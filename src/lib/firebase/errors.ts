@@ -13,15 +13,19 @@ export function mapFirebaseAuthError(error: unknown): string {
     switch (error.code) {
       // Login & credential failures
       case "auth/invalid-credential":
-      case "auth/wrong-password":
+        return "Incorrect password or account does not exist. Please check your details or create an account.";
+
       case "auth/user-not-found":
-        return "Please check your email and password.";
+        return "Account does not exist. Please check your email or create an account.";
+
+      case "auth/wrong-password":
+        return "Incorrect password. Please try again or reset your password.";
 
       case "auth/invalid-email":
-        return "The flight ID (email) format is invalid.";
+        return "Invalid email address format.";
 
       case "auth/user-disabled":
-        return "This pilot account has been suspended. Please contact flight control.";
+        return "This account has been suspended. Please contact support.";
 
       // Registration failures
       case "auth/email-already-in-use":

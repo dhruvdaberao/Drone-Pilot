@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { ProtectedRoute } from "@/components/auth/route-guard";
-import { FlightBadge } from "@/components/ui/flight-badge";
 import { Button } from "@/components/ui/button";
 import { DroneIcon } from "@/components/ui/drone-icon";
 import { LogOut, CheckCircle2, AlertCircle, User, Mail, Shield } from "lucide-react";
@@ -35,20 +34,13 @@ export default function DashboardPage() {
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5 sm:gap-4">
-            <div className="hidden sm:inline-flex">
-              <FlightBadge
-                label={user?.emailVerified ? "Verified Pilot" : "Pending Verification"}
-                variant={user?.emailVerified ? "active" : "warning"}
-              />
-            </div>
-
+          <div className="flex items-center">
             <Button
-              variant="outline"
-              size="sm"
-              className="text-neutral-800 border-neutral-300 hover:bg-neutral-100 hover:text-black text-xs px-2.5 sm:px-3.5"
+              variant="primary"
+              size="md"
+              className="font-semibold shadow-sm px-4 sm:px-5 text-xs sm:text-sm"
               onClick={handleSignOut}
-              leftIcon={<LogOut className="h-3.5 w-3.5" />}
+              leftIcon={<LogOut className="h-4 w-4 stroke-[2]" />}
             >
               Log Out
             </Button>

@@ -27,6 +27,7 @@ export function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setAuthError(null);
 
     const validationErrors = validateLoginForm(email, password);
@@ -44,7 +45,7 @@ export function LoginForm() {
       if (err instanceof Error) {
         setAuthError(err.message);
       } else {
-        setAuthError("Unable to sign in. Please check your credentials.");
+        setAuthError("Incorrect password or account does not exist. Please check your credentials.");
       }
     } finally {
       setIsSubmitting(false);
@@ -75,49 +76,49 @@ export function LoginForm() {
       belowCard={
         <>
           {/* Subtle Canvas-blended Divider */}
-          <div className="relative flex items-center justify-center my-0.5">
+          <div className="relative flex items-center justify-center my-2">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/15" />
+              <div className="w-full border-t border-neutral-300" />
             </div>
-            <div className="relative bg-black/60 backdrop-blur-sm px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-neutral-300 uppercase tracking-widest border border-white/10">
+            <div className="relative bg-white/95 backdrop-blur-sm px-3.5 py-1 rounded-full text-[11px] font-semibold text-neutral-600 uppercase tracking-wider border border-neutral-200 shadow-sm">
               or continue with
             </div>
           </div>
 
-          {/* Premium Google OAuth Button Outside the Card */}
+          {/* Premium Google OAuth Bar Button */}
           <Button
             type="button"
             variant="secondary"
             size="md"
-            className="w-full justify-center text-xs font-semibold text-neutral-800 bg-white hover:bg-neutral-50 shadow-sm border-neutral-200/90 transition-all"
+            className="w-full justify-center text-sm font-semibold text-neutral-900 bg-white hover:bg-neutral-50 shadow-sm border-neutral-300 transition-all"
             onClick={handleGoogleSignIn}
             isLoading={isGoogleLoading}
             loadingText="Connecting..."
-            leftIcon={<GoogleIcon className="h-4 w-4 shrink-0" />}
+            leftIcon={<GoogleIcon className="h-5 w-5 shrink-0" />}
           >
             Continue with Google
           </Button>
 
           {/* New User Account Switch directly on page with seamless feathered blur */}
-          <div className="relative flex justify-center pt-0.5">
+          <div className="relative flex justify-center pt-2">
             <div
-              className="absolute -inset-x-6 -inset-y-2 -z-10 pointer-events-none"
+              className="absolute -inset-x-8 -inset-y-2.5 -z-10 pointer-events-none"
               style={{
                 background:
-                  "radial-gradient(ellipse at center, rgba(26, 27, 29, 0.94) 0%, rgba(26, 27, 29, 0.6) 45%, transparent 75%)",
+                  "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.75) 50%, transparent 80%)",
                 backdropFilter: "blur(6px)",
                 WebkitBackdropFilter: "blur(6px)",
                 maskImage:
-                  "radial-gradient(ellipse at center, black 30%, transparent 75%)",
+                  "radial-gradient(ellipse at center, black 35%, transparent 80%)",
                 WebkitMaskImage:
-                  "radial-gradient(ellipse at center, black 30%, transparent 75%)",
+                  "radial-gradient(ellipse at center, black 35%, transparent 80%)",
               }}
             />
-            <p className="text-center text-xs text-neutral-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+            <p className="text-center text-xs sm:text-sm text-neutral-700">
               New user?{" "}
               <Link
                 href="/signup"
-                className="font-bold text-white hover:underline transition-colors ml-0.5 focus-visible:outline-none focus-visible:underline"
+                className="font-bold text-black hover:underline transition-colors ml-1 focus-visible:outline-none focus-visible:underline"
               >
                 Create an account
               </Link>
@@ -135,7 +136,7 @@ export function LoginForm() {
           />
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3" noValidate>
+        <form onSubmit={handleSubmit} action="javascript:void(0);" className="space-y-4" noValidate>
           <Input
             id="pilot-email"
             label="Email address"
@@ -152,7 +153,7 @@ export function LoginForm() {
             required
           />
 
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label
                 htmlFor="pilot-password"
@@ -182,15 +183,15 @@ export function LoginForm() {
             />
           </div>
 
-          <div className="flex items-center justify-between text-xs text-neutral-600 pt-0.5">
+          <div className="flex items-center justify-between text-xs text-neutral-600 pt-1">
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-neutral-300 text-black focus:ring-black accent-black cursor-pointer"
+                className="h-4 w-4 rounded border-neutral-300 text-black focus:ring-black accent-black cursor-pointer"
               />
-              <span className="text-[11px] text-neutral-600">Remember this station</span>
+              <span className="text-xs text-neutral-600">Remember this station</span>
             </label>
           </div>
 
@@ -198,7 +199,7 @@ export function LoginForm() {
             type="submit"
             variant="primary"
             size="md"
-            className="w-full mt-1 font-semibold"
+            className="w-full mt-2 font-semibold text-sm"
             isLoading={isSubmitting}
             loadingText="Signing in..."
             rightIcon={<ArrowRight className="h-4 w-4" />}

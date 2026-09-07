@@ -85,7 +85,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     setError(null);
-    setLoading(true);
     try {
       const result = await apiLogin(email, password);
       setUser(result.user);
@@ -93,14 +92,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const friendlyMessage = mapFirebaseAuthError(err);
       setError(friendlyMessage);
       throw new Error(friendlyMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
   const signup = async (email: string, password: string, displayName?: string) => {
     setError(null);
-    setLoading(true);
     try {
       const result = await apiSignUp(email, password, displayName);
       setUser(result.user);
@@ -108,14 +104,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const friendlyMessage = mapFirebaseAuthError(err);
       setError(friendlyMessage);
       throw new Error(friendlyMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
   const loginWithGoogle = async () => {
     setError(null);
-    setLoading(true);
     try {
       const result = await apiLoginWithGoogle();
       setUser(result.user);
@@ -123,14 +116,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const friendlyMessage = mapFirebaseAuthError(err);
       setError(friendlyMessage);
       throw new Error(friendlyMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
   const logout = async () => {
     setError(null);
-    setLoading(true);
     try {
       await apiLogout();
       setUser(null);
@@ -139,8 +129,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const friendlyMessage = mapFirebaseAuthError(err);
       setError(friendlyMessage);
       throw new Error(friendlyMessage);
-    } finally {
-      setLoading(false);
     }
   };
 

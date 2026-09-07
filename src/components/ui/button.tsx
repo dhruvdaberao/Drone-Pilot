@@ -31,25 +31,25 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      "group relative inline-flex items-center justify-center font-medium select-none transition-all duration-200 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:pointer-events-none disabled:opacity-40 active:scale-[0.98]";
+      "group relative inline-flex items-center justify-center font-semibold select-none transition-all duration-300 ease-out rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:pointer-events-none disabled:opacity-40 active:scale-[0.98] active:translate-y-0";
 
     const sizeStyles = {
-      sm: "h-8.5 px-3 text-xs gap-1.5",
-      md: "h-10 px-4 text-xs sm:text-sm gap-2",
-      lg: "h-11 px-5 text-sm gap-2.5",
+      sm: "h-10 px-4 text-xs gap-2 rounded-xl",
+      md: "h-12 px-6 text-sm gap-2.5 rounded-xl",
+      lg: "h-14 px-8 text-base gap-3 rounded-xl",
     };
 
     const variantStyles = {
       primary:
-        "bg-black text-white font-semibold hover:bg-neutral-800 border border-black shadow-[0_2px_8px_-2px_rgba(0,0,0,0.2)] hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.3)]",
+        "bg-black text-white border border-black shadow-[0_2px_8px_-1px_rgba(0,0,0,0.2)] hover:bg-black hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4)] active:shadow-[0_2px_6px_rgba(0,0,0,0.2)]",
       secondary:
-        "bg-white text-neutral-800 border border-neutral-200/90 hover:bg-neutral-50/90 hover:border-neutral-300 hover:shadow-sm shadow-[0_1px_2px_rgba(0,0,0,0.03)]",
+        "bg-white text-neutral-900 border border-neutral-200 shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:bg-white hover:border-black hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-2px_rgba(0,0,0,0.12)] active:shadow-[0_1px_3px_rgba(0,0,0,0.04)]",
       outline:
-        "bg-transparent text-neutral-800 border border-neutral-300 hover:border-neutral-500 hover:bg-neutral-100/60 hover:text-black",
+        "bg-transparent text-neutral-900 border border-neutral-300 hover:bg-black hover:text-white hover:border-black hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-2px_rgba(0,0,0,0.2)]",
       ghost:
-        "bg-transparent text-neutral-600 hover:text-black hover:bg-neutral-100",
+        "bg-transparent text-neutral-600 hover:text-black hover:bg-neutral-100/80",
       danger:
-        "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 hover:border-red-300",
+        "bg-red-600 text-white border border-red-600 shadow-sm hover:bg-red-700 hover:-translate-y-0.5 hover:shadow-md",
     };
 
     return (

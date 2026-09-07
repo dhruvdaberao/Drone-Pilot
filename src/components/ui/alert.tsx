@@ -58,7 +58,7 @@ export function Alert({
             {title}
           </p>
         )}
-        <p className="text-neutral-700">{message}</p>
+        <p className={cn("text-xs leading-relaxed font-medium", variant === "error" ? "text-red-900" : "text-neutral-800")}>{message}</p>
       </div>
 
       {onClose && (
