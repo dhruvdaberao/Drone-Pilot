@@ -42,17 +42,15 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero directly on page with localized blur strictly behind text */}
+      {/* Hero directly on page - completely cardless */}
       <div className="my-auto z-10 w-full max-w-xl mx-auto px-4 py-8 flex flex-col items-center text-center">
-        <div className="flex flex-col items-center px-6 py-5 sm:px-8 sm:py-7 rounded-3xl bg-black/60 backdrop-blur-md border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-          <h1 className="font-heading text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white uppercase">
-            DRONE PILOT
-          </h1>
+        <h1 className="font-heading text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white uppercase drop-shadow-md">
+          DRONE PILOT
+        </h1>
 
-          <p className="mt-3.5 sm:mt-4 text-xs sm:text-base text-neutral-300 leading-relaxed max-w-md px-2">
-            Next-generation drone simulation and learning platform. Authenticate to access your pilot credentials.
-          </p>
-        </div>
+        <p className="mt-3.5 sm:mt-4 text-xs sm:text-base text-neutral-300 leading-relaxed max-w-md px-2 drop-shadow-sm">
+          Next-generation drone simulation and learning platform. Authenticate to access your pilot credentials.
+        </p>
 
         <div className="mt-7 sm:mt-8 flex flex-col sm:flex-row gap-3 w-full sm:w-auto px-2 sm:px-0">
           <Button
@@ -80,7 +78,7 @@ export default function HomePage() {
       {/* Clean Minimalist Footer */}
       <footer className="relative z-10 flex flex-col sm:flex-row items-center justify-between border-t border-white/10 bg-black/80 backdrop-blur-md px-4 py-3.5 sm:px-10 text-xs text-neutral-400 gap-2 text-center sm:text-left">
         <div>DRONE PILOT PLATFORM &copy; {new Date().getFullYear()}</div>
-        <div className="text-neutral-400">Phase 1 &bull; Authentication Foundation</div>
+        <div className="text-neutral-400 font-medium">Precision Flight Training Platform</div>
       </footer>
     </main>
   );

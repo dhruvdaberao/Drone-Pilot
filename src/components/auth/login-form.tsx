@@ -98,18 +98,16 @@ export function LoginForm() {
             Continue with Google
           </Button>
 
-          {/* New User Account Switch */}
-          <div className="flex justify-center pt-0.5">
-            <div className="inline-flex items-center px-3.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-xs text-neutral-300 shadow-sm">
-              New user?{" "}
-              <Link
-                href="/signup"
-                className="font-bold text-white hover:underline transition-colors ml-1 focus-visible:outline-none focus-visible:underline"
-              >
-                Create an account
-              </Link>
-            </div>
-          </div>
+          {/* New User Account Switch directly on page */}
+          <p className="text-center text-xs text-neutral-400 pt-0.5">
+            New user?{" "}
+            <Link
+              href="/signup"
+              className="font-bold text-white hover:underline transition-colors ml-0.5 focus-visible:outline-none focus-visible:underline"
+            >
+              Create an account
+            </Link>
+          </p>
         </>
       }
     >

@@ -150,7 +150,7 @@ export default function DashboardPage() {
         {/* Clean White Footer */}
         <footer className="relative z-10 flex flex-col sm:flex-row items-center justify-between border-t border-neutral-200/80 bg-white px-6 py-4 sm:px-10 text-xs text-neutral-500 gap-2">
           <div>DRONE PILOT &copy; {new Date().getFullYear()}</div>
-          <div className="text-neutral-400">Phase 1 &bull; Command Center Gateway</div>
+          <div className="text-neutral-500 font-medium">Precision Flight Training Platform</div>
         </footer>
       </div>
     </ProtectedRoute>
