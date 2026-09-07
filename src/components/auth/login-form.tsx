@@ -77,9 +77,9 @@ export function LoginForm() {
           {/* Subtle Canvas-blended Divider */}
           <div className="relative flex items-center justify-center my-0.5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-neutral-200" />
+              <div className="w-full border-t border-white/15" />
             </div>
-            <div className="relative bg-white/80 backdrop-blur-sm px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-neutral-400 uppercase tracking-widest">
+            <div className="relative bg-black/60 backdrop-blur-sm px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-neutral-300 uppercase tracking-widest border border-white/10">
               or continue with
             </div>
           </div>
@@ -99,15 +99,17 @@ export function LoginForm() {
           </Button>
 
           {/* New User Account Switch */}
-          <p className="text-center text-xs text-neutral-500 pt-0.5">
-            New user?{" "}
-            <Link
-              href="/signup"
-              className="font-bold text-black hover:underline transition-colors ml-0.5 focus-visible:outline-none focus-visible:underline"
-            >
-              Create an account
-            </Link>
-          </p>
+          <div className="flex justify-center pt-0.5">
+            <div className="inline-flex items-center px-3.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-xs text-neutral-300 shadow-sm">
+              New user?{" "}
+              <Link
+                href="/signup"
+                className="font-bold text-white hover:underline transition-colors ml-1 focus-visible:outline-none focus-visible:underline"
+              >
+                Create an account
+              </Link>
+            </div>
+          </div>
         </>
       }
     >
