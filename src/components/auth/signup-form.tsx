@@ -8,11 +8,10 @@ import { validateSignUpForm } from "@/lib/validation";
 import { Input } from "../ui/input";
 import { PasswordInput } from "../ui/password-input";
 import { Button } from "../ui/button";
-import { Alert } from "../ui/alert";
 import { GoogleIcon } from "../ui/google-icon";
 import { PasswordStrengthMeter } from "./password-strength";
 import { AuthCard } from "./auth-card";
-import { User, Mail, Lock, ArrowRight } from "lucide-react";
+import { User, Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
 
 export function SignupForm() {
   const router = useRouter();
@@ -139,13 +138,12 @@ export function SignupForm() {
         </>
       }
     >
-      <div className="space-y-2.5">
+      <div className="space-y-3.5">
         {authError && (
-          <Alert
-            variant="error"
-            message={authError}
-            onClose={() => setAuthError(null)}
-          />
+          <div className="flex items-start gap-2 text-xs sm:text-sm font-medium text-red-600 py-0.5 animate-in fade-in duration-200">
+            <AlertCircle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+            <span className="leading-snug">{authError}</span>
+          </div>
         )}
 
         <form onSubmit={handleSubmit} action="javascript:void(0);" className="space-y-3.5" noValidate>

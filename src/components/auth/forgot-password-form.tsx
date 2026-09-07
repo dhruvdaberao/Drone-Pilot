@@ -6,8 +6,7 @@ import { useAuth } from "@/context/auth-context";
 import { isValidEmail } from "@/lib/validation";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { Alert } from "../ui/alert";
-import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
 
 export function ForgotPasswordForm() {
   const { resetPassword } = useAuth();
@@ -76,11 +75,10 @@ export function ForgotPasswordForm() {
   return (
     <div className="space-y-4">
       {error && (
-        <Alert
-          variant="error"
-          message={error}
-          onClose={() => setError(null)}
-        />
+        <div className="flex items-start gap-2 text-xs sm:text-sm font-medium text-red-600 py-0.5 animate-in fade-in duration-200">
+          <AlertCircle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+          <span className="leading-snug">{error}</span>
+        </div>
       )}
 
       <p className="text-xs text-neutral-500 leading-relaxed">
