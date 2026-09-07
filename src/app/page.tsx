@@ -32,11 +32,11 @@ export default function HomePage() {
         />
       </div>
 
-      {/* Sleek Black Navigation Bar */}
-      <header className="relative z-10 flex items-center justify-between bg-black/90 backdrop-blur-md px-4 py-3 sm:px-10 sm:py-3.5 text-white shadow-sm border-b border-white/10">
+      {/* Sleek White Navigation Bar */}
+      <header className="relative z-10 flex items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-10 sm:py-3.5 text-neutral-900 shadow-sm border-b border-neutral-200/80">
         <div className="flex items-center gap-2.5">
-          <DroneIcon className="h-5 w-5 text-white" />
-          <span className="font-heading text-xs sm:text-sm font-bold tracking-wider text-white uppercase">
+          <DroneIcon className="h-5 w-5 text-black" />
+          <span className="font-heading text-xs sm:text-sm font-bold tracking-wider text-black uppercase">
             DRONE PILOT
           </span>
         </div>
@@ -89,12 +89,6 @@ export default function HomePage() {
           </Button>
         </div>
       </div>
-
-      {/* Clean Minimalist Footer */}
-      <footer className="relative z-10 flex flex-col sm:flex-row items-center justify-between border-t border-white/10 bg-black/80 backdrop-blur-md px-4 py-3.5 sm:px-10 text-xs text-neutral-400 gap-2 text-center sm:text-left">
-        <div>DRONE PILOT PLATFORM &copy; {new Date().getFullYear()}</div>
-        <div className="text-neutral-400 font-medium">Precision Flight Training Platform</div>
-      </footer>
     </main>
   );
 }

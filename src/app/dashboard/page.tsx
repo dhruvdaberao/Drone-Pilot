@@ -26,11 +26,11 @@ export default function DashboardPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen flex flex-col justify-between bg-white text-neutral-900 overflow-x-hidden">
-        {/* Sleek Black Navigation Bar */}
-        <header className="relative z-10 flex items-center justify-between bg-black px-4 py-3 sm:px-10 sm:py-3.5 text-white shadow-sm">
+        {/* Sleek White Navigation Bar */}
+        <header className="relative z-10 flex items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-10 sm:py-3.5 text-neutral-900 shadow-sm border-b border-neutral-200/80">
           <div className="flex items-center gap-2.5">
-            <DroneIcon className="h-5 w-5 text-white" />
-            <span className="font-heading text-xs sm:text-sm font-bold tracking-wider text-white uppercase">
+            <DroneIcon className="h-5 w-5 text-black" />
+            <span className="font-heading text-xs sm:text-sm font-bold tracking-wider text-black uppercase">
               DRONE PILOT
             </span>
           </div>
@@ -46,7 +46,7 @@ export default function DashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              className="text-white border-neutral-700 hover:bg-neutral-900 hover:text-white text-xs px-2.5 sm:px-3.5"
+              className="text-neutral-800 border-neutral-300 hover:bg-neutral-100 hover:text-black text-xs px-2.5 sm:px-3.5"
               onClick={handleSignOut}
               leftIcon={<LogOut className="h-3.5 w-3.5" />}
             >
@@ -146,12 +146,6 @@ export default function DashboardPage() {
             </div>
           </div>
         </main>
-
-        {/* Clean White Footer */}
-        <footer className="relative z-10 flex flex-col sm:flex-row items-center justify-between border-t border-neutral-200/80 bg-white px-6 py-4 sm:px-10 text-xs text-neutral-500 gap-2">
-          <div>DRONE PILOT &copy; {new Date().getFullYear()}</div>
-          <div className="text-neutral-500 font-medium">Precision Flight Training Platform</div>
-        </footer>
       </div>
     </ProtectedRoute>
   );
