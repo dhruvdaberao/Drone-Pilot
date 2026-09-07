@@ -8,8 +8,21 @@ import {
   sendEmailVerification,
   updateProfile,
   type User,
+  type ActionCodeSettings,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "./client";
+
+function getActionCodeSettings(returnPath: string = "/dashboard"): ActionCodeSettings {
+  const origin =
+    typeof window !== "undefined" && window.location.origin
+      ? window.location.origin
+      : "http://localhost:3000";
+
+  return {
+    url: `${origin}${returnPath}`,
+    handleCodeInApp: false,
+  };
+}
 
 export interface PilotUser {
   uid: string;
@@ -73,7 +86,7 @@ export async function signUpWithEmail(
   }
   // Automatically trigger email verification dispatch
   try {
-    await sendEmailVerification(credential.user);
+    await sendEmailVerification(credential.user, getActionCodeSettings("/dashboard"));
   } catch (err) {
     console.warn("Could not automatically dispatch verification email:", err);
   }
@@ -163,7 +176,7 @@ export async function resetPassword(email: string): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 500));
     return;
   }
-  await sendPasswordResetEmail(auth, email);
+  await sendPasswordResetEmail(auth, email, getActionCodeSettings("/login"));
 }
 
 /**
@@ -178,7 +191,7 @@ export async function sendVerificationEmail(currentUser?: User | null): Promise<
   if (!target) {
     throw new Error("No authenticated pilot found to verify.");
   }
-  await sendEmailVerification(target);
+  await sendEmailVerification(target, getActionCodeSettings("/dashboard"));
 }
 
 /**
