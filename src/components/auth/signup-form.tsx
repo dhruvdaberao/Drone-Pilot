@@ -91,7 +91,7 @@ export function SignupForm() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-neutral-200" />
             </div>
-            <div className="relative bg-[#f8fafc] px-2.5 text-[10px] font-semibold text-neutral-400 uppercase tracking-widest">
+            <div className="relative bg-white/80 backdrop-blur-sm px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-neutral-400 uppercase tracking-widest">
               or continue with
             </div>
           </div>

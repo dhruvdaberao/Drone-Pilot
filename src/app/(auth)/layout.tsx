@@ -1,12 +1,27 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { DroneIcon } from "@/components/ui/drone-icon";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-screen flex flex-col justify-between bg-[#f8fafc] text-neutral-900 overflow-x-hidden">
+    <div className="relative min-h-screen flex flex-col justify-between bg-neutral-100 text-neutral-900 overflow-x-hidden">
+      {/* Technical Drone Blueprint Background Image */}
+      <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden">
+        <Image
+          src="/login-baground.jpg"
+          alt="Technical Drone Blueprint Background"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center opacity-85"
+        />
+        {/* Soft translucent wash */}
+        <div className="absolute inset-0 bg-white/25" />
+      </div>
+
       {/* Sleek Black Navigation Bar */}
-      <header className="relative z-10 flex items-center justify-between bg-black px-4 py-3.5 sm:px-10 text-white shadow-md shadow-black/10">
+      <header className="relative z-10 flex items-center justify-between bg-black/90 backdrop-blur-md px-4 py-3 sm:px-10 sm:py-3.5 text-white shadow-md shadow-black/10">
         <Link
           href="/"
           className="group flex items-center gap-2.5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded"
@@ -18,13 +33,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </Link>
       </header>
 
-      {/* Main Form Container on Subtle Off-White Canvas for Crisp Card Elevation */}
-      <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-3 sm:py-5">
+      {/* Main Form Container */}
+      <main className="relative z-10 flex flex-1 items-center justify-center px-3.5 py-4 sm:px-6 sm:py-6 w-full">
         {children}
       </main>
 
-      {/* Clean Minimalist White Footer */}
-      <footer className="relative z-10 flex flex-col sm:flex-row items-center justify-between border-t border-neutral-200 bg-white px-4 py-2.5 sm:px-10 text-xs text-neutral-500 gap-2 text-center sm:text-left">
+      {/* Clean Minimalist Footer */}
+      <footer className="relative z-10 flex flex-col sm:flex-row items-center justify-between border-t border-neutral-200/80 bg-white/85 backdrop-blur-md px-4 py-2.5 sm:px-10 text-xs text-neutral-600 gap-2 text-center sm:text-left">
         <div>DRONE PILOT &copy; {new Date().getFullYear()}</div>
         <div className="text-neutral-500 font-medium">Precision Flight Training Platform</div>
       </footer>
