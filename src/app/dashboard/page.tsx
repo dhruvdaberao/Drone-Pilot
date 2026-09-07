@@ -38,7 +38,7 @@ export default function DashboardPage() {
             <Button
               variant="primary"
               size="md"
-              className="font-semibold shadow-sm px-4 sm:px-5 text-xs sm:text-sm"
+              className="h-11 px-5 text-sm font-semibold shadow-md"
               onClick={handleSignOut}
               leftIcon={<LogOut className="h-4 w-4 stroke-[2]" />}
             >
