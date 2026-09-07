@@ -20,14 +20,29 @@ export function AuthCard({
 }: AuthCardProps) {
   return (
     <div className="w-full max-w-[370px] sm:max-w-[395px] mx-auto flex flex-col items-center">
-      {/* ABOVE THE CARD: Heading and Subheading directly on canvas */}
-      <div className="flex flex-col items-center text-center mb-3 space-y-0.5 w-full">
-        <h1 className="font-heading text-lg sm:text-xl font-bold tracking-tight text-white uppercase drop-shadow-sm">
+      {/* ABOVE THE CARD: Heading and Subheading directly on canvas with seamless feathered blur aura */}
+      <div className="relative flex flex-col items-center text-center mb-3.5 space-y-0.5 w-full">
+        {/* Seamless feathered dark radial blur directly behind heading text - no card/borders */}
+        <div
+          className="absolute -inset-x-6 -inset-y-3 -z-10 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, rgba(26, 27, 29, 0.94) 0%, rgba(26, 27, 29, 0.7) 50%, transparent 80%)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            maskImage:
+              "radial-gradient(ellipse at center, black 35%, transparent 80%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse at center, black 35%, transparent 80%)",
+          }}
+        />
+
+        <h1 className="font-heading text-lg sm:text-xl font-bold tracking-tight text-white uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
           {heading}
         </h1>
 
         {subheading && (
-          <p className="text-xs text-neutral-300 font-normal max-w-xs leading-normal">
+          <p className="text-xs text-neutral-200 font-normal max-w-xs leading-normal drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
             {subheading}
           </p>
         )}

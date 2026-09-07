@@ -42,13 +42,28 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero directly on page - completely cardless */}
-      <div className="my-auto z-10 w-full max-w-xl mx-auto px-4 py-8 flex flex-col items-center text-center">
-        <h1 className="font-heading text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white uppercase drop-shadow-md">
+      {/* Hero directly on page with seamless feathered blur aura (no card, no borders) */}
+      <div className="relative my-auto z-10 w-full max-w-xl mx-auto px-4 py-8 flex flex-col items-center text-center">
+        {/* Seamless feathered dark radial blur directly behind the text - 100% borderless */}
+        <div
+          className="absolute inset-x-2 sm:inset-x-0 -top-8 -bottom-4 -z-10 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse 90% 85% at 50% 45%, rgba(26, 27, 29, 0.94) 0%, rgba(26, 27, 29, 0.75) 45%, transparent 75%)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            maskImage:
+              "radial-gradient(ellipse 85% 80% at 50% 45%, black 35%, transparent 75%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 85% 80% at 50% 45%, black 35%, transparent 75%)",
+          }}
+        />
+
+        <h1 className="font-heading text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white uppercase drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]">
           DRONE PILOT
         </h1>
 
-        <p className="mt-3.5 sm:mt-4 text-xs sm:text-base text-neutral-300 leading-relaxed max-w-md px-2 drop-shadow-sm">
+        <p className="mt-3.5 sm:mt-4 text-xs sm:text-base text-neutral-200 font-normal leading-relaxed max-w-md px-2 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
           Next-generation drone simulation and learning platform. Authenticate to access your pilot credentials.
         </p>
 

@@ -98,16 +98,31 @@ export function LoginForm() {
             Continue with Google
           </Button>
 
-          {/* New User Account Switch directly on page */}
-          <p className="text-center text-xs text-neutral-400 pt-0.5">
-            New user?{" "}
-            <Link
-              href="/signup"
-              className="font-bold text-white hover:underline transition-colors ml-0.5 focus-visible:outline-none focus-visible:underline"
-            >
-              Create an account
-            </Link>
-          </p>
+          {/* New User Account Switch directly on page with seamless feathered blur */}
+          <div className="relative flex justify-center pt-0.5">
+            <div
+              className="absolute -inset-x-6 -inset-y-2 -z-10 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse at center, rgba(26, 27, 29, 0.94) 0%, rgba(26, 27, 29, 0.6) 45%, transparent 75%)",
+                backdropFilter: "blur(6px)",
+                WebkitBackdropFilter: "blur(6px)",
+                maskImage:
+                  "radial-gradient(ellipse at center, black 30%, transparent 75%)",
+                WebkitMaskImage:
+                  "radial-gradient(ellipse at center, black 30%, transparent 75%)",
+              }}
+            />
+            <p className="text-center text-xs text-neutral-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+              New user?{" "}
+              <Link
+                href="/signup"
+                className="font-bold text-white hover:underline transition-colors ml-0.5 focus-visible:outline-none focus-visible:underline"
+              >
+                Create an account
+              </Link>
+            </p>
+          </div>
         </>
       }
     >
