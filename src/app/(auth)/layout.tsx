@@ -6,7 +6,7 @@ import { DroneIcon } from "@/components/ui/drone-icon";
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative min-h-screen flex flex-col justify-between bg-neutral-100 text-neutral-900 overflow-x-hidden">
-      {/* Technical Drone Blueprint Background Image */}
+      {/* Technical Drone Blueprint Background Image with Feathered Center Blur */}
       <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden">
         <Image
           src="/login-baground.jpg"
@@ -14,10 +14,23 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center opacity-85"
+          className="object-cover object-center"
         />
-        {/* Soft translucent wash */}
-        <div className="absolute inset-0 bg-white/25" />
+        {/* Seamless feathered blur specifically behind the center text/card area */}
+        <div
+          className="absolute inset-0 backdrop-blur-md"
+          style={{
+            maskImage: "radial-gradient(ellipse 550px 600px at 50% 50%, black 25%, transparent 85%)",
+            WebkitMaskImage: "radial-gradient(ellipse 550px 600px at 50% 50%, black 25%, transparent 85%)",
+          }}
+        />
+        {/* Soft radial white wash for maximum contrast and legibility */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "radial-gradient(ellipse 550px 600px at 50% 50%, rgba(255,255,255,0.75) 20%, rgba(255,255,255,0.3) 60%, transparent 85%)",
+          }}
+        />
       </div>
 
       {/* Sleek Black Navigation Bar */}
