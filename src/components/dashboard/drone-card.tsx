@@ -41,10 +41,8 @@ export function DroneCard({
       onKeyDown={handleKeyDown}
       className={cn(
         // Pure Cardless Hangar Stage Item (No boxy cards, no borders, no pill clutter)
-        "group relative flex flex-col items-center justify-between cursor-pointer select-none text-center transition-all duration-500 ease-out focus-visible:outline-none w-full h-full",
-        isSelected
-          ? "-translate-y-2 sm:-translate-y-3 scale-[1.02] sm:scale-105 z-20"
-          : "hover:-translate-y-1 hover:scale-[1.01] opacity-85 hover:opacity-100 z-10",
+        "group relative flex flex-col items-center justify-between cursor-pointer select-none text-center transition-all duration-500 ease-out focus-visible:outline-none w-full h-full opacity-100",
+        isSelected ? "z-20" : "z-10",
         className
       )}
     >
@@ -74,7 +72,7 @@ export function DroneCard({
         <h3
           className={cn(
             "font-heading text-lg sm:text-xl lg:text-2xl font-bold tracking-wider uppercase transition-colors duration-300",
-            isSelected ? "text-neutral-950" : "text-neutral-700 group-hover:text-neutral-900"
+            isSelected ? "text-neutral-950" : "text-neutral-900 group-hover:text-black"
           )}
         >
           {drone.name}
