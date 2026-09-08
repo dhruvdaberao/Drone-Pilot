@@ -103,20 +103,22 @@ export default function DashboardPage() {
           <div
             role="radiogroup"
             aria-label="Drone Selection"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 w-full min-w-0 items-start my-auto"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 w-full min-w-0 items-stretch my-auto"
           >
             {DRONES.map((drone) => {
               const isSelected = selectedDrone?.id === drone.id;
               return (
                 <div
                   key={drone.id}
-                  className="w-full min-w-0 sm:last:col-span-2 sm:last:max-w-md sm:last:mx-auto lg:last:col-span-1 lg:last:max-w-none"
+                  className="w-full min-w-0 flex justify-center sm:last:col-span-2 lg:last:col-span-1 h-full"
                 >
-                  <DroneCard
-                    drone={drone}
-                    isSelected={isSelected}
-                    onSelect={handleSelectDrone}
-                  />
+                  <div className="w-full max-w-[340px] lg:max-w-none h-full">
+                    <DroneCard
+                      drone={drone}
+                      isSelected={isSelected}
+                      onSelect={handleSelectDrone}
+                    />
+                  </div>
                 </div>
               );
             })}

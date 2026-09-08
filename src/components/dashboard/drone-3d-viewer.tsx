@@ -36,9 +36,9 @@ export function Drone3DViewer({
     const height = container.clientHeight || 200;
 
     const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
-    // Position camera for cinematic three-quarter aerial cockpit view
-    camera.position.set(0, 2.8, 4.4);
-    camera.lookAt(0, 0, 0);
+    // Framed with generous clearance so all airframes and rotating props fit comfortably with zero clipping
+    camera.position.set(0, 3.4, 5.8);
+    camera.lookAt(0, -0.05, 0);
 
     // RENDERER
     const renderer = new THREE.WebGLRenderer({
@@ -138,7 +138,7 @@ export function Drone3DViewer({
     scene.add(droneGroup);
 
     // Ground Contact Shadow Plane
-    const shadowGeo = new THREE.PlaneGeometry(3.6, 3.6);
+    const shadowGeo = new THREE.PlaneGeometry(4.2, 4.2);
     const canvas = document.createElement("canvas");
     canvas.width = 128;
     canvas.height = 128;
@@ -159,15 +159,16 @@ export function Drone3DViewer({
     });
     const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
     shadowMesh.rotation.x = -Math.PI / 2;
-    shadowMesh.position.y = -0.85;
+    shadowMesh.position.y = -0.52;
     scene.add(shadowMesh);
 
     // ==========================================
     // 1. AERODYNAMIC FUSELAGE / CHASSIS
     // ==========================================
-    const bodyLength = type === "octacopter" ? 1.3 : type === "hexacopter" ? 1.15 : 1.0;
-    const bodyWidth = type === "octacopter" ? 0.9 : type === "hexacopter" ? 0.8 : 0.68;
-    const bodyHeight = 0.28;
+    // Harmonious proportions so all 3 aircraft belong to the same visual scale
+    const bodyLength = type === "octacopter" ? 1.05 : type === "hexacopter" ? 1.0 : 0.95;
+    const bodyWidth = type === "octacopter" ? 0.72 : type === "hexacopter" ? 0.68 : 0.62;
+    const bodyHeight = 0.25;
 
     // Main composite central canopy (streamlined, modern UAV shape)
     const canopyGeo = new THREE.BoxGeometry(bodyWidth, bodyHeight, bodyLength);
@@ -241,7 +242,7 @@ export function Drone3DViewer({
     const propellerList: PropellerData[] = [];
 
     let armAngles: number[] = [];
-    let armLength = 1.6;
+    let armLength = 1.4;
 
     if (type === "quadcopter") {
       // Classic symmetrical 4-rotor X-frame (45°, 135°, 225°, 315°)
@@ -251,15 +252,15 @@ export function Drone3DViewer({
         Math.PI * 1.25, // Rear-Left
         Math.PI * 1.75, // Front-Left
       ];
-      armLength = 1.65;
+      armLength = 1.35;
     } else if (type === "hexacopter") {
       // 6-rotor radial configuration (every 60°)
       armAngles = [0, 1, 2, 3, 4, 5].map((i) => (i * Math.PI) / 3);
-      armLength = 1.8;
+      armLength = 1.4;
     } else {
       // Octacopter: 8-rotor heavy lifter (every 45°)
       armAngles = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => (i * Math.PI) / 4);
-      armLength = 1.95;
+      armLength = 1.45;
     }
 
     armAngles.forEach((angle, idx) => {
@@ -321,7 +322,7 @@ export function Drone3DViewer({
       propGroup.add(hubNut);
 
       // 2 Realistic Aerodynamic Twisted Propeller Blades
-      const bladeRadius = type === "octacopter" ? 0.75 : type === "hexacopter" ? 0.85 : 0.95;
+      const bladeRadius = type === "octacopter" ? 0.45 : type === "hexacopter" ? 0.50 : 0.55;
 
       [-1, 1].forEach((dir) => {
         const bladeHalfGeo = new THREE.BoxGeometry(bladeRadius * 0.9, 0.012, 0.08);
@@ -377,8 +378,8 @@ export function Drone3DViewer({
       });
     } else {
       // Heavy-Duty Industrial Dual Landing Skids (DJI Matrice / Agras Style)
-      const skidSpacing = bodyWidth * 0.85;
-      const skidLength = armLength * 1.35;
+      const skidSpacing = bodyWidth * 0.72;
+      const skidLength = 1.35;
 
       [-skidSpacing, skidSpacing].forEach((zPos) => {
         // Horizontal carbon skid pipe
@@ -501,12 +502,12 @@ export function Drone3DViewer({
 
       // Dynamic game-style elevation & scale when selected (drone comes closer & lifts up)
       const isCurrentSelected = isSelectedRef.current;
-      const targetScale = isCurrentSelected ? 1.15 : 0.98;
-      const targetElevY = isCurrentSelected ? 0.22 : 0;
+      const targetScale = isCurrentSelected ? 1.05 : 0.92;
+      const targetElevY = isCurrentSelected ? 0.14 : 0;
       droneGroup.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.08);
 
       // Subtle aerodynamic hover breathing combined with selection elevation
-      droneGroup.position.y = targetElevY + Math.sin(elapsed * 2.2) * 0.04;
+      droneGroup.position.y = targetElevY + Math.sin(elapsed * 2.2) * 0.03;
 
       // Handle Damped Rotation or Auto-Turntable
       if (!isDragging) {
@@ -518,7 +519,8 @@ export function Drone3DViewer({
         }
 
         if (Math.abs(rotVelocityX) > 0.0001) {
-          droneGroup.rotation.x = Math.max(-0.6, Math.min(0.8, droneGroup.rotation.x + rotVelocityX));
+          // Bounded pitch to ensure complete visibility at all interactive angles
+          droneGroup.rotation.x = Math.max(-0.45, Math.min(0.65, droneGroup.rotation.x + rotVelocityX));
           rotVelocityX *= friction;
         }
       }
