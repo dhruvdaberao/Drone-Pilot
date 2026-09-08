@@ -141,9 +141,8 @@ export default function DashboardPage() {
                   LET&apos;S FLY
                 </Button>
 
-                <p className="text-xs text-neutral-500 font-mono flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Platform confirmed: {selectedDrone.name} ({selectedDrone.specs.rotors} Rotors Armed)</span>
+                <p className="text-xs text-neutral-600 font-medium tracking-wide">
+                  Pilot confirmed • Ready for takeoff
                 </p>
               </div>
             ) : (
@@ -158,7 +157,7 @@ export default function DashboardPage() {
                 </Button>
 
                 <p className="text-xs text-neutral-400">
-                  Select an aircraft above to initialize flight controls
+                  Select an aircraft above to continue
                 </p>
               </div>
             )}
