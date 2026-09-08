@@ -118,7 +118,7 @@ export function VerifyEmailCard() {
       <div className="space-y-2 pt-2">
         <Button
           type="button"
-          variant="primary"
+          variant="orange"
           size="md"
           className="w-full"
           onClick={handleCheckStatus}

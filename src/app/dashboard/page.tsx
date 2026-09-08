@@ -36,7 +36,7 @@ export default function DashboardPage() {
 
           <div className="flex items-center">
             <Button
-              variant="primary"
+              variant="black"
               size="md"
               className="h-11 px-5 text-sm font-semibold shadow-md"
               onClick={handleSignOut}
@@ -128,7 +128,7 @@ export default function DashboardPage() {
             {/* Logout Action */}
             <div className="pt-1 flex justify-end">
               <Button
-                variant="primary"
+                variant="black"
                 size="md"
                 onClick={handleSignOut}
                 leftIcon={<LogOut className="h-4 w-4" />}

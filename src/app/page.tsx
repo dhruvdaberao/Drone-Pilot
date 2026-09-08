@@ -69,7 +69,7 @@ export default function HomePage() {
 
         <div className="mt-7 sm:mt-8 flex flex-col sm:flex-row gap-3 w-full sm:w-auto px-2 sm:px-0">
           <Button
-            variant="primary"
+            variant="black"
             size="md"
             className="w-full sm:w-auto min-w-[135px]"
             onClick={() => router.push("/login")}
@@ -79,7 +79,7 @@ export default function HomePage() {
           </Button>
 
           <Button
-            variant="primary"
+            variant="orange"
             size="md"
             className="w-full sm:w-auto min-w-[175px]"
             onClick={() => router.push("/signup")}

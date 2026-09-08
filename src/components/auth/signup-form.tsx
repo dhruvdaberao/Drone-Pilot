@@ -258,7 +258,7 @@ export function SignupForm() {
 
           <Button
             type="submit"
-            variant="primary"
+            variant="orange"
             size="md"
             className="w-full mt-1 font-semibold text-xs sm:text-sm"
             isLoading={isSubmitting}

@@ -102,7 +102,7 @@ export function ForgotPasswordForm() {
 
         <Button
           type="submit"
-          variant="primary"
+          variant="orange"
           size="md"
           className="w-full"
           isLoading={isSubmitting}

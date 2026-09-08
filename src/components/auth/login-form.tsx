@@ -195,7 +195,7 @@ export function LoginForm() {
 
           <Button
             type="submit"
-            variant="primary"
+            variant="black"
             size="md"
             className="w-full mt-1.5 font-semibold text-xs sm:text-sm"
             isLoading={isSubmitting}
