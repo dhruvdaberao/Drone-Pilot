@@ -13,6 +13,7 @@ import { TelemetryHUD } from "./telemetry-hud";
 import { ControlsOverlay } from "./controls-overlay";
 import { MobileTouchControls } from "./mobile-touch-controls";
 import { EducationalAdvisory } from "./educational-advisory";
+import { IslandMapModal } from "./island-map-modal";
 import { TelemetryState } from "@/lib/simulation/types";
 
 interface FlightSimulatorProps {
@@ -44,6 +45,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     isArmed: false,
     rotorRpmPercent: 0,
     distanceFromHome: 0,
+    flightPath: [{ x: 0, z: 0 }],
   });
 
   // Cycle camera
@@ -227,6 +229,8 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     }
   }, []);
 
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-sky-200 select-none">
       {/* Three.js Canvas Container */}
@@ -242,6 +246,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         onExit={onExit}
         isHoverMode={isHoverMode}
         onToggleHover={handleToggleHover}
+        onToggleMap={() => setIsMapModalOpen((prev) => !prev)}
       />
 
       {/* Mobile / Touch Screen Virtual Joysticks (only on touch devices) */}
@@ -250,7 +255,15 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       )}
 
       {/* Educational Advisory Messaging (translucent, non-overlapping) */}
-      <EducationalAdvisory telemetry={telemetry} />
+      {!isMapModalOpen && <EducationalAdvisory telemetry={telemetry} />}
+
+      {/* Full Tactical Island Map Modal (Topmost z-50 layer) */}
+      <IslandMapModal
+        isOpen={isMapModalOpen}
+        onClose={() => setIsMapModalOpen(false)}
+        telemetry={telemetry}
+        droneName={selectedDrone.name}
+      />
     </div>
   );
 }

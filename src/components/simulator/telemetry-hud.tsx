@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TelemetryState } from "@/lib/simulation/types";
 import { CameraMode } from "./chase-camera";
+import { MinimapWidget } from "./minimap-widget";
 import {
   Compass,
   Battery,
@@ -14,6 +15,7 @@ import {
   ChevronDown,
   Keyboard,
   ChevronUp,
+  Map as MapIcon,
 } from "lucide-react";
 
 interface TelemetryHUDProps {
@@ -25,6 +27,7 @@ interface TelemetryHUDProps {
   onExit: () => void;
   isHoverMode: boolean;
   onToggleHover: () => void;
+  onToggleMap: () => void;
 }
 
 export function TelemetryHUD({
@@ -36,9 +39,23 @@ export function TelemetryHUD({
   onExit,
   isHoverMode,
   onToggleHover,
+  onToggleMap,
 }: TelemetryHUDProps) {
   const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
+
+  // Keyboard shortcut: 'M' toggles tactical island map
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      if ((e.target as HTMLElement)?.tagName === "INPUT" || (e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+      if (e.key === "m" || e.key === "M") {
+        onToggleMap();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onToggleMap]);
 
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -132,6 +149,10 @@ export function TelemetryHUD({
                   <span className="text-neutral-500">Reset to Helipad</span>
                   <span className="font-bold bg-neutral-100 px-1.5 py-0.5 rounded border border-neutral-300">R</span>
                 </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-500">Tactical Island Map</span>
+                  <span className="font-bold bg-[#FF5500] text-white px-1.5 py-0.5 rounded border border-black">M</span>
+                </div>
               </div>
             </div>
           )}
@@ -217,101 +238,110 @@ export function TelemetryHUD({
           <span>← Dashboard</span>
         </button>
 
-        {/* Center/Right: Independent Floating Action Controls */}
-        <div className="flex items-center gap-2 sm:gap-3 pointer-events-auto">
-          {/* 1. Hover Assist Toggle Button (with real visual toggle switch!) */}
-          <button
-            onClick={onToggleHover}
-            className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border-2 border-black text-xs font-bold transition-all shadow-md active:scale-95 ${
-              isHoverMode ? "bg-white text-black" : "bg-neutral-100 text-neutral-500"
-            }`}
-          >
-            <span>Hover Assist</span>
-            {/* Visual Toggle Pill */}
-            <div
-              className={`w-8 h-4 rounded-full p-0.5 transition-colors border ${
-                isHoverMode ? "bg-[#FF5500] border-[#FF5500]" : "bg-neutral-300 border-neutral-400"
+        {/* Center/Right: Independent Floating Action Controls + Minimap Circle */}
+        <div className="flex flex-col items-end gap-2.5 pointer-events-auto">
+          {/* Circular Minimap Radar Widget */}
+          <MinimapWidget
+            telemetry={telemetry}
+            onClick={onToggleMap}
+          />
+
+          {/* Action Controls Row */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* 1. Hover Assist Toggle Button (with real visual toggle switch!) */}
+            <button
+              onClick={onToggleHover}
+              className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border-2 border-black text-xs font-bold transition-all shadow-md active:scale-95 ${
+                isHoverMode ? "bg-white text-black" : "bg-neutral-100 text-neutral-500"
               }`}
             >
+              <span>Hover Assist</span>
+              {/* Visual Toggle Pill */}
               <div
-                className={`w-2.5 h-2.5 rounded-full bg-white transition-transform ${
-                  isHoverMode ? "translate-x-4" : "translate-x-0"
+                className={`w-8 h-4 rounded-full p-0.5 transition-colors border ${
+                  isHoverMode ? "bg-[#FF5500] border-[#FF5500]" : "bg-neutral-300 border-neutral-400"
                 }`}
-              />
-            </div>
-          </button>
-
-          {/* 2. View Dropdown Select with Bullet Circles */}
-          <div className="relative">
-            <button
-              onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border-2 border-black text-xs font-bold text-neutral-900 hover:bg-neutral-100 active:scale-95 transition-all shadow-md"
-            >
-              <Eye className="h-3.5 w-3.5 text-[#FF5500]" />
-              <span>View: {cameraModeLabels[cameraMode]}</span>
-              <ChevronDown className="h-3.5 w-3.5 text-neutral-500" />
+              >
+                <div
+                  className={`w-2.5 h-2.5 rounded-full bg-white transition-transform ${
+                    isHoverMode ? "translate-x-4" : "translate-x-0"
+                  }`}
+                />
+              </div>
             </button>
 
-            {/* Dropdown with Bullet Circles */}
-            {isViewDropdownOpen && (
-              <div className="absolute bottom-full mb-2 right-0 sm:left-0 w-52 p-1.5 rounded-xl bg-white border-2 border-black shadow-xl text-xs space-y-1 animate-in fade-in zoom-in-95">
-                <button
-                  onClick={() => {
-                    onSelectCameraMode("chase");
-                    setIsViewDropdownOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 text-left font-medium transition-colors"
-                >
-                  <span
-                    className={`h-3 w-3 rounded-full border-2 border-black flex items-center justify-center shrink-0 ${
-                      cameraMode === "chase" ? "bg-[#FF5500]" : "bg-white"
-                    }`}
-                  />
-                  <span>Chase View (3rd Person)</span>
-                </button>
+            {/* 2. View Dropdown Select with Bullet Circles */}
+            <div className="relative">
+              <button
+                onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border-2 border-black text-xs font-bold text-neutral-900 hover:bg-neutral-100 active:scale-95 transition-all shadow-md"
+              >
+                <Eye className="h-3.5 w-3.5 text-[#FF5500]" />
+                <span>View: {cameraModeLabels[cameraMode]}</span>
+                <ChevronDown className="h-3.5 w-3.5 text-neutral-500" />
+              </button>
 
-                <button
-                  onClick={() => {
-                    onSelectCameraMode("fpv");
-                    setIsViewDropdownOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 text-left font-medium transition-colors"
-                >
-                  <span
-                    className={`h-3 w-3 rounded-full border-2 border-black flex items-center justify-center shrink-0 ${
-                      cameraMode === "fpv" ? "bg-[#FF5500]" : "bg-white"
-                    }`}
-                  />
-                  <span>FPV Nose View (Gimbal)</span>
-                </button>
+              {/* Dropdown with Bullet Circles */}
+              {isViewDropdownOpen && (
+                <div className="absolute bottom-full mb-2 right-0 sm:left-0 w-52 p-1.5 rounded-xl bg-white border-2 border-black shadow-xl text-xs space-y-1 animate-in fade-in zoom-in-95">
+                  <button
+                    onClick={() => {
+                      onSelectCameraMode("chase");
+                      setIsViewDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 text-left font-medium transition-colors"
+                  >
+                    <span
+                      className={`h-3 w-3 rounded-full border-2 border-black flex items-center justify-center shrink-0 ${
+                        cameraMode === "chase" ? "bg-[#FF5500]" : "bg-white"
+                      }`}
+                    />
+                    <span>Chase View (3rd Person)</span>
+                  </button>
 
-                <button
-                  onClick={() => {
-                    onSelectCameraMode("topdown");
-                    setIsViewDropdownOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 text-left font-medium transition-colors"
-                >
-                  <span
-                    className={`h-3 w-3 rounded-full border-2 border-black flex items-center justify-center shrink-0 ${
-                      cameraMode === "topdown" ? "bg-[#FF5500]" : "bg-white"
-                    }`}
-                  />
-                  <span>Top-Down View (Tactical)</span>
-                </button>
-              </div>
-            )}
+                  <button
+                    onClick={() => {
+                      onSelectCameraMode("fpv");
+                      setIsViewDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 text-left font-medium transition-colors"
+                  >
+                    <span
+                      className={`h-3 w-3 rounded-full border-2 border-black flex items-center justify-center shrink-0 ${
+                        cameraMode === "fpv" ? "bg-[#FF5500]" : "bg-white"
+                      }`}
+                    />
+                    <span>FPV Nose View (Gimbal)</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      onSelectCameraMode("topdown");
+                      setIsViewDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 text-left font-medium transition-colors"
+                  >
+                    <span
+                      className={`h-3 w-3 rounded-full border-2 border-black flex items-center justify-center shrink-0 ${
+                        cameraMode === "topdown" ? "bg-[#FF5500]" : "bg-white"
+                      }`}
+                    />
+                    <span>Top-Down View (Tactical)</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 3. Reset Button (Independent floating) */}
+            <button
+              onClick={onReset}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border-2 border-black text-xs font-bold text-neutral-900 hover:bg-neutral-100 active:scale-95 transition-all shadow-md"
+              title="Reset to Helipad (R)"
+            >
+              <RotateCcw className="h-3.5 w-3.5 text-neutral-700" />
+              <span>Reset (R)</span>
+            </button>
           </div>
-
-          {/* 3. Reset Button (Independent floating) */}
-          <button
-            onClick={onReset}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border-2 border-black text-xs font-bold text-neutral-900 hover:bg-neutral-100 active:scale-95 transition-all shadow-md"
-            title="Reset to Helipad (R)"
-          >
-            <RotateCcw className="h-3.5 w-3.5 text-neutral-700" />
-            <span>Reset (R)</span>
-          </button>
         </div>
       </footer>
     </div>

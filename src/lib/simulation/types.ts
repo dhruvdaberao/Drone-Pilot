@@ -1,4 +1,4 @@
-﻿// ==========================================================
+// ==========================================================
 // DRONE PILOT SIMULATION CORE — TYPE DEFINITIONS
 // Modular Drone Architecture, Flight Controller & Avionics
 // ==========================================================
@@ -73,6 +73,7 @@ export interface TelemetryState {
   isArmed: boolean;
   rotorRpmPercent: number; // 0 - 100 %
   distanceFromHome: number; // meters
+  flightPath: Array<{ x: number; z: number }>;
 }
 
 export type WeatherType = "clear" | "overcast" | "windy";

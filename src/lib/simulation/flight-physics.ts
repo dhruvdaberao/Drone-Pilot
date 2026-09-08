@@ -1,4 +1,4 @@
-﻿// ==========================================================
+// ==========================================================
 // DRONE PILOT — FLIGHT PHYSICS ENGINE
 // Deterministic 6-DoF Multirotor Aerodynamic & Dynamic Solver
 // Handles collective thrust, gravity, attitude stabilization,
@@ -37,6 +37,10 @@ export class FlightPhysicsEngine {
   // Rotor RPM telemetry
   public rotorRpm = 0;
 
+  // Breadcrumbs path history
+  private breadcrumbs: Array<{ x: number; z: number }> = [{ x: 0, z: 0 }];
+  private lastBreadcrumbTime = 0;
+
   constructor(definition: DroneDefinition) {
     this.def = definition;
     this.reset();
@@ -68,6 +72,8 @@ export class FlightPhysicsEngine {
     this.flightTime = 0.0;
     this.isHoverMode = true;
     this.rotorRpm = 0;
+    this.breadcrumbs = [{ x: Math.round(spawnX), z: Math.round(spawnZ) }];
+    this.lastBreadcrumbTime = 0;
   }
 
   /**
@@ -212,8 +218,8 @@ export class FlightPhysicsEngine {
       }
     }
 
-    // Soft Boundary Damping (keep drone inside training airspace: 380m diameter)
-    const maxBound = 190.0;
+    // Soft Boundary Damping (keep drone inside island airspace: 960m diameter)
+    const maxBound = 460.0;
     if (Math.abs(this.posX) > maxBound) {
       this.posX = Math.sign(this.posX) * maxBound;
       this.velX *= -0.4;
@@ -222,10 +228,23 @@ export class FlightPhysicsEngine {
       this.posZ = Math.sign(this.posZ) * maxBound;
       this.velZ *= -0.4;
     }
-    // Altitude Ceiling: 120m (FAA regulation recreational maximum)
-    if (this.posY > 120.0) {
-      this.posY = 120.0;
+    // Altitude Ceiling: 180m (panoramic mountain & skyscraper flyover ceiling)
+    if (this.posY > 180.0) {
+      this.posY = 180.0;
       if (this.velY > 0) this.velY = 0;
+    }
+
+    // Record flight path breadcrumb periodically (every 0.5s or > 3m movement)
+    if (this.flightTime - this.lastBreadcrumbTime > 0.5) {
+      const last = this.breadcrumbs[this.breadcrumbs.length - 1];
+      const dist = last ? Math.hypot(this.posX - last.x, this.posZ - last.z) : 999;
+      if (dist > 2.5) {
+        this.breadcrumbs.push({ x: Math.round(this.posX * 10) / 10, z: Math.round(this.posZ * 10) / 10 });
+        if (this.breadcrumbs.length > 200) {
+          this.breadcrumbs.shift();
+        }
+        this.lastBreadcrumbTime = this.flightTime;
+      }
     }
 
     // ----------------------------------------------------
@@ -262,6 +281,7 @@ export class FlightPhysicsEngine {
       isArmed: this.isArmed,
       rotorRpmPercent: Math.round(this.rotorRpm),
       distanceFromHome: distFromHome,
+      flightPath: this.breadcrumbs,
     };
   }
 }
