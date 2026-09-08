@@ -104,6 +104,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     const droneDef = getDroneDefinition(selectedDrone.id);
     const droneMesh = new ModularDrone(droneDef);
     scene.add(droneMesh.group);
+    scene.add(droneMesh.groundShadowMesh);
 
     // 5. PHYSICS ENGINE
     const physics = new FlightPhysicsEngine(droneDef);
@@ -218,6 +219,8 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         container.removeChild(domEl);
       }
 
+      scene.remove(droneMesh.group);
+      scene.remove(droneMesh.groundShadowMesh);
       renderer.dispose();
     };
   }, [selectedDrone]);

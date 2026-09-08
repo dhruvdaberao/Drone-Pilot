@@ -1,4 +1,4 @@
-﻿// ==========================================================
+// ==========================================================
 // DRONE PILOT — MODULAR 3D DRONE (ENTERPRISE MATRICE SPEC)
 // Hierarchical Component Architecture:
 // Frame, Motors, Propellers (with Orange Tips), Battery,
@@ -15,6 +15,7 @@ interface PropellerAssembly {
 
 export class ModularDrone {
   public group = new THREE.Group();
+  public groundShadowMesh!: THREE.Mesh;
   private def: DroneDefinition;
   private propellers: PropellerAssembly[] = [];
 
@@ -294,7 +295,19 @@ export class ModularDrone {
       this.group.add(armGroup);
     });
 
-    // Shadow plane under drone
+    // ----------------------------------------------------
+    // 5. ENABLE REAL 3D SHADOW CASTING ON ALL DRONE MESHES
+    // ----------------------------------------------------
+    this.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        child.castShadow = true;
+      }
+    });
+
+    // ----------------------------------------------------
+    // 6. DEDICATED GROUND CONTACT SHADOW DECAL
+    // Stays strictly on ground level (Y = 0.33m), NEVER in the sky!
+    // ----------------------------------------------------
     const shadowCanvas = document.createElement("canvas");
     shadowCanvas.width = 128;
     shadowCanvas.height = 128;
@@ -302,38 +315,61 @@ export class ModularDrone {
     if (ctx) {
       const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
       grad.addColorStop(0, "rgba(0,0,0,0.45)");
-      grad.addColorStop(0.4, "rgba(0,0,0,0.18)");
+      grad.addColorStop(0.35, "rgba(0,0,0,0.20)");
+      grad.addColorStop(0.7, "rgba(0,0,0,0.06)");
       grad.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, 128, 128);
     }
     const shadowTex = new THREE.CanvasTexture(shadowCanvas);
-    const shadowMesh = new THREE.Mesh(
+    this.groundShadowMesh = new THREE.Mesh(
       new THREE.PlaneGeometry(1.8, 1.8),
-      new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false })
+      new THREE.MeshBasicMaterial({
+        map: shadowTex,
+        transparent: true,
+        opacity: 0.45,
+        depthWrite: false,
+      })
     );
-    shadowMesh.rotation.x = -Math.PI / 2;
-    shadowMesh.position.y = -0.24;
-    this.group.add(shadowMesh);
+    this.groundShadowMesh.rotation.x = -Math.PI / 2;
+    this.groundShadowMesh.position.set(0, 0.33, 0); // Strictly locked to ground!
+    // NOTE: NOT added to this.group! Added directly to the scene.
   }
 
   /**
    * Updates drone transforms and spinning propeller animations
    */
   public update(telemetry: TelemetryState, dt: number) {
-    // Synchronize position
+    // 1. Synchronize drone position & 3D rotation
     this.group.position.set(telemetry.position.x, telemetry.position.y, telemetry.position.z);
-
-    // Synchronize orientation (Yaw -> Pitch -> Roll)
     this.group.rotation.order = "YXZ";
     this.group.rotation.y = telemetry.rotation.yaw;
     this.group.rotation.x = telemetry.rotation.pitch;
     this.group.rotation.z = telemetry.rotation.roll;
 
-    // Spin Propellers based on real-time RPM
+    // 2. Spin Propellers based on real-time RPM
     const rpmFactor = (telemetry.rotorRpmPercent / 100) * 55;
     this.propellers.forEach((p) => {
       p.group.rotation.y += p.direction * rpmFactor * dt;
     });
+
+    // 3. Update ground shadow:
+    // Follows drone (X, Z), but Y IS STRICTLY ON THE GROUND (0.33m), NEVER IN SKY!
+    if (this.groundShadowMesh) {
+      this.groundShadowMesh.position.set(telemetry.position.x, 0.33, telemetry.position.z);
+      this.groundShadowMesh.rotation.z = -telemetry.rotation.yaw;
+
+      // As drone climbs into the sky, shadow fades out and softens naturally
+      const alt = Math.max(0, telemetry.altitude);
+      const opacity = Math.max(0, 0.45 * Math.exp(-alt / 5.0));
+      (this.groundShadowMesh.material as THREE.MeshBasicMaterial).opacity = opacity;
+
+      // Soft ground shadow spreads slightly with altitude
+      const scale = 1.0 + alt * 0.10;
+      this.groundShadowMesh.scale.set(scale, scale, 1);
+
+      // In the sky above 12m, ground shadow completely disappears
+      this.groundShadowMesh.visible = opacity > 0.01;
+    }
   }
 }
