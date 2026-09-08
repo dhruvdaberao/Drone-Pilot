@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { InputManager } from "@/lib/simulation/input-manager";
 
 interface MobileTouchControlsProps {
@@ -8,6 +8,8 @@ interface MobileTouchControlsProps {
 }
 
 export function MobileTouchControls({ inputManager }: MobileTouchControlsProps) {
+  const [isTouchSupported, setIsTouchSupported] = useState(false);
+
   const leftStickRef = useRef<HTMLDivElement>(null);
   const leftKnobRef = useRef<HTMLDivElement>(null);
 
@@ -15,6 +17,16 @@ export function MobileTouchControls({ inputManager }: MobileTouchControlsProps) 
   const rightKnobRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Only enable touch controls on actual physical touch devices
+    if (typeof window !== "undefined") {
+      const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+      setIsTouchSupported(hasTouch);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isTouchSupported) return;
+
     const setupJoystick = (
       base: HTMLDivElement | null,
       knob: HTMLDivElement | null,
@@ -71,9 +83,8 @@ export function MobileTouchControls({ inputManager }: MobileTouchControlsProps) 
 
         knob.style.transform = `translate(${knobX}px, ${knobY}px)`;
 
-        // Normalized outputs (-1 to 1)
         const normX = knobX / radius;
-        const normY = -knobY / radius; // Invert Y so up is positive
+        const normY = -knobY / radius;
         onMove(normX, normY);
       };
 
@@ -90,7 +101,6 @@ export function MobileTouchControls({ inputManager }: MobileTouchControlsProps) 
       };
     };
 
-    // Left Stick: Yaw (X) & Throttle (Y)
     const cleanupLeft = setupJoystick(
       leftStickRef.current,
       leftKnobRef.current,
@@ -100,7 +110,6 @@ export function MobileTouchControls({ inputManager }: MobileTouchControlsProps) 
       }
     );
 
-    // Right Stick: Roll (X) & Pitch (Y)
     const cleanupRight = setupJoystick(
       rightStickRef.current,
       rightKnobRef.current,
@@ -114,10 +123,13 @@ export function MobileTouchControls({ inputManager }: MobileTouchControlsProps) 
       cleanupLeft?.();
       cleanupRight?.();
     };
-  }, [inputManager]);
+  }, [inputManager, isTouchSupported]);
+
+  // If not a touch screen device, never render touch sticks
+  if (!isTouchSupported) return null;
 
   return (
-    <div className="absolute inset-x-0 bottom-16 px-6 pointer-events-none z-30 flex justify-between items-end md:hidden">
+    <div className="absolute inset-x-0 bottom-20 px-6 pointer-events-none z-30 flex justify-between items-end">
       {/* Left Stick (Throttle / Yaw) */}
       <div className="flex flex-col items-center pointer-events-auto">
         <div
@@ -131,7 +143,7 @@ export function MobileTouchControls({ inputManager }: MobileTouchControlsProps) 
             LIFT
           </div>
         </div>
-        <span className="text-[10px] font-mono font-bold text-neutral-800 mt-1 bg-white/70 px-2 py-0.5 rounded">
+        <span className="text-[10px] font-mono font-bold text-neutral-800 mt-1 bg-white/80 px-2 py-0.5 rounded border border-black">
           ALT / YAW
         </span>
       </div>
@@ -149,7 +161,7 @@ export function MobileTouchControls({ inputManager }: MobileTouchControlsProps) 
             PITCH
           </div>
         </div>
-        <span className="text-[10px] font-mono font-bold text-neutral-800 mt-1 bg-white/70 px-2 py-0.5 rounded">
+        <span className="text-[10px] font-mono font-bold text-neutral-800 mt-1 bg-white/80 px-2 py-0.5 rounded border border-black">
           FLIGHT STICK
         </span>
       </div>

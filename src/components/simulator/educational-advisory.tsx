@@ -50,8 +50,9 @@ export function EducationalAdvisory({ telemetry }: EducationalAdvisoryProps) {
   if (!currentEvent || dismissed) return null;
 
   return (
-    <div className="absolute top-16 sm:top-20 inset-x-3 sm:inset-x-auto sm:right-5 z-20 pointer-events-auto max-w-sm mx-auto sm:mx-0 animate-in fade-in slide-in-from-top-2 duration-300 font-mono">
-      <div className="p-2.5 sm:p-3 rounded-xl bg-white/95 backdrop-blur-md border-2 border-black shadow-lg flex items-start justify-between gap-2">
+    <div className="absolute top-28 sm:top-32 right-3 sm:right-5 z-20 pointer-events-auto max-w-[280px] sm:max-w-xs animate-in fade-in slide-in-from-top-2 duration-300 font-mono">
+      {/* Translucent frosted container */}
+      <div className="p-3 rounded-xl bg-white/80 backdrop-blur-md border-2 border-black shadow-lg flex items-start justify-between gap-2.5">
         <div className="flex items-start gap-2">
           {currentEvent.severity === "success" ? (
             <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -64,7 +65,7 @@ export function EducationalAdvisory({ telemetry }: EducationalAdvisoryProps) {
             <h4 className="font-heading text-xs font-bold text-neutral-950 uppercase tracking-wide">
               {currentEvent.title}
             </h4>
-            <p className="text-[10px] sm:text-[11px] text-neutral-600 leading-snug">
+            <p className="text-[10px] sm:text-[11px] text-neutral-700 leading-snug">
               {currentEvent.message}
             </p>
           </div>
@@ -72,7 +73,8 @@ export function EducationalAdvisory({ telemetry }: EducationalAdvisoryProps) {
 
         <button
           onClick={() => setDismissed(true)}
-          className="text-neutral-400 hover:text-neutral-700 p-0.5 rounded transition-colors shrink-0"
+          className="text-neutral-500 hover:text-neutral-900 p-0.5 rounded transition-colors shrink-0"
+          title="Dismiss advisory"
         >
           <X className="h-3.5 w-3.5" />
         </button>

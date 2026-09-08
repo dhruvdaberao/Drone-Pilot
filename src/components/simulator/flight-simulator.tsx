@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
@@ -220,6 +220,13 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     };
   }, [selectedDrone]);
 
+  const handleSelectCameraMode = useCallback((mode: CameraMode) => {
+    if (cameraControllerRef.current) {
+      cameraControllerRef.current.setMode(mode);
+      setCameraMode(mode);
+    }
+  }, []);
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-sky-200 select-none">
       {/* Three.js Canvas Container */}
@@ -230,22 +237,19 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         telemetry={telemetry}
         droneName={selectedDrone.name}
         cameraMode={cameraMode}
-        onToggleCamera={handleToggleCamera}
+        onSelectCameraMode={handleSelectCameraMode}
         onReset={handleReset}
         onExit={onExit}
         isHoverMode={isHoverMode}
         onToggleHover={handleToggleHover}
       />
 
-      {/* Collapsible Keyboard Controls Overlay */}
-      <ControlsOverlay />
-
-      {/* Mobile / Touch Screen Virtual Joysticks */}
+      {/* Mobile / Touch Screen Virtual Joysticks (only on touch devices) */}
       {inputManagerRef.current && (
         <MobileTouchControls inputManager={inputManagerRef.current} />
       )}
 
-      {/* Educational Advisory Messaging */}
+      {/* Educational Advisory Messaging (translucent, non-overlapping) */}
       <EducationalAdvisory telemetry={telemetry} />
     </div>
   );

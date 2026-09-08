@@ -1,4 +1,4 @@
-﻿// ==========================================================
+// ==========================================================
 // DRONE PILOT — CHASE CAMERA CONTROLLER
 // Cinematic 3rd-Person Spring-Damped Follow Camera,
 // FPV Gimbal Cockpit View, and Tactical Top-Down Mode.
@@ -29,6 +29,11 @@ export class ChaseCameraController {
   public setAspect(aspect: number) {
     this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
+  }
+
+  public setMode(mode: CameraMode): CameraMode {
+    this.mode = mode;
+    return this.mode;
   }
 
   public cycleMode(): CameraMode {
