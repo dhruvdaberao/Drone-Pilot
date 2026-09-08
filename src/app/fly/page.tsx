@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,34 +7,39 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_DRONE_STORAGE_KEY, getDroneById, DRONES } from "@/lib/drones";
 import { DroneModel } from "@/types/drone";
-import { ArrowLeft, CheckCircle2, Cpu, Gauge, ShieldCheck, Sparkles } from "lucide-react";
+import { FlightSimulator } from "@/components/simulator/flight-simulator";
+import { ArrowLeft, CheckCircle2, Cpu, Gauge, Play, ShieldCheck } from "lucide-react";
 
 export default function FlyPage() {
   const router = useRouter();
   const [selectedDrone, setSelectedDrone] = useState<DroneModel | null>(null);
   const [loadingDrone, setLoadingDrone] = useState(true);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   useEffect(() => {
     try {
-      const urlDrone = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("drone") : null;
+      const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const urlDrone = params ? params.get("drone") : null;
+      const autoLaunch = params ? params.get("launch") === "true" : false;
+
+      let activeDrone = DRONES[0];
+
       if (urlDrone) {
         const found = getDroneById(urlDrone);
         if (found) {
-          setSelectedDrone(found);
-          setLoadingDrone(false);
-          return;
-        }
-      }
-      const storedId = localStorage.getItem(DEFAULT_DRONE_STORAGE_KEY);
-      if (storedId) {
-        const drone = getDroneById(storedId);
-        if (drone) {
-          setSelectedDrone(drone);
-        } else {
-          setSelectedDrone(DRONES[0]);
+          activeDrone = found;
         }
       } else {
-        setSelectedDrone(DRONES[0]);
+        const storedId = localStorage.getItem(DEFAULT_DRONE_STORAGE_KEY);
+        if (storedId) {
+          const drone = getDroneById(storedId);
+          if (drone) activeDrone = drone;
+        }
+      }
+
+      setSelectedDrone(activeDrone);
+      if (autoLaunch) {
+        setIsSimulating(true);
       }
     } catch {
       setSelectedDrone(DRONES[0]);
@@ -43,6 +48,23 @@ export default function FlyPage() {
     }
   }, []);
 
+  // --------------------------------------------------------
+  // ACTIVE 3D FLIGHT SIMULATION VIEWPORT
+  // --------------------------------------------------------
+  if (isSimulating && selectedDrone) {
+    return (
+      <ProtectedRoute>
+        <FlightSimulator
+          selectedDrone={selectedDrone}
+          onExit={() => setIsSimulating(false)}
+        />
+      </ProtectedRoute>
+    );
+  }
+
+  // --------------------------------------------------------
+  // PRE-FLIGHT STAGING BRIEFING
+  // --------------------------------------------------------
   return (
     <ProtectedRoute>
       <div className="relative min-h-screen flex flex-col justify-between bg-[#FAF7F2] text-neutral-900 overflow-x-hidden">
@@ -64,16 +86,16 @@ export default function FlyPage() {
             {/* Status Pill */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span>FLIGHT SYSTEMS INITIALIZED</span>
+              <span>FLIGHT SYSTEMS INITIALIZED • READY FOR TAKEOFF</span>
             </div>
 
             {/* Main Heading */}
             <div className="space-y-2">
               <h1 className="font-heading text-2xl sm:text-4xl font-bold tracking-tight text-neutral-900 uppercase">
-                READY FOR FLIGHT
+                ENTER COCKPIT
               </h1>
               <p className="text-xs sm:text-sm text-neutral-600 max-w-md mx-auto leading-relaxed">
-                Selected Platform: <strong className="text-neutral-950 font-bold">{selectedDrone?.name || "QUADCOPTER"}</strong>
+                Platform: <strong className="text-neutral-950 font-bold">{selectedDrone?.name || "QUADCOPTER"}</strong> • Training Airspace: Multi-Zone Arena
               </p>
             </div>
 
@@ -113,22 +135,26 @@ export default function FlyPage() {
               </div>
             )}
 
-            {/* Phase 3 Notice */}
-            <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-orange-50/70 border border-orange-200/70 text-xs text-neutral-700 max-w-md mx-auto">
-              <Sparkles className="h-4 w-4 text-[#FF5500] shrink-0" />
-              <span>Phase 2 complete! 3D flight physics and interactive engine connect here in Phase 3.</span>
-            </div>
-
-            {/* Back to Hangar Action */}
-            <div className="pt-2 flex justify-center">
+            {/* Primary Action Buttons */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button
                 variant="black"
-                size="md"
-                className="min-w-[180px]"
+                size="lg"
+                className="w-full sm:w-auto min-w-[220px] text-sm font-bold tracking-wider"
+                onClick={() => setIsSimulating(true)}
+                rightIcon={<Play className="h-4 w-4 fill-current text-[#FF5500]" />}
+              >
+                LAUNCH SIMULATOR
+              </Button>
+
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full sm:w-auto min-w-[160px] border-2 border-black"
                 onClick={() => router.push("/dashboard")}
                 leftIcon={<ArrowLeft className="h-4 w-4" />}
               >
-                Back to Hangar
+                Change Drone
               </Button>
             </div>
           </div>
