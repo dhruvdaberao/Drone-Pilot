@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ProtectedRoute } from "@/components/auth/route-guard";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
@@ -46,25 +45,22 @@ export default function FlyPage() {
 
   return (
     <ProtectedRoute>
-      <div className="relative min-h-screen flex flex-col justify-between bg-white text-neutral-900 overflow-x-hidden">
-        {/* Background Blueprint */}
-        <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden bg-white">
-          <Image
-            src="/Final-Baground.png"
-            alt="Technical Drone Flight Blueprint Background"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover object-center opacity-25 [filter:sepia(100%)_saturate(500%)_hue-rotate(-22deg)]"
-          />
-        </div>
+      <div className="relative min-h-screen flex flex-col justify-between bg-[#FAF7F2] text-neutral-900 overflow-x-hidden">
+        {/* Subtle Tech Grid Accent */}
+        <div
+          className="fixed inset-0 z-0 pointer-events-none opacity-40"
+          style={{
+            backgroundImage: `radial-gradient(circle, rgba(255, 85, 0, 0.12) 1px, transparent 1px)`,
+            backgroundSize: "24px 24px",
+          }}
+        />
 
         {/* Fixed Header */}
         <DashboardHeader />
 
         {/* Flight Staging Area */}
         <main className="relative z-10 flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 pt-24 pb-12 flex flex-col items-center justify-center text-center">
-          <div className="w-full rounded-2xl bg-gradient-to-b from-[#FFFFFF] via-[#FFFDFB] to-[#FFF9F4] border border-orange-200/90 p-6 sm:p-10 shadow-[0_20px_50px_-12px_rgba(255,85,0,0.14),0_6px_20px_-4px_rgba(0,0,0,0.06)] space-y-6">
+          <div className="w-full rounded-2xl bg-gradient-to-b from-[#FFF6EE] via-[#FFF1E6] to-[#FFE8D6] border border-orange-200/90 p-6 sm:p-10 shadow-[0_20px_50px_-12px_rgba(255,85,0,0.16),0_6px_20px_-4px_rgba(0,0,0,0.06)] space-y-6">
             {/* Status Pill */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
