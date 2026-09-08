@@ -41,11 +41,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantStyles = {
       primary:
-        "bg-neutral-950 text-white border border-neutral-900 shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:bg-black hover:border-[#FF5500] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-4px_rgba(255,85,0,0.35)] active:shadow-[0_2px_6px_rgba(0,0,0,0.2)] active:translate-y-0",
+        "bg-gradient-to-r from-[#FF5500] via-[#FF5F08] to-[#E64800] text-white font-bold tracking-wide border border-[#FF7020] shadow-[0_4px_16px_rgba(255,85,0,0.4),0_1px_2px_rgba(0,0,0,0.1)] hover:from-[#FF6315] hover:to-[#D43F00] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-4px_rgba(255,85,0,0.6)] active:translate-y-0 active:shadow-[0_2px_8px_rgba(255,85,0,0.4)]",
       secondary:
-        "bg-white text-neutral-900 border border-neutral-300 shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:bg-neutral-50 hover:border-[#FF5500] hover:text-black hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-2px_rgba(255,85,0,0.15)] active:shadow-[0_1px_3px_rgba(0,0,0,0.04)]",
+        "bg-gradient-to-b from-white to-[#FFF9F4] text-neutral-900 border border-orange-200/90 shadow-[0_2px_6px_rgba(255,85,0,0.06)] hover:bg-[#FFF4EB] hover:border-orange-400 hover:text-black hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-2px_rgba(255,85,0,0.18)] active:shadow-[0_1px_3px_rgba(0,0,0,0.04)]",
       outline:
-        "bg-transparent text-neutral-900 border border-neutral-300 hover:bg-[#FF5500] hover:text-white hover:border-[#FF5500] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-2px_rgba(255,85,0,0.35)]",
+        "bg-transparent text-neutral-900 border border-orange-200 hover:bg-[#FF5500] hover:text-white hover:border-[#FF5500] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-2px_rgba(255,85,0,0.35)]",
       ghost:
         "bg-transparent text-neutral-600 hover:text-[#FF5500] hover:bg-orange-50/70",
       danger:

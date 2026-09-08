@@ -86,22 +86,22 @@ export function SignupForm() {
       subheading="Register your flight credentials."
       belowCard={
         <>
-          {/* Subtle Canvas-blended Divider */}
+          {/* Subtle Canvas-blended Divider with Warm Tint */}
           <div className="relative flex items-center justify-center my-1.5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-neutral-300" />
+              <div className="w-full border-t border-orange-200/80" />
             </div>
-            <div className="relative bg-white/95 backdrop-blur-sm px-3.5 py-0.5 rounded-full text-[11px] font-semibold text-neutral-600 uppercase tracking-wider border border-neutral-200 shadow-sm">
+            <div className="relative bg-[#FFF9F4] px-3.5 py-0.5 rounded-full text-[11px] font-semibold text-[#FF5500] uppercase tracking-wider border border-orange-200/90 shadow-sm">
               or continue with
             </div>
           </div>
 
-          {/* Premium Google OAuth Bar Button */}
+          {/* Premium Google OAuth Bar Button with Warm Tint */}
           <Button
             type="button"
             variant="secondary"
             size="md"
-            className="w-full justify-center text-xs sm:text-sm font-semibold text-neutral-900 bg-white hover:bg-neutral-50 shadow-sm border-neutral-300 transition-all"
+            className="w-full justify-center text-xs sm:text-sm font-semibold transition-all"
             onClick={handleGoogleSignUp}
             isLoading={isGoogleLoading}
             loadingText="Connecting..."

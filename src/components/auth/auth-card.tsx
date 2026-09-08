@@ -47,12 +47,12 @@ export function AuthCard({
         )}
       </div>
 
-      {/* LUXURY FORM CARD STRICTLY FOR INPUT FIELDS */}
+      {/* LUXURY FORM CARD STRICTLY FOR INPUT FIELDS WITH WARM AEROSPACE TINT */}
       <div
         className={cn(
-          "w-full rounded-2xl border border-neutral-300 bg-white p-4 sm:p-5",
-          "shadow-[0_20px_50px_-12px_rgba(0,0,0,0.14),0_6px_18px_-4px_rgba(0,0,0,0.06)]",
-          "hover:border-orange-500/50 transition-all duration-300",
+          "w-full rounded-2xl border border-orange-200/90 bg-gradient-to-b from-[#FFFFFF] via-[#FFFDFB] to-[#FFF9F4] p-4 sm:p-5",
+          "shadow-[0_20px_50px_-12px_rgba(255,85,0,0.12),0_8px_24px_-6px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)]",
+          "hover:border-orange-400/80 transition-all duration-300",
           className
         )}
       >
