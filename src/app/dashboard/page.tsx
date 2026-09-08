@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
         {/* Main Content Area on Clean White Canvas */}
         <main className="flex flex-1 items-center justify-center px-3 py-6 sm:p-8 md:p-12 bg-white">
-          <div className="w-full max-w-lg rounded-xl sm:rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-8 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] space-y-5 sm:space-y-6">
+          <div className="w-full max-w-lg rounded-xl sm:rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-8 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.14),0_6px_18px_-4px_rgba(0,0,0,0.06)] space-y-5 sm:space-y-6">
             {/* Status Header */}
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs text-neutral-800">
