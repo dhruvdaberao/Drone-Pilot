@@ -32,7 +32,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </header>
 
       {/* Main Form Container */}
-      <main className="relative z-10 flex flex-1 items-center justify-center px-3.5 py-6 pt-20 sm:pt-24 sm:px-6 sm:py-8 w-full">
+      <main className="relative z-10 flex flex-1 items-center justify-center px-3.5 py-4 pt-16 sm:pt-16 sm:px-6 sm:py-6 w-full">
         {children}
       </main>
     </div>
