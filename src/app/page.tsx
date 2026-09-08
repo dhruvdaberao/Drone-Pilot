@@ -20,7 +20,7 @@ export default function HomePage() {
 
   return (
     <main className="relative flex min-h-screen flex-col justify-between bg-white text-neutral-900 overflow-x-hidden">
-      {/* Pristine Drone Flight Illustration Background - Faint Ambient Watermark */}
+      {/* Pristine Drone Flight Illustration Background with Aerospace Orange Blueprint Tint */}
       <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden bg-white">
         <Image
           src="/Final-Baground.png"
@@ -28,16 +28,16 @@ export default function HomePage() {
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center opacity-25"
+          className="object-cover object-center opacity-30 [filter:sepia(100%)_saturate(500%)_hue-rotate(-22deg)]"
         />
       </div>
 
-      {/* Sleek Fixed Black Navigation Bar */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-black px-4 py-3 sm:px-10 sm:py-3.5 text-white shadow-md">
+      {/* Bold Fixed Aerospace Orange Navigation Bar */}
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-gradient-to-r from-[#FF5500] via-[#FF5F08] to-[#E64800] px-4 py-3 sm:px-10 sm:py-3 text-white shadow-[0_4px_20px_rgba(255,85,0,0.35)] border-b border-[#D43F00]">
         <div className="flex items-center gap-2.5">
-          <DroneIcon className="h-5 w-5 text-white" />
-          <span className="font-heading text-xs sm:text-sm font-bold tracking-wider text-white uppercase">
-            DRONE PILOT
+          <DroneIcon className="h-5 w-5 transition-transform hover:scale-105" />
+          <span className="font-machinic text-base sm:text-lg font-bold tracking-widest text-black uppercase flex items-center gap-1.5">
+            DRONE <span className="text-white">PILOT</span>
           </span>
         </div>
       </header>
