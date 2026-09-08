@@ -129,7 +129,7 @@ export function SignupForm() {
               Already have an account?{" "}
               <Link
                 href="/login"
-                className="font-bold text-black hover:underline transition-colors ml-1 focus-visible:outline-none focus-visible:underline"
+                className="font-bold text-[#FF5500] hover:text-[#D43F00] hover:underline transition-colors ml-1 focus-visible:outline-none focus-visible:underline"
               >
                 Sign in
               </Link>
@@ -229,20 +229,20 @@ export function SignupForm() {
                   setAcceptTerms(e.target.checked);
                   if (errors.acceptTerms) setErrors((prev) => ({ ...prev, acceptTerms: "" }));
                 }}
-                className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-black focus:ring-black accent-black cursor-pointer"
+                className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-[#FF5500] focus:ring-[#FF5500] accent-[#FF5500] cursor-pointer"
               />
               <span>
                 I agree to the{" "}
                 <Link
                   href="/terms"
-                  className="text-black font-semibold hover:underline transition-colors focus-visible:outline-none focus-visible:underline"
+                  className="text-[#FF5500] font-semibold hover:underline transition-colors focus-visible:outline-none focus-visible:underline"
                 >
                   Terms of Service
                 </Link>{" "}
                 and{" "}
                 <Link
                   href="/privacy"
-                  className="text-black font-semibold hover:underline transition-colors focus-visible:outline-none focus-visible:underline"
+                  className="text-[#FF5500] font-semibold hover:underline transition-colors focus-visible:outline-none focus-visible:underline"
                 >
                   Privacy Policy
                 </Link>.

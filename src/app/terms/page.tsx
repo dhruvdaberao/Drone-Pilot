@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Metadata } from "next";
@@ -25,15 +25,15 @@ export default function TermsOfServicePage() {
         />
       </div>
 
-      {/* Sleek Fixed Black Navigation Bar */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-black px-4 py-3 sm:px-10 sm:py-3.5 text-white shadow-md">
+      {/* Sleek Fixed Black Navigation Bar with Aerospace Orange Horizon Line */}
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-black/95 backdrop-blur-md px-4 py-3 sm:px-10 sm:py-3 text-white shadow-md border-b border-[#FF5500]/40">
         <Link
           href="/"
           className="group flex items-center gap-2.5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded"
         >
-          <DroneIcon className="h-5 w-5 text-white transition-transform group-hover:scale-105" />
-          <span className="font-heading text-xs sm:text-sm font-bold tracking-wider text-white uppercase">
-            DRONE PILOT
+          <DroneIcon className="h-5 w-5 text-[#FF5500] drop-shadow-[0_0_8px_rgba(255,85,0,0.7)] transition-transform group-hover:scale-110" />
+          <span className="font-machinic text-sm sm:text-base font-bold tracking-widest text-white uppercase flex items-center gap-1.5">
+            DRONE <span className="text-[#FF5500]">PILOT</span>
           </span>
         </Link>
 

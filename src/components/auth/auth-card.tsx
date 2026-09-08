@@ -20,8 +20,8 @@ export function AuthCard({
 }: AuthCardProps) {
   return (
     <div className="w-full max-w-[460px] sm:max-w-[480px] mx-auto flex flex-col items-center">
-      {/* ABOVE THE CARD: Heading and Subheading directly on canvas with seamless feathered blur aura */}
-      <div className="relative flex flex-col items-center text-center mb-3 space-y-0.5 w-full">
+      {/* ABOVE THE CARD: Machinic Cockpit Heading with telemetry beacon */}
+      <div className="relative flex flex-col items-center text-center mb-2.5 space-y-1 w-full">
         <div
           className="absolute -inset-x-8 -inset-y-3 -z-10 pointer-events-none"
           style={{
@@ -36,7 +36,13 @@ export function AuthCard({
           }}
         />
 
-        <h1 className="font-heading text-lg sm:text-xl font-bold tracking-tight text-neutral-900 uppercase">
+        {/* Telemetry Status Pill */}
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-50/90 border border-orange-200/90 text-[10px] font-mono font-semibold text-[#FF5500] tracking-widest uppercase shadow-sm">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#FF5500] animate-pulse" />
+          <span>Telemetry Station // Active</span>
+        </div>
+
+        <h1 className="font-machinic text-xl sm:text-2xl font-bold tracking-widest text-neutral-900 uppercase">
           {heading}
         </h1>
 
@@ -52,7 +58,7 @@ export function AuthCard({
         className={cn(
           "w-full rounded-2xl border border-neutral-300 bg-white p-4 sm:p-5",
           "shadow-[0_20px_50px_-12px_rgba(0,0,0,0.14),0_6px_18px_-4px_rgba(0,0,0,0.06)]",
-          "hover:border-neutral-400 transition-all duration-300",
+          "hover:border-orange-500/50 transition-all duration-300",
           className
         )}
       >

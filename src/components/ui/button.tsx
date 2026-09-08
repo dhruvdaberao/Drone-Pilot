@@ -41,13 +41,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantStyles = {
       primary:
-        "bg-black text-white border border-black shadow-[0_2px_8px_-1px_rgba(0,0,0,0.2)] hover:bg-black hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4)] active:shadow-[0_2px_6px_rgba(0,0,0,0.2)]",
+        "bg-gradient-to-r from-[#FF5500] via-[#FF5F08] to-[#E64800] text-white border border-[#FF7020] shadow-[0_4px_16px_-2px_rgba(255,85,0,0.42),0_1px_2px_rgba(0,0,0,0.1)] hover:from-[#FF6315] hover:to-[#D43F00] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-4px_rgba(255,85,0,0.55)] active:shadow-[0_2px_6px_rgba(255,85,0,0.4)] active:translate-y-0",
       secondary:
-        "bg-white text-neutral-900 border border-neutral-300 shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:bg-white hover:border-black hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-2px_rgba(0,0,0,0.12)] active:shadow-[0_1px_3px_rgba(0,0,0,0.04)]",
+        "bg-white text-neutral-900 border border-neutral-300 shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:bg-neutral-50 hover:border-[#FF5500] hover:text-black hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-2px_rgba(255,85,0,0.15)] active:shadow-[0_1px_3px_rgba(0,0,0,0.04)]",
       outline:
-        "bg-transparent text-neutral-900 border border-neutral-300 hover:bg-black hover:text-white hover:border-black hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-2px_rgba(0,0,0,0.2)]",
+        "bg-transparent text-neutral-900 border border-neutral-300 hover:bg-[#FF5500] hover:text-white hover:border-[#FF5500] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-2px_rgba(255,85,0,0.35)]",
       ghost:
-        "bg-transparent text-neutral-600 hover:text-black hover:bg-neutral-100/80",
+        "bg-transparent text-neutral-600 hover:text-[#FF5500] hover:bg-orange-50/70",
       danger:
         "bg-red-600 text-white border border-red-600 shadow-sm hover:bg-red-700 hover:-translate-y-0.5 hover:shadow-md",
     };

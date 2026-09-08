@@ -117,7 +117,7 @@ export function LoginForm() {
               New user?{" "}
               <Link
                 href="/signup"
-                className="font-bold text-black hover:underline transition-colors ml-1 focus-visible:outline-none focus-visible:underline"
+                className="font-bold text-[#FF5500] hover:text-[#D43F00] hover:underline transition-colors ml-1 focus-visible:outline-none focus-visible:underline"
               >
                 Create an account
               </Link>
@@ -161,7 +161,7 @@ export function LoginForm() {
               </label>
               <Link
                 href="/forgot-password"
-                className="text-xs font-medium text-neutral-500 hover:text-black transition-colors focus-visible:outline-none focus-visible:underline"
+                className="text-xs font-medium text-neutral-500 hover:text-[#FF5500] transition-colors focus-visible:outline-none focus-visible:underline"
               >
                 Forgot?
               </Link>
@@ -187,7 +187,7 @@ export function LoginForm() {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 rounded border-neutral-300 text-black focus:ring-black accent-black cursor-pointer"
+                className="h-4 w-4 rounded border-neutral-300 text-[#FF5500] focus:ring-[#FF5500] accent-[#FF5500] cursor-pointer"
               />
               <span className="text-xs text-neutral-600">Remember this station</span>
             </label>

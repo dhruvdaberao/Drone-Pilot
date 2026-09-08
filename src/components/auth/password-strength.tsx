@@ -19,7 +19,7 @@ export function PasswordStrengthMeter({ password, className }: PasswordStrengthP
     if (strength.score === 1) return "bg-neutral-400";
     if (strength.score === 2) return "bg-neutral-600";
     if (strength.score === 3) return "bg-neutral-800";
-    return "bg-black";
+    return "bg-[#FF5500]";
   };
 
   return (

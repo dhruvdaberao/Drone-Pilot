@@ -1,25 +1,32 @@
 import type { Metadata, Viewport } from "next";
-import { Poppins, Space_Grotesk } from "next/font/google";
+import { Rajdhani, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import { AuthProvider } from "@/context/auth-context";
 
-const poppins = Poppins({
+const rajdhani = Rajdhani({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-poppins",
+  weight: ["500", "600", "700"],
+  variable: "--font-machinic",
   display: "swap",
 });
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-heading",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-mono",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "DRONE PILOT",
-  description: "Next-generation interactive drone simulation and flight training platform.",
+  title: "DRONE PILOT | Flight Telemetry & Simulation",
+  description: "Next-generation interactive drone simulation, digital twin telemetry, and flight training platform.",
   icons: {
     icon: "/drone-icon.png",
     apple: "/drone-icon.png",
@@ -27,7 +34,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#FF5500",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -41,7 +48,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${poppins.variable} ${spaceGrotesk.variable} font-sans min-h-screen bg-white text-neutral-900 antialiased selection:bg-black selection:text-white`}
+        className={`${spaceGrotesk.variable} ${rajdhani.variable} ${jetbrainsMono.variable} font-sans min-h-screen bg-white text-neutral-900 antialiased selection:bg-[#FF5500] selection:text-white`}
       >
         <AuthProvider>{children}</AuthProvider>
       </body>
