@@ -6,7 +6,7 @@ import { DroneIcon } from "@/components/ui/drone-icon";
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative min-h-screen flex flex-col justify-between bg-white text-neutral-900 overflow-x-hidden">
-      {/* Pristine Drone Flight Illustration Background */}
+      {/* Pristine Drone Flight Illustration Background - Faint Ambient Watermark */}
       <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden bg-white">
         <Image
           src="/Final-Baground.png"
@@ -14,7 +14,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center"
+          className="object-cover object-center opacity-25"
         />
       </div>
 

@@ -20,7 +20,7 @@ export default function HomePage() {
 
   return (
     <main className="relative flex min-h-screen flex-col justify-between bg-white text-neutral-900 overflow-x-hidden">
-      {/* Pristine Drone Flight Illustration Background */}
+      {/* Pristine Drone Flight Illustration Background - Faint Ambient Watermark */}
       <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden bg-white">
         <Image
           src="/Final-Baground.png"
@@ -28,7 +28,7 @@ export default function HomePage() {
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center"
+          className="object-cover object-center opacity-25"
         />
       </div>
 
