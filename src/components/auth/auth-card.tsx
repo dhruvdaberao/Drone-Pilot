@@ -47,12 +47,11 @@ export function AuthCard({
         )}
       </div>
 
-      {/* LUXURY CRISP WHITE FORM CARD WITH PRECISION BORDER */}
+      {/* LUXURY CRISP WHITE FORM CARD WITH BOLD BLACK BORDER */}
       <div
         className={cn(
-          "w-full rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6",
-          "shadow-[0_20px_50px_-12px_rgba(0,0,0,0.09),0_6px_18px_-4px_rgba(0,0,0,0.05)]",
-          "hover:border-neutral-300 transition-all duration-300",
+          "w-full rounded-2xl border-2 border-black bg-white p-5 sm:p-6",
+          "shadow-[0_20px_50px_-12px_rgba(0,0,0,0.12),0_6px_18px_-4px_rgba(0,0,0,0.06)]",
           className
         )}
       >

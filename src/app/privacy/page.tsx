@@ -48,7 +48,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Main Privacy Content Container */}
       <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-8 pt-24 sm:pt-28 pb-16 w-full">
-        <div className="w-full max-w-3xl rounded-2xl border border-neutral-300 bg-white p-6 sm:p-10 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.14),0_6px_18px_-4px_rgba(0,0,0,0.06)] space-y-8">
+        <div className="w-full max-w-3xl rounded-2xl border-2 border-black bg-white p-6 sm:p-10 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.14),0_6px_18px_-4px_rgba(0,0,0,0.06)] space-y-8">
           {/* Header & Meta */}
           <div className="border-b border-neutral-200 pb-6 space-y-2.5">
             <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs text-neutral-800 font-medium">

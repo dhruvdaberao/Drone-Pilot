@@ -47,7 +47,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       orange:
         "bg-gradient-to-r from-[#FF5500] via-[#FF5F08] to-[#E64800] text-white font-bold tracking-wide border border-[#FF5500] shadow-[0_4px_16px_rgba(255,85,0,0.4),0_1px_2px_rgba(0,0,0,0.1)] hover:from-[#FF6315] hover:to-[#D43F00] hover:border-[#FF5500] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-4px_rgba(255,85,0,0.6)] active:translate-y-0 active:shadow-[0_2px_8px_rgba(255,85,0,0.4)] focus-visible:ring-[#FF5500]",
       secondary:
-        "bg-white text-neutral-900 border border-neutral-300 shadow-sm hover:bg-neutral-50 hover:border-neutral-400 hover:text-black hover:-translate-y-0.5 hover:shadow-md active:shadow-xs focus-visible:ring-neutral-400",
+        "bg-white text-neutral-900 border-2 border-black shadow-sm hover:bg-neutral-50 hover:border-black hover:text-black hover:-translate-y-0.5 hover:shadow-md active:shadow-xs focus-visible:ring-black",
       outline:
         "bg-transparent text-neutral-900 border border-neutral-300 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-2px_rgba(0,0,0,0.2)] focus-visible:ring-neutral-900",
       ghost:
