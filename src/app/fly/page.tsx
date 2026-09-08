@@ -60,7 +60,7 @@ export default function FlyPage() {
 
         {/* Flight Staging Area */}
         <main className="relative z-10 flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 pt-24 pb-12 flex flex-col items-center justify-center text-center">
-          <div className="w-full rounded-2xl bg-gradient-to-b from-[#FFF6EE] via-[#FFF1E6] to-[#FFE8D6] border border-orange-200/90 p-6 sm:p-10 shadow-[0_20px_50px_-12px_rgba(255,85,0,0.16),0_6px_20px_-4px_rgba(0,0,0,0.06)] space-y-6">
+          <div className="w-full rounded-2xl bg-white border border-neutral-200/90 p-6 sm:p-10 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08),0_6px_20px_-4px_rgba(0,0,0,0.04)] space-y-6">
             {/* Status Pill */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
@@ -73,13 +73,13 @@ export default function FlyPage() {
                 READY FOR FLIGHT
               </h1>
               <p className="text-xs sm:text-sm text-neutral-600 max-w-md mx-auto leading-relaxed">
-                Selected Platform: <strong className="text-[#FF5500] font-bold">{selectedDrone?.name || "QUADCOPTER"}</strong>
+                Selected Platform: <strong className="text-neutral-950 font-bold">{selectedDrone?.name || "QUADCOPTER"}</strong>
               </p>
             </div>
 
             {/* Selected Platform Spec Card */}
             {selectedDrone && (
-              <div className="rounded-xl bg-white/90 border border-orange-200/80 p-5 max-w-md mx-auto text-left space-y-3">
+              <div className="rounded-xl bg-neutral-50/80 border border-neutral-200/90 p-5 max-w-md mx-auto text-left space-y-3">
                 <div className="flex items-center justify-between border-b border-orange-100 pb-2">
                   <span className="font-heading font-bold text-sm text-neutral-900">
                     {selectedDrone.name}

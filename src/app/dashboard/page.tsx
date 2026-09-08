@@ -8,7 +8,7 @@ import { DroneCard } from "@/components/dashboard/drone-card";
 import { Button } from "@/components/ui/button";
 import { DRONES, DEFAULT_DRONE_STORAGE_KEY } from "@/lib/drones";
 import { DroneModel } from "@/types/drone";
-import { ArrowRight, Info } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -33,10 +33,9 @@ export default function DashboardPage() {
           return;
         }
       }
-      // Default to Quadcopter so user immediately sees a 3D model in action
+      // Initial default to Quadcopter
       setSelectedDrone(DRONES[0]);
     } catch {
-      // Storage unavailable or blocked
       setSelectedDrone(DRONES[0]);
     }
   }, []);
@@ -60,43 +59,51 @@ export default function DashboardPage() {
     router.push("/fly");
   };
 
+  const handleBackgroundClick = () => {
+    // Clicking the background stage deselects the current drone
+    setSelectedDrone(null);
+  };
+
   return (
     <ProtectedRoute>
-      {/* Clean Aerospace Hangar Background — No background blueprint image on dashboard */}
-      <div className="relative min-h-screen w-full max-w-full flex flex-col justify-between bg-[#FAF7F2] text-neutral-900 overflow-x-hidden">
-        {/* Subtle Tech Grid Accent (CSS-only, high contrast, zero blur/doodle clutter) */}
+      {/* Clean Aerospace Hangar Stage — Clicking background clears drone selection */}
+      <div
+        onClick={handleBackgroundClick}
+        className="relative min-h-screen w-full max-w-full flex flex-col justify-between bg-[#FAF7F2] text-neutral-900 overflow-x-hidden cursor-default"
+      >
+        {/* Subtle Tech Grid Accent */}
         <div
-          className="fixed inset-0 z-0 pointer-events-none opacity-40"
+          className="fixed inset-0 z-0 pointer-events-none opacity-30"
           style={{
-            backgroundImage: `radial-gradient(circle, rgba(255, 85, 0, 0.12) 1px, transparent 1px)`,
-            backgroundSize: "24px 24px",
+            backgroundImage: `radial-gradient(circle, rgba(0, 0, 0, 0.08) 1px, transparent 1px)`,
+            backgroundSize: "28px 28px",
           }}
         />
 
         {/* Fixed Aerospace Orange Header */}
         <DashboardHeader />
 
-        {/* Main Dashboard / Hangar Selection */}
-        <main className="relative z-10 flex-1 w-full max-w-full sm:max-w-6xl mx-auto px-3 sm:px-6 pt-16 sm:pt-20 pb-6 flex flex-col justify-center overflow-x-hidden">
-          {/* Cockpit Heading */}
-          <div className="text-center max-w-2xl mx-auto mb-3 sm:mb-5 pt-1 sm:pt-2 px-1">
-            <h1 className="font-heading text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-neutral-950 uppercase">
+        {/* Main Hangar Stage */}
+        <main className="relative z-10 flex-1 w-full max-w-full sm:max-w-6xl mx-auto px-4 sm:px-8 pt-20 sm:pt-24 pb-8 flex flex-col justify-center overflow-x-hidden">
+          {/* Hangar Heading */}
+          <div className="text-center max-w-2xl mx-auto mb-4 sm:mb-6 px-2 select-none pointer-events-none">
+            <h1 className="font-heading text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-neutral-950 uppercase">
               SELECT YOUR DRONE
             </h1>
 
-            <p className="mt-1 text-[11px] sm:text-xs text-neutral-600 leading-snug max-w-xs sm:max-w-md mx-auto">
-              Choose your flight platform to initialize digital telemetry and pre-flight calibrations. Touch or drag any model to rotate in 3D.
+            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-neutral-600 max-w-md mx-auto leading-relaxed">
+              Choose your flight platform to initialize digital telemetry. Touch or drag any aircraft to inspect in 3D.
             </p>
           </div>
 
-          {/* Drone Selection Grid:
-              - Mobile (<640px): 1 column, unselected cards compact, selected card expands
-              - Half-screen / Tablet (640px - 1023px): 2 cards in row 1, 1 card centered below them
-              - Desktop (1024px+): 3 cards side-by-side in 1 row */}
+          {/* Cardless Hangar 3D Stage Grid:
+              - Desktop (1024px+): 3 drones in 1 horizontal line
+              - Half-screen (640px - 1023px): 2 drones in row 1, 1 drone centered below
+              - Mobile (<640px): Stacked cleanly */}
           <div
             role="radiogroup"
             aria-label="Drone Selection"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5 w-full min-w-0 items-start"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 w-full min-w-0 items-start my-auto"
           >
             {DRONES.map((drone) => {
               const isSelected = selectedDrone?.id === drone.id;
@@ -115,40 +122,41 @@ export default function DashboardPage() {
             })}
           </div>
 
-          {/* Primary CTA Area: LET'S FLY */}
-          <div className="mt-4 sm:mt-6 flex flex-col items-center text-center">
+          {/* Primary CTA Area: Black LET'S FLY Button */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="mt-6 sm:mt-8 flex flex-col items-center text-center select-none"
+          >
             {selectedDrone ? (
-              <div className="flex flex-col items-center gap-1.5 animate-in fade-in duration-200">
+              <div className="flex flex-col items-center gap-2 animate-in fade-in duration-200">
                 <Button
-                  variant="orange"
+                  variant="black"
                   size="md"
-                  className="min-w-[240px] sm:min-w-[280px] h-11 sm:h-12 text-xs sm:text-sm font-bold tracking-wider uppercase shadow-[0_6px_22px_rgba(255,85,0,0.4)] transition-transform hover:scale-[1.02]"
+                  className="min-w-[220px] sm:min-w-[260px] h-12 text-sm font-bold tracking-widest uppercase shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:bg-black hover:-translate-y-0.5 transition-all"
                   onClick={handleStartFlight}
                   rightIcon={<ArrowRight className="h-4 w-4" />}
                 >
-                  LET&apos;S FLY // {selectedDrone.name}
+                  LET&apos;S FLY
                 </Button>
 
-                <p className="text-[10.5px] text-neutral-500 font-mono flex items-center gap-1.5">
+                <p className="text-xs text-neutral-500 font-mono flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>3D Platform Calibrated: {selectedDrone.specs.rotors} Rotors Armed</span>
+                  <span>Platform confirmed: {selectedDrone.name} ({selectedDrone.specs.rotors} Rotors Armed)</span>
                 </p>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-1.5">
+              <div className="flex flex-col items-center gap-2">
                 <Button
-                  variant="secondary"
+                  variant="black"
                   size="md"
                   disabled
-                  className="min-w-[240px] sm:min-w-[280px] h-11 sm:h-12 text-xs sm:text-sm font-semibold tracking-wide uppercase opacity-50 cursor-not-allowed border-neutral-300"
-                  rightIcon={<ArrowRight className="h-4 w-4 text-neutral-400" />}
+                  className="min-w-[220px] sm:min-w-[260px] h-12 text-sm font-bold tracking-widest uppercase opacity-40 cursor-not-allowed border border-neutral-300"
                 >
-                  SELECT A DRONE TO FLY
+                  LET&apos;S FLY
                 </Button>
 
-                <p className="text-[11px] text-neutral-500 flex items-center gap-1">
-                  <Info className="h-3.5 w-3.5 text-neutral-400" />
-                  <span>Click or tap any drone card to inspect in 3D and commence flight</span>
+                <p className="text-xs text-neutral-400">
+                  Select an aircraft above to initialize flight controls
                 </p>
               </div>
             )}

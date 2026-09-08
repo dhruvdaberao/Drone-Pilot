@@ -4,7 +4,7 @@ export const DRONES: DroneModel[] = [
   {
     id: "quadcopter",
     name: "QUADCOPTER",
-    tagline: "4 Rotors // Balanced Agility",
+    tagline: "4 Rotors • Balanced Agility",
     description:
       "Highly responsive X-frame configuration. Exceptional maneuverability and balanced aerodynamic response, ideal for precision piloting.",
     image: "/drone1.png",
@@ -20,7 +20,7 @@ export const DRONES: DroneModel[] = [
   {
     id: "hexacopter",
     name: "HEXACOPTER",
-    tagline: "6 Rotors // Enhanced Stability",
+    tagline: "6 Rotors • Enhanced Stability",
     description:
       "Radial 6-motor layout offering motor redundancy and increased lift stability. Smooth, consistent flight dynamics in variable winds.",
     image: "/drone2.png",
@@ -36,7 +36,7 @@ export const DRONES: DroneModel[] = [
   {
     id: "octacopter",
     name: "OCTACOPTER",
-    tagline: "8 Rotors // Heavy Payload",
+    tagline: "8 Rotors • Heavy Payload",
     description:
       "Industrial 8-rotor heavy lifter. Maximum thrust authority and rock-solid hovering stability for complex flight operations.",
     image: "/drone3.png",

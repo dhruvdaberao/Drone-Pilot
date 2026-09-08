@@ -7,6 +7,7 @@ import { RotateCw } from "lucide-react";
 
 interface Drone3DViewerProps {
   type: DroneType;
+  isSelected?: boolean;
   className?: string;
   autoRotate?: boolean;
   interactive?: boolean;
@@ -14,13 +15,15 @@ interface Drone3DViewerProps {
 
 export function Drone3DViewer({
   type,
+  isSelected = false,
   className = "",
   autoRotate = true,
   interactive = true,
 }: Drone3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const isSelectedRef = useRef(isSelected);
+  isSelectedRef.current = isSelected;
   const [isInteracting, setIsInteracting] = useState(false);
-  const [hasInteracted, setHasInteracted] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -78,9 +81,9 @@ export function Drone3DViewer({
       metalness: 0.45,
     });
 
-    // Sleek anodized orange aerospace accent trim
-    const aerospaceOrangeTrim = new THREE.MeshStandardMaterial({
-      color: 0xff5500,
+    // Sleek dark titanium aerospace trim
+    const stealthDarkTrim = new THREE.MeshStandardMaterial({
+      color: 0x242830,
       roughness: 0.28,
       metalness: 0.8,
     });
@@ -178,7 +181,7 @@ export function Drone3DViewer({
     droneGroup.add(topHood);
 
     const stripeGeo = new THREE.BoxGeometry(bodyWidth * 0.25, 0.09, bodyLength * 0.86);
-    const stripe = new THREE.Mesh(stripeGeo, aerospaceOrangeTrim);
+    const stripe = new THREE.Mesh(stripeGeo, stealthDarkTrim);
     stripe.position.y = bodyHeight / 2 + 0.045;
     droneGroup.add(stripe);
 
@@ -313,7 +316,7 @@ export function Drone3DViewer({
 
       // Streamlined Propeller Hub Spinner Nut
       const hubNutGeo = new THREE.ConeGeometry(0.06, 0.09, 12);
-      const hubNut = new THREE.Mesh(hubNutGeo, aerospaceOrangeTrim);
+      const hubNut = new THREE.Mesh(hubNutGeo, stealthDarkTrim);
       hubNut.position.y = 0.04;
       propGroup.add(hubNut);
 
@@ -389,7 +392,7 @@ export function Drone3DViewer({
         [-skidLength / 2, skidLength / 2].forEach((tipZ) => {
           const tipEnd = new THREE.Mesh(
             new THREE.SphereGeometry(0.04, 8, 8),
-            aerospaceOrangeTrim
+            stealthDarkTrim
           );
           tipEnd.position.set(0, -0.48, zPos + tipZ);
           landingGear.add(tipEnd);
@@ -425,7 +428,6 @@ export function Drone3DViewer({
       if (!interactive) return;
       isDragging = true;
       setIsInteracting(true);
-      setHasInteracted(true);
       const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
       const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
       prevPointerX = clientX;
@@ -497,8 +499,14 @@ export function Drone3DViewer({
         prop.group.rotation.y += prop.direction * propSpeed * delta;
       });
 
-      // Subtle aerodynamic hover breathing
-      droneGroup.position.y = Math.sin(elapsed * 2.2) * 0.045;
+      // Dynamic game-style elevation & scale when selected (drone comes closer & lifts up)
+      const isCurrentSelected = isSelectedRef.current;
+      const targetScale = isCurrentSelected ? 1.15 : 0.98;
+      const targetElevY = isCurrentSelected ? 0.22 : 0;
+      droneGroup.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.08);
+
+      // Subtle aerodynamic hover breathing combined with selection elevation
+      droneGroup.position.y = targetElevY + Math.sin(elapsed * 2.2) * 0.04;
 
       // Handle Damped Rotation or Auto-Turntable
       if (!isDragging) {
@@ -506,7 +514,7 @@ export function Drone3DViewer({
           droneGroup.rotation.y += rotVelocityY;
           rotVelocityY *= friction;
         } else if (autoRotate) {
-          droneGroup.rotation.y += 0.006;
+          droneGroup.rotation.y += 0.005;
         }
 
         if (Math.abs(rotVelocityX) > 0.0001) {
@@ -545,16 +553,6 @@ export function Drone3DViewer({
     <div
       ref={containerRef}
       className={`relative w-full h-full select-none cursor-grab active:cursor-grabbing overflow-hidden ${className}`}
-    >
-      {/* 360 Rotation Hint Badge */}
-      <div
-        className={`absolute bottom-2 left-1/2 -translate-x-1/2 pointer-events-none transition-opacity duration-300 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-neutral-950/75 backdrop-blur-sm border border-orange-400/40 text-[9px] font-mono text-white tracking-wider uppercase ${
-          hasInteracted && !isInteracting ? "opacity-40" : "opacity-90"
-        }`}
-      >
-        <RotateCw className="h-2.5 w-2.5 text-[#FF5500] animate-spin [animation-duration:6s]" />
-        <span>360° TOUCH / DRAG</span>
-      </div>
-    </div>
+    />
   );
 }
