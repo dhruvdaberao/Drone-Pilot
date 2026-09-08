@@ -72,19 +72,61 @@ export function LoginForm() {
     <AuthCard
       heading="WELCOME, PILOT"
       subheading="Enter the flight experience."
-      footer={
-        <p className="text-center text-xs text-neutral-600">
-          New user?{" "}
-          <Link
-            href="/signup"
-            className="font-bold text-black hover:underline transition-colors ml-1 focus-visible:outline-none focus-visible:underline"
+      belowCard={
+        <>
+          {/* Subtle Canvas-blended Divider */}
+          <div className="relative flex items-center justify-center my-1.5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-neutral-300" />
+            </div>
+            <div className="relative bg-white/95 backdrop-blur-sm px-3.5 py-0.5 rounded-full text-[11px] font-semibold text-neutral-600 uppercase tracking-wider border border-neutral-200 shadow-sm">
+              or continue with
+            </div>
+          </div>
+
+          {/* Premium Google OAuth Bar Button */}
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            className="w-full justify-center text-xs sm:text-sm font-semibold text-neutral-900 bg-white hover:bg-neutral-50 shadow-sm border-neutral-300 transition-all"
+            onClick={handleGoogleSignIn}
+            isLoading={isGoogleLoading}
+            loadingText="Connecting..."
+            leftIcon={<GoogleIcon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />}
           >
-            Create an account
-          </Link>
-        </p>
+            Continue with Google
+          </Button>
+
+          {/* New User Account Switch directly on canvas */}
+          <div className="relative flex justify-center pt-1">
+            <div
+              className="absolute -inset-x-8 -inset-y-2 -z-10 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.75) 50%, transparent 80%)",
+                backdropFilter: "blur(6px)",
+                WebkitBackdropFilter: "blur(6px)",
+                maskImage:
+                  "radial-gradient(ellipse at center, black 35%, transparent 80%)",
+                WebkitMaskImage:
+                  "radial-gradient(ellipse at center, black 35%, transparent 80%)",
+              }}
+            />
+            <p className="text-center text-xs sm:text-sm text-neutral-700">
+              New user?{" "}
+              <Link
+                href="/signup"
+                className="font-bold text-black hover:underline transition-colors ml-1 focus-visible:outline-none focus-visible:underline"
+              >
+                Create an account
+              </Link>
+            </p>
+          </div>
+        </>
       }
     >
-      <div className="space-y-3.5">
+      <div className="space-y-3">
         {authError && (
           <div className="flex items-start gap-2 text-xs font-medium text-red-600 py-0.5 animate-in fade-in duration-200">
             <AlertCircle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
@@ -92,31 +134,7 @@ export function LoginForm() {
           </div>
         )}
 
-        {/* 1-Click Google OAuth at the TOP */}
-        <Button
-          type="button"
-          variant="secondary"
-          size="md"
-          className="w-full justify-center text-xs sm:text-sm font-semibold text-neutral-900 bg-white hover:bg-neutral-50 shadow-sm border-neutral-300 transition-all"
-          onClick={handleGoogleSignIn}
-          isLoading={isGoogleLoading}
-          loadingText="Connecting..."
-          leftIcon={<GoogleIcon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />}
-        >
-          Continue with Google
-        </Button>
-
-        {/* Clean Modern Divider */}
-        <div className="relative flex items-center justify-center my-2.5">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-neutral-200" />
-          </div>
-          <div className="relative bg-white px-3 text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
-            or continue with email
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} action="javascript:void(0);" className="space-y-3.5" noValidate>
+        <form onSubmit={handleSubmit} action="javascript:void(0);" className="space-y-3" noValidate>
           <Input
             id="pilot-email"
             label="Email address"

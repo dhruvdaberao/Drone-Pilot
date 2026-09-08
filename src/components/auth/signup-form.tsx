@@ -84,19 +84,61 @@ export function SignupForm() {
     <AuthCard
       heading="PILOT ENLISTMENT"
       subheading="Register your flight credentials."
-      footer={
-        <p className="text-center text-xs text-neutral-600">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="font-bold text-black hover:underline transition-colors ml-1 focus-visible:outline-none focus-visible:underline"
+      belowCard={
+        <>
+          {/* Subtle Canvas-blended Divider */}
+          <div className="relative flex items-center justify-center my-1.5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-neutral-300" />
+            </div>
+            <div className="relative bg-white/95 backdrop-blur-sm px-3.5 py-0.5 rounded-full text-[11px] font-semibold text-neutral-600 uppercase tracking-wider border border-neutral-200 shadow-sm">
+              or continue with
+            </div>
+          </div>
+
+          {/* Premium Google OAuth Bar Button */}
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            className="w-full justify-center text-xs sm:text-sm font-semibold text-neutral-900 bg-white hover:bg-neutral-50 shadow-sm border-neutral-300 transition-all"
+            onClick={handleGoogleSignUp}
+            isLoading={isGoogleLoading}
+            loadingText="Connecting..."
+            leftIcon={<GoogleIcon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />}
           >
-            Sign in
-          </Link>
-        </p>
+            Continue with Google
+          </Button>
+
+          {/* Existing User Account Switch directly on canvas */}
+          <div className="relative flex justify-center pt-1">
+            <div
+              className="absolute -inset-x-8 -inset-y-2 -z-10 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.75) 50%, transparent 80%)",
+                backdropFilter: "blur(6px)",
+                WebkitBackdropFilter: "blur(6px)",
+                maskImage:
+                  "radial-gradient(ellipse at center, black 35%, transparent 80%)",
+                WebkitMaskImage:
+                  "radial-gradient(ellipse at center, black 35%, transparent 80%)",
+              }}
+            />
+            <p className="text-center text-xs sm:text-sm text-neutral-700">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="font-bold text-black hover:underline transition-colors ml-1 focus-visible:outline-none focus-visible:underline"
+              >
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </>
       }
     >
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {authError && (
           <div className="flex items-start gap-2 text-xs font-medium text-red-600 py-0.5 animate-in fade-in duration-200">
             <AlertCircle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
@@ -104,96 +146,78 @@ export function SignupForm() {
           </div>
         )}
 
-        {/* 1-Click Google OAuth at the TOP */}
-        <Button
-          type="button"
-          variant="secondary"
-          size="md"
-          className="w-full justify-center text-xs sm:text-sm font-semibold text-neutral-900 bg-white hover:bg-neutral-50 shadow-sm border-neutral-300 transition-all"
-          onClick={handleGoogleSignUp}
-          isLoading={isGoogleLoading}
-          loadingText="Connecting..."
-          leftIcon={<GoogleIcon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />}
-        >
-          Continue with Google
-        </Button>
-
-        {/* Clean Modern Divider */}
-        <div className="relative flex items-center justify-center my-2.5">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-neutral-200" />
-          </div>
-          <div className="relative bg-white px-3 text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
-            or continue with email
-          </div>
-        </div>
-
         <form onSubmit={handleSubmit} action="javascript:void(0);" className="space-y-2.5" noValidate>
-          <Input
-            id="pilot-callsign"
-            label="Pilot Call Sign"
-            type="text"
-            autoComplete="name"
-            placeholder="e.g. Maverick"
-            leftIcon={<User className="h-4 w-4" />}
-            value={displayName}
-            onChange={(e) => {
-              setDisplayName(e.target.value);
-              if (errors.displayName) setErrors((prev) => ({ ...prev, displayName: "" }));
-            }}
-            error={errors.displayName}
-            required
-          />
-
-          <Input
-            id="pilot-signup-email"
-            label="Email address"
-            type="email"
-            autoComplete="email"
-            placeholder="pilot@dronepilot.io"
-            leftIcon={<Mail className="h-4 w-4" />}
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              if (errors.email) setErrors((prev) => ({ ...prev, email: "" }));
-            }}
-            error={errors.email}
-            required
-          />
-
-          <div>
-            <PasswordInput
-              id="pilot-signup-password"
-              label="Password"
-              autoComplete="new-password"
-              placeholder="At least 8 characters"
-              leftIcon={<Lock className="h-4 w-4" />}
-              value={password}
+          {/* Responsive 2-Column Row 1: Call Sign & Email */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <Input
+              id="pilot-callsign"
+              label="Pilot Call Sign"
+              type="text"
+              autoComplete="name"
+              placeholder="e.g. Maverick"
+              leftIcon={<User className="h-4 w-4" />}
+              value={displayName}
               onChange={(e) => {
-                setPassword(e.target.value);
-                if (errors.password) setErrors((prev) => ({ ...prev, password: "" }));
+                setDisplayName(e.target.value);
+                if (errors.displayName) setErrors((prev) => ({ ...prev, displayName: "" }));
               }}
-              error={errors.password}
+              error={errors.displayName}
               required
             />
 
-            <PasswordStrengthMeter password={password} />
+            <Input
+              id="pilot-signup-email"
+              label="Email address"
+              type="email"
+              autoComplete="email"
+              placeholder="pilot@dronepilot.io"
+              leftIcon={<Mail className="h-4 w-4" />}
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (errors.email) setErrors((prev) => ({ ...prev, email: "" }));
+              }}
+              error={errors.email}
+              required
+            />
           </div>
 
-          <PasswordInput
-            id="pilot-signup-confirm-password"
-            label="Confirm password"
-            autoComplete="new-password"
-            placeholder="Re-enter password"
-            leftIcon={<Lock className="h-4 w-4" />}
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
-              if (errors.confirmPassword) setErrors((prev) => ({ ...prev, confirmPassword: "" }));
-            }}
-            error={errors.confirmPassword}
-            required
-          />
+          {/* Responsive 2-Column Row 2: Password & Confirm Password */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-start">
+            <div>
+              <PasswordInput
+                id="pilot-signup-password"
+                label="Password"
+                autoComplete="new-password"
+                placeholder="At least 8 chars"
+                leftIcon={<Lock className="h-4 w-4" />}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errors.password) setErrors((prev) => ({ ...prev, password: "" }));
+                }}
+                error={errors.password}
+                required
+              />
+
+              <PasswordStrengthMeter password={password} />
+            </div>
+
+            <PasswordInput
+              id="pilot-signup-confirm-password"
+              label="Confirm password"
+              autoComplete="new-password"
+              placeholder="Re-enter password"
+              leftIcon={<Lock className="h-4 w-4" />}
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                if (errors.confirmPassword) setErrors((prev) => ({ ...prev, confirmPassword: "" }));
+              }}
+              error={errors.confirmPassword}
+              required
+            />
+          </div>
 
           {/* Terms & Consent */}
           <div className="pt-0.5">
@@ -236,7 +260,7 @@ export function SignupForm() {
             type="submit"
             variant="primary"
             size="md"
-            className="w-full mt-1.5 font-semibold text-xs sm:text-sm"
+            className="w-full mt-1 font-semibold text-xs sm:text-sm"
             isLoading={isSubmitting}
             loadingText="Creating account..."
             rightIcon={<ArrowRight className="h-4 w-4" />}
