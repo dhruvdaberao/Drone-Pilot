@@ -227,13 +227,19 @@ export function SignupForm() {
               />
               <span>
                 I agree to the{" "}
-                <span className="text-black font-semibold hover:underline">
+                <Link
+                  href="/terms"
+                  className="text-black font-semibold hover:underline transition-colors focus-visible:outline-none focus-visible:underline"
+                >
                   Terms of Service
-                </span>{" "}
+                </Link>{" "}
                 and{" "}
-                <span className="text-black font-semibold hover:underline">
+                <Link
+                  href="/privacy"
+                  className="text-black font-semibold hover:underline transition-colors focus-visible:outline-none focus-visible:underline"
+                >
                   Privacy Policy
-                </span>.
+                </Link>.
               </span>
             </label>
             {errors.acceptTerms && (

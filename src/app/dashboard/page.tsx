@@ -25,8 +25,8 @@ export default function DashboardPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen flex flex-col justify-between bg-white text-neutral-900 overflow-x-hidden">
-        {/* Sleek White Navigation Bar */}
-        <header className="relative z-10 flex items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-10 sm:py-3.5 text-neutral-900 shadow-sm border-b border-neutral-200/80">
+        {/* Sleek Fixed White Navigation Bar */}
+        <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-10 sm:py-3.5 text-neutral-900 shadow-sm border-b border-neutral-200/80">
           <div className="flex items-center gap-2.5">
             <DroneIcon className="h-5 w-5 text-black" />
             <span className="font-heading text-xs sm:text-sm font-bold tracking-wider text-black uppercase">
@@ -48,7 +48,7 @@ export default function DashboardPage() {
         </header>
 
         {/* Main Content Area on Clean White Canvas */}
-        <main className="flex flex-1 items-center justify-center px-3 py-6 sm:p-8 md:p-12 bg-white">
+        <main className="flex flex-1 items-center justify-center px-3 py-6 pt-20 sm:pt-24 sm:p-8 md:p-12 bg-white">
           <div className="w-full max-w-lg rounded-xl sm:rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-8 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.14),0_6px_18px_-4px_rgba(0,0,0,0.06)] space-y-5 sm:space-y-6">
             {/* Status Header */}
             <div className="space-y-2">

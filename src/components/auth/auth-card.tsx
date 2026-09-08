@@ -48,12 +48,12 @@ export function AuthCard({
         )}
       </div>
 
-      {/* LUXURY FORM CARD WITH PROPER SEPARATION SHADOW */}
+      {/* LUXURY FORM CARD WITH PROPER SEPARATION SHADOW & CRISP BORDER */}
       <div
         className={cn(
-          "w-full rounded-2xl border border-neutral-200/90 bg-white p-6 sm:p-7",
+          "w-full rounded-2xl border border-neutral-300 bg-white p-6 sm:p-7",
           "shadow-[0_20px_50px_-12px_rgba(0,0,0,0.14),0_6px_18px_-4px_rgba(0,0,0,0.06)]",
-          "hover:border-neutral-300 transition-all duration-300",
+          "hover:border-neutral-400 transition-all duration-300",
           className
         )}
       >

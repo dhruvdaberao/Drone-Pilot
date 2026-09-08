@@ -32,8 +32,8 @@ export default function HomePage() {
         />
       </div>
 
-      {/* Sleek Black Navigation Bar */}
-      <header className="relative z-10 flex items-center justify-between bg-black px-4 py-3 sm:px-10 sm:py-3.5 text-white shadow-md">
+      {/* Sleek Fixed Black Navigation Bar */}
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-black px-4 py-3 sm:px-10 sm:py-3.5 text-white shadow-md">
         <div className="flex items-center gap-2.5">
           <DroneIcon className="h-5 w-5 text-white" />
           <span className="font-heading text-xs sm:text-sm font-bold tracking-wider text-white uppercase">
@@ -43,7 +43,7 @@ export default function HomePage() {
       </header>
 
       {/* Hero directly on page with seamless feathered blur aura (no card, no borders) */}
-      <div className="relative my-auto z-10 w-full max-w-xl mx-auto px-4 py-8 flex flex-col items-center text-center">
+      <div className="relative my-auto z-10 w-full max-w-xl mx-auto px-4 py-8 pt-24 sm:pt-28 flex flex-col items-center text-center">
         {/* Seamless feathered white radial blur directly behind the text - 100% borderless */}
         <div
           className="absolute inset-x-2 sm:inset-x-0 -top-8 -bottom-4 -z-10 pointer-events-none"

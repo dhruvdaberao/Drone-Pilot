@@ -43,7 +43,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       primary:
         "bg-black text-white border border-black shadow-[0_2px_8px_-1px_rgba(0,0,0,0.2)] hover:bg-black hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4)] active:shadow-[0_2px_6px_rgba(0,0,0,0.2)]",
       secondary:
-        "bg-white text-neutral-900 border border-neutral-200 shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:bg-white hover:border-black hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-2px_rgba(0,0,0,0.12)] active:shadow-[0_1px_3px_rgba(0,0,0,0.04)]",
+        "bg-white text-neutral-900 border border-neutral-300 shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:bg-white hover:border-black hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-2px_rgba(0,0,0,0.12)] active:shadow-[0_1px_3px_rgba(0,0,0,0.04)]",
       outline:
         "bg-transparent text-neutral-900 border border-neutral-300 hover:bg-black hover:text-white hover:border-black hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-2px_rgba(0,0,0,0.2)]",
       ghost:

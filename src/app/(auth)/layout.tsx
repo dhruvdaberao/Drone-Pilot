@@ -18,8 +18,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         />
       </div>
 
-      {/* Sleek Black Navigation Bar */}
-      <header className="relative z-10 flex items-center justify-between bg-black px-4 py-3 sm:px-10 sm:py-3.5 text-white shadow-md">
+      {/* Sleek Fixed Black Navigation Bar */}
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-black px-4 py-3 sm:px-10 sm:py-3.5 text-white shadow-md">
         <Link
           href="/"
           className="group flex items-center gap-2.5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded"
@@ -32,7 +32,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </header>
 
       {/* Main Form Container */}
-      <main className="relative z-10 flex flex-1 items-center justify-center px-3.5 py-4 sm:px-6 sm:py-6 w-full">
+      <main className="relative z-10 flex flex-1 items-center justify-center px-3.5 py-6 pt-20 sm:pt-24 sm:px-6 sm:py-8 w-full">
         {children}
       </main>
     </div>
