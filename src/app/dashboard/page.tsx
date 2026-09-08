@@ -1,141 +1,149 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/auth-context";
 import { ProtectedRoute } from "@/components/auth/route-guard";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DroneCard } from "@/components/dashboard/drone-card";
 import { Button } from "@/components/ui/button";
-import { DroneIcon } from "@/components/ui/drone-icon";
-import { LogOut, CheckCircle2, AlertCircle, User, Mail, Shield } from "lucide-react";
+import { DRONES, DEFAULT_DRONE_STORAGE_KEY } from "@/lib/drones";
+import { DroneModel } from "@/types/drone";
+import { ArrowRight, PlaneTakeoff, Info } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const [selectedDrone, setSelectedDrone] = useState<DroneModel | null>(null);
 
-  const handleSignOut = async () => {
+  // Restore previous selection if exists or via URL param
+  useEffect(() => {
     try {
-      await logout();
-      router.push("/login");
-    } catch (err) {
-      console.error("Sign out error:", err);
+      const urlDrone = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("drone") : null;
+      if (urlDrone) {
+        const found = DRONES.find((d) => d.id === urlDrone);
+        if (found) {
+          setSelectedDrone(found);
+          return;
+        }
+      }
+      const stored = localStorage.getItem(DEFAULT_DRONE_STORAGE_KEY);
+      if (stored) {
+        const found = DRONES.find((d) => d.id === stored);
+        if (found) setSelectedDrone(found);
+      }
+    } catch {
+      // Storage unavailable or blocked
     }
+  }, []);
+
+  const handleSelectDrone = (drone: DroneModel) => {
+    setSelectedDrone(drone);
+    try {
+      localStorage.setItem(DEFAULT_DRONE_STORAGE_KEY, drone.id);
+    } catch {
+      // Storage error ignored
+    }
+  };
+
+  const handleStartFlight = () => {
+    if (!selectedDrone) return;
+    try {
+      localStorage.setItem(DEFAULT_DRONE_STORAGE_KEY, selectedDrone.id);
+    } catch {
+      // Storage error ignored
+    }
+    router.push("/fly");
   };
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen flex flex-col justify-between bg-white text-neutral-900 overflow-x-hidden">
-        {/* Sleek Fixed White Navigation Bar */}
-        <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-10 sm:py-3.5 text-neutral-900 shadow-sm border-b border-neutral-200/80">
-          <div className="flex items-center gap-2.5">
-            <DroneIcon className="h-5 w-5 text-black" />
-            <span className="font-heading text-xs sm:text-sm font-bold tracking-wider text-black uppercase">
-              DRONE PILOT
-            </span>
+      <div className="relative min-h-screen flex flex-col justify-between bg-white text-neutral-900 overflow-x-hidden">
+        {/* Background Blueprint with Warm Aerospace Tint */}
+        <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden bg-white">
+          <Image
+            src="/Final-Baground.png"
+            alt="Technical Drone Flight Blueprint Background"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center opacity-25 [filter:sepia(100%)_saturate(500%)_hue-rotate(-22deg)]"
+          />
+        </div>
+
+        {/* Fixed Aerospace Orange Header */}
+        <DashboardHeader />
+
+        {/* Main Dashboard / Hangar Selection */}
+        <main className="relative z-10 flex-1 w-full max-w-5xl mx-auto px-3 sm:px-6 pt-16 sm:pt-18 pb-6 flex flex-col justify-center">
+          {/* Welcome Area */}
+          <div className="text-center max-w-2xl mx-auto mb-3 sm:mb-4 pt-1 sm:pt-2 px-1">
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-orange-50 border border-orange-200/90 text-[11px] font-semibold text-[#FF5500] uppercase tracking-wider mb-1.5">
+              <PlaneTakeoff className="h-3 w-3" />
+              <span>Pilot Hangar // Stage 1</span>
+            </div>
+
+            <h1 className="font-heading text-lg sm:text-3xl lg:text-4xl font-bold tracking-tight text-neutral-900 uppercase">
+              SELECT YOUR DRONE
+            </h1>
+
+            <p className="mt-1 text-[11px] sm:text-xs text-neutral-600 leading-snug max-w-xs sm:max-w-md mx-auto">
+              Choose your flight platform to initialize digital telemetry and pre-flight calibrations.
+            </p>
           </div>
 
-          <div className="flex items-center">
-            <Button
-              variant="black"
-              size="md"
-              className="h-11 px-5 text-sm font-semibold shadow-md"
-              onClick={handleSignOut}
-              leftIcon={<LogOut className="h-4 w-4 stroke-[2]" />}
-            >
-              Log Out
-            </Button>
+          {/* Drone Selection Grid */}
+          <div
+            role="radiogroup"
+            aria-label="Drone Selection"
+            className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-5 w-full"
+          >
+            {DRONES.map((drone) => (
+              <DroneCard
+                key={drone.id}
+                drone={drone}
+                isSelected={selectedDrone?.id === drone.id}
+                onSelect={handleSelectDrone}
+              />
+            ))}
           </div>
-        </header>
 
-        {/* Main Content Area on Clean White Canvas */}
-        <main className="flex flex-1 items-center justify-center px-3 py-6 pt-20 sm:pt-24 sm:p-8 md:p-12 bg-white">
-          <div className="w-full max-w-lg rounded-xl sm:rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-8 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.14),0_6px_18px_-4px_rgba(0,0,0,0.06)] space-y-5 sm:space-y-6">
-            {/* Status Header */}
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs text-neutral-800">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                <span className="font-medium">Authentication Successful</span>
+          {/* Primary CTA Area: LET'S FLY */}
+          <div className="mt-4 sm:mt-5 flex flex-col items-center text-center">
+            {selectedDrone ? (
+              <div className="flex flex-col items-center gap-2 animate-in fade-in duration-200">
+                <Button
+                  variant="orange"
+                  size="md"
+                  className="min-w-[220px] sm:min-w-[260px] h-11 sm:h-12 text-xs sm:text-sm font-bold tracking-wider uppercase shadow-[0_6px_20px_rgba(255,85,0,0.4)]"
+                  onClick={handleStartFlight}
+                  rightIcon={<ArrowRight className="h-4 w-4" />}
+                >
+                  LET&apos;S FLY // {selectedDrone.name}
+                </Button>
+
+                <p className="text-[11px] text-neutral-500 font-mono flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Platform confirmed: {selectedDrone.specs.rotors} rotors ready for calibration</span>
+                </p>
               </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="md"
+                  disabled
+                  className="min-w-[220px] sm:min-w-[260px] h-11 sm:h-12 text-xs sm:text-sm font-semibold tracking-wide uppercase opacity-50 cursor-not-allowed border-neutral-300"
+                  rightIcon={<ArrowRight className="h-4 w-4 text-neutral-400" />}
+                >
+                  SELECT A DRONE TO FLY
+                </Button>
 
-              <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
-                Authentication successful — Command Center coming next.
-              </h1>
-
-              <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
-                Your pilot session is active. Route guards and session persistence are functioning properly.
-              </p>
-            </div>
-
-            {/* Pilot Profile Overview */}
-            <div className="rounded-xl border border-neutral-200 bg-neutral-50/50 p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-neutral-200 pb-2.5">
-                <span className="text-xs font-semibold text-neutral-800 font-heading">
-                  Pilot Credentials
-                </span>
-                <span className="text-xs text-emerald-600 font-medium">
-                  Active
-                </span>
+                <p className="text-[11px] text-neutral-500 flex items-center gap-1">
+                  <Info className="h-3.5 w-3.5 text-neutral-400" />
+                  <span>Click or tap any drone card above to unlock flight controls</span>
+                </p>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-white border border-neutral-200">
-                  <User className="h-4 w-4 text-neutral-400 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wider text-neutral-400 font-medium">Call Sign</p>
-                    <p className="font-semibold text-neutral-900 truncate">
-                      {user?.displayName || "Pilot Cadet"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-white border border-neutral-200">
-                  <Mail className="h-4 w-4 text-neutral-400 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wider text-neutral-400 font-medium">Email</p>
-                    <p className="font-semibold text-neutral-900 truncate">
-                      {user?.email || "Unknown"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-white border border-neutral-200 sm:col-span-2">
-                  <Shield className="h-4 w-4 text-neutral-400 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] uppercase tracking-wider text-neutral-400 font-medium">Pilot ID (UID)</p>
-                    <p className="text-xs font-mono text-neutral-700 break-all">
-                      {user?.uid || "N/A"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {!user?.emailVerified && (
-                <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900">
-                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-                  <div>
-                    <span>Your flight ID is pending verification. </span>
-                    <Link
-                      href="/verify-email"
-                      className="text-black underline font-medium hover:text-neutral-700 ml-0.5"
-                    >
-                      Verify email now &rarr;
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Logout Action */}
-            <div className="pt-1 flex justify-end">
-              <Button
-                variant="black"
-                size="md"
-                onClick={handleSignOut}
-                leftIcon={<LogOut className="h-4 w-4" />}
-              >
-                Sign Out
-              </Button>
-            </div>
+            )}
           </div>
         </main>
       </div>

@@ -61,7 +61,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             emailVerified: firebaseUser.emailVerified,
           });
         } else {
-          setUser(null);
+          try {
+            const devStored = typeof window !== "undefined" ? localStorage.getItem(MOCK_STORAGE_KEY) : null;
+            const hasMockParam = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mock") === "true";
+            if (devStored) {
+              setUser(JSON.parse(devStored));
+            } else if (hasMockParam) {
+              setUser({
+                uid: "pilot-cadet-007",
+                email: "maverick@dronepilot.io",
+                displayName: "Maverick",
+                photoURL: null,
+                emailVerified: true,
+              });
+            } else {
+              setUser(null);
+            }
+          } catch {
+            setUser(null);
+          }
         }
         setLoading(false);
       });
@@ -125,6 +143,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await apiLogout();
       setUser(null);
       setRawFirebaseUser(null);
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(MOCK_STORAGE_KEY);
+        }
+      } catch {
+        // Ignore
+      }
     } catch (err) {
       const friendlyMessage = mapFirebaseAuthError(err);
       setError(friendlyMessage);

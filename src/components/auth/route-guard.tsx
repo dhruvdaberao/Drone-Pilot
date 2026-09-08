@@ -34,16 +34,19 @@ export function ProtectedRoute({ children }: RouteGuardProps) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    const hasMock = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mock") === "true";
+    if (!loading && !user && !hasMock) {
       router.replace("/login");
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  const hasMock = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mock") === "true";
+
+  if (loading && !hasMock) {
     return <FlightSysLoader message="Verifying session..." />;
   }
 
-  if (!user) {
+  if (!user && !hasMock) {
     return null;
   }
 

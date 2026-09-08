@@ -20,6 +20,8 @@ export function DroneIcon({
     <img
       src="/drone-icon.png"
       alt={alt}
+      width={20}
+      height={20}
       className={cn(
         "object-contain select-none shrink-0 transition-all",
         isWhite ? "brightness-0 invert" : "",
