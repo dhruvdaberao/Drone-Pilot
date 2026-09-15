@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -8,11 +8,15 @@ import { Button } from "@/components/ui/button";
 import { DEFAULT_DRONE_STORAGE_KEY, getDroneById, DRONES } from "@/lib/drones";
 import { DroneModel } from "@/types/drone";
 import { FlightSimulator } from "@/components/simulator/flight-simulator";
-import { ArrowLeft, CheckCircle2, Cpu, Gauge, Play, ShieldCheck } from "lucide-react";
+import { REGIONS } from "@/lib/world/region-definitions";
+import { HELIPADS } from "@/lib/world/helipad-definitions";
+import { ArrowLeft, CheckCircle2, Cpu, Gauge, Play, ShieldCheck, MapPin, Compass } from "lucide-react";
 
 export default function FlyPage() {
   const router = useRouter();
   const [selectedDrone, setSelectedDrone] = useState<DroneModel | null>(null);
+  const [targetRegionId, setTargetRegionId] = useState<string>("training");
+  const [targetHelipadId, setTargetHelipadId] = useState<string>("training-alpha");
   const [loadingDrone, setLoadingDrone] = useState(true);
   const [isSimulating, setIsSimulating] = useState(false);
 
@@ -20,6 +24,8 @@ export default function FlyPage() {
     try {
       const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
       const urlDrone = params ? params.get("drone") : null;
+      const urlRegion = params ? params.get("region") : null;
+      const urlHelipad = params ? params.get("helipad") || params.get("spawn") : null;
       const autoLaunch = params ? params.get("launch") === "true" : false;
 
       let activeDrone = DRONES[0];
@@ -35,6 +41,14 @@ export default function FlyPage() {
           const drone = getDroneById(storedId);
           if (drone) activeDrone = drone;
         }
+      }
+
+      if (urlRegion && REGIONS[urlRegion]) {
+        setTargetRegionId(urlRegion);
+      }
+      if (urlHelipad && HELIPADS[urlHelipad]) {
+        setTargetHelipadId(urlHelipad);
+        setTargetRegionId(HELIPADS[urlHelipad].regionId);
       }
 
       setSelectedDrone(activeDrone);
@@ -95,8 +109,14 @@ export default function FlyPage() {
                 ENTER COCKPIT
               </h1>
               <p className="text-xs sm:text-sm text-neutral-600 max-w-md mx-auto leading-relaxed">
-                Platform: <strong className="text-neutral-950 font-bold">{selectedDrone?.name || "QUADCOPTER"}</strong> • Training Airspace: Multi-Zone Arena
+                Platform: <strong className="text-neutral-950 font-bold">{selectedDrone?.name || "QUADCOPTER"}</strong>
               </p>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-neutral-100 border border-neutral-300 font-mono text-[11px] text-neutral-700">
+                <MapPin className="h-3.5 w-3.5 text-[#FF5500]" />
+                <span>ZONE: {REGIONS[targetRegionId]?.shortName.toUpperCase() || "ACADEMY"}</span>
+                <span className="text-neutral-400">•</span>
+                <span>PAD: {HELIPADS[targetHelipadId]?.name.split(" ")[0].toUpperCase() || "ALPHA"} ({(HELIPADS[targetHelipadId]?.elevation ?? 1.2).toFixed(1)}m)</span>
+              </div>
             </div>
 
             {/* Selected Platform Spec Card */}
@@ -140,7 +160,7 @@ export default function FlyPage() {
               <Button
                 variant="black"
                 size="lg"
-                className="w-full sm:w-auto min-w-[220px] text-sm font-bold tracking-wider"
+                className="w-full sm:w-auto min-w-[200px] text-sm font-bold tracking-wider"
                 onClick={() => setIsSimulating(true)}
                 rightIcon={<Play className="h-4 w-4 fill-current text-[#FF5500]" />}
               >
@@ -151,10 +171,20 @@ export default function FlyPage() {
                 variant="outline"
                 size="lg"
                 className="w-full sm:w-auto min-w-[160px] border-2 border-black"
+                onClick={() => router.push(`/fly/select?drone=${selectedDrone?.id}&region=${targetRegionId}&helipad=${targetHelipadId}`)}
+                leftIcon={<Compass className="h-4 w-4 text-[#FF5500]" />}
+              >
+                Change Region
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="lg"
+                className="w-full sm:w-auto min-w-[130px] border border-neutral-300"
                 onClick={() => router.push("/dashboard")}
                 leftIcon={<ArrowLeft className="h-4 w-4" />}
               >
-                Change Drone
+                Hangar
               </Button>
             </div>
           </div>

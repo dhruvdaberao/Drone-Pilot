@@ -38,3 +38,6 @@ next-env.d.ts
 *.blend
 *.blend1
 *.blend.zip
+
+# temporary test scratch scripts
+scratch/

@@ -46,8 +46,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${spaceGrotesk.variable} ${rajdhani.variable} ${jetbrainsMono.variable} font-sans min-h-screen bg-white text-neutral-900 antialiased selection:bg-[#FF5500] selection:text-white`}
       >
         <AuthProvider>{children}</AuthProvider>

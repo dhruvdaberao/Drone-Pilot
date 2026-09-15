@@ -13,17 +13,17 @@ export class ChaseCameraController {
   public camera: THREE.PerspectiveCamera;
   public mode: CameraMode = "chase";
 
-  private currentPos = new THREE.Vector3(0, 3.0, 6.0);
-  private currentLookAt = new THREE.Vector3(0, 0, 0);
+  private currentPos = new THREE.Vector3(0, 3.2, 5.2);
+  private currentLookAt = new THREE.Vector3(0, 0.865, 0);
 
   // Orbit drag offset
-  private orbitYaw = 0;
-  private orbitPitch = 0;
-  private isOrbiting = false;
+  public orbitYaw = 0;
+  public orbitPitch = 0;
+  public isOrbiting = false;
 
   constructor(fov = 55, aspect = 16 / 9) {
-    this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 800);
-    this.camera.position.set(0, 3.0, 6.0);
+    this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 900);
+    this.camera.position.set(0, 3.2, 5.2);
   }
 
   public setAspect(aspect: number) {
@@ -44,9 +44,14 @@ export class ChaseCameraController {
   }
 
   public setOrbitDelta(deltaX: number, deltaY: number) {
-    this.orbitYaw -= deltaX * 0.006;
-    this.orbitPitch = Math.max(-0.4, Math.min(0.6, this.orbitPitch + deltaY * 0.004));
+    this.orbitYaw -= deltaX * 0.007;
+    // Allows steep overhead top-down (+1.25 rad) down to skyward view (-1.1 rad)
+    this.orbitPitch = Math.max(-1.1, Math.min(1.25, this.orbitPitch + deltaY * 0.006));
     this.isOrbiting = true;
+  }
+
+  public stopOrbiting() {
+    this.isOrbiting = false;
   }
 
   public resetOrbit() {
@@ -59,27 +64,31 @@ export class ChaseCameraController {
     const dronePos = new THREE.Vector3(telemetry.position.x, telemetry.position.y, telemetry.position.z);
     const droneYaw = telemetry.rotation.yaw + this.orbitYaw;
 
-    // Decay orbit offset back to neutral when not dragging
-    if (!this.isOrbiting) {
-      this.orbitYaw *= 0.95;
-      this.orbitPitch *= 0.95;
+    // Gently align orbit yaw back with flight heading when traveling fast
+    if (!this.isOrbiting && telemetry.groundSpeed > 15) {
+      this.orbitYaw *= 0.985;
     }
 
     if (this.mode === "chase") {
-      // Third-Person Chase Cam
-      const followDistance = 4.2;
-      const followHeight = 1.6 + this.orbitPitch * 2.0;
+      // Third-Person Spherical Orbit Follow Cam
+      const followDistance = 4.8;
+      const effectivePitch = this.orbitPitch + 0.36;
 
-      // Position behind drone according to drone yaw
-      const targetX = dronePos.x + Math.sin(droneYaw) * followDistance;
-      const targetZ = dronePos.z + Math.cos(droneYaw) * followDistance;
-      const targetY = Math.max(0.6, dronePos.y + followHeight);
+      // Spherical coordinate offset
+      const clampedPitch = Math.max(-0.6, Math.min(1.35, effectivePitch));
+      const horizDist = followDistance * Math.cos(clampedPitch);
+      const vertDist = followDistance * Math.sin(clampedPitch);
+
+      const targetX = dronePos.x + Math.sin(droneYaw) * horizDist;
+      const targetZ = dronePos.z + Math.cos(droneYaw) * horizDist;
+      // Ensure camera stays safely above terrain (at least 1.0m)
+      const targetY = Math.max(1.0, dronePos.y + vertDist + 0.6);
 
       const targetPos = new THREE.Vector3(targetX, targetY, targetZ);
-      const targetLookAt = dronePos.clone().add(new THREE.Vector3(0, 0.15, 0));
+      const targetLookAt = dronePos.clone().add(new THREE.Vector3(0, 0.35, 0));
 
-      // Smooth exponential lerp
-      const lerpSpeed = Math.min(1.0, dt * 8.0);
+      // Smooth lerp
+      const lerpSpeed = Math.min(1.0, dt * 10.0);
       this.currentPos.lerp(targetPos, lerpSpeed);
       this.currentLookAt.lerp(targetLookAt, lerpSpeed);
 
@@ -99,7 +108,7 @@ export class ChaseCameraController {
 
     } else if (this.mode === "topdown") {
       // Tactical Top-Down Orthographic feel
-      const targetPos = dronePos.clone().add(new THREE.Vector3(0, 26.0, 0.01));
+      const targetPos = dronePos.clone().add(new THREE.Vector3(0, 28.0, 0.01));
       this.currentPos.lerp(targetPos, dt * 10.0);
       this.camera.position.copy(this.currentPos);
       this.camera.lookAt(dronePos);

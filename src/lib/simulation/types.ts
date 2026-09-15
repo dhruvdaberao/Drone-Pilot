@@ -1,6 +1,7 @@
 // ==========================================================
 // DRONE PILOT SIMULATION CORE — TYPE DEFINITIONS
-// Modular Drone Architecture, Flight Controller & Avionics
+// Modular Multi-Rotor Architecture, 6-DoF Physics, Avionics,
+// Battery Dynamics, Environment Modeling & Educational Guidance
 // ==========================================================
 
 export type DroneCategory = "quadcopter" | "hexacopter" | "octacopter";
@@ -16,16 +17,18 @@ export interface DroneDefinition {
   id: string;
   name: string;
   type: DroneCategory;
-  
+
   // --------------------------------------------------------
   // SIMULATION / PROTOTYPE PARAMETERS (Prototype Flight Model)
   // --------------------------------------------------------
-  mass: number; // kg
+  mass: number; // kg (dry airframe mass)
   motorCount: number;
   motors: MotorDefinition[];
   maximumThrust: number; // Newtons total collective
   batteryCapacity: number; // mAh (nominal simulation capacity)
   batteryDischargeRate: number; // % per minute hovering
+  batteryCells?: number; // LiPo series cell count (e.g. 4S, 6S)
+  motorTimeConstant?: number; // seconds to reach target RPM (typically 0.05s)
   dimensions: {
     length: number; // meters
     width: number;
@@ -33,7 +36,7 @@ export interface DroneDefinition {
   };
   payloadCapacity: number; // kg
   inertia: {
-    pitch: number;
+    pitch: number; // kg * m^2
     roll: number;
     yaw: number;
   };
@@ -57,41 +60,156 @@ export interface FlightInput {
   cameraToggle: boolean;
 }
 
-export type FlightMode = "LANDED" | "HOVER" | "MANUAL" | "RTH";
+export type FlightMode = "LANDED" | "HOVER" | "MANUAL" | "STABILIZED" | "RTH" | "AUTO LAND";
+
+export interface MotorState {
+  id: number;
+  throttle: number; // 0.0 - 1.0 commanded
+  rpm: number; // actual revolutions per minute
+  thrustNewtons: number; // instantaneous thrust in N
+  currentAmps: number; // current draw in A
+}
+
+export interface BatteryState {
+  capacityMah: number;
+  remainingMah: number;
+  percentage: number; // 0 - 100%
+  cellCount: number;
+  openCircuitVoltage: number; // V
+  terminalVoltage: number; // V (sagged under current draw)
+  currentAmps: number; // instantaneous total discharge
+  powerWatts: number; // instantaneous power
+  temperatureC: number; // battery cell temperature
+  isLow: boolean;
+  isCritical: boolean;
+}
+
+export type WeatherPreset = "normal" | "windy" | "hot" | "rain" | "fog" | "storm";
+export type WeatherType = "clear" | "overcast" | "windy" | "rain" | "fog" | "storm";
+export type TimeOfDay = "morning" | "noon" | "sunset" | "night";
+
+export interface EnvironmentState {
+  weather: WeatherType;
+  preset: WeatherPreset;
+  windSpeed: number; // m/s (0 - 25 m/s)
+  windDirection: number; // degrees (0 - 360°, North=0)
+  windGust: number; // gust amplitude m/s
+  temperature: number; // Celsius (-10 to 45°C)
+  rainIntensity: "off" | "light" | "moderate" | "heavy";
+  visibility: "clear" | "hazy" | "foggy";
+  timeOfDay: TimeOfDay;
+}
 
 export interface TelemetryState {
   position: { x: number; y: number; z: number };
   velocity: { x: number; y: number; z: number };
   rotation: { pitch: number; roll: number; yaw: number }; // radians
-  altitude: number; // meters Above Ground Level
+  altitude: number; // meters Above Ground Level (AGL)
+  altitudeMsl?: number; // meters Mean Sea Level
   groundSpeed: number; // km/h
   verticalSpeed: number; // m/s
   heading: number; // degrees 0-360 (North=0, East=90, South=180, West=270)
   batteryLevel: number; // 0 - 100 %
+  batteryVoltage?: number; // V
+  batteryCurrentAmps?: number; // A
   flightTimeSeconds: number;
   flightMode: FlightMode;
   isArmed: boolean;
   rotorRpmPercent: number; // 0 - 100 %
+  motorOutputs?: number[]; // [0.0 - 1.0] per motor
   distanceFromHome: number; // meters
   flightPath: Array<{ x: number; z: number }>;
+  payloadMassKg?: number;
+  isCrashed?: boolean;
 }
 
-export type WeatherType = "clear" | "overcast" | "windy";
-export type TimeOfDay = "morning" | "noon" | "sunset" | "night";
-
-export interface EnvironmentState {
-  weather: WeatherType;
-  windSpeed: number; // m/s (default 0 for prototype)
-  windDirection: number; // degrees
-  visibility: "high" | "medium" | "low";
-  temperature: number; // Celsius
-  timeOfDay: TimeOfDay;
+export interface PhysicsDebugTelemetry {
+  dryMass: number;
+  payloadMass: number;
+  totalMass: number;
+  weightNewtons: number;
+  totalThrustNewtons: number;
+  thrustToWeightRatio: number;
+  motorOutputs: number[];
+  accel: { x: number; y: number; z: number };
+  vel: { x: number; y: number; z: number };
+  windForce: { x: number; y: number; z: number };
+  dragForce: { x: number; y: number; z: number };
+  batteryPowerWatts: number;
+  groundElevationMsl: number;
+  radarAgl: number;
 }
 
 export interface EducationalEvent {
   id: string;
   title: string;
   message: string;
+  cause?: string;
+  effect?: string;
+  recommendedAction?: string;
   severity: "info" | "success" | "warning" | "error";
   timestamp: number;
+}
+
+export interface CrashState {
+  isCrashed: boolean;
+  impactSpeedKmh: number;
+  impactSpeedMs: number;
+  impactLocation: { x: number; y: number; z: number };
+  kineticEnergyJoules: number;
+  primaryCause: string;
+  impactNormal: { x: number; y: number; z: number };
+  timestamp: number;
+}
+
+export interface FlightLogEntry {
+  id: string;
+  timestampSeconds: number;
+  type: "TAKEOFF" | "HOVER" | "WIND_CHANGE" | "PAYLOAD_CHANGE" | "WARNING" | "LANDING" | "CRASH";
+  title: string;
+  description: string;
+  telemetrySnapshot: {
+    altitudeAgl: number;
+    groundSpeedKmh: number;
+    batteryLevel: number;
+  };
+}
+
+export interface FlightAnalysisReport {
+  droneName: string;
+  flightDurationSeconds: number;
+  maxAltitudeMeters: number;
+  maxSpeedKmh: number;
+  avgSpeedKmh: number;
+  batteryConsumedPercent: number;
+  batteryConsumedMah: number;
+  maxWindSpeedMs: number;
+  warningCount: number;
+  landingQuality: "PERFECT" | "SMOOTH" | "HARD" | "CRASH";
+  crashDetails?: CrashState;
+  whatHappened: string;
+  whyItHappened: string;
+  howToImprove: string[];
+}
+
+export interface ReplayFrame {
+  timeSeconds: number;
+  position: { x: number; y: number; z: number };
+  rotation: { pitch: number; roll: number; yaw: number };
+  velocity: { x: number; y: number; z: number };
+  motorOutputs: number[];
+  batteryLevel: number;
+  altitudeAgl: number;
+  groundSpeedKmh: number;
+  flightMode: FlightMode;
+  eventMarker?: string;
+}
+
+export interface TutorialStep {
+  index: number;
+  id: string;
+  title: string;
+  instruction: string;
+  actionCallout: string;
+  completed: boolean;
 }

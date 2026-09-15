@@ -332,7 +332,7 @@ export class ModularDrone {
       })
     );
     this.groundShadowMesh.rotation.x = -Math.PI / 2;
-    this.groundShadowMesh.position.set(0, 0.33, 0); // Strictly locked to ground!
+    this.groundShadowMesh.position.set(0, 0.445, 0); // Strictly locked to ground & helipad surface!
     // NOTE: NOT added to this.group! Added directly to the scene.
   }
 
@@ -354,9 +354,10 @@ export class ModularDrone {
     });
 
     // 3. Update ground shadow:
-    // Follows drone (X, Z), but Y IS STRICTLY ON THE GROUND (0.33m), NEVER IN SKY!
+    // Follows drone (X, Z), strictly anchored 5mm above the surface beneath the drone
     if (this.groundShadowMesh) {
-      this.groundShadowMesh.position.set(telemetry.position.x, 0.33, telemetry.position.z);
+      const surfaceY = Math.max(0.01, telemetry.position.y - telemetry.altitude - 0.245 + 0.005);
+      this.groundShadowMesh.position.set(telemetry.position.x, surfaceY, telemetry.position.z);
       this.groundShadowMesh.rotation.z = -telemetry.rotation.yaw;
 
       // As drone climbs into the sky, shadow fades out and softens naturally

@@ -56,7 +56,8 @@ export default function DashboardPage() {
     } catch {
       // Storage error ignored
     }
-    router.push("/fly");
+    const isMock = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mock") === "true";
+    router.push(`/fly/select?drone=${selectedDrone.id}${isMock ? "&mock=true" : ""}`);
   };
 
   const handleBackgroundClick = () => {

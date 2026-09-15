@@ -3,18 +3,36 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import { DroneModel } from "@/types/drone";
+import {
+  TelemetryState,
+  EnvironmentState,
+  WeatherPreset,
+  FlightAnalysisReport,
+  ReplayFrame,
+  PhysicsDebugTelemetry,
+} from "@/lib/simulation/types";
 import { getDroneDefinition } from "@/lib/simulation/drone-definitions";
 import { FlightPhysicsEngine } from "@/lib/simulation/flight-physics";
 import { InputManager } from "@/lib/simulation/input-manager";
+import { FlightRecorder } from "@/lib/simulation/flight-recorder";
+import { RemotePlayerState } from "@/lib/multiplayer/multiplayer-types";
+import { MultiplayerClient } from "@/lib/multiplayer/multiplayer-client";
 import { WorldScene } from "./world-scene";
 import { ModularDrone } from "./modular-drone";
 import { ChaseCameraController, CameraMode } from "./chase-camera";
 import { TelemetryHUD } from "./telemetry-hud";
-import { ControlsOverlay } from "./controls-overlay";
-import { MobileTouchControls } from "./mobile-touch-controls";
 import { EducationalAdvisory } from "./educational-advisory";
 import { IslandMapModal } from "./island-map-modal";
-import { TelemetryState } from "@/lib/simulation/types";
+import { SimulationLoadingScreen } from "./loading/simulation-loading-screen";
+import { EnvironmentControlPanel } from "./environment-control-panel";
+import { TutorialOverlay } from "./tutorial-overlay";
+import { FlightAnalysisModal } from "./analysis/flight-analysis-modal";
+import { FlightReplayModal } from "./replay/flight-replay-modal";
+import { PhysicsDebugHUD } from "./debug/physics-debug-hud";
+import { MultiplayerRosterWidget } from "./multiplayer/multiplayer-roster-widget";
+import { RemoteDroneManager } from "./multiplayer/remote-drone-manager";
+import { SpawnSystem } from "@/lib/world/spawn-system";
+import { SpawnConfiguration } from "@/lib/world/world-types";
 
 interface FlightSimulatorProps {
   selectedDrone: DroneModel;
@@ -26,29 +44,102 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
   const inputManagerRef = useRef<InputManager | null>(null);
   const cameraControllerRef = useRef<ChaseCameraController | null>(null);
   const physicsEngineRef = useRef<FlightPhysicsEngine | null>(null);
+  const flightRecorderRef = useRef<FlightRecorder>(new FlightRecorder());
+  const multiplayerClientRef = useRef<MultiplayerClient | null>(null);
+  const remoteDroneManagerRef = useRef<RemoteDroneManager | null>(null);
+  const crashTriggeredRef = useRef<boolean>(false);
+  const remotePlayersRef = useRef<RemotePlayerState[]>([]);
 
+  // Resolve initial spawn point from URL parameters
+  const initialSpawn = React.useMemo(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return SpawnSystem.resolveSpawn(
+        params.get("region"),
+        params.get("helipad") || params.get("spawn")
+      );
+    }
+    return SpawnSystem.resolveSpawn();
+  }, []);
+
+  const spawnConfigRef = useRef<SpawnConfiguration>(initialSpawn);
+
+  // Callsign for multiplayer
+  const [callsign] = useState(() => {
+    return "PILOT-" + Math.floor(100 + Math.random() * 900);
+  });
+
+  // UI Modal States
+  const [isLoading, setIsLoading] = useState(true);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [isEnvironmentOpen, setIsEnvironmentOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
+  const [isReplayOpen, setIsReplayOpen] = useState(false);
+  const [isDebugOpen, setIsDebugOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      return new URLSearchParams(window.location.search).get("debug") === "true";
+    }
+    return false;
+  });
+
+  // Simulation Data States
   const [cameraMode, setCameraMode] = useState<CameraMode>("chase");
   const [isHoverMode, setIsHoverMode] = useState(true);
+  const [remotePlayers, setRemotePlayers] = useState<RemotePlayerState[]>([]);
+  const [replayFrames, setReplayFrames] = useState<ReplayFrame[]>([]);
+  const [analysisReport, setAnalysisReport] = useState<FlightAnalysisReport | null>(null);
+  const [physicsDebug, setPhysicsDebug] = useState<PhysicsDebugTelemetry | null>(null);
 
-  // Real-time telemetry state for HUD
-  const [telemetry, setTelemetry] = useState<TelemetryState>({
-    position: { x: 0, y: 0.32, z: 0 },
+  // Environment State
+  const [envState, setEnvState] = useState<EnvironmentState>({
+    weather: "clear",
+    preset: "normal",
+    windSpeed: 2.0,
+    windDirection: 45,
+    windGust: 0.8,
+    temperature: 20,
+    rainIntensity: "off",
+    visibility: "clear",
+    timeOfDay: "noon",
+  });
+
+  // Telemetry state for HUD
+  const [telemetry, setTelemetry] = useState<TelemetryState>(() => ({
+    position: {
+      x: initialSpawn.position.x,
+      y: initialSpawn.position.y,
+      z: initialSpawn.position.z,
+    },
     velocity: { x: 0, y: 0, z: 0 },
-    rotation: { pitch: 0, roll: 0, yaw: 0 },
+    rotation: {
+      pitch: initialSpawn.rotation.pitch,
+      roll: initialSpawn.rotation.roll,
+      yaw: initialSpawn.rotation.yaw,
+    },
     altitude: 0,
+    altitudeMsl: initialSpawn.position.y,
     groundSpeed: 0,
     verticalSpeed: 0,
-    heading: 0,
+    heading: Math.round((((initialSpawn.rotation.yaw * 180) / Math.PI) % 360 + 360) % 360),
     batteryLevel: 100,
+    batteryVoltage: 16.8,
+    batteryCurrentAmps: 0.8,
     flightTimeSeconds: 0,
     flightMode: "LANDED",
     isArmed: false,
     rotorRpmPercent: 0,
+    motorOutputs: [0, 0, 0, 0],
     distanceFromHome: 0,
-    flightPath: [{ x: 0, z: 0 }],
-  });
+    flightPath: [{ x: initialSpawn.position.x, z: initialSpawn.position.z }],
+  }));
 
-  // Cycle camera
+  // Stable loading ready callback
+  const handleLoadingReady = useCallback(() => {
+    setIsLoading(false);
+  }, []);
+
+  // Toggle Camera
   const handleToggleCamera = useCallback(() => {
     if (cameraControllerRef.current) {
       const nextMode = cameraControllerRef.current.cycleMode();
@@ -56,10 +147,18 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     }
   }, []);
 
-  // Reset to Helipad
+  // Reset to Selected Spawn Helipad
   const handleReset = useCallback(() => {
+    crashTriggeredRef.current = false;
     if (physicsEngineRef.current) {
-      physicsEngineRef.current.reset();
+      physicsEngineRef.current.resetCrash();
+      const sp = spawnConfigRef.current;
+      physicsEngineRef.current.reset(
+        sp.position.x,
+        sp.position.y,
+        sp.position.z,
+        sp.rotation.yaw
+      );
     }
   }, []);
 
@@ -73,6 +172,79 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     }
   }, []);
 
+  // Controls input delegation
+  const handleMoveDirection = useCallback((pitch: number, roll: number) => {
+    inputManagerRef.current?.setDirection(pitch, roll);
+  }, []);
+
+  const handleYaw = useCallback((yaw: number) => {
+    inputManagerRef.current?.setYaw(yaw);
+  }, []);
+
+  const handleThrottle = useCallback((throttle: number) => {
+    inputManagerRef.current?.setThrottle(throttle);
+  }, []);
+
+  const handleAutoLand = useCallback(() => {
+    physicsEngineRef.current?.triggerAutoLand();
+  }, []);
+
+  // Camera selection
+  const handleSelectCameraMode = useCallback((mode: CameraMode) => {
+    if (cameraControllerRef.current) {
+      cameraControllerRef.current.setMode(mode);
+      setCameraMode(mode);
+    }
+  }, []);
+
+  // Environment Control Handlers
+  const handleUpdateEnvironment = useCallback((updates: Partial<EnvironmentState>) => {
+    if (physicsEngineRef.current) {
+      physicsEngineRef.current.environment.setState(updates);
+      setEnvState({ ...physicsEngineRef.current.environment.getState() });
+    }
+  }, []);
+
+  const handleApplyWeatherPreset = useCallback((preset: WeatherPreset) => {
+    if (physicsEngineRef.current) {
+      physicsEngineRef.current.environment.applyPreset(preset);
+      setEnvState({ ...physicsEngineRef.current.environment.getState() });
+    }
+  }, []);
+
+  // Post-Flight Analysis Handlers
+  const handleManualDebrief = useCallback(() => {
+    const report = flightRecorderRef.current.generateAnalysis(
+      selectedDrone.name,
+      physicsEngineRef.current?.crashState || null
+    );
+    setAnalysisReport(report);
+    setIsAnalysisOpen(true);
+  }, [selectedDrone.name]);
+
+  const handleOpenReplay = useCallback(() => {
+    setReplayFrames(flightRecorderRef.current.getFrames());
+    setIsReplayOpen(true);
+  }, []);
+
+  const handleFlyAgain = useCallback(() => {
+    setIsAnalysisOpen(false);
+    handleReset();
+  }, [handleReset]);
+
+  // Keybindings for Debug & Hotkeys
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.tagName === "INPUT" || (e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+      if (e.key === "F3" || e.key === "\x60" || e.key === "~") {
+        setIsDebugOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Main 3D Three.js Lifecycle
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -86,6 +258,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: "high-performance",
+      preserveDrawingBuffer: true,
     });
     renderer.setSize(width, height, false);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -97,29 +270,68 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     renderer.domElement.style.display = "block";
     container.appendChild(renderer.domElement);
 
-    // 3. 3D WORLD SCENE
+    // 3. 3D WORLD SCENE (Irregular Island World Root)
     const worldScene = new WorldScene(scene);
 
-    // 4. MODULAR DRONE
+    // 4. DYNAMIC SPAWN RESOLUTION & CONFIGURATION
+    const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const reqRegion = urlParams?.get("region");
+    const reqHelipad = urlParams?.get("helipad") || urlParams?.get("spawn");
+    const spawnConfig = SpawnSystem.resolveSpawn(reqRegion, reqHelipad);
+    spawnConfigRef.current = spawnConfig;
+
+    // 5. MODULAR DRONE
     const droneDef = getDroneDefinition(selectedDrone.id);
     const droneMesh = new ModularDrone(droneDef);
     scene.add(droneMesh.group);
     scene.add(droneMesh.groundShadowMesh);
 
-    // 5. PHYSICS ENGINE
+    // 6. MULTIPLAYER REMOTE DRONES LAYER
+    const remoteDroneMgr = new RemoteDroneManager();
+    scene.add(remoteDroneMgr.group);
+    remoteDroneManagerRef.current = remoteDroneMgr;
+
+    // Connect to room network
+    const mpClient = new MultiplayerClient(callsign, spawnConfig.regionId, (players) => {
+      remotePlayersRef.current = players;
+      setRemotePlayers(players);
+    });
+    mpClient.connect();
+    multiplayerClientRef.current = mpClient;
+
+    // 7. PHYSICS ENGINE WITH ELEVATION QUERY, PAYLOAD & ENVIRONMENT
     const physics = new FlightPhysicsEngine(droneDef);
+    physics.elevationQueryFn = (x, z) => worldScene.getGroundElevation(x, z);
+
+    // Configure payload mass if requested
+    const payloadParam = parseFloat(urlParams?.get("payload") || "0");
+    if (!isNaN(payloadParam) && payloadParam > 0) {
+      physics.setPayloadMass(payloadParam);
+    }
+
+    // Configure initial weather preset if requested
+    const weatherParam = (urlParams?.get("weather") as WeatherPreset) || "normal";
+    physics.environment.applyPreset(weatherParam);
+    setEnvState({ ...physics.environment.getState() });
+
+    physics.reset(
+      spawnConfig.position.x,
+      spawnConfig.position.y,
+      spawnConfig.position.z,
+      spawnConfig.rotation.yaw
+    );
     physicsEngineRef.current = physics;
 
-    // 6. CHASE CAMERA
+    // 8. CHASE CAMERA
     const chaseCam = new ChaseCameraController(55, width / height);
     cameraControllerRef.current = chaseCam;
 
-    // 7. INPUT MANAGER
+    // 9. INPUT MANAGER
     const inputManager = new InputManager();
     inputManager.attach();
     inputManagerRef.current = inputManager;
 
-    // 8. RESIZE OBSERVER
+    // 10. RESIZE OBSERVER
     const handleResize = () => {
       if (!container) return;
       const w = container.clientWidth;
@@ -131,7 +343,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     const resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(container);
 
-    // 9. MOUSE DRAG 360 ORBIT CONTROLS
+    // 11. MOUSE DRAG 360 ORBIT CONTROLS
     let isDragging = false;
     let lastMouseX = 0;
     let lastMouseY = 0;
@@ -154,15 +366,28 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
 
     const onMouseUp = () => {
       isDragging = false;
+      chaseCam.stopOrbiting();
+    };
+
+    const onDblClick = () => {
       chaseCam.resetOrbit();
+    };
+
+    const onGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.tagName === "INPUT" || (e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+      if (e.code === "KeyL") {
+        physics.triggerAutoLand();
+      }
     };
 
     const domEl = renderer.domElement;
     domEl.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
+    domEl.addEventListener("dblclick", onDblClick);
+    window.addEventListener("keydown", onGlobalKeyDown);
 
-    // 10. ANIMATION & SIMULATION LOOP
+    // 12. ANIMATION & SIMULATION LOOP
     let animationId: number;
     const clock = new THREE.Clock();
     let telemetryThrottleTimer = 0;
@@ -183,23 +408,56 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       // Step Physics
       const curTelemetry = physics.update(input, dt);
 
+      // Record telemetry frame for recorder & replay
+      flightRecorderRef.current.record(curTelemetry);
+
+      // Check for impact / crash incident
+      if (curTelemetry.isCrashed && !crashTriggeredRef.current) {
+        crashTriggeredRef.current = true;
+        const report = flightRecorderRef.current.generateAnalysis(
+          selectedDrone.name,
+          physics.crashState
+        );
+        setAnalysisReport(report);
+        setIsAnalysisOpen(true);
+      }
+
       // Update 3D Drone Transform & Props
       droneMesh.update(curTelemetry, dt);
+
+      // Update Remote Drones in Airspace
+      remoteDroneMgr.update(remotePlayersRef.current, dt);
 
       // Update Follow Camera
       chaseCam.update(curTelemetry, dt);
 
-      // Update World Animations (Waves, Windsock, Beacon strobes)
-      worldScene.update(dt, elapsed);
+      // Update World Animations (Waves, Windsock, Beacon strobes, traffic, grass wind, downwash)
+      const droneWorldPos = new THREE.Vector3(
+        curTelemetry.position.x,
+        curTelemetry.position.y,
+        curTelemetry.position.z
+      );
+      worldScene.update(
+        dt,
+        elapsed,
+        droneWorldPos,
+        curTelemetry.rotorRpmPercent ? curTelemetry.rotorRpmPercent / 100 : 0.8
+      );
 
       // Render 3D Frame
       renderer.render(scene, chaseCam.camera);
 
-      // Sync React Telemetry State at ~20Hz to keep UI smooth and CPU light
+      // Broadcast telemetry to peer pilots
+      mpClient.sendTelemetry(curTelemetry);
+
+      // Sync React Telemetry State at ~20Hz to keep UI responsive and light
       telemetryThrottleTimer += dt;
       if (telemetryThrottleTimer >= 0.05) {
         telemetryThrottleTimer = 0;
         setTelemetry({ ...curTelemetry });
+        if (isDebugOpen) {
+          setPhysicsDebug(physics.getDebugTelemetry());
+        }
       }
     };
 
@@ -210,10 +468,13 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       cancelAnimationFrame(animationId);
       resizeObserver.disconnect();
       inputManager.detach();
+      mpClient.disconnect();
 
       domEl.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
+      domEl.removeEventListener("dblclick", onDblClick);
+      window.removeEventListener("keydown", onGlobalKeyDown);
 
       if (container.contains(domEl)) {
         container.removeChild(domEl);
@@ -221,23 +482,18 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
 
       scene.remove(droneMesh.group);
       scene.remove(droneMesh.groundShadowMesh);
+      scene.remove(remoteDroneMgr.group);
       renderer.dispose();
     };
-  }, [selectedDrone]);
-
-  const handleSelectCameraMode = useCallback((mode: CameraMode) => {
-    if (cameraControllerRef.current) {
-      cameraControllerRef.current.setMode(mode);
-      setCameraMode(mode);
-    }
-  }, []);
-
-  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  }, [selectedDrone, isDebugOpen, callsign]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-sky-200 select-none">
       {/* Three.js Canvas Container */}
       <div ref={containerRef} className="w-full h-full cursor-crosshair" />
+
+      {/* Loading Screen Overlay */}
+      {isLoading && <SimulationLoadingScreen onReady={handleLoadingReady} />}
 
       {/* Avionics Telemetry HUD */}
       <TelemetryHUD
@@ -250,22 +506,77 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         isHoverMode={isHoverMode}
         onToggleHover={handleToggleHover}
         onToggleMap={() => setIsMapModalOpen((prev) => !prev)}
+        onMoveDirection={handleMoveDirection}
+        onYaw={handleYaw}
+        onThrottle={handleThrottle}
+        onAutoLand={handleAutoLand}
+        onOpenEnvironment={() => setIsEnvironmentOpen(true)}
+        onOpenReplay={handleOpenReplay}
+        onOpenAnalysis={handleManualDebrief}
+        onToggleDebug={() => setIsDebugOpen((prev) => !prev)}
+        onToggleTutorial={() => setIsTutorialOpen((prev) => !prev)}
+        environment={envState}
       />
 
-      {/* Mobile / Touch Screen Virtual Joysticks (only on touch devices) */}
-      {inputManagerRef.current && (
-        <MobileTouchControls inputManager={inputManagerRef.current} />
+      {/* Multiplayer Airspace Roster Widget */}
+      <MultiplayerRosterWidget players={remotePlayers} myCallsign={callsign} />
+
+      {/* Live Tutorial Overlay */}
+      {isTutorialOpen && (
+        <TutorialOverlay
+          telemetry={telemetry}
+          onDismiss={() => setIsTutorialOpen(false)}
+        />
       )}
 
-      {/* Educational Advisory Messaging (translucent, non-overlapping) */}
-      {!isMapModalOpen && <EducationalAdvisory telemetry={telemetry} />}
+      {/* Developer Physics 6-DoF Debug HUD */}
+      <PhysicsDebugHUD
+        isOpen={isDebugOpen}
+        onClose={() => setIsDebugOpen(false)}
+        telemetry={physicsDebug}
+      />
 
-      {/* Full Tactical Island Map Modal (Topmost z-50 layer) */}
+      {/* Educational Advisory Messaging (translucent, non-overlapping) */}
+      {!isMapModalOpen && !isAnalysisOpen && !isReplayOpen && (
+        <EducationalAdvisory telemetry={telemetry} />
+      )}
+
+      {/* Environment & Weather Control Panel Modal */}
+      <EnvironmentControlPanel
+        isOpen={isEnvironmentOpen}
+        onClose={() => setIsEnvironmentOpen(false)}
+        environment={envState}
+        onUpdateEnvironment={handleUpdateEnvironment}
+        onApplyPreset={handleApplyWeatherPreset}
+      />
+
+      {/* Full Tactical Island Map Modal */}
       <IslandMapModal
         isOpen={isMapModalOpen}
         onClose={() => setIsMapModalOpen(false)}
         telemetry={telemetry}
         droneName={selectedDrone.name}
+      />
+
+      {/* Post-Flight Debrief & Incident Analysis Modal */}
+      {analysisReport && (
+        <FlightAnalysisModal
+          isOpen={isAnalysisOpen}
+          report={analysisReport}
+          onFlyAgain={handleFlyAgain}
+          onOpenReplay={() => {
+            setIsAnalysisOpen(false);
+            handleOpenReplay();
+          }}
+          onExitToDashboard={onExit}
+        />
+      )}
+
+      {/* Telemetry Stream Replay Modal */}
+      <FlightReplayModal
+        isOpen={isReplayOpen}
+        onClose={() => setIsReplayOpen(false)}
+        frames={replayFrames}
       />
     </div>
   );

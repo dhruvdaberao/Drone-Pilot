@@ -1,4 +1,4 @@
-﻿// ==========================================================
+// ==========================================================
 // DRONE PILOT — UNIFIED INPUT MANAGER
 // Merges Desktop Keyboard and Mobile Touch into a single
 // normalized FlightInput stream.
@@ -70,7 +70,6 @@ export class InputManager {
     this.keys[e.code] = false;
   }
 
-  // Mobile Touch Setters
   public setTouchThrottle(val: number) {
     this.touchThrottle = Math.max(-1, Math.min(1, val));
   }
@@ -82,6 +81,18 @@ export class InputManager {
   }
   public setTouchRoll(val: number) {
     this.touchRoll = Math.max(-1, Math.min(1, val));
+  }
+
+  // Unified on-screen widget control methods
+  public setDirection(pitch: number, roll: number) {
+    this.touchPitch = Math.max(-1, Math.min(1, pitch));
+    this.touchRoll = Math.max(-1, Math.min(1, roll));
+  }
+  public setThrottle(val: number) {
+    this.touchThrottle = Math.max(-1, Math.min(1, val));
+  }
+  public setYaw(val: number) {
+    this.touchYaw = Math.max(-1, Math.min(1, val));
   }
   public triggerResetAction() {
     this.triggerReset = true;

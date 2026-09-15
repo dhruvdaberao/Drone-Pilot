@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { TelemetryState } from "@/lib/simulation/types";
 import { X, Navigation, Compass, MapPin, Target, Mountain, Building2, Trees, Droplets, Radio, ShieldCheck } from "lucide-react";
+import { getCoastlineSvgPath } from "@/lib/world/map-data";
 
 interface IslandMapModalProps {
   isOpen: boolean;
@@ -84,13 +85,23 @@ const POINTS_OF_INTEREST: PointOfInterest[] = [
     challenge: "Fly directly beneath the bridge archway.",
   },
   {
+    id: "industrial",
+    name: "Harbor Industrial & Logistics",
+    category: "city",
+    x: 55,
+    z: 140,
+    elevation: "9.0m AGL",
+    description: "Aircraft hangars, fuel storage silos, utility piping and stacked intermodal containers.",
+    challenge: "Navigate between the storage silos and cargo container stacks.",
+  },
+  {
     id: "forest",
     name: "Whispering Pines",
     category: "forest",
     x: 120,
     z: -120,
     elevation: "8.0m AGL",
-    description: "Vast coniferous forest with 180+ mature pine trees and granite boulders.",
+    description: "Vast coniferous forest with 250+ mature trees and granite boulders.",
     challenge: "Slalom through the forest canopy without hitting tree branches.",
   },
 ];
@@ -107,14 +118,15 @@ export function IslandMapModal({ isOpen, onClose, telemetry, droneName }: Island
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  const coastlinePath900 = useMemo(() => getCoastlineSvgPath(128, 900), []);
 
   // Map coordinate conversion:
-  // World space: [-450, 450] in X and Z
+  // World space: [-1100, 1100] in X and Z
   // SVG viewBox: 0 to 900 (where center 450, 450 corresponds to world 0, 0)
   const worldToSvg = (x: number, z: number) => {
-    const svgX = 450 + x;
-    const svgZ = 450 + z;
+    const scale = (900 * 0.44) / 1100;
+    const svgX = 450 + x * scale;
+    const svgZ = 450 + z * scale;
     return { x: svgX, y: svgZ };
   };
 
@@ -130,18 +142,42 @@ export function IslandMapModal({ isOpen, onClose, telemetry, droneName }: Island
         .join(" ")
     : "";
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 font-mono select-none">
-      {/* Click outside to close */}
-      <div className="absolute inset-0" onClick={onClose} />
+      {/* Backdrop click outside to close */}
+      <div
+        className="absolute inset-0 cursor-pointer pointer-events-auto"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onClose();
+        }}
+        aria-label="Backdrop close"
+      />
 
       {/* Main Tactical Card */}
-      <div className="relative z-10 w-full max-w-5xl max-h-[94vh] bg-white border-3 border-black rounded-2xl shadow-2xl flex flex-col overflow-hidden text-neutral-900 animate-in zoom-in-95 duration-200">
+      <div className="relative z-10 w-full max-w-5xl max-h-[94vh] bg-white border-3 border-black rounded-2xl shadow-2xl flex flex-col overflow-hidden text-neutral-900 animate-in zoom-in-95 duration-200 pointer-events-auto">
         
+        {/* Floating prominent top-right close cross button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClose();
+          }}
+          className="absolute top-2 right-2 sm:top-3 sm:right-3 z-30 w-9 h-9 rounded-xl bg-black text-white hover:bg-neutral-800 active:scale-95 flex items-center justify-center border-2 border-black shadow-lg cursor-pointer transition-transform"
+          aria-label="Close Map Modal"
+        >
+          <X className="h-5 w-5 pointer-events-none stroke-[2.5]" />
+        </button>
+
         {/* ==================================================== */}
         {/* MODAL HEADER                                         */}
         {/* ==================================================== */}
-        <header className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-black bg-neutral-50 shrink-0">
+        <header className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-black bg-neutral-50 shrink-0 pr-14">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center font-extrabold text-sm border-2 border-black shadow-sm">
               <Compass className="h-4 w-4 text-[#FF5500]" />
@@ -174,12 +210,17 @@ export function IslandMapModal({ isOpen, onClose, telemetry, droneName }: Island
               <span>HDG: {telemetry.heading}°</span>
             </div>
 
-            {/* Close Button */}
+            {/* Header Close Button */}
             <button
-              onClick={onClose}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-black text-white hover:bg-neutral-800 active:scale-95 transition-all text-xs font-bold border-2 border-black shadow-md cursor-pointer"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black text-white hover:bg-neutral-800 active:scale-95 transition-all text-xs font-bold border-2 border-black shadow-md cursor-pointer"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4 pointer-events-none stroke-[2.5]" />
               <span>Close (Esc)</span>
             </button>
           </div>
@@ -225,15 +266,25 @@ export function IslandMapModal({ isOpen, onClose, telemetry, droneName }: Island
               <circle cx="450" cy="450" r="440" fill="none" stroke="#38bdf8" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.4" />
               <circle cx="450" cy="450" r="410" fill="none" stroke="#38bdf8" strokeWidth="1" strokeDasharray="2 4" opacity="0.3" />
 
-              {/* 2. Sandy Shoreline Bed (Outer Island: R=370) */}
-              <ellipse cx="450" cy="450" rx="370" ry="360" fill="#e0c598" stroke="#cca873" strokeWidth="4" />
-              {/* Coastal Coves & Bays */}
-              <circle cx="310" cy="630" r="80" fill="#e0c598" />
-              <circle cx="590" cy="590" r="70" fill="#e0c598" />
-              <circle cx="280" cy="310" r="75" fill="#e0c598" />
+              {/* 2. Sandy Shoreline Bed (Natural Irregular Coastline) */}
+              <path
+                d={coastlinePath900}
+                fill="#deb887"
+                stroke="#cca873"
+                strokeWidth="12"
+                strokeLinejoin="round"
+              />
 
-              {/* 3. Main Island Plateau / Lush Grassland (R=345) */}
-              <ellipse cx="450" cy="450" rx="340" ry="330" fill="#476b3f" stroke="#365330" strokeWidth="3" />
+              {/* 3. Main Island Plateau / Turf (Scaled slightly inside) */}
+              <g transform="translate(450, 450) scale(0.92) translate(-450, -450)">
+                <path
+                  d={coastlinePath900}
+                  fill="#476b3f"
+                  stroke="#365330"
+                  strokeWidth="4"
+                  strokeLinejoin="round"
+                />
+              </g>
               <rect width="900" height="900" fill="url(#turf-dots)" />
 
               {/* 4. Coastal Bluffs & Hills */}
@@ -363,14 +414,7 @@ export function IslandMapModal({ isOpen, onClose, telemetry, droneName }: Island
               {/* Secondary Pad Bravo */}
               <circle cx="482" cy="450" r="10" fill="#3f4654" stroke="#38bdf8" strokeWidth="1.5" />
 
-              {/* 10. Flight Training Hoops (Orange target circles) */}
-              {[
-                [495, 495], [530, 530], [400, 410], [340, 370], [300, 320], [585, 570]
-              ].map(([hx, hy], i) => (
-                <circle key={i} cx={hx} cy={hy} r="6" fill="none" stroke="#ff5500" strokeWidth="2.5" strokeDasharray="3 2" />
-              ))}
-
-              {/* 11. Flight Breadcrumb Trail */}
+              {/* 10. Flight Breadcrumb Trail */}
               {flightPathPoints && (
                 <polyline
                   points={flightPathPoints}
@@ -532,10 +576,20 @@ export function IslandMapModal({ isOpen, onClose, telemetry, droneName }: Island
               </div>
             </div>
 
-            {/* Bottom Footer Note */}
-            <div className="pt-3 border-t border-neutral-300 text-[10px] text-neutral-500 flex items-center justify-between">
-              <span>Click ESC or Close to resume flight</span>
-              <span className="font-bold text-neutral-900">100% 3D World</span>
+            {/* Bottom Footer Note & Close Action */}
+            <div className="pt-3 border-t border-neutral-300 text-[10px] text-neutral-500 flex items-center justify-between gap-2">
+              <span>Click ✕, Esc, or outside to close</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onClose();
+                }}
+                className="px-3 py-1 rounded-lg bg-black text-white hover:bg-neutral-800 active:scale-95 text-xs font-bold border border-black shadow cursor-pointer"
+              >
+                Close Map
+              </button>
             </div>
           </div>
         </div>

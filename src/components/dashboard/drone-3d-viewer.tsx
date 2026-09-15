@@ -630,8 +630,8 @@ export function Drone3DViewer({
 
       droneGroup.rotation.y += deltaX * 0.012;
       droneGroup.rotation.x += deltaY * 0.008;
-      // Pitch limits to maintain clear framing
-      droneGroup.rotation.x = Math.max(-0.45, Math.min(0.65, droneGroup.rotation.x));
+      // Expanded pitch limits to allow full top and bottom angles
+      droneGroup.rotation.x = Math.max(-1.45, Math.min(1.45, droneGroup.rotation.x));
 
       rotVelocityY = deltaX * 0.008;
       rotVelocityX = deltaY * 0.005;
@@ -719,7 +719,7 @@ export function Drone3DViewer({
         }
 
         if (Math.abs(rotVelocityX) > 0.0001) {
-          droneGroup.rotation.x = Math.max(-0.45, Math.min(0.65, droneGroup.rotation.x + rotVelocityX));
+          droneGroup.rotation.x = Math.max(-1.45, Math.min(1.45, droneGroup.rotation.x + rotVelocityX));
           rotVelocityX *= friction;
         }
       }
