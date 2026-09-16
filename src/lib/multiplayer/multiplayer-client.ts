@@ -1,12 +1,20 @@
 // ==========================================================
-// DRONE PILOT — REAL-TIME MULTIPLAYER CLIENT
-// Supports state synchronization, dead-reckoning interpolation,
-// collision-free helipad spawn allocation, and room sessions.
-// Uses local broadcast channel with fallback for seamless demo.
+// DRONE PILOT — REAL-TIME GLOBAL MULTIPLAYER CLIENT
+// Supports state synchronization across different computers/devices via Firebase Firestore,
+// local BroadcastChannel fallback for multi-tab testing, dead-reckoning, and helipad deconfliction.
 // ==========================================================
 
 import { RemotePlayerState, MultiplayerPacket } from "./multiplayer-types";
 import { TelemetryState } from "../simulation/types";
+import { db, isFirebaseConfigured } from "../firebase/client";
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  onSnapshot,
+  type Unsubscribe,
+} from "firebase/firestore";
 
 export class MultiplayerClient {
   public localPlayerId: string;
@@ -14,18 +22,24 @@ export class MultiplayerClient {
   public isConnected = false;
   public regionId = "training";
   public helipadId = "training-alpha";
+
   private channel: BroadcastChannel | null = null;
+  private firestoreUnsubscribe: Unsubscribe | null = null;
   private remotePlayers: Map<string, RemotePlayerState> = new Map();
   private onPlayersUpdated?: (players: RemotePlayerState[]) => void;
+
   private broadcastTimer = 0;
-  private broadcastInterval = 0.05; // 20Hz broadcast
+  private broadcastInterval = 0.05; // 20Hz local broadcast
+  private cloudSyncTimer = 0;
+  private cloudSyncInterval = 0.15; // ~7Hz cloud broadcast (low latency without quota exhaustion)
+  private unloadListener: (() => void) | null = null;
 
   constructor(
     callsign?: string,
     regionId = "training",
     onUpdate?: (players: RemotePlayerState[]) => void
   ) {
-    this.localPlayerId = "pilot_" + Math.random().toString(36).substring(2, 7);
+    this.localPlayerId = "pilot_" + Math.random().toString(36).substring(2, 8);
     this.callsign = callsign || "EAGLE-" + Math.floor(10 + Math.random() * 90);
     this.regionId = regionId;
     this.onPlayersUpdated = onUpdate;
@@ -39,6 +53,8 @@ export class MultiplayerClient {
     if (regionId) this.regionId = regionId;
     if (helipadId) this.helipadId = helipadId;
     if (onUpdate) this.onPlayersUpdated = onUpdate;
+
+    // 1. Local BroadcastChannel for instant local inter-tab communication
     if (typeof window !== "undefined" && "BroadcastChannel" in window) {
       try {
         this.channel = new BroadcastChannel("drone_pilot_airspace");
@@ -52,8 +68,61 @@ export class MultiplayerClient {
           helipadId: this.helipadId,
         });
       } catch (e) {
-        console.warn("Multiplayer broadcast channel unavailable, running offline mode", e);
+        console.warn("Local broadcast channel unavailable:", e);
       }
+    }
+
+    // 2. Global Cloud Airspace via Firebase Firestore (Multi-device/multi-computer)
+    if (db && isFirebaseConfigured()) {
+      try {
+        const airspaceCol = collection(db, "active_airspace");
+        this.firestoreUnsubscribe = onSnapshot(
+          airspaceCol,
+          (snapshot) => {
+            const now = Date.now();
+            let changed = false;
+
+            snapshot.docChanges().forEach((change) => {
+              const id = change.doc.id;
+              if (id === this.localPlayerId) return;
+
+              if (change.type === "removed") {
+                if (this.remotePlayers.delete(id)) {
+                  changed = true;
+                }
+              } else {
+                const data = change.doc.data() as RemotePlayerState;
+                // Only consider recent packets (< 8s stale)
+                if (data && now - (data.lastUpdate || 0) < 8000) {
+                  this.remotePlayers.set(id, {
+                    ...data,
+                    lastUpdate: data.lastUpdate || now,
+                  });
+                  changed = true;
+                }
+              }
+            });
+
+            if (changed) {
+              this.notifyUpdate();
+            }
+          },
+          (err) => {
+            console.warn("Firestore airspace subscription warning (falling back to local channel):", err);
+          }
+        );
+        this.isConnected = true;
+      } catch (err) {
+        console.warn("Failed to subscribe to cloud airspace:", err);
+      }
+    }
+
+    // 3. Auto-cleanup on window unload
+    if (typeof window !== "undefined") {
+      this.unloadListener = () => {
+        this.disconnect();
+      };
+      window.addEventListener("beforeunload", this.unloadListener);
     }
   }
 
@@ -66,8 +135,29 @@ export class MultiplayerClient {
       this.sendPacket("LEAVE", {});
       this.channel.close();
       this.channel = null;
-      this.isConnected = false;
     }
+
+    // Remove document from Firestore
+    if (db && isFirebaseConfigured() && this.localPlayerId) {
+      try {
+        const docRef = doc(db, "active_airspace", this.localPlayerId);
+        deleteDoc(docRef).catch(() => {});
+      } catch {
+        // Ignore during tear down
+      }
+    }
+
+    if (this.firestoreUnsubscribe) {
+      this.firestoreUnsubscribe();
+      this.firestoreUnsubscribe = null;
+    }
+
+    if (this.unloadListener && typeof window !== "undefined") {
+      window.removeEventListener("beforeunload", this.unloadListener);
+      this.unloadListener = null;
+    }
+
+    this.isConnected = false;
     this.remotePlayers.clear();
     this.notifyUpdate();
   }
@@ -79,32 +169,48 @@ export class MultiplayerClient {
     helipadId: string,
     dt: number
   ) {
-    if (!this.isConnected || !this.channel) return;
+    if (!this.isConnected) return;
 
+    const state: RemotePlayerState = {
+      playerId: this.localPlayerId,
+      callsign: this.callsign,
+      droneId,
+      regionId,
+      helipadId,
+      position: { ...telemetry.position },
+      rotation: { ...telemetry.rotation },
+      velocity: { ...telemetry.velocity },
+      rotorRpmPercent: telemetry.rotorRpmPercent,
+      flightMode: telemetry.flightMode,
+      lastUpdate: Date.now(),
+    };
+
+    // 1. Fast local broadcast (20Hz)
     this.broadcastTimer += dt;
     if (this.broadcastTimer >= this.broadcastInterval) {
       this.broadcastTimer = 0;
-      const state: RemotePlayerState = {
-        playerId: this.localPlayerId,
-        callsign: this.callsign,
-        droneId,
-        regionId,
-        helipadId,
-        position: { ...telemetry.position },
-        rotation: { ...telemetry.rotation },
-        velocity: { ...telemetry.velocity },
-        rotorRpmPercent: telemetry.rotorRpmPercent,
-        flightMode: telemetry.flightMode,
-        lastUpdate: Date.now(),
-      };
-
       this.sendPacket("STATE", state);
     }
 
+    // 2. Cloud Firestore broadcast (~7Hz)
+    this.cloudSyncTimer += dt;
+    if (this.cloudSyncTimer >= this.cloudSyncInterval) {
+      this.cloudSyncTimer = 0;
+      if (db && isFirebaseConfigured()) {
+        try {
+          const docRef = doc(db, "active_airspace", this.localPlayerId);
+          setDoc(docRef, state, { merge: true }).catch(() => {});
+        } catch {
+          // Ignore transient network errors
+        }
+      }
+    }
+
+    // 3. Prune stale remote drones (> 6.5s)
     const now = Date.now();
     let changed = false;
     for (const [id, player] of this.remotePlayers.entries()) {
-      if (now - player.lastUpdate > 4000) {
+      if (now - player.lastUpdate > 6500) {
         this.remotePlayers.delete(id);
         changed = true;
       }

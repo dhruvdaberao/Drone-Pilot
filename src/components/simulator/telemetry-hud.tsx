@@ -37,6 +37,8 @@ import {
   HelpCircle,
   Zap,
 } from "lucide-react";
+import { MultiplayerRosterWidget } from "./multiplayer/multiplayer-roster-widget";
+import { RemotePlayerState } from "@/lib/multiplayer/multiplayer-types";
 
 // ----------------------------------------------------------------
 // 1. ARTIFICIAL HORIZON / ATTITUDE GYRO INSTRUMENT
@@ -298,6 +300,8 @@ interface TelemetryHUDProps {
   onToggleDebug?: () => void;
   onToggleTutorial?: () => void;
   environment?: EnvironmentState;
+  remotePlayers?: RemotePlayerState[];
+  callsign?: string;
 }
 
 export function TelemetryHUD({
@@ -320,6 +324,8 @@ export function TelemetryHUD({
   onToggleDebug,
   onToggleTutorial,
   environment,
+  remotePlayers,
+  callsign,
 }: TelemetryHUDProps) {
   const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
@@ -441,8 +447,8 @@ export function TelemetryHUD({
             )}
           </div>
 
-          {/* Row 2: Timer, Distance, Controls Modal Toggle & Dashboard Exit Button */}
-          <div className="flex items-center gap-2">
+          {/* Row 2: Timer, Distance, Airspace Roster, Controls Modal Toggle & Dashboard Exit Button */}
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border-2 border-black shadow-sm text-xs font-semibold">
               <Clock className="h-3.5 w-3.5 text-[#FF5500]" />
               <span>T+{formatTime(telemetry.flightTimeSeconds)}</span>
@@ -450,6 +456,12 @@ export function TelemetryHUD({
               <Navigation className="h-3.5 w-3.5 text-[#FF5500]" />
               <span>{telemetry.distanceFromHome.toFixed(1)}m</span>
             </div>
+
+            {/* Multiplayer Airspace Roster Widget */}
+            <MultiplayerRosterWidget
+              players={remotePlayers || []}
+              myCallsign={callsign || "PILOT"}
+            />
 
             {/* Controls Button */}
             <button

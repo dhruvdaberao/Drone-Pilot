@@ -7,6 +7,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DroneCard } from "@/components/dashboard/drone-card";
 import { Button } from "@/components/ui/button";
 import { DRONES, DEFAULT_DRONE_STORAGE_KEY } from "@/lib/drones";
+import { HELIPAD_LIST } from "@/lib/world/helipad-definitions";
 import { DroneModel } from "@/types/drone";
 import { ArrowRight } from "lucide-react";
 
@@ -57,7 +58,14 @@ export default function DashboardPage() {
       // Storage error ignored
     }
     const isMock = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mock") === "true";
-    router.push(`/fly/select?drone=${selectedDrone.id}${isMock ? "&mock=true" : ""}`);
+    
+    // Tactical Dropzone: Randomly pick a scenic spawn helipad from across the entire island
+    const spawnablePads = HELIPAD_LIST.filter((h) => h.spawnAllowed);
+    const randomPad = spawnablePads[Math.floor(Math.random() * spawnablePads.length)] || HELIPAD_LIST[0];
+
+    router.push(
+      `/fly?drone=${selectedDrone.id}&launch=true&helipad=${randomPad.id}&region=${randomPad.regionId}${isMock ? "&mock=true" : ""}`
+    );
   };
 
   const handleBackgroundClick = () => {

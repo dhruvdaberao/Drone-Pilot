@@ -29,10 +29,10 @@ import { TutorialOverlay } from "./tutorial-overlay";
 import { FlightAnalysisModal } from "./analysis/flight-analysis-modal";
 import { FlightReplayModal } from "./replay/flight-replay-modal";
 import { PhysicsDebugHUD } from "./debug/physics-debug-hud";
-import { MultiplayerRosterWidget } from "./multiplayer/multiplayer-roster-widget";
 import { RemoteDroneManager } from "./multiplayer/remote-drone-manager";
 import { SpawnSystem } from "@/lib/world/spawn-system";
 import { SpawnConfiguration } from "@/lib/world/world-types";
+import { HELIPADS } from "@/lib/world/helipad-definitions";
 
 interface FlightSimulatorProps {
   selectedDrone: DroneModel;
@@ -134,9 +134,17 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     flightPath: [{ x: initialSpawn.position.x, z: initialSpawn.position.z }],
   }));
 
+  // Tactical Dropzone Briefing state
+  const [showDropBriefing, setShowDropBriefing] = useState(false);
+
   // Stable loading ready callback
   const handleLoadingReady = useCallback(() => {
     setIsLoading(false);
+    setShowDropBriefing(true);
+    const timer = setTimeout(() => {
+      setShowDropBriefing(false);
+    }, 6000);
+    return () => clearTimeout(timer);
   }, []);
 
   // Toggle Camera
@@ -495,6 +503,24 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       {/* Loading Screen Overlay */}
       {isLoading && <SimulationLoadingScreen onReady={handleLoadingReady} />}
 
+      {/* Tactical Dropzone Deployment Briefing Banner */}
+      {!isLoading && showDropBriefing && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-black/90 backdrop-blur-md text-white border-2 border-[#FF5500] px-4 py-2 rounded-xl shadow-[0_8px_30px_rgba(255,85,0,0.3)] flex items-center gap-3 font-mono select-none">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#FF5500] animate-ping shrink-0" />
+            <div className="text-xs">
+              <span className="text-[#FF5500] font-black uppercase tracking-wider">DROPZONE DEPLOYMENT: </span>
+              <span className="font-bold text-white">
+                {HELIPADS[initialSpawn.helipadId]?.name || "Island Helipad"}
+              </span>
+              <span className="text-neutral-400 text-[10px] ml-2 hidden sm:inline">
+                [{initialSpawn.regionId.toUpperCase()} • ELEV {initialSpawn.groundElevation.toFixed(1)}m]
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Avionics Telemetry HUD */}
       <TelemetryHUD
         telemetry={telemetry}
@@ -516,10 +542,9 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         onToggleDebug={() => setIsDebugOpen((prev) => !prev)}
         onToggleTutorial={() => setIsTutorialOpen((prev) => !prev)}
         environment={envState}
+        remotePlayers={remotePlayers}
+        callsign={callsign}
       />
-
-      {/* Multiplayer Airspace Roster Widget */}
-      <MultiplayerRosterWidget players={remotePlayers} myCallsign={callsign} />
 
       {/* Live Tutorial Overlay */}
       {isTutorialOpen && (

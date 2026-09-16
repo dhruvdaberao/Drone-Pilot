@@ -9,7 +9,7 @@ import { DEFAULT_DRONE_STORAGE_KEY, getDroneById, DRONES } from "@/lib/drones";
 import { DroneModel } from "@/types/drone";
 import { FlightSimulator } from "@/components/simulator/flight-simulator";
 import { REGIONS } from "@/lib/world/region-definitions";
-import { HELIPADS } from "@/lib/world/helipad-definitions";
+import { HELIPADS, HELIPAD_LIST } from "@/lib/world/helipad-definitions";
 import { ArrowLeft, CheckCircle2, Cpu, Gauge, Play, ShieldCheck, MapPin, Compass } from "lucide-react";
 
 export default function FlyPage() {
@@ -23,10 +23,10 @@ export default function FlyPage() {
   useEffect(() => {
     try {
       const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-      const urlDrone = params ? params.get("drone") : null;
-      const urlRegion = params ? params.get("region") : null;
-      const urlHelipad = params ? params.get("helipad") || params.get("spawn") : null;
-      const autoLaunch = params ? params.get("launch") === "true" : false;
+      const urlDrone = params?.get("drone");
+      const urlRegion = params?.get("region");
+      const urlHelipad = params?.get("helipad");
+      const autoLaunch = params?.get("launch") === "true";
 
       let activeDrone = DRONES[0];
 
@@ -43,12 +43,21 @@ export default function FlyPage() {
         }
       }
 
-      if (urlRegion && REGIONS[urlRegion]) {
-        setTargetRegionId(urlRegion);
-      }
       if (urlHelipad && HELIPADS[urlHelipad]) {
         setTargetHelipadId(urlHelipad);
         setTargetRegionId(HELIPADS[urlHelipad].regionId);
+      } else if (urlRegion && REGIONS[urlRegion]) {
+        setTargetRegionId(urlRegion);
+        const regPads = HELIPAD_LIST.filter((h) => h.regionId === urlRegion && h.spawnAllowed);
+        if (regPads.length > 0) {
+          setTargetHelipadId(regPads[0].id);
+        }
+      } else {
+        // Dynamic random tactical dropzone across the island
+        const spawnablePads = HELIPAD_LIST.filter((h) => h.spawnAllowed);
+        const randomPad = spawnablePads[Math.floor(Math.random() * spawnablePads.length)] || HELIPAD_LIST[0];
+        setTargetHelipadId(randomPad.id);
+        setTargetRegionId(randomPad.regionId);
       }
 
       setSelectedDrone(activeDrone);

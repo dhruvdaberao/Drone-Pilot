@@ -209,9 +209,13 @@ export class FlightPhysicsEngine {
         this.velZ *= 0.88;
         commandedThrottle = (hoverWeight / this.def.maximumThrust) * 0.92;
       } else if (this.isHoverMode) {
-        // Base throttle balances gravity perfectly:
-        const baseHoverThrottle = hoverWeight / this.def.maximumThrust;
-        const verticalDelta = input.throttle * (1.0 - baseHoverThrottle) * 0.85;
+        // Tilt thrust compensation: auto-boosts collective thrust when pitched/rolled
+        // so that Ty = T * cos(pitch) * cos(roll) == mg, maintaining level altitude
+        const cosTilt = Math.max(0.45, Math.cos(this.pitch) * Math.cos(this.roll));
+        const tiltCompensation = 1.0 / cosTilt;
+        const baseHoverThrottle = (hoverWeight / this.def.maximumThrust) * tiltCompensation;
+
+        const verticalDelta = input.throttle * (1.0 - (hoverWeight / this.def.maximumThrust)) * 0.85;
         commandedThrottle = baseHoverThrottle + verticalDelta;
 
         // Active vertical hover damping
@@ -268,7 +272,7 @@ export class FlightPhysicsEngine {
     // ----------------------------------------------------
     // 4. ATTITUDE (PITCH, ROLL, YAW)
     // ----------------------------------------------------
-    const targetYawRate = -input.yaw * 2.2;
+    const targetYawRate = -input.yaw * 2.4;
     this.yawRate += (targetYawRate - this.yawRate) * (clampedDt * 10.0);
     this.yaw += this.yawRate * clampedDt;
 
@@ -277,10 +281,12 @@ export class FlightPhysicsEngine {
 
     const effPitch = this.isAutoLanding ? 0 : input.pitch;
     const effRoll = this.isAutoLanding ? 0 : input.roll;
-    const targetPitch = effPitch * this.def.maxTiltAngle;
-    const targetRoll = effRoll * this.def.maxTiltAngle;
+    // Dynamic tilt authority: 1.25x for responsive, fast forward flight (up to 75 km/h)
+    const tiltMultiplier = this.isHoverMode ? 1.20 : 1.45;
+    const targetPitch = effPitch * this.def.maxTiltAngle * tiltMultiplier;
+    const targetRoll = effRoll * this.def.maxTiltAngle * tiltMultiplier;
 
-    const tiltSpeed = 12.0;
+    const tiltSpeed = 14.0;
     this.pitch += (targetPitch - this.pitch) * (clampedDt * tiltSpeed);
     this.roll += (targetRoll - this.roll) * (clampedDt * tiltSpeed);
 
@@ -295,7 +301,8 @@ export class FlightPhysicsEngine {
     const relVy = this.velY - windVec.y;
     const relVz = this.velZ - windVec.z;
 
-    const aeroFactor = 0.5 * airDensity * this.def.drag.linear;
+    // Streamlined aerodynamic drag curve for higher maximum cruise velocity
+    const aeroFactor = 0.5 * airDensity * (this.def.drag.linear * 0.55);
     this.dragForceX = -relVx * Math.abs(relVx) * aeroFactor;
     this.dragForceY = -relVy * Math.abs(relVy) * aeroFactor * 0.5;
     this.dragForceZ = -relVz * Math.abs(relVz) * aeroFactor;
@@ -312,14 +319,24 @@ export class FlightPhysicsEngine {
     const rightX = Math.cos(this.yaw);
     const rightZ = -Math.sin(this.yaw);
 
-    const thrustWorldX = (forwardX * this.pitch + rightX * this.roll) * this.totalThrust;
-    const thrustWorldZ = (forwardZ * this.pitch + rightZ * this.roll) * this.totalThrust;
+    const thrustWorldX = (forwardX * Math.sin(this.pitch) + rightX * Math.sin(this.roll)) * this.totalThrust;
+    const thrustWorldZ = (forwardZ * Math.sin(this.pitch) + rightZ * Math.sin(this.roll)) * this.totalThrust;
     const thrustWorldY = this.totalThrust * Math.cos(this.pitch) * Math.cos(this.roll);
 
     // Total Accelerations: a = F_net / m
     this.accelX = (thrustWorldX + this.dragForceX) / totalMass;
     this.accelY = (thrustWorldY - hoverWeight + this.dragForceY) / totalMass;
     this.accelZ = (thrustWorldZ + this.dragForceZ) / totalMass;
+
+    // GPS Position Hold: When sticks are centered in hover mode, active braking locks position with zero wind drift
+    if (this.isHoverMode && !onGround) {
+      const isStickNeutral = Math.abs(input.pitch) < 0.04 && Math.abs(input.roll) < 0.04;
+      if (isStickNeutral) {
+        const brakeFactor = Math.min(1.0, clampedDt * 4.5);
+        this.velX += (0 - this.velX) * brakeFactor;
+        this.velZ += (0 - this.velZ) * brakeFactor;
+      }
+    }
 
     // Integrate Velocities
     this.velX += this.accelX * clampedDt;

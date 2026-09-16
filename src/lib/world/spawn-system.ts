@@ -19,20 +19,32 @@ export class SpawnSystem {
     requestedRegionId?: string | null,
     requestedHelipadId?: string | null
   ): SpawnConfiguration {
-    // 1. Check if specific helipad ID was directly requested
+    // 1. Check if random dropzone was requested
+    if (requestedHelipadId === "random") {
+      const spawnable = SpawnSystem.getSpawnableHelipads();
+      const randomPad = spawnable[Math.floor(Math.random() * spawnable.length)] || HELIPADS["training-alpha"];
+      return SpawnSystem.createConfigForHelipad(randomPad);
+    }
+
+    // 2. Check if specific helipad ID was directly requested
     let targetHelipad = requestedHelipadId ? HELIPADS[requestedHelipadId] : null;
 
-    // 2. If no valid helipad, check requested region's primary helipad
+    // 3. If no valid helipad, check requested region's primary helipad
     if (!targetHelipad && requestedRegionId && REGIONS[requestedRegionId]) {
       const region = REGIONS[requestedRegionId];
       targetHelipad = HELIPADS[region.primaryHelipadId] || null;
     }
 
-    // 3. Fallback to canonical default: Training Helipad Alpha
+    // 4. If neither specified, drop into a random helipad across the island
     if (!targetHelipad) {
-      targetHelipad = HELIPADS["training-alpha"];
+      const spawnable = SpawnSystem.getSpawnableHelipads();
+      targetHelipad = spawnable[Math.floor(Math.random() * spawnable.length)] || HELIPADS["training-alpha"];
     }
 
+    return SpawnSystem.createConfigForHelipad(targetHelipad);
+  }
+
+  public static createConfigForHelipad(targetHelipad: typeof HELIPADS[string]): SpawnConfiguration {
     const groundElevation = targetHelipad.elevation;
     const droneSpawnY = groundElevation + SpawnSystem.DRONE_SKID_VERTICAL_OFFSET;
 

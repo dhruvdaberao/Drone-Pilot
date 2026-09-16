@@ -207,8 +207,9 @@ export class NatureSystem {
     let attempts = 0;
     const maxAttempts = count * 6;
 
-    // 1. Whispering Pines Core (X: 300 to 640, Z: -590 to -250) - 2,800 trees
-    // 2. Mountain Ridge Pines (X: -640 to -300, Z: -580 to -300) - 700 trees
+    const pineGrid = new Set<string>();
+    const pineCellSize = 13.0; // Enforces minimum 13m trunk clearance so canopies never overlap into solid blobs
+
     while (placed < count && attempts++ < maxAttempts) {
       let x = 0;
       let z = 0;
@@ -217,6 +218,10 @@ export class NatureSystem {
         // Whispering Pines Forest
         x = 310 + Math.random() * 330;
         z = -590 + Math.random() * 340;
+
+        // Slalom Flight Corridor: Keep a 24m wide winding flight path clear through the pines
+        const trailCenterZ = -420 + Math.sin(x * 0.028) * 32;
+        if (Math.abs(z - trailCenterZ) < 12) continue;
       } else {
         // Mountain slopes
         x = -640 + Math.random() * 340;
@@ -226,8 +231,25 @@ export class NatureSystem {
       // Avoid all registered helipads, runways, and downtown
       if (isNearProtectedZone(x, z, 30)) continue;
 
+      // Check spatial grid clearance against neighboring trees
+      const gx = Math.floor(x / pineCellSize);
+      const gz = Math.floor(z / pineCellSize);
+      let overlaps = false;
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dz = -1; dz <= 1; dz++) {
+          if (pineGrid.has(`${gx + dx}_${gz + dz}`)) {
+            overlaps = true;
+            break;
+          }
+        }
+        if (overlaps) break;
+      }
+      if (overlaps) continue;
+
       const sample = evaluateIslandElevation(x, z);
       if (sample.elevation < 1.0 || sample.elevation > 75 || sample.slope > 0.6) continue;
+
+      pineGrid.add(`${gx}_${gz}`);
 
       const scale = 0.85 + Math.random() * 0.45; // 24m to 35m height!
       dummy.position.set(x, sample.elevation, z);
@@ -292,6 +314,8 @@ export class NatureSystem {
     let placed = 0;
     let attempts = 0;
     const maxAttempts = count * 6;
+    const oakGrid = new Set<string>();
+    const oakCellSize = 14.0; // Enforces minimum 14m trunk clearance for broadleaf trees
 
     while (placed < count && attempts++ < maxAttempts) {
       let x = 0;
@@ -314,8 +338,25 @@ export class NatureSystem {
       // Avoid all helipads, runways, and urban downtown
       if (isNearProtectedZone(x, z, 35)) continue;
 
+      // Check spatial grid clearance
+      const gx = Math.floor(x / oakCellSize);
+      const gz = Math.floor(z / oakCellSize);
+      let overlaps = false;
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dz = -1; dz <= 1; dz++) {
+          if (oakGrid.has(`${gx + dx}_${gz + dz}`)) {
+            overlaps = true;
+            break;
+          }
+        }
+        if (overlaps) break;
+      }
+      if (overlaps) continue;
+
       const sample = evaluateIslandElevation(x, z);
       if (sample.elevation < 0.9 || sample.elevation > 45 || sample.slope > 0.45) continue;
+
+      oakGrid.add(`${gx}_${gz}`);
 
       const scale = 0.85 + Math.random() * 0.45; // 20m to 30m height!
       dummy.position.set(x, sample.elevation, z);

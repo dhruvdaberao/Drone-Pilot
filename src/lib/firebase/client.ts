@@ -1,9 +1,11 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
 import { firebaseConfig, isFirebaseConfigured } from "./config";
 
 let app: FirebaseApp;
 let auth: Auth;
+let db: Firestore | null = null;
 
 // Fallback dummy config to prevent runtime SDK initialization crash when .env.local is not yet populated
 const fallbackConfig = {
@@ -25,4 +27,10 @@ if (getApps().length > 0) {
 
 auth = getAuth(app);
 
-export { app, auth, isFirebaseConfigured };
+try {
+  db = getFirestore(app);
+} catch (e) {
+  console.warn("Firestore initialization error, running in local mode:", e);
+}
+
+export { app, auth, db, isFirebaseConfigured };
