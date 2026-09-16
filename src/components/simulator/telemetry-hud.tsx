@@ -387,16 +387,24 @@ export function TelemetryHUD({
       {/* ---------------------------------------------------- */}
       <header className="flex items-start justify-between gap-2 sm:gap-4 w-full max-w-full">
         {/* ==================================================== */}
-        {/* TOP-LEFT: DRONE IDENTITY, AIRSPACE & MISSION CONTROLS */}
+        {/* TOP-LEFT: DASHBOARD CORNER, FLIGHT STATUS & TOOLS    */}
         {/* ==================================================== */}
         <div className="flex flex-col items-start gap-1.5 sm:gap-2 pointer-events-auto shrink-0 z-30">
-          {/* Row 1: Drone Name, Flight Mode Badge, Airspace Badge, Tools Dropdown */}
+          {/* Row 1: Dashboard Exit Button (In corner), Flight Mode, Airspace Roster, Tools & Controls */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            <span className="font-heading font-extrabold text-xs sm:text-sm tracking-wider uppercase bg-black text-white px-2.5 sm:px-3 py-1 rounded-lg border-2 border-black shadow-md">
-              {droneName}
-            </span>
+            {/* Top-Left Corner Dashboard Button */}
+            <button
+              onClick={onExit}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-black text-white hover:bg-neutral-800 border-2 border-black text-xs font-extrabold shadow-md active:scale-95 transition-all cursor-pointer select-none shrink-0"
+              title="Return to Drone Hangar / Dashboard"
+            >
+              <ArrowLeft className="h-4 w-4 text-[#FF5500]" />
+              <span>Dashboard</span>
+            </button>
+
+            {/* Flight Mode Badge */}
             <span
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold tracking-wide border-2 ${
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold tracking-wide border-2 shrink-0 ${
                 telemetry.flightMode === "HOVER"
                   ? "bg-amber-50 text-amber-900 border-amber-400"
                   : telemetry.flightMode === "LANDED"
@@ -406,7 +414,7 @@ export function TelemetryHUD({
                   : "bg-blue-50 text-blue-900 border-blue-400"
               }`}
             >
-              <ShieldCheck className="h-3 w-3" />
+              <ShieldCheck className="h-3.5 w-3.5" />
               <span>{telemetry.flightMode}</span>
             </span>
 
@@ -423,7 +431,7 @@ export function TelemetryHUD({
                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border-2 border-black text-xs font-bold text-neutral-800 shadow-sm hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer"
                 title="Mission Tools: Weather, Replay, Debrief, 6-DoF Debug"
               >
-                <SlidersHorizontal className="h-3 w-3 text-[#FF5500]" />
+                <SlidersHorizontal className="h-3.5 w-3.5 text-[#FF5500]" />
                 <span className="hidden sm:inline">Tools</span>
                 <ChevronDown className="h-3 w-3 text-neutral-500" />
               </button>
@@ -486,11 +494,93 @@ export function TelemetryHUD({
                 </div>
               )}
             </div>
+
+            {/* Flight Controls Button */}
+            <div ref={controlsRef} className="relative">
+              <button
+                onClick={() => setIsControlsOpen(!isControlsOpen)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border-2 border-black text-xs font-bold text-neutral-900 shadow-sm hover:bg-neutral-100 active:scale-95 transition-all cursor-pointer"
+                title="View Keyboard Flight Controls"
+              >
+                <Keyboard className="h-3.5 w-3.5 text-[#FF5500]" />
+                <span className="hidden sm:inline">Controls</span>
+                {isControlsOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </button>
+
+              {/* Controls Panel Dropdown */}
+              {isControlsOpen && (
+                <div className="absolute top-full left-0 mt-2 w-72 p-3.5 rounded-2xl bg-white border-2 border-black shadow-2xl text-xs space-y-2.5 animate-in fade-in zoom-in-95 z-40 pointer-events-auto">
+                  <div className="border-b border-neutral-200 pb-2 flex justify-between items-center">
+                    <div className="flex items-center gap-1.5">
+                      <Keyboard className="h-4 w-4 text-[#FF5500]" />
+                      <span className="font-heading font-extrabold text-neutral-950 uppercase tracking-wide">
+                        Flight Controls
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setIsControlsOpen(false)}
+                      className="text-neutral-400 hover:text-black p-0.5 rounded cursor-pointer transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5 text-neutral-800">
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-600">Pitch & Roll</span>
+                      <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
+                        W A S D
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-600">Climb (Throttle Up)</span>
+                      <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
+                        SPACE
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-600">Descend (Throttle Down)</span>
+                      <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
+                        SHIFT / C
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-600">Yaw Rotation</span>
+                      <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
+                        Q / E
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-600">Hover Assist</span>
+                      <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
+                        H
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-600">Precision Land</span>
+                      <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
+                        L
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-600">Tactical Map</span>
+                      <span className="font-bold bg-[#FF5500] text-white px-2 py-0.5 rounded border border-black">
+                        M
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-neutral-200 text-[10px] text-neutral-500 leading-tight">
+                    💡 Tip: Click & drag on 3D view to orbit camera 360°.
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Row 2: Timer, Distance, Controls Modal Toggle & Dashboard Exit Button */}
-          <div ref={controlsRef} className="relative flex items-center gap-1.5 sm:gap-2">
-            <div className="flex items-center gap-1.5 sm:gap-2 bg-white px-2.5 sm:px-3 py-1 rounded-lg border-2 border-black shadow-sm text-xs font-semibold">
+          {/* Row 2: Timer, Distance, Heading & Wind Speed (Cleanly aligned, zero overlap) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-white px-2.5 sm:px-3 py-1 rounded-lg border-2 border-black shadow-sm text-xs font-semibold shrink-0">
               <Clock className="h-3.5 w-3.5 text-[#FF5500]" />
               <span>T+{formatTime(telemetry.flightTimeSeconds)}</span>
               <span className="text-neutral-300">|</span>
@@ -498,93 +588,20 @@ export function TelemetryHUD({
               <span>{telemetry.distanceFromHome.toFixed(1)}m</span>
             </div>
 
-            {/* Controls Button */}
-            <button
-              onClick={() => setIsControlsOpen(!isControlsOpen)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border-2 border-black text-xs font-bold text-neutral-900 shadow-sm hover:bg-neutral-100 active:scale-95 transition-all cursor-pointer"
-              title="View Keyboard Flight Controls"
-            >
-              <Keyboard className="h-3.5 w-3.5 text-[#FF5500]" />
-              <span className="hidden sm:inline">Controls</span>
-              {isControlsOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            </button>
+            {/* Compass Heading Badge */}
+            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border-2 border-black shadow-sm text-xs font-bold text-neutral-900 shrink-0">
+              <Compass className="h-3.5 w-3.5 text-[#FF5500]" />
+              <span>HDG {telemetry.heading.toString().padStart(3, "0")}°</span>
+            </div>
 
-            {/* Top-Left Exit to Dashboard Button */}
-            <button
-              onClick={onExit}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black text-white hover:bg-neutral-800 border-2 border-black text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
-              title="Return to Drone Hangar / Dashboard"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Dashboard</span>
-            </button>
-
-            {/* Controls Panel Dropdown */}
-            {isControlsOpen && (
-              <div className="absolute top-full left-0 mt-2 w-72 p-3.5 rounded-2xl bg-white border-2 border-black shadow-2xl text-xs space-y-2.5 animate-in fade-in zoom-in-95 z-40 pointer-events-auto">
-                <div className="border-b border-neutral-200 pb-2 flex justify-between items-center">
-                  <div className="flex items-center gap-1.5">
-                    <Keyboard className="h-4 w-4 text-[#FF5500]" />
-                    <span className="font-heading font-extrabold text-neutral-950 uppercase tracking-wide">
-                      Flight Controls
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setIsControlsOpen(false)}
-                    className="text-neutral-400 hover:text-black p-0.5 rounded cursor-pointer transition-colors"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <div className="space-y-1.5 text-neutral-800">
-                  <div className="flex justify-between items-center">
-                    <span className="text-neutral-600">Pitch & Roll</span>
-                    <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
-                      W A S D
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-neutral-600">Climb (Throttle Up)</span>
-                    <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
-                      SPACE
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-neutral-600">Descend (Throttle Down)</span>
-                    <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
-                      SHIFT / C
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-neutral-600">Yaw Rotation</span>
-                    <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
-                      Q / E
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-neutral-600">Hover Assist</span>
-                    <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
-                      H
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-neutral-600">Precision Land</span>
-                    <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
-                      L
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-neutral-600">Tactical Map</span>
-                    <span className="font-bold bg-[#FF5500] text-white px-2 py-0.5 rounded border border-black">
-                      M
-                    </span>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-neutral-200 text-[10px] text-neutral-500 leading-tight">
-                  💡 Tip: Click & drag on 3D view to orbit camera 360°.
-                </div>
+            {/* Wind Vector Badge */}
+            {environment && (
+              <div
+                className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border-2 border-black shadow-sm text-xs font-bold text-neutral-900 shrink-0"
+                title={`Wind: ${environment.windSpeed.toFixed(1)} m/s at ${environment.windDirection}°`}
+              >
+                <Wind className="h-3.5 w-3.5 text-[#FF5500]" />
+                <span>{environment.windSpeed.toFixed(1)}m/s</span>
               </div>
             )}
           </div>
@@ -647,19 +664,6 @@ export function TelemetryHUD({
                 </span>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Compact Compass & Wind Badge on screens below 1280px (Never clips!) */}
-        <div className="hidden sm:flex xl:hidden items-center gap-2 bg-white px-3 py-1.5 rounded-xl border-2 border-black shadow-sm text-xs font-bold shrink-0 pointer-events-auto z-20">
-          <Compass className="h-3.5 w-3.5 text-[#FF5500]" />
-          <span>HDG {telemetry.heading.toString().padStart(3, "0")}°</span>
-          {environment && (
-            <>
-              <span className="text-neutral-300">|</span>
-              <Wind className="h-3.5 w-3.5 text-[#FF5500]" />
-              <span>{environment.windSpeed.toFixed(1)}m/s</span>
-            </>
           )}
         </div>
 

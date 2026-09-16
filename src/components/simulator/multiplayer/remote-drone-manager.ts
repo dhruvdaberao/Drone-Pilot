@@ -87,26 +87,58 @@ export class RemoteDroneManager {
     });
 
     const canvas = document.createElement("canvas");
-    canvas.width = 256;
-    canvas.height = 64;
+    canvas.width = 512;
+    canvas.height = 128;
     const ctx = canvas.getContext("2d");
     if (ctx) {
-      ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
-      ctx.roundRect(0, 0, 256, 64, 16);
+      // Dark high-contrast rounded badge
+      ctx.fillStyle = "rgba(15, 23, 42, 0.90)";
+      ctx.beginPath();
+      ctx.roundRect(12, 16, 488, 96, 28);
       ctx.fill();
-      ctx.strokeStyle = "#2563eb";
-      ctx.lineWidth = 4;
+
+      // Neon Cyan border for remote pilots
+      ctx.strokeStyle = "#06B6D4";
+      ctx.lineWidth = 6;
       ctx.stroke();
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 26px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText(callsign, 128, 42);
+
+      // Glowing cyan beacon indicator (left)
+      ctx.fillStyle = "#06B6D4";
+      ctx.beginPath();
+      ctx.arc(60, 64, 14, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner bright white dot
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.arc(60, 64, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Remote pilot callsign / name
+      const name = callsign.toUpperCase();
+      const displayName = name.length > 18 ? name.substring(0, 16) + "…" : name;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "900 36px monospace";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(displayName, 95, 64);
+
+      // "PILOT" tag on the right
+      ctx.fillStyle = "#06B6D4";
+      ctx.font = "bold 24px monospace";
+      ctx.textAlign = "right";
+      ctx.fillText("PILOT", 470, 64);
     }
     const texture = new THREE.CanvasTexture(canvas);
-    const spriteMat = new THREE.SpriteMaterial({ map: texture });
+    texture.minFilter = THREE.LinearFilter;
+    const spriteMat = new THREE.SpriteMaterial({
+      map: texture,
+      depthTest: true,
+      depthWrite: false,
+    });
     const sprite = new THREE.Sprite(spriteMat);
-    sprite.position.set(0, 0.45, 0);
-    sprite.scale.set(1.2, 0.3, 1);
+    sprite.position.set(0, 0.52, 0);
+    sprite.scale.set(1.4, 0.35, 1);
     group.add(sprite);
 
     return {

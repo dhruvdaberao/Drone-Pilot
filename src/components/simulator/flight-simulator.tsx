@@ -32,6 +32,7 @@ import { RemoteDroneManager } from "./multiplayer/remote-drone-manager";
 import { SpawnSystem } from "@/lib/world/spawn-system";
 import { SpawnConfiguration } from "@/lib/world/world-types";
 import { HELIPADS } from "@/lib/world/helipad-definitions";
+import { useAuth } from "@/context/auth-context";
 
 interface FlightSimulatorProps {
   selectedDrone: DroneModel;
@@ -49,6 +50,16 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
   const crashTriggeredRef = useRef<boolean>(false);
   const remotePlayersRef = useRef<RemotePlayerState[]>([]);
 
+  // Authenticated pilot username
+  const { user } = useAuth();
+  const pilotName = React.useMemo(() => {
+    return (
+      user?.displayName ||
+      user?.email?.split("@")[0] ||
+      "PILOT-" + Math.floor(100 + Math.random() * 900)
+    );
+  }, [user]);
+
   // Resolve initial spawn point from URL parameters
   const initialSpawn = React.useMemo(() => {
     if (typeof window !== "undefined") {
@@ -63,10 +74,8 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
 
   const spawnConfigRef = useRef<SpawnConfiguration>(initialSpawn);
 
-  // Callsign for multiplayer
-  const [callsign] = useState(() => {
-    return "PILOT-" + Math.floor(100 + Math.random() * 900);
-  });
+  // Callsign for multiplayer matches authenticated pilot name
+  const callsign = pilotName;
 
   // UI Modal States
   const [isLoading, setIsLoading] = useState(true);
@@ -289,7 +298,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
 
     // 5. MODULAR DRONE
     const droneDef = getDroneDefinition(selectedDrone.id);
-    const droneMesh = new ModularDrone(droneDef);
+    const droneMesh = new ModularDrone(droneDef, pilotName);
     scene.add(droneMesh.group);
     scene.add(droneMesh.groundShadowMesh);
 
@@ -431,6 +440,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
 
       // Update 3D Drone Transform & Props
       droneMesh.update(curTelemetry, dt);
+      droneMesh.setNameTagVisible(chaseCam.mode !== "fpv");
 
       // Update Remote Drones in Airspace
       remoteDroneMgr.update(remotePlayersRef.current, dt);

@@ -18,10 +18,89 @@ export class ModularDrone {
   public groundShadowMesh!: THREE.Mesh;
   private def: DroneDefinition;
   private propellers: PropellerAssembly[] = [];
+  private nameTagSprite: THREE.Sprite | null = null;
+  private pilotName = "PILOT";
 
-  constructor(definition: DroneDefinition) {
+  constructor(definition: DroneDefinition, pilotName = "PILOT") {
     this.def = definition;
+    this.pilotName = pilotName;
     this.buildDrone();
+    this.updateNameTag();
+  }
+
+  public setPilotName(name: string) {
+    this.pilotName = name.toUpperCase();
+    this.updateNameTag();
+  }
+
+  public setNameTagVisible(visible: boolean) {
+    if (this.nameTagSprite) {
+      this.nameTagSprite.visible = visible;
+    }
+  }
+
+  private updateNameTag() {
+    if (this.nameTagSprite) {
+      this.group.remove(this.nameTagSprite);
+      this.nameTagSprite.material.dispose();
+      this.nameTagSprite = null;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 128;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Dark high-contrast rounded badge background
+    ctx.fillStyle = "rgba(15, 23, 42, 0.90)";
+    ctx.beginPath();
+    ctx.roundRect(12, 16, 488, 96, 28);
+    ctx.fill();
+
+    // Vibrant aerospace orange neon border
+    ctx.strokeStyle = "#FF5500";
+    ctx.lineWidth = 6;
+    ctx.stroke();
+
+    // Glowing pilot beacon indicator (left)
+    ctx.fillStyle = "#FF5500";
+    ctx.beginPath();
+    ctx.arc(60, 64, 14, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Inner bright white dot
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath();
+    ctx.arc(60, 64, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Pilot name text (truncated cleanly if long)
+    const displayName = this.pilotName.length > 18 ? this.pilotName.substring(0, 16) + "…" : this.pilotName;
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "900 36px monospace";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(displayName, 95, 64);
+
+    // "YOU" tag on the right
+    ctx.fillStyle = "#FF5500";
+    ctx.font = "bold 24px monospace";
+    ctx.textAlign = "right";
+    ctx.fillText("YOU", 470, 64);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    const spriteMat = new THREE.SpriteMaterial({
+      map: texture,
+      depthTest: true,
+      depthWrite: false,
+    });
+    this.nameTagSprite = new THREE.Sprite(spriteMat);
+    // Position floating above the drone canopy
+    this.nameTagSprite.position.set(0, 0.52, 0);
+    this.nameTagSprite.scale.set(1.4, 0.35, 1);
+    this.group.add(this.nameTagSprite);
   }
 
   public setDefinition(definition: DroneDefinition) {
@@ -31,7 +110,9 @@ export class ModularDrone {
       this.group.remove(this.group.children[0]);
     }
     this.propellers = [];
+    this.nameTagSprite = null;
     this.buildDrone();
+    this.updateNameTag();
   }
 
   private buildDrone() {
