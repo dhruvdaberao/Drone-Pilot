@@ -21,7 +21,6 @@ import { WorldScene } from "./world-scene";
 import { ModularDrone } from "./modular-drone";
 import { ChaseCameraController, CameraMode } from "./chase-camera";
 import { TelemetryHUD } from "./telemetry-hud";
-import { EducationalAdvisory } from "./educational-advisory";
 import { IslandMapModal } from "./island-map-modal";
 import { SimulationLoadingScreen } from "./loading/simulation-loading-screen";
 import { EnvironmentControlPanel } from "./environment-control-panel";
@@ -73,7 +72,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
   const [isLoading, setIsLoading] = useState(true);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isEnvironmentOpen, setIsEnvironmentOpen] = useState(false);
-  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(true);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [isReplayOpen, setIsReplayOpen] = useState(false);
   const [isDebugOpen, setIsDebugOpen] = useState(() => {
@@ -560,11 +559,6 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         onClose={() => setIsDebugOpen(false)}
         telemetry={physicsDebug}
       />
-
-      {/* Educational Advisory Messaging (translucent, non-overlapping) */}
-      {!isMapModalOpen && !isAnalysisOpen && !isReplayOpen && (
-        <EducationalAdvisory telemetry={telemetry} />
-      )}
 
       {/* Environment & Weather Control Panel Modal */}
       <EnvironmentControlPanel

@@ -36,6 +36,8 @@ import {
   CloudSun,
   HelpCircle,
   Zap,
+  SlidersHorizontal,
+  Sparkles,
 } from "lucide-react";
 import { MultiplayerRosterWidget } from "./multiplayer/multiplayer-roster-widget";
 import { RemotePlayerState } from "@/lib/multiplayer/multiplayer-types";
@@ -329,6 +331,26 @@ export function TelemetryHUD({
 }: TelemetryHUDProps) {
   const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
+  const [isToolsOpen, setIsToolsOpen] = useState(false);
+
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const toolsRef = useRef<HTMLDivElement>(null);
+
+  // Click outside to dismiss popups automatically
+  useEffect(() => {
+    if (!isControlsOpen && !isToolsOpen) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (isControlsOpen && controlsRef.current && !controlsRef.current.contains(target)) {
+        setIsControlsOpen(false);
+      }
+      if (isToolsOpen && toolsRef.current && !toolsRef.current.contains(target)) {
+        setIsToolsOpen(false);
+      }
+    };
+    window.addEventListener("mousedown", handleOutsideClick);
+    return () => window.removeEventListener("mousedown", handleOutsideClick);
+  }, [isControlsOpen, isToolsOpen]);
 
   // Keyboard shortcut: 'M' toggles tactical island map
   useEffect(() => {
@@ -363,12 +385,14 @@ export function TelemetryHUD({
       {/* ---------------------------------------------------- */}
       {/* TOP BAR: INDEPENDENT AIRCRAFT & TELEMETRY CLUSTERS   */}
       {/* ---------------------------------------------------- */}
-      <header className="flex items-start justify-between gap-3 w-full">
-        {/* Top Left: Drone Name, Flight Mode, Timer & Controls */}
-        <div className="flex flex-col items-start gap-2 pointer-events-auto shrink-0">
-          {/* Row 1: Drone Name, Flight Mode Badge & Quick Platform Modals */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-heading font-extrabold text-xs sm:text-sm tracking-wider uppercase bg-black text-white px-3 py-1 rounded-lg border-2 border-black shadow-md">
+      <header className="flex items-start justify-between gap-2 sm:gap-4 w-full max-w-full">
+        {/* ==================================================== */}
+        {/* TOP-LEFT: DRONE IDENTITY, AIRSPACE & MISSION CONTROLS */}
+        {/* ==================================================== */}
+        <div className="flex flex-col items-start gap-1.5 sm:gap-2 pointer-events-auto shrink-0 z-30">
+          {/* Row 1: Drone Name, Flight Mode Badge, Airspace Badge, Tools Dropdown */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            <span className="font-heading font-extrabold text-xs sm:text-sm tracking-wider uppercase bg-black text-white px-2.5 sm:px-3 py-1 rounded-lg border-2 border-black shadow-md">
               {droneName}
             </span>
             <span
@@ -386,70 +410,87 @@ export function TelemetryHUD({
               <span>{telemetry.flightMode}</span>
             </span>
 
-            {/* Quick Action: Environment Modal */}
-            {onOpenEnvironment && (
-              <button
-                onClick={onOpenEnvironment}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-neutral-300 text-[11px] font-bold text-neutral-800 shadow-xs hover:border-black active:scale-95 transition-all cursor-pointer"
-                title="Open Environment & Weather Controls"
-              >
-                <CloudSun className="h-3 w-3 text-[#FF5500]" />
-                <span className="hidden md:inline">Weather</span>
-              </button>
-            )}
+            {/* Multiplayer Airspace Roster Widget */}
+            <MultiplayerRosterWidget
+              players={remotePlayers || []}
+              myCallsign={callsign || "PILOT"}
+            />
 
-            {/* Quick Action: Replay Modal */}
-            {onOpenReplay && (
+            {/* Secondary Mission Tools Dropdown */}
+            <div ref={toolsRef} className="relative">
               <button
-                onClick={onOpenReplay}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-neutral-300 text-[11px] font-bold text-neutral-800 shadow-xs hover:border-black active:scale-95 transition-all cursor-pointer"
-                title="Playback Telemetry Recording"
+                onClick={() => setIsToolsOpen(!isToolsOpen)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border-2 border-black text-xs font-bold text-neutral-800 shadow-sm hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer"
+                title="Mission Tools: Weather, Replay, Debrief, 6-DoF Debug"
               >
-                <Play className="h-3 w-3 text-blue-600 fill-current" />
-                <span className="hidden md:inline">Replay</span>
+                <SlidersHorizontal className="h-3 w-3 text-[#FF5500]" />
+                <span className="hidden sm:inline">Tools</span>
+                <ChevronDown className="h-3 w-3 text-neutral-500" />
               </button>
-            )}
 
-            {/* Quick Action: Debrief Modal */}
-            {onOpenAnalysis && (
-              <button
-                onClick={onOpenAnalysis}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-neutral-300 text-[11px] font-bold text-neutral-800 shadow-xs hover:border-black active:scale-95 transition-all cursor-pointer"
-                title="Post-Flight Analysis & Mission Debrief"
-              >
-                <FileText className="h-3 w-3 text-emerald-600" />
-                <span className="hidden md:inline">Debrief</span>
-              </button>
-            )}
+              {isToolsOpen && (
+                <div className="absolute top-full left-0 mt-2 w-48 bg-white border-2 border-black rounded-2xl shadow-2xl p-2 z-40 space-y-1 animate-in fade-in slide-in-from-top-2 duration-150 font-mono">
+                  <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest px-2 py-1">
+                    MISSION TOOLS
+                  </div>
 
-            {/* Quick Action: Physics Debug Toggle */}
-            {onToggleDebug && (
-              <button
-                onClick={onToggleDebug}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-neutral-300 text-[11px] font-bold text-neutral-800 shadow-xs hover:border-black active:scale-95 transition-all cursor-pointer"
-                title="Toggle 6-DoF Physics Debug HUD (F3 or ~)"
-              >
-                <Activity className="h-3 w-3 text-rose-500" />
-                <span className="hidden lg:inline">Debug</span>
-              </button>
-            )}
+                  {onOpenEnvironment && (
+                    <button
+                      onClick={() => { setIsToolsOpen(false); onOpenEnvironment(); }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-bold text-neutral-800 hover:bg-neutral-100 transition-colors text-left cursor-pointer"
+                    >
+                      <CloudSun className="h-3.5 w-3.5 text-[#FF5500]" />
+                      <span>Weather & Wind</span>
+                    </button>
+                  )}
 
-            {/* Quick Action: Tutorial Toggle */}
-            {onToggleTutorial && (
-              <button
-                onClick={onToggleTutorial}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-neutral-300 text-[11px] font-bold text-neutral-800 shadow-xs hover:border-black active:scale-95 transition-all cursor-pointer"
-                title="Toggle Flight Academy Tutorial"
-              >
-                <HelpCircle className="h-3 w-3 text-amber-500" />
-                <span className="hidden lg:inline">Tutorial</span>
-              </button>
-            )}
+                  {onOpenReplay && (
+                    <button
+                      onClick={() => { setIsToolsOpen(false); onOpenReplay(); }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-bold text-neutral-800 hover:bg-neutral-100 transition-colors text-left cursor-pointer"
+                    >
+                      <Play className="h-3.5 w-3.5 text-blue-600 fill-current" />
+                      <span>Flight Replay</span>
+                    </button>
+                  )}
+
+                  {onOpenAnalysis && (
+                    <button
+                      onClick={() => { setIsToolsOpen(false); onOpenAnalysis(); }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-bold text-neutral-800 hover:bg-neutral-100 transition-colors text-left cursor-pointer"
+                    >
+                      <FileText className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>Mission Debrief</span>
+                    </button>
+                  )}
+
+                  {onToggleDebug && (
+                    <button
+                      onClick={() => { setIsToolsOpen(false); onToggleDebug(); }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-bold text-neutral-800 hover:bg-neutral-100 transition-colors text-left cursor-pointer"
+                    >
+                      <Activity className="h-3.5 w-3.5 text-rose-500" />
+                      <span>6-DoF Physics Debug</span>
+                    </button>
+                  )}
+
+                  {onToggleTutorial && (
+                    <button
+                      onClick={() => { setIsToolsOpen(false); onToggleTutorial(); }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-bold text-neutral-800 hover:bg-neutral-100 transition-colors text-left cursor-pointer"
+                    >
+                      <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                      <span>Flight Coach Guide</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Row 2: Timer, Distance, Airspace Roster, Controls Modal Toggle & Dashboard Exit Button */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border-2 border-black shadow-sm text-xs font-semibold">
+          {/* Row 2: Timer, Distance, Controls Modal Toggle & Dashboard Exit Button */}
+          <div ref={controlsRef} className="relative flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-white px-2.5 sm:px-3 py-1 rounded-lg border-2 border-black shadow-sm text-xs font-semibold">
               <Clock className="h-3.5 w-3.5 text-[#FF5500]" />
               <span>T+{formatTime(telemetry.flightTimeSeconds)}</span>
               <span className="text-neutral-300">|</span>
@@ -457,16 +498,10 @@ export function TelemetryHUD({
               <span>{telemetry.distanceFromHome.toFixed(1)}m</span>
             </div>
 
-            {/* Multiplayer Airspace Roster Widget */}
-            <MultiplayerRosterWidget
-              players={remotePlayers || []}
-              myCallsign={callsign || "PILOT"}
-            />
-
             {/* Controls Button */}
             <button
               onClick={() => setIsControlsOpen(!isControlsOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border-2 border-black text-xs font-bold text-neutral-900 shadow-sm hover:bg-neutral-100 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border-2 border-black text-xs font-bold text-neutral-900 shadow-sm hover:bg-neutral-100 active:scale-95 transition-all cursor-pointer"
               title="View Keyboard Flight Controls"
             >
               <Keyboard className="h-3.5 w-3.5 text-[#FF5500]" />
@@ -477,106 +512,95 @@ export function TelemetryHUD({
             {/* Top-Left Exit to Dashboard Button */}
             <button
               onClick={onExit}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black text-white hover:bg-neutral-800 border-2 border-black text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black text-white hover:bg-neutral-800 border-2 border-black text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
               title="Return to Drone Hangar / Dashboard"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Dashboard</span>
             </button>
+
+            {/* Controls Panel Dropdown */}
+            {isControlsOpen && (
+              <div className="absolute top-full left-0 mt-2 w-72 p-3.5 rounded-2xl bg-white border-2 border-black shadow-2xl text-xs space-y-2.5 animate-in fade-in zoom-in-95 z-40 pointer-events-auto">
+                <div className="border-b border-neutral-200 pb-2 flex justify-between items-center">
+                  <div className="flex items-center gap-1.5">
+                    <Keyboard className="h-4 w-4 text-[#FF5500]" />
+                    <span className="font-heading font-extrabold text-neutral-950 uppercase tracking-wide">
+                      Flight Controls
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setIsControlsOpen(false)}
+                    className="text-neutral-400 hover:text-black p-0.5 rounded cursor-pointer transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-1.5 text-neutral-800">
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Pitch & Roll</span>
+                    <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
+                      W A S D
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Climb (Throttle Up)</span>
+                    <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
+                      SPACE
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Descend (Throttle Down)</span>
+                    <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
+                      SHIFT / C
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Yaw Rotation</span>
+                    <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
+                      Q / E
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Hover Assist</span>
+                    <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
+                      H
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Precision Land</span>
+                    <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
+                      L
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Tactical Map</span>
+                    <span className="font-bold bg-[#FF5500] text-white px-2 py-0.5 rounded border border-black">
+                      M
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-neutral-200 text-[10px] text-neutral-500 leading-tight">
+                  💡 Tip: Click & drag on 3D view to orbit camera 360°.
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* -------------------------------------------------- */}
-          {/* SOLID WHITE FLIGHT CONTROLS CARD (NOT TRANSLUCENT) */}
-          {/* -------------------------------------------------- */}
-          {isControlsOpen && (
-            <div className="mt-1 w-72 p-3.5 rounded-2xl bg-white border-2 border-black shadow-2xl text-xs space-y-2.5 animate-in fade-in zoom-in-95 z-30 pointer-events-auto">
-              {/* Header */}
-              <div className="border-b border-neutral-200 pb-2 flex justify-between items-center">
-                <div className="flex items-center gap-1.5">
-                  <Keyboard className="h-4 w-4 text-[#FF5500]" />
-                  <span className="font-heading font-extrabold text-neutral-950 uppercase tracking-wide">
-                    Flight Controls
-                  </span>
-                </div>
-                <button
-                  onClick={() => setIsControlsOpen(false)}
-                  className="text-neutral-400 hover:text-black p-0.5 rounded cursor-pointer transition-colors"
-                  title="Close controls panel"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Controls List */}
-              <div className="space-y-1.5 text-neutral-800">
-                <div className="flex justify-between items-center">
-                  <span className="text-neutral-600">Pitch & Roll</span>
-                  <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
-                    W A S D
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-neutral-600">Climb (Throttle Up)</span>
-                  <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
-                    SPACE
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-neutral-600">Descend (Throttle Down)</span>
-                  <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
-                    SHIFT / C
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-neutral-600">Yaw Rotation</span>
-                  <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
-                    Q / E
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-neutral-600">Hover Assist</span>
-                  <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
-                    H
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-neutral-600">Precision Land</span>
-                  <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
-                    L
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-neutral-600">Reset to Helipad</span>
-                  <span className="font-bold bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded border border-neutral-300">
-                    R
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-neutral-600">Tactical Island Map</span>
-                  <span className="font-bold bg-[#FF5500] text-white px-2 py-0.5 rounded border border-black">
-                    M
-                  </span>
-                </div>
-              </div>
-
-              {/* Orbit Tip */}
-              <div className="pt-2 border-t border-neutral-200 text-[10px] text-neutral-500 leading-tight">
-                💡 Tip: Click & drag on 3D view to orbit camera 360°.
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Top Center: Attitude Horizon, Heading Tape & Wind Vector */}
-        <div className="hidden sm:flex items-center gap-3 shrink-0 pointer-events-auto">
-          {/* 1. Attitude Indicator / Artificial Horizon */}
+        {/* ==================================================== */}
+        {/* TOP-CENTER: RESPONSIVE FLIGHT AVIONICS INSTRUMENTS    */}
+        {/* ==================================================== */}
+        {/* Full Expanded Gyro & Tape on xl screens (>= 1280px) */}
+        <div className="hidden xl:flex items-center gap-2.5 shrink-0 pointer-events-auto z-20">
           <AttitudeIndicator
             pitchRad={telemetry.rotation.pitch}
             rollRad={telemetry.rotation.roll}
           />
 
-          {/* 2. Heading Compass Tape */}
-          <div className="flex flex-col items-center bg-white px-3.5 py-1.5 rounded-xl border-2 border-black shadow-sm">
+          <div className="flex flex-col items-center bg-white px-3 py-1.5 rounded-xl border-2 border-black shadow-sm">
             <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-900">
               <Compass className="h-3.5 w-3.5 text-[#FF5500]" />
               <span>HDG: {telemetry.heading.toString().padStart(3, "0")}°</span>
@@ -600,13 +624,11 @@ export function TelemetryHUD({
             </div>
           </div>
 
-          {/* 3. Motor Mixer Outputs */}
           <MotorMixerGauges motorOutputs={telemetry.motorOutputs} />
 
-          {/* 4. Wind Vector Indicator */}
           {environment && (
             <div
-              className="flex flex-col items-center bg-white p-1.5 px-2.5 rounded-xl border-2 border-black shadow-sm"
+              className="flex flex-col items-center bg-white p-1 px-2.5 rounded-xl border-2 border-black shadow-sm"
               title={`Wind: ${environment.windSpeed.toFixed(1)} m/s at ${environment.windDirection}°`}
             >
               <div className="flex items-center gap-1 text-[8px] font-black text-neutral-500 uppercase tracking-wider">
@@ -628,39 +650,70 @@ export function TelemetryHUD({
           )}
         </div>
 
-        {/* Top Right: Battery, Altitude & Airspeed */}
-        <div className="flex flex-col items-end gap-1.5 pointer-events-auto shrink-0">
-          <div className="flex items-center gap-2 bg-white px-2.5 py-1 rounded-lg border-2 border-black shadow-sm text-xs">
-            <Battery className="h-3.5 w-3.5 text-[#FF5500]" />
-            <span className="font-bold text-xs">{telemetry.batteryLevel}%</span>
-            <div className="w-10 sm:w-14 h-2 bg-neutral-200 rounded-full overflow-hidden border border-neutral-300">
-              <div
-                className="h-full bg-[#FF5500] transition-all duration-300"
-                style={{ width: `${telemetry.batteryLevel}%` }}
-              />
+        {/* Compact Compass & Wind Badge on screens below 1280px (Never clips!) */}
+        <div className="hidden sm:flex xl:hidden items-center gap-2 bg-white px-3 py-1.5 rounded-xl border-2 border-black shadow-sm text-xs font-bold shrink-0 pointer-events-auto z-20">
+          <Compass className="h-3.5 w-3.5 text-[#FF5500]" />
+          <span>HDG {telemetry.heading.toString().padStart(3, "0")}°</span>
+          {environment && (
+            <>
+              <span className="text-neutral-300">|</span>
+              <Wind className="h-3.5 w-3.5 text-[#FF5500]" />
+              <span>{environment.windSpeed.toFixed(1)}m/s</span>
+            </>
+          )}
+        </div>
+
+        {/* ==================================================== */}
+        {/* TOP-RIGHT: BATTERY, ALTITUDE TAPE & FLIGHT COACH     */}
+        {/* ==================================================== */}
+        <div className="flex flex-col items-end gap-1.5 pointer-events-auto shrink-0 z-30">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Battery Indicator */}
+            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border-2 border-black shadow-sm text-xs">
+              <Battery className="h-3.5 w-3.5 text-[#FF5500]" />
+              <span className="font-bold text-xs">{telemetry.batteryLevel}%</span>
+              <div className="w-8 sm:w-12 h-1.5 bg-neutral-200 rounded-full overflow-hidden border border-neutral-300">
+                <div
+                  className="h-full bg-[#FF5500] transition-all duration-300"
+                  style={{ width: `${telemetry.batteryLevel}%` }}
+                />
+              </div>
+              {telemetry.batteryVoltage ? (
+                <span className="text-[9px] text-neutral-600 font-bold hidden sm:inline">
+                  {telemetry.batteryVoltage.toFixed(1)}V
+                </span>
+              ) : null}
             </div>
-            {telemetry.batteryVoltage ? (
-              <span className="text-[9px] text-neutral-600 font-bold hidden sm:inline">
-                {telemetry.batteryVoltage.toFixed(1)}V
-              </span>
-            ) : null}
+
+            {/* Flight Coach Toggle Button */}
+            {onToggleTutorial && (
+              <button
+                onClick={onToggleTutorial}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 border-2 border-[#FF5500] text-xs font-bold text-[#FF5500] shadow-sm hover:bg-orange-100 active:scale-95 transition-all cursor-pointer"
+                title="Toggle Step-by-Step Flight Coach Guide"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Guide</span>
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center gap-3 text-xs text-neutral-800 bg-white px-3 py-1.5 rounded-xl border-2 border-black shadow-sm">
+          {/* Altitude & Speed Tape */}
+          <div className="flex items-center gap-2 sm:gap-3 text-xs text-neutral-800 bg-white px-2.5 sm:px-3 py-1 rounded-xl border-2 border-black shadow-sm">
             <div>
-              <span className="text-[9px] text-neutral-500 block uppercase font-medium">Altitude</span>
+              <span className="text-[8px] text-neutral-500 block uppercase font-bold">ALT</span>
               <strong className="text-xs sm:text-sm font-extrabold text-neutral-950 font-heading">
                 {telemetry.altitude.toFixed(1)}m
               </strong>
             </div>
-            <div className="border-l border-neutral-200 pl-3">
-              <span className="text-[9px] text-neutral-500 block uppercase font-medium">Speed</span>
+            <div className="border-l border-neutral-200 pl-2 sm:pl-3">
+              <span className="text-[8px] text-neutral-500 block uppercase font-bold">SPD</span>
               <strong className="text-xs sm:text-sm font-extrabold text-neutral-950 font-heading">
                 {telemetry.groundSpeed.toFixed(1)}km/h
               </strong>
             </div>
-            <div className="border-l border-neutral-200 pl-3 hidden md:block">
-              <span className="text-[9px] text-neutral-500 block uppercase font-medium">Climb</span>
+            <div className="border-l border-neutral-200 pl-2 sm:pl-3 hidden md:block">
+              <span className="text-[8px] text-neutral-500 block uppercase font-bold">CLIMB</span>
               <strong className="text-xs sm:text-sm font-extrabold text-neutral-950 font-heading">
                 {telemetry.verticalSpeed >= 0 ? "+" : ""}{telemetry.verticalSpeed.toFixed(1)}m/s
               </strong>

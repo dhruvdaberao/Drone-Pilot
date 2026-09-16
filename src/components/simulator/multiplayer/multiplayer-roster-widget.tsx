@@ -1,8 +1,6 @@
-"use client";
-
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { RemotePlayerState } from "@/lib/multiplayer/multiplayer-types";
-import { Users, Wifi } from "lucide-react";
+import { Users, Wifi, X } from "lucide-react";
 
 interface MultiplayerRosterWidgetProps {
   players: RemotePlayerState[];
@@ -12,9 +10,21 @@ interface MultiplayerRosterWidgetProps {
 
 export function MultiplayerRosterWidget({ players, myCallsign, className }: MultiplayerRosterWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("mousedown", handleOutsideClick);
+    return () => window.removeEventListener("mousedown", handleOutsideClick);
+  }, [isOpen]);
 
   return (
-    <div className={`relative font-mono select-none pointer-events-auto ${className || ""}`}>
+    <div ref={containerRef} className={`relative font-mono select-none pointer-events-auto ${className || ""}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border-2 border-black shadow-sm text-xs font-bold text-neutral-800 hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer"
@@ -27,8 +37,16 @@ export function MultiplayerRosterWidget({ players, myCallsign, className }: Mult
 
       {isOpen && (
         <div className="absolute top-full left-0 mt-2 w-64 bg-white border-2 border-black rounded-2xl shadow-2xl p-3 animate-in fade-in slide-in-from-top-2 duration-150 z-50">
-          <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">
-            ACTIVE SESSION PILOTS
+          <div className="flex items-center justify-between pb-1.5 border-b border-neutral-200 mb-2">
+            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+              ACTIVE SESSION PILOTS
+            </span>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="text-neutral-400 hover:text-black p-0.5 cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
           </div>
 
           <div className="space-y-1.5 max-h-48 overflow-y-auto">
