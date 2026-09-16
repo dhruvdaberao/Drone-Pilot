@@ -22,6 +22,7 @@ import { ModularDrone } from "./modular-drone";
 import { ChaseCameraController, CameraMode } from "./chase-camera";
 import { TelemetryHUD } from "./telemetry-hud";
 import { IslandMapModal } from "./island-map-modal";
+import { NavigationWaypoint } from "./minimap-widget";
 import { SimulationLoadingScreen } from "./loading/simulation-loading-screen";
 import { EnvironmentControlPanel } from "./environment-control-panel";
 import { TutorialOverlay } from "./tutorial-overlay";
@@ -80,6 +81,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
   // UI Modal States
   const [isLoading, setIsLoading] = useState(true);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [activeWaypoint, setActiveWaypoint] = useState<NavigationWaypoint | null>(null);
   const [isEnvironmentOpen, setIsEnvironmentOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(true);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
@@ -553,6 +555,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         environment={envState}
         remotePlayers={remotePlayers}
         callsign={callsign}
+        activeWaypoint={activeWaypoint}
       />
 
       {/* Live Tutorial Overlay */}
@@ -585,6 +588,8 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         onClose={() => setIsMapModalOpen(false)}
         telemetry={telemetry}
         droneName={selectedDrone.name}
+        activeWaypoint={activeWaypoint}
+        onSelectWaypoint={setActiveWaypoint}
       />
 
       {/* Post-Flight Debrief & Incident Analysis Modal */}

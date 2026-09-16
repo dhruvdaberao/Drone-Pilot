@@ -1,131 +1,311 @@
 // ==========================================================
-// DRONE PILOT — TACTICAL MINIMAP RADAR WIDGET
-// Renders the natural irregular island coastline & real-time telemetry
+// DRONE PILOT — REAL-TIME TACTICAL RADAR MINIMAP (AAA GAME SPEC)
+// Centered on the drone with dynamic terrain scrolling, 180m radar range,
+// heading radar cone, helipad beacons, and waypoint edge tracking.
 // ==========================================================
 
 "use client";
 
 import React, { useMemo } from "react";
 import { TelemetryState } from "@/lib/simulation/types";
-import { worldToRadarCoords, getTacticalMapData } from "@/lib/world/map-data";
+import { generateCoastlinePolygon } from "@/lib/world/coastline-math";
+import { HELIPAD_LIST } from "@/lib/world/helipad-definitions";
+import { Navigation, Target, MapPin } from "lucide-react";
+
+export interface NavigationWaypoint {
+  id: string;
+  name: string;
+  x: number;
+  z: number;
+  elevation?: number;
+}
 
 interface MinimapWidgetProps {
   telemetry: TelemetryState;
   onClick: () => void;
+  activeWaypoint?: NavigationWaypoint | null;
 }
 
-export function MinimapWidget({ telemetry, onClick }: MinimapWidgetProps) {
-  const mapData = useMemo(() => getTacticalMapData(200), []);
-  const dronePos = worldToRadarCoords(telemetry.position.x, telemetry.position.z, 200);
+const RADAR_RANGE_METERS = 180; // 180m radar radius
+const CANV_SIZE = 200;
+const CENTER = 100;
+const SCALE = CENTER / RADAR_RANGE_METERS; // ~0.555 px/m
+
+export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWidgetProps) {
+  const droneX = telemetry.position.x;
+  const droneZ = telemetry.position.z;
+  const heading = telemetry.heading;
+
+  // Pre-generate true physical coastline polygon in meters
+  const baseCoastline = useMemo(() => generateCoastlinePolygon(96), []);
+
+  // Project physical coastline relative to the drone's center
+  const localCoastlinePath = useMemo(() => {
+    if (baseCoastline.length === 0) return "";
+    let d = "";
+    baseCoastline.forEach((pt, i) => {
+      const rx = CENTER + (pt.x - droneX) * SCALE;
+      const ry = CENTER + (pt.z - droneZ) * SCALE;
+      d += i === 0 ? `M ${rx.toFixed(1)} ${ry.toFixed(1)}` : ` L ${rx.toFixed(1)} ${ry.toFixed(1)}`;
+    });
+    return d + " Z";
+  }, [baseCoastline, droneX, droneZ]);
+
+  // Determine active or nearest waypoint target ("Where we want to go")
+  const targetWaypoint = useMemo<NavigationWaypoint>(() => {
+    if (activeWaypoint) return activeWaypoint;
+    // Fallback: track nearest helipad
+    let nearest = HELIPAD_LIST[0];
+    let minDist = Infinity;
+    HELIPAD_LIST.forEach((h) => {
+      const d = Math.hypot(h.position.x - droneX, h.position.z - droneZ);
+      if (d < minDist) {
+        minDist = d;
+        nearest = h;
+      }
+    });
+    return {
+      id: nearest.id,
+      name: nearest.name.split(" ")[0] || "PAD",
+      x: nearest.position.x,
+      z: nearest.position.z,
+    };
+  }, [activeWaypoint, droneX, droneZ]);
+
+  // Target relative math
+  const targetRel = useMemo(() => {
+    const dx = targetWaypoint.x - droneX;
+    const dz = targetWaypoint.z - droneZ;
+    const dist = Math.hypot(dx, dz);
+    const angleRad = Math.atan2(dz, dx);
+    const angleDeg = (angleRad * 180) / Math.PI;
+
+    // Projected position on radar
+    const rx = CENTER + dx * SCALE;
+    const ry = CENTER + dz * SCALE;
+
+    const isInside = dist <= RADAR_RANGE_METERS - 15;
+
+    // Clamped edge position if outside radar radius
+    const edgeRadius = CENTER - 14;
+    const edgeX = CENTER + Math.cos(angleRad) * edgeRadius;
+    const edgeY = CENTER + Math.sin(angleRad) * edgeRadius;
+
+    return { dx, dz, dist, rx, ry, isInside, edgeX, edgeY, angleDeg };
+  }, [targetWaypoint, droneX, droneZ]);
+
+  // Nearby Helipads within 280m
+  const nearbyHelipads = useMemo(() => {
+    return HELIPAD_LIST.map((h) => {
+      const dx = h.position.x - droneX;
+      const dz = h.position.z - droneZ;
+      const dist = Math.hypot(dx, dz);
+      return {
+        id: h.id,
+        name: h.name,
+        rx: CENTER + dx * SCALE,
+        ry: CENTER + dz * SCALE,
+        dist,
+        elevation: h.elevation,
+      };
+    }).filter((h) => h.dist < RADAR_RANGE_METERS + 80);
+  }, [droneX, droneZ]);
+
+  // Current Sector Tag
+  const sectorName = useMemo(() => {
+    if (Math.hypot(droneX, droneZ) < 180) return "ACADEMY";
+    if (droneX < -200 && droneZ < -200) return "MT APEX";
+    if (droneX > 200 && droneZ < -200) return "FOREST";
+    if (droneX > 250 && droneZ > 200) return "METROPOLIS";
+    if (droneX < -200 && droneZ > 100) return "PELICAN COVE";
+    if (droneZ > 350) return "HARBOR DOCKS";
+    return "ARCHIPELAGO";
+  }, [droneX, droneZ]);
 
   return (
     <div
       onClick={onClick}
       role="button"
       tabIndex={0}
-      aria-label="Open Full Island Map"
+      aria-label="Open Full Tactical Island Map"
       className="group relative cursor-pointer pointer-events-auto select-none transition-all duration-200 hover:scale-105 active:scale-95"
-      title="Click to open Full Island Tactical Map (M)"
+      title="Tactical Radar GPS — Click to open Full Island Map (M)"
     >
-      {/* Outer Circular Radar Container with Black Border */}
-      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white border-2 sm:border-3 border-black shadow-xl overflow-hidden relative flex items-center justify-center">
-        {/* Radar SVG Graphic */}
+      {/* Outer Tactical Bezel Frame */}
+      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-neutral-950/90 border-2 border-neutral-700/80 shadow-[0_12px_30px_rgba(0,0,0,0.6),0_0_15px_rgba(255,85,0,0.15)] relative overflow-hidden flex items-center justify-center backdrop-blur-md">
+        
+        {/* Dynamic SVG Radar Canvas */}
         <svg viewBox="0 0 200 200" className="w-full h-full">
-          {/* 1. Surrounding Ocean Expanse */}
-          <rect width="200" height="200" fill="#0284c7" />
+          <defs>
+            <clipPath id="radar-clip">
+              <circle cx="100" cy="100" r="98" />
+            </clipPath>
 
-          {/* 2. Natural Irregular Coastline — Sandy Beach Shelf */}
-          <path
-            d={mapData.coastlinePath}
-            fill="#deb887"
-            stroke="#d4a373"
-            strokeWidth="3"
-            strokeLinejoin="round"
-          />
+            {/* Tactical Radar Grid Gradient */}
+            <radialGradient id="radar-dark-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#0f172a" stopOpacity="0.95" />
+              <stop offset="70%" stopColor="#020617" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#000000" stopOpacity="1" />
+            </radialGradient>
 
-          {/* 3. Natural Irregular Island — Turf Landmass (scaled slightly inside) */}
-          <g transform="translate(100, 100) scale(0.92) translate(-100, -100)">
+            {/* Vision Cone Gradient */}
+            <radialGradient id="fov-cone" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#ff5500" stopOpacity="0.40" />
+              <stop offset="70%" stopColor="#ff5500" stopOpacity="0.12" />
+              <stop offset="100%" stopColor="#ff5500" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+
+          {/* Group clipped to circular radar bezel */}
+          <g clipPath="url(#radar-clip)">
+            {/* 1. Base Ocean Background */}
+            <rect width="200" height="200" fill="#030712" />
+
+            {/* 2. Scrolling Island Coastline (Sandy Beach Shelf) */}
             <path
-              d={mapData.coastlinePath}
-              fill="#476b3f"
-              stroke="#34522d"
-              strokeWidth="1.5"
+              d={localCoastlinePath}
+              fill="#ca8a04"
+              stroke="#eab308"
+              strokeWidth="6"
               strokeLinejoin="round"
+              opacity="0.85"
             />
-          </g>
 
-          {/* 4. Key Region Geographic Anchors */}
-          {/* Mountain Massif (North-West) */}
-          <polygon points="56,48 70,62 44,62" fill="#475569" />
-          <polygon points="56,48 61,53 51,53" fill="#ffffff" />
-          <polygon points="68,56 78,66 58,66" fill="#475569" />
+            {/* 3. Scrolling Island Turf Landmass */}
+            <path
+              d={localCoastlinePath}
+              fill="#14532d"
+              stroke="#166534"
+              strokeWidth="2"
+              strokeLinejoin="round"
+              opacity="0.92"
+            />
 
-          {/* Forest Pines (North-East) */}
-          <g fill="#1a361a">
-            <polygon points="132,58 136,66 128,66" />
-            <polygon points="144,52 148,60 140,60" />
-            <polygon points="152,60 156,68 148,68" />
-            <polygon points="138,68 142,76 134,76" />
-          </g>
-
-          {/* Downtown Metropolis (South-East) */}
-          <g fill="#1e293b" stroke="#000000" strokeWidth="0.5">
-            <rect x="134" y="124" width="8" height="8" rx="1" />
-            <rect x="145" y="122" width="9" height="10" rx="1" fill="#0f172a" />
-            <rect x="136" y="135" width="7" height="8" rx="1" />
-          </g>
-
-          {/* Harbor Industrial (South) */}
-          <g fill="#d97706" opacity="0.85">
-            <rect x="105" y="146" width="10" height="6" rx="1" />
-            <circle cx="102" cy="154" r="3" />
-          </g>
-
-          {/* 5. Central Academy Launchpad Alpha (Origin) */}
-          <circle cx="100" cy="100" r="4.5" fill="#242831" stroke="#f59e0b" strokeWidth="1.2" />
-          <text
-            x="100"
-            y="102"
-            fill="#ffffff"
-            fontSize="4.5"
-            fontWeight="bold"
-            textAnchor="middle"
-            fontFamily="sans-serif"
-          >
-            H
-          </text>
-
-          {/* 6. Radar Concentric Rings & Crosshairs */}
-          <circle cx="100" cy="100" r="40" fill="none" stroke="#000000" strokeWidth="0.6" strokeDasharray="2 3" opacity="0.35" />
-          <circle cx="100" cy="100" r="75" fill="none" stroke="#000000" strokeWidth="0.6" strokeDasharray="3 3" opacity="0.35" />
-          <line x1="100" y1="8" x2="100" y2="192" stroke="#000000" strokeWidth="0.5" opacity="0.25" />
-          <line x1="8" y1="100" x2="192" y2="100" stroke="#000000" strokeWidth="0.5" opacity="0.25" />
-
-          {/* 7. Cardinal North Indicator */}
-          <polygon points="100,5 103.5,12 96.5,12" fill="#ff5500" stroke="#000000" strokeWidth="0.5" />
-          <text x="100" y="20" fill="#ff5500" fontSize="8" fontWeight="extrabold" textAnchor="middle" fontFamily="sans-serif">
-            N
-          </text>
-
-          {/* 8. Live Drone Position Marker & Heading Chevron */}
-          <g transform={`translate(${dronePos.x}, ${dronePos.y})`}>
-            {/* Range Pulse */}
-            <circle cx="0" cy="0" r="6" fill="none" stroke="#ff5500" strokeWidth="1.2" opacity="0.75" />
-
-            {/* Drone Center Core */}
-            <circle cx="0" cy="0" r="3.2" fill="#000000" stroke="#ffffff" strokeWidth="1" />
-
-            {/* Heading Pointer Chevron */}
-            <g transform={`rotate(${telemetry.heading})`}>
-              <polygon points="0,-9 -4,-4 4,-4" fill="#ff5500" stroke="#000000" strokeWidth="0.5" />
+            {/* 4. Local Academy Runway Strip (Centered at 0, 0 in World) */}
+            <g transform={`translate(${CENTER - droneX * SCALE}, ${CENTER - droneZ * SCALE})`}>
+              {/* Asphalt Runway: 240m long x 24m wide */}
+              <rect
+                x={-120 * SCALE}
+                y={-12 * SCALE}
+                width={240 * SCALE}
+                height={24 * SCALE}
+                rx={2}
+                fill="#1e293b"
+                stroke="#475569"
+                strokeWidth="1"
+              />
+              {/* White Centerline */}
+              <line
+                x1={-110 * SCALE}
+                y1={0}
+                x2={110 * SCALE}
+                y2={0}
+                stroke="#ffffff"
+                strokeWidth="1.2"
+                strokeDasharray="4 4"
+                opacity="0.8"
+              />
             </g>
+
+            {/* 5. Concentric Tactical Range Rings (50m, 100m, 150m) */}
+            <circle cx="100" cy="100" r={50 * SCALE} fill="none" stroke="#22d3ee" strokeWidth="0.8" strokeDasharray="2 3" opacity="0.40" />
+            <circle cx="100" cy="100" r={100 * SCALE} fill="none" stroke="#22d3ee" strokeWidth="0.8" strokeDasharray="3 3" opacity="0.35" />
+            <circle cx="100" cy="100" r={150 * SCALE} fill="none" stroke="#22d3ee" strokeWidth="0.8" strokeDasharray="4 4" opacity="0.30" />
+
+            {/* Crosshair Axes */}
+            <line x1="100" y1="4" x2="100" y2="196" stroke="#22d3ee" strokeWidth="0.6" opacity="0.25" />
+            <line x1="4" y1="100" x2="196" y2="100" stroke="#22d3ee" strokeWidth="0.6" opacity="0.25" />
+
+            {/* 6. Nearby Helipads Beacons */}
+            {nearbyHelipads.map((pad) => (
+              <g key={pad.id} transform={`translate(${pad.rx}, ${pad.ry})`}>
+                <circle cx="0" cy="0" r="5.5" fill="#0f172a" stroke="#22c55e" strokeWidth="1.5" />
+                <text x="0" y="2.5" fill="#22c55e" fontSize="5.5" fontWeight="900" textAnchor="middle" fontFamily="monospace">
+                  H
+                </text>
+              </g>
+            ))}
+
+            {/* 7. Active Navigation Waypoint Line & Beacon ("Where we want to go") */}
+            {targetRel.isInside ? (
+              <g transform={`translate(${targetRel.rx}, ${targetRel.ry})`}>
+                {/* Dashed flight line from drone to waypoint */}
+                <line
+                  x1={-(targetRel.rx - CENTER)}
+                  y1={-(targetRel.ry - CENTER)}
+                  x2="0"
+                  y2="0"
+                  stroke="#ff5500"
+                  strokeWidth="1.5"
+                  strokeDasharray="3 2"
+                  opacity="0.75"
+                />
+                <circle cx="0" cy="0" r="8" fill="none" stroke="#ff5500" strokeWidth="1.5" className="animate-ping" opacity="0.7" />
+                <circle cx="0" cy="0" r="5" fill="#ff5500" stroke="#ffffff" strokeWidth="1.2" />
+              </g>
+            ) : (
+              // Navigation Edge Arrow pointing toward off-screen waypoint
+              <g transform={`translate(${targetRel.edgeX}, ${targetRel.edgeY}) rotate(${targetRel.angleDeg})`}>
+                <polygon points="6,0 -4,-5 -1,0 -4,5" fill="#ff5500" stroke="#ffffff" strokeWidth="0.8" />
+              </g>
+            )}
+
+            {/* 8. Drone Forward Radar Vision Cone */}
+            <g transform={`translate(100, 100) rotate(${heading})`}>
+              <path
+                d="M 0 0 L -25 -70 A 70 70 0 0 1 25 -70 Z"
+                fill="url(#fov-cone)"
+              />
+              <line x1="0" y1="0" x2="0" y2="-70" stroke="#ff5500" strokeWidth="1.2" strokeDasharray="3 2" opacity="0.85" />
+            </g>
+
+            {/* 9. Center Aircraft Marker */}
+            <g transform="translate(100, 100)">
+              {/* Drone Center Pulse */}
+              <circle cx="0" cy="0" r="8" fill="none" stroke="#ff5500" strokeWidth="1.2" opacity="0.6" />
+              <circle cx="0" cy="0" r="3.5" fill="#000000" stroke="#ffffff" strokeWidth="1.2" />
+              {/* Rotating Heading Chevron */}
+              <g transform={`rotate(${heading})`}>
+                <polygon points="0,-8 -4,-2 0,-4 4,-2" fill="#ff5500" stroke="#000000" strokeWidth="0.8" />
+              </g>
+            </g>
+          </g>
+
+          {/* 10. Outer Cardinal Compass Indicators */}
+          <g>
+            {/* North Indicator */}
+            <polygon points="100,4 103,10 97,10" fill="#ff5500" />
+            <text x="100" y="18" fill="#ff5500" fontSize="7" fontWeight="900" textAnchor="middle" fontFamily="monospace">
+              N
+            </text>
+            <text x="190" y="102" fill="#94a3b8" fontSize="6.5" fontWeight="bold" textAnchor="middle" fontFamily="monospace">
+              E
+            </text>
+            <text x="100" y="194" fill="#94a3b8" fontSize="6.5" fontWeight="bold" textAnchor="middle" fontFamily="monospace">
+              S
+            </text>
+            <text x="10" y="102" fill="#94a3b8" fontSize="6.5" fontWeight="bold" textAnchor="middle" fontFamily="monospace">
+              W
+            </text>
           </g>
         </svg>
 
-        {/* Hover Icon Indicator */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 text-white text-[8px] font-extrabold px-1.5 py-0.5 rounded shadow">
-            EXPAND
+        {/* Top Radar Sector Header Pill */}
+        <div className="absolute top-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-black/80 border border-neutral-700/80 text-[8px] font-mono font-bold text-neutral-200 tracking-wider flex items-center gap-1 shadow-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span>{sectorName}</span>
+        </div>
+
+        {/* Bottom Distance to Target Pill ("Where we want to go") */}
+        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-black/85 border border-[#ff5500]/60 text-[8px] font-mono font-bold text-neutral-100 tracking-tight flex items-center gap-1 shadow-sm whitespace-nowrap">
+          <Target className="h-2.5 w-2.5 text-[#ff5500]" />
+          <span>{targetWaypoint.name}: {targetRel.dist.toFixed(0)}m</span>
+        </div>
+
+        {/* Hover Expand Prompt */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center pointer-events-none">
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/90 text-white border border-[#ff5500] text-[9px] font-bold px-2 py-1 rounded shadow-lg font-mono tracking-wider">
+            EXPAND (M)
           </span>
         </div>
       </div>
