@@ -158,30 +158,38 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
 
           {/* Group clipped to circular radar bezel */}
           <g clipPath="url(#radar-clip)">
-            {/* 1. Base Ocean Background */}
-            <rect width="200" height="200" fill="#030712" />
+            {/* 1. Base Ocean Background (Deep Maritime Blue) */}
+            <rect width="200" height="200" fill="#081726" />
 
-            {/* 2. Scrolling Island Coastline (Sandy Beach Shelf) */}
+            {/* 2. Shallow Turquoise Coral Shelf */}
             <path
               d={localCoastlinePath}
-              fill="#ca8a04"
-              stroke="#eab308"
-              strokeWidth="6"
+              fill="none"
+              stroke="#0d4a6e"
+              strokeWidth="14"
               strokeLinejoin="round"
               opacity="0.85"
             />
 
-            {/* 3. Scrolling Island Turf Landmass */}
+            {/* 3. Scrolling Island Coastline (Natural Golden Sand Beach) */}
             <path
               d={localCoastlinePath}
-              fill="#14532d"
-              stroke="#166534"
-              strokeWidth="2"
+              fill="#dfc086"
+              stroke="#c29d5b"
+              strokeWidth="6"
               strokeLinejoin="round"
-              opacity="0.92"
             />
 
-            {/* 4. Local Academy Runway Strip (Centered at 0, 0 in World) */}
+            {/* 4. Scrolling Island Turf Landmass (Solid Natural Green) */}
+            <path
+              d={localCoastlinePath}
+              fill="#1b3d2b"
+              stroke="#2d5e3f"
+              strokeWidth="2"
+              strokeLinejoin="round"
+            />
+
+            {/* 5. Local Academy Runway Strip (Centered at 0, 0 in World) */}
             <g transform={`translate(${CENTER - droneX * SCALE}, ${CENTER - droneZ * SCALE})`}>
               {/* Asphalt Runway: 240m long x 24m wide */}
               <rect
@@ -190,9 +198,26 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
                 width={240 * SCALE}
                 height={24 * SCALE}
                 rx={2}
-                fill="#1e293b"
-                stroke="#475569"
+                fill="#0f172a"
+                stroke="#94a3b8"
                 strokeWidth="1"
+              />
+              {/* Runway Threshold Marks */}
+              <line
+                x1={-115 * SCALE}
+                y1={-9 * SCALE}
+                x2={-115 * SCALE}
+                y2={9 * SCALE}
+                stroke="#ffffff"
+                strokeWidth="1.5"
+              />
+              <line
+                x1={115 * SCALE}
+                y1={-9 * SCALE}
+                x2={115 * SCALE}
+                y2={9 * SCALE}
+                stroke="#ffffff"
+                strokeWidth="1.5"
               />
               {/* White Centerline */}
               <line
@@ -203,7 +228,7 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
                 stroke="#ffffff"
                 strokeWidth="1.2"
                 strokeDasharray="4 4"
-                opacity="0.8"
+                opacity="0.9"
               />
             </g>
 

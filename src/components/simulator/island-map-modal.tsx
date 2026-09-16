@@ -50,6 +50,8 @@ interface TacticalPOI {
   elevationMeters: number;
   description: string;
   callsign: string;
+  labelOffsetX: number;
+  labelOffsetY: number;
 }
 
 const TACTICAL_POIS: TacticalPOI[] = [
@@ -63,6 +65,8 @@ const TACTICAL_POIS: TacticalPOI[] = [
     elevation: "1.2m AGL",
     elevationMeters: 1.2,
     description: "Central Flight Academy asphalt runway & primary drone apron.",
+    labelOffsetX: 0,
+    labelOffsetY: -24,
   },
   {
     id: "mountain-apex",
@@ -74,6 +78,8 @@ const TACTICAL_POIS: TacticalPOI[] = [
     elevation: "28.5m AGL",
     elevationMeters: 28.5,
     description: "North-west granite mountain ridge with meteorological telemetry mast.",
+    labelOffsetX: 0,
+    labelOffsetY: -24,
   },
   {
     id: "forest-outpost",
@@ -85,6 +91,8 @@ const TACTICAL_POIS: TacticalPOI[] = [
     elevation: "4.0m AGL",
     elevationMeters: 4.0,
     description: "Coniferous timber outpost nestled in a dense pine forest clearing.",
+    labelOffsetX: 0,
+    labelOffsetY: -24,
   },
   {
     id: "downtown-heliport",
@@ -96,6 +104,8 @@ const TACTICAL_POIS: TacticalPOI[] = [
     elevation: "2.5m AGL",
     elevationMeters: 2.5,
     description: "Municipal vertiport situated between corporate skyscrapers.",
+    labelOffsetX: -36,
+    labelOffsetY: 26, // Placed below and left
   },
   {
     id: "city-rooftop",
@@ -107,6 +117,8 @@ const TACTICAL_POIS: TacticalPOI[] = [
     elevation: "58.5m AGL",
     elevationMeters: 58.5,
     description: "Elevated high-rise skyport atop the tallest island skyscraper.",
+    labelOffsetX: 40,
+    labelOffsetY: -26, // Placed above and right (no collision with METRO-01)
   },
   {
     id: "valley-bridge",
@@ -118,6 +130,8 @@ const TACTICAL_POIS: TacticalPOI[] = [
     elevation: "2.5m AGL",
     elevationMeters: 2.5,
     description: "Riverside observation platform adjacent to historic stone arch bridge.",
+    labelOffsetX: 0,
+    labelOffsetY: 26, // Placed below the bridge
   },
   {
     id: "harbor-cargo",
@@ -129,6 +143,8 @@ const TACTICAL_POIS: TacticalPOI[] = [
     elevation: "1.8m AGL",
     elevationMeters: 1.8,
     description: "Logistics shipping terminal bordered by fuel silos and container cranes.",
+    labelOffsetX: 0,
+    labelOffsetY: 24,
   },
   {
     id: "pelican-cove",
@@ -140,6 +156,8 @@ const TACTICAL_POIS: TacticalPOI[] = [
     elevation: "1.5m AGL",
     elevationMeters: 1.5,
     description: "South-west coastal cove pad overlooking turquoise shallow reefs.",
+    labelOffsetX: -20,
+    labelOffsetY: 24,
   },
 ];
 
@@ -322,26 +340,17 @@ export function IslandMapModal({
             {/* Topographical SVG Map Canvas */}
             <svg
               viewBox="0 0 900 900"
-              className="w-full h-full max-w-[720px] max-h-[720px] rounded-xl border border-neutral-800/80 shadow-2xl bg-[#030712] transition-transform duration-300 ease-out"
+              className="w-full h-full max-w-[720px] max-h-[720px] rounded-xl border border-neutral-800/80 shadow-2xl bg-[#081726] transition-transform duration-300 ease-out"
               style={{
                 transform: `scale(${zoomLevel})`,
                 transformOrigin: `${droneSvg.x}px ${droneSvg.y}px`,
               }}
             >
               <defs>
-                {/* Tactical Radar Grid */}
+                {/* Tactical Maritime Radar Grid */}
                 <pattern id="recon-grid" width="60" height="60" patternUnits="userSpaceOnUse">
-                  <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#1e293b" strokeWidth="0.8" opacity="0.45" />
+                  <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#132a45" strokeWidth="0.8" opacity="0.6" />
                 </pattern>
-
-                {/* Satellite Elevation Gradient */}
-                <radialGradient id="topography-relief" cx="40%" cy="35%" r="65%">
-                  <stop offset="0%" stopColor="#334155" stopOpacity="0.85" />
-                  <stop offset="40%" stopColor="#1e293b" stopOpacity="0.90" />
-                  <stop offset="75%" stopColor="#14532d" stopOpacity="0.95" />
-                  <stop offset="95%" stopColor="#ca8a04" stopOpacity="0.95" />
-                  <stop offset="100%" stopColor="#083344" stopOpacity="0.90" />
-                </radialGradient>
 
                 {/* Radar Vision Cone */}
                 <radialGradient id="recon-cone" cx="50%" cy="50%" r="50%">
@@ -351,101 +360,182 @@ export function IslandMapModal({
                 </radialGradient>
               </defs>
 
-              {/* 1. Surrounding Deep Ocean */}
-              <rect width="900" height="900" fill="#030712" />
+              {/* 1. Deep Maritime Ocean Water */}
+              <rect width="900" height="900" fill="#081726" />
               <rect width="900" height="900" fill="url(#recon-grid)" />
 
-              {/* Bathymetry Depth Rings */}
-              <circle cx="450" cy="450" r="440" fill="none" stroke="#0e7490" strokeWidth="1" strokeDasharray="4 6" opacity="0.30" />
-              <circle cx="450" cy="450" r="390" fill="none" stroke="#0e7490" strokeWidth="1" strokeDasharray="2 4" opacity="0.25" />
+              {/* Bathymetry Range Rings */}
+              <circle cx="450" cy="450" r="440" fill="none" stroke="#164e63" strokeWidth="1" strokeDasharray="6 8" opacity="0.4" />
+              <circle cx="450" cy="450" r="390" fill="none" stroke="#164e63" strokeWidth="1" strokeDasharray="3 5" opacity="0.3" />
+              <circle cx="450" cy="450" r="260" fill="none" stroke="#164e63" strokeWidth="1" strokeDasharray="2 4" opacity="0.25" />
 
-              {/* 2. Shallow Coral Reef Turquoise Shelf */}
+              {/* 2. Shallow Coral Reef Turquoise Water Shelf */}
               <path
                 d={coastlinePath900}
                 fill="none"
-                stroke="#083344"
-                strokeWidth="28"
+                stroke="#0d4a6e"
+                strokeWidth="24"
                 strokeLinejoin="round"
-                opacity="0.8"
+                opacity="0.85"
               />
 
-              {/* 3. Sandy Shoreline Bed */}
+              {/* 3. Natural Golden Sand Beach Coastline */}
               <path
                 d={coastlinePath900}
-                fill="#ca8a04"
-                stroke="#a16207"
-                strokeWidth="10"
+                fill="#dfc086"
+                stroke="#c29d5b"
+                strokeWidth="8"
                 strokeLinejoin="round"
-                opacity="0.9"
               />
 
-              {/* 4. Island Landmass Shaded Relief Topography */}
+              {/* 4. Natural Island Landmass (SOLID LUSH GREEN - NO HEAT MAP GRADIENTS) */}
               <path
                 d={coastlinePath900}
-                fill="url(#topography-relief)"
-                stroke="#15803d"
-                strokeWidth="3"
+                fill="#1b3d2b"
+                stroke="#2d5e3f"
+                strokeWidth="2"
                 strokeLinejoin="round"
               />
 
-              {/* 5. Topographical Elevation Contour Isolines */}
-              {/* 15m Elevation Line */}
-              <g transform="translate(450, 450) scale(0.78) translate(-450, -450)" opacity="0.45">
-                <path d={coastlinePath900} fill="none" stroke="#22c55e" strokeWidth="1.2" strokeDasharray="3 3" />
+              {/* Central Plains Meadow Zone around Airfield */}
+              <ellipse cx="450" cy="450" rx="190" ry="130" fill="#254d37" opacity="0.8" />
+
+              {/* Topographical Elevation Isolines (Thin & Clean) */}
+              <g transform="translate(450, 450) scale(0.78) translate(-450, -450)" opacity="0.35">
+                <path d={coastlinePath900} fill="none" stroke="#4ade80" strokeWidth="1.2" strokeDasharray="4 4" />
               </g>
-              {/* 30m Elevation Line */}
-              <g transform="translate(450, 450) scale(0.58) translate(-450, -450)" opacity="0.45">
-                <path d={coastlinePath900} fill="none" stroke="#eab308" strokeWidth="1.2" strokeDasharray="3 3" />
+              <g transform="translate(450, 450) scale(0.58) translate(-450, -450)" opacity="0.30">
+                <path d={coastlinePath900} fill="none" stroke="#a3e635" strokeWidth="1.2" strokeDasharray="4 4" />
               </g>
-              {/* 45m Elevation Ridge Line */}
-              <g transform="translate(450, 450) scale(0.38) translate(-450, -450)" opacity="0.45">
-                <path d={coastlinePath900} fill="none" stroke="#f97316" strokeWidth="1.2" strokeDasharray="3 3" />
+              <g transform="translate(450, 450) scale(0.38) translate(-450, -450)" opacity="0.30">
+                <path d={coastlinePath900} fill="none" stroke="#facc15" strokeWidth="1.2" strokeDasharray="4 4" />
               </g>
 
-              {/* 6. Realistic Infrastructure Features */}
-              {/* CENTRAL ACADEMY RUNWAY & APRON (0, 0 in World -> 450, 450 SVG) */}
-              <g transform="translate(450, 450)">
-                {/* 240m Runway Strip */}
-                <rect x="-85" y="-12" width="170" height="24" rx="3" fill="#0f172a" stroke="#64748b" strokeWidth="1.5" />
-                {/* Runway Centerline */}
-                <line x1="-75" y1="0" x2="75" y2="0" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="6 6" />
-                {/* Threshold Markings */}
-                <line x1="-80" y1="-8" x2="-80" y2="8" stroke="#ffffff" strokeWidth="2" />
-                <line x1="80" y1="-8" x2="80" y2="8" stroke="#ffffff" strokeWidth="2" />
+              {/* 5. Natural Regional Biomes */}
+              {/* NORTH-WEST MOUNTAIN APEX MASSIF */}
+              <g transform="translate(277, 288)">
+                <ellipse cx="0" cy="0" rx="100" ry="80" fill="#2e3b4e" stroke="#475569" strokeWidth="1.5" />
+                <ellipse cx="-10" cy="-8" rx="68" ry="52" fill="#3b4b5e" stroke="#64748b" strokeWidth="1.2" />
+                <ellipse cx="-18" cy="-12" rx="40" ry="30" fill="#4d5f75" stroke="#94a3b8" strokeWidth="1" />
+                <circle cx="-20" cy="-14" r="16" fill="#e2e8f0" opacity="0.9" />
+                <text x="-20" y="-10" fill="#0f172a" fontSize="8" fontWeight="900" textAnchor="middle" fontFamily="monospace">62m</text>
+                <text x="-20" y="6" fill="#cbd5e1" fontSize="7" fontWeight="bold" textAnchor="middle">MT APEX</text>
               </g>
 
-              {/* MOUNTAIN APEX MASSIF (North-West) */}
-              <g transform="translate(260, 270)">
-                <ellipse cx="0" cy="0" rx="95" ry="75" fill="#1e293b" opacity="0.6" stroke="#475569" strokeWidth="1" />
-                <ellipse cx="-15" cy="-10" rx="55" ry="40" fill="#334155" opacity="0.8" />
-                <circle cx="-15" cy="-10" r="15" fill="#f8fafc" opacity="0.85" />
-                <text x="-15" y="-14" fill="#ffffff" fontSize="8" fontWeight="900" textAnchor="middle">62m</text>
+              {/* NORTH-EAST CONIFEROUS PINE FOREST */}
+              <g transform="translate(612, 298)">
+                <ellipse cx="0" cy="0" rx="90" ry="75" fill="#133621" opacity="0.95" stroke="#164e2a" strokeWidth="1.2" />
+                {/* Forest canopy clusters */}
+                <circle cx="-30" cy="-20" r="18" fill="#0e2919" opacity="0.8" />
+                <circle cx="25" cy="-25" r="22" fill="#0e2919" opacity="0.8" />
+                <circle cx="-15" cy="20" r="24" fill="#0e2919" opacity="0.8" />
+                <circle cx="30" cy="20" r="19" fill="#0e2919" opacity="0.8" />
+                <text x="0" y="-45" fill="#86efac" fontSize="8" fontWeight="bold" textAnchor="middle" opacity="0.9">PINES WOODLAND</text>
               </g>
 
-              {/* ALPINE LAKE & VALLEY RIVER DELTA */}
-              <circle cx="390" cy="400" r="32" fill="#0284c7" stroke="#38bdf8" strokeWidth="2" />
-              {/* Meandering River Channel */}
+              {/* ALPINE LAKE & VALLEY RIVER ESTUARY */}
+              <circle cx="390" cy="400" r="28" fill="#0284c7" stroke="#38bdf8" strokeWidth="2" />
+              <text x="390" y="403" fill="#ffffff" fontSize="7" fontWeight="bold" textAnchor="middle">LAKE</text>
+              {/* Natural Winding River Channel */}
               <path
-                d="M 390 425 Q 400 460 410 500 T 390 560 T 360 630 T 310 720"
+                d="M 390 425 Q 402 460 406 493 T 392 560 T 360 630 T 310 735"
                 fill="none"
-                stroke="#0284c7"
-                strokeWidth="14"
+                stroke="#0c4a6e"
+                strokeWidth="15"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              {/* Stone Arch Bridge */}
-              <rect x="395" y="495" width="22" height="8" rx="2" fill="#94a3b8" stroke="#1e293b" strokeWidth="1" transform="rotate(25 406 499)" />
+              <path
+                d="M 390 425 Q 402 460 406 493 T 392 560 T 360 630 T 310 735"
+                fill="none"
+                stroke="#0284c7"
+                strokeWidth="10"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
 
-              {/* DOWNTOWN METROPOLIS SKYLINE BLOCKS (South-East) */}
-              <g transform="translate(660, 600)" fill="#0f172a" stroke="#334155" strokeWidth="1">
-                <rect x="-40" y="-40" width="28" height="28" rx="2" />
-                <rect x="-5" y="-45" width="34" height="32" rx="2" fill="#1e293b" />
-                <rect x="-42" y="-5" width="30" height="30" rx="2" fill="#1e293b" />
-                <rect x="-4" y="-5" width="36" height="36" rx="2" />
-                <rect x="38" y="-35" width="24" height="24" rx="2" />
+              {/* 6. High-Visibility Road & Highway Network */}
+              {/* Highway Casing (Dark Asphalt Border) */}
+              <g fill="none" stroke="#0f172a" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M 450 450 L 406 493" />
+                <path d="M 406 493 Q 320 520 241 565" />
+                <path d="M 406 493 Q 440 580 493 673" />
+                <path d="M 493 673 Q 570 650 637 586" />
+                <path d="M 637 586 Q 660 440 612 298" />
+                <path d="M 612 298 Q 450 240 277 288" />
+                <path d="M 277 288 Q 340 360 450 450" />
+              </g>
+              {/* Highway Surface (High-Visibility Yellow) */}
+              <g fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M 450 450 L 406 493" />
+                <path d="M 406 493 Q 320 520 241 565" />
+                <path d="M 406 493 Q 440 580 493 673" />
+                <path d="M 493 673 Q 570 650 637 586" />
+                <path d="M 637 586 Q 660 440 612 298" />
+                <path d="M 612 298 Q 450 240 277 288" />
+                <path d="M 277 288 Q 340 360 450 450" />
               </g>
 
-              {/* 7. Flight Trail Path */}
+              {/* Concrete Highway River Bridge */}
+              <rect x="396" y="487" width="20" height="12" rx="2" fill="#94a3b8" stroke="#1e293b" strokeWidth="1.5" transform="rotate(-15 406 493)" />
+
+              {/* 7. Central Airfield & Runway Complex */}
+              <g transform="translate(450, 450)">
+                {/* Airfield Apron Pad */}
+                <polygon points="-90,-25 90,-25 100,25 -100,25" fill="#1e293b" stroke="#475569" strokeWidth="1" />
+                {/* 240m Runway Strip */}
+                <rect x="-95" y="-14" width="190" height="28" rx="2" fill="#0f172a" stroke="#cbd5e1" strokeWidth="1.5" />
+                {/* Runway Centerline */}
+                <line x1="-80" y1="0" x2="80" y2="0" stroke="#ffffff" strokeWidth="1.8" strokeDasharray="6 5" />
+                {/* Threshold Markings */}
+                <line x1="-88" y1="-10" x2="-88" y2="10" stroke="#ffffff" strokeWidth="2.5" />
+                <line x1="88" y1="-10" x2="88" y2="10" stroke="#ffffff" strokeWidth="2.5" />
+                {/* Runway Headings */}
+                <text x="-80" y="4" fill="#ffffff" fontSize="7" fontWeight="900" textAnchor="middle">09</text>
+                <text x="80" y="4" fill="#ffffff" fontSize="7" fontWeight="900" textAnchor="middle">27</text>
+                {/* Airport Hangars */}
+                <rect x="-70" y="-36" width="22" height="15" rx="2" fill="#334155" stroke="#64748b" strokeWidth="1" />
+                <rect x="-42" y="-36" width="22" height="15" rx="2" fill="#334155" stroke="#64748b" strokeWidth="1" />
+                <rect x="-14" y="-36" width="22" height="15" rx="2" fill="#334155" stroke="#64748b" strokeWidth="1" />
+                <text x="-31" y="-26" fill="#94a3b8" fontSize="6" fontWeight="bold" textAnchor="middle">HANGARS</text>
+                {/* Control Tower */}
+                <circle cx="45" cy="-30" r="7" fill="#dc2626" stroke="#ffffff" strokeWidth="1" />
+                <circle cx="45" cy="-30" r="2" fill="#ffffff" />
+              </g>
+
+              {/* 8. Downtown Metropolis & Harbor Marina */}
+              <g transform="translate(640, 590)">
+                {/* Paved City District Base */}
+                <rect x="-65" y="-65" width="130" height="110" rx="8" fill="#1e293b" stroke="#475569" strokeWidth="1.5" />
+                {/* City Streets Grid */}
+                <line x1="-65" y1="-15" x2="65" y2="-15" stroke="#334155" strokeWidth="5" />
+                <line x1="-65" y1="20" x2="65" y2="20" stroke="#334155" strokeWidth="5" />
+                <line x1="-15" y1="-65" x2="-15" y2="45" stroke="#334155" strokeWidth="5" />
+                <line x1="25" y1="-65" x2="25" y2="45" stroke="#334155" strokeWidth="5" />
+                {/* Skyscraper 1: Bank Tower */}
+                <rect x="-55" y="-55" width="32" height="32" rx="2" fill="#0f172a" stroke="#64748b" strokeWidth="1.5" />
+                {/* Skyscraper 2: Tech Center */}
+                <rect x="32" y="-55" width="26" height="32" rx="2" fill="#0f172a" stroke="#64748b" strokeWidth="1.5" />
+                {/* Skyscraper 3: Apex High-Rise Tower with Rooftop Skyport */}
+                <rect x="10" y="2" width="34" height="34" rx="2" fill="#020617" stroke="#ff5500" strokeWidth="2" />
+                <text x="27" y="22" fill="#ff5500" fontSize="7" fontWeight="900" textAnchor="middle">APEX</text>
+                {/* Commercial Building 4 */}
+                <rect x="-55" y="-7" width="32" height="24" rx="2" fill="#0f172a" stroke="#64748b" strokeWidth="1.5" />
+              </g>
+
+              {/* Harbor Cargo Apron & Shipping Marina Piers */}
+              <g transform="translate(493, 673)">
+                <rect x="-18" y="-12" width="36" height="24" rx="2" fill="#334155" stroke="#64748b" strokeWidth="1" />
+                {/* Wooden Docks extending into ocean */}
+                <rect x="-8" y="12" width="6" height="32" fill="#78350f" stroke="#451a03" strokeWidth="1" />
+                <rect x="6" y="12" width="6" height="40" fill="#78350f" stroke="#451a03" strokeWidth="1" />
+                {/* Colored Shipping Containers */}
+                <rect x="-15" y="-8" width="10" height="5" fill="#dc2626" />
+                <rect x="-15" y="-1" width="10" height="5" fill="#0284c7" />
+                <rect x="2" y="-8" width="10" height="5" fill="#eab308" />
+              </g>
+
+              {/* 9. Live Flight Trail Path */}
               {flightPathPoints && (
                 <polyline
                   points={flightPathPoints}
@@ -459,63 +549,61 @@ export function IslandMapModal({
                 />
               )}
 
-              {/* 8. Active Waypoint Navigation Vector Line ("Where we want to go") */}
+              {/* 10. Active Waypoint Navigation Vector Line */}
               <line
                 x1={droneSvg.x}
                 y1={droneSvg.y}
                 x2={targetSvg.x}
                 y2={targetSvg.y}
                 stroke="#ff5500"
-                strokeWidth="2"
+                strokeWidth="2.2"
                 strokeDasharray="6 4"
-                opacity="0.9"
+                opacity="0.95"
               />
 
               {/* Midpoint Distance Tag */}
               <g transform={`translate(${(droneSvg.x + targetSvg.x) / 2}, ${(droneSvg.y + targetSvg.y) / 2})`}>
-                <rect x="-35" y="-10" width="70" height="20" rx="4" fill="#000000" stroke="#ff5500" strokeWidth="1" />
+                <rect x="-35" y="-10" width="70" height="20" rx="4" fill="#020617" stroke="#ff5500" strokeWidth="1.2" />
                 <text x="0" y="3" fill="#ff5500" fontSize="9" fontWeight="900" textAnchor="middle">
                   {navStats.dist.toFixed(0)}m
                 </text>
               </g>
 
-              {/* 9. Canonical Helipad Markers */}
+              {/* 11. Canonical Helipads with Anti-Collision Labels */}
               {TACTICAL_POIS.map((poi) => {
                 const pt = worldToSvg(poi.x, poi.z);
                 const isSelected = poi.id === selectedPoiId;
+                const ox = poi.labelOffsetX;
+                const oy = poi.labelOffsetY;
+
                 return (
                   <g
                     key={poi.id}
-                    transform={`translate(${pt.x}, ${pt.y})`}
                     className="cursor-pointer group"
                     onClick={() => handleSelectTarget(poi)}
-                    onMouseEnter={() => setHoveredPoi(poi)}
-                    onMouseLeave={() => setHoveredPoi(null)}
                   >
                     {/* Pulsing ring if selected */}
                     {isSelected && (
-                      <circle cx="0" cy="0" r="16" fill="none" stroke="#ff5500" strokeWidth="1.5" className="animate-ping" opacity="0.6" />
+                      <circle cx={pt.x} cy={pt.y} r="18" fill="none" stroke="#ff5500" strokeWidth="2" className="animate-ping" opacity="0.75" />
                     )}
 
-                    {/* Outer Target Box */}
-                    <rect
-                      x="-11"
-                      y="-11"
-                      width="22"
-                      height="22"
-                      rx="6"
+                    {/* Helipad Round Concrete Marker */}
+                    <circle
+                      cx={pt.x}
+                      cy={pt.y}
+                      r="10"
                       fill={isSelected ? "#ff5500" : "#0f172a"}
                       stroke={isSelected ? "#ffffff" : "#22c55e"}
-                      strokeWidth={isSelected ? "2" : "1.5"}
-                      className="transition-colors shadow-md"
+                      strokeWidth={isSelected ? "2.5" : "2"}
+                      className="transition-transform duration-150 group-hover:scale-125 shadow-lg"
                     />
 
                     {/* Helipad Symbol [H] */}
                     <text
-                      x="0"
-                      y="4"
+                      x={pt.x}
+                      y={pt.y + 3.5}
                       fill={isSelected ? "#000000" : "#22c55e"}
-                      fontSize="11"
+                      fontSize="10"
                       fontWeight="900"
                       textAnchor="middle"
                       fontFamily="monospace"
@@ -523,35 +611,37 @@ export function IslandMapModal({
                       H
                     </text>
 
-                    {/* Staggered Callout Label */}
-                    <g transform="translate(0, -16)">
+                    {/* Anti-Collision Offset Callout Badge */}
+                    <g transform={`translate(${pt.x + ox}, ${pt.y + oy})`}>
                       <rect
-                        x="-45"
-                        y="-12"
-                        width="90"
-                        height="16"
-                        rx="3"
+                        x="-46"
+                        y="-10"
+                        width="92"
+                        height="18"
+                        rx="4"
                         fill="#020617"
                         stroke={isSelected ? "#ff5500" : "#475569"}
-                        strokeWidth="1"
-                        opacity="0.95"
+                        strokeWidth={isSelected ? "1.8" : "1"}
+                        opacity="0.96"
+                        className="shadow-xl"
                       />
                       <text
                         x="0"
-                        y="-1"
-                        fill={isSelected ? "#ff5500" : "#f1f5f9"}
-                        fontSize="7.5"
+                        y="2"
+                        fill={isSelected ? "#ff5500" : "#f8fafc"}
+                        fontSize="8"
                         fontWeight="bold"
                         textAnchor="middle"
+                        fontFamily="monospace"
                       >
-                        {poi.callsign} ({poi.elevation})
+                        {poi.callsign} • {poi.elevation}
                       </text>
                     </g>
                   </g>
                 );
               })}
 
-              {/* 10. Live Drone Marker & Radar Sweep Vision Cone */}
+              {/* 12. Live Drone Marker & Radar Sweep Vision Cone */}
               <g transform={`translate(${droneSvg.x}, ${droneSvg.y})`}>
                 {/* Vision Field-of-View Cone */}
                 <g transform={`rotate(${telemetry.heading})`}>
