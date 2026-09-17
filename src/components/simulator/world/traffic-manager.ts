@@ -46,14 +46,14 @@ export class TrafficManager {
       vehicleModels.map((p) => this.assetMgr.loadModel(p))
     );
 
-    const vehicleCount = 12;
+    const vehicleCount = 22;
 
     for (let i = 0; i < vehicleCount; i++) {
       const template = templates[i % templates.length].clone();
-      // Kenney vehicles are around 2m-3m wide/long, scale appropriately (e.g. 1.8x)
-      template.scale.set(1.8, 1.8, 1.8);
+      // Kenney vehicles scale appropriately (1.9x) for human/road proportion
+      template.scale.set(1.9, 1.9, 1.9);
 
-      // Find wheel meshes for rotation animation
+      // Find wheel meshes for rotation animation & enhance lights
       const wheels: THREE.Object3D[] = [];
       template.traverse((child) => {
         if (child.name.toLowerCase().includes("wheel") || (child as THREE.Mesh).isMesh) {
@@ -62,6 +62,15 @@ export class TrafficManager {
           }
         }
       });
+
+      // Add miniature headlight glow meshes so vehicles are easily spotted from flight altitude
+      const headLightMat = new THREE.MeshBasicMaterial({ color: 0xfffde0 });
+      const hlLeft = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.05), headLightMat);
+      hlLeft.position.set(-0.45, 0.45, 1.1);
+      const hlRight = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.05), headLightMat);
+      hlRight.position.set(0.45, 0.45, 1.1);
+      template.add(hlLeft);
+      template.add(hlRight);
 
       // Position evenly along the waypoint circuit
       const startWaypoint = i % (this.waypoints.length - 1);
@@ -72,8 +81,8 @@ export class TrafficManager {
 
       this.vehicles.push({
         mesh: template,
-        speed: 12 + Math.random() * 8, // 12-20 m/s (~45-72 km/h)
-        progress: Math.random(),
+        speed: 13 + Math.random() * 9, // 13-22 m/s (~47-80 km/h)
+        progress: (i / vehicleCount),
         pathIndex: startWaypoint,
         wheels,
       });

@@ -38,9 +38,11 @@ import {
   Zap,
   SlidersHorizontal,
   Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 import { MultiplayerRosterWidget } from "./multiplayer/multiplayer-roster-widget";
 import { RemotePlayerState } from "@/lib/multiplayer/multiplayer-types";
+import { BaseSwitcherHUD, FastTravelBase } from "./base-switcher-hud";
 
 // ----------------------------------------------------------------
 // 1. ARTIFICIAL HORIZON / ATTITUDE GYRO INSTRUMENT
@@ -303,6 +305,7 @@ interface TelemetryHUDProps {
   remotePlayers?: RemotePlayerState[];
   callsign?: string;
   activeWaypoint?: NavigationWaypoint | null;
+  onTeleportBase?: (base: FastTravelBase) => void;
 }
 
 export function TelemetryHUD({
@@ -328,6 +331,7 @@ export function TelemetryHUD({
   remotePlayers,
   callsign,
   activeWaypoint,
+  onTeleportBase,
 }: TelemetryHUDProps) {
   const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
@@ -423,6 +427,9 @@ export function TelemetryHUD({
               players={remotePlayers || []}
               myCallsign={callsign || "PILOT"}
             />
+
+            {/* Island Base Quick Travel Switcher */}
+            {onTeleportBase && <BaseSwitcherHUD onTeleport={onTeleportBase} />}
 
             {/* Secondary Mission Tools Dropdown */}
             <div ref={toolsRef} className="relative">
@@ -725,6 +732,27 @@ export function TelemetryHUD({
           </div>
         </div>
       </header>
+
+      {/* ---------------------------------------------------- */}
+      {/* ALTITUDE RESTRICTION & SURFACE CONTACT POPUP NOTICES  */}
+      {/* ---------------------------------------------------- */}
+      {telemetry.isCeilingLimitReached && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150 select-none">
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/95 text-neutral-950 font-bold font-mono text-xs shadow-[0_4px_24px_rgba(245,158,11,0.5)] backdrop-blur-md border-2 border-neutral-950">
+            <AlertTriangle className="w-4 h-4 text-neutral-950 shrink-0" />
+            <span>MAXIMUM FLIGHT CEILING REACHED (250m) — You are already at the highest altitude!</span>
+          </div>
+        </div>
+      )}
+
+      {telemetry.isGroundLimitReached && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150 select-none">
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-400/95 text-neutral-950 font-bold font-mono text-xs shadow-[0_4px_24px_rgba(6,182,212,0.5)] backdrop-blur-md border-2 border-neutral-950">
+            <ArrowDown className="w-4 h-4 text-neutral-950 shrink-0" />
+            <span>SURFACE TOUCHDOWN — You are on the ground/water, cannot descend deeper!</span>
+          </div>
+        </div>
+      )}
 
       {/* ---------------------------------------------------- */}
       {/* CENTER CROSSHAIR (SUBTLE, NON-INTRUSIVE)             */}

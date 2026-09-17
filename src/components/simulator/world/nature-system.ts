@@ -1,484 +1,216 @@
 // ==========================================================
-// DRONE PILOT — REALISTIC NATURE & VEGETATION SYSTEM (PUBG-GRADE)
-// 5,000+ full-scale towering pines (28m), mature oaks (24m), coastal palms,
-// boulders & wildflower meadows
+// DRONE PILOT — REALISTIC NATURAL ENVIRONMENT & WORLD SCENERY (PHASE 2)
+// Multi-Layer Woodland, Ecological Mountain Zones, Riparian Corridors,
+// Shoreline Debris, Authored Vignettes & GPU Instancing
 // ==========================================================
 
 import * as THREE from "three";
 import { evaluateIslandElevation } from "@/lib/world/terrain-math";
-import { HELIPADS } from "@/lib/world/helipad-definitions";
-
-/**
- * Ensures trees, rocks, and foliage never spawn on helipads, runways, or city center
- */
-function isNearProtectedZone(x: number, z: number, clearance = 32): boolean {
-  // 1. Check all registered helipads with generous clearances
-  for (const pad of Object.values(HELIPADS)) {
-    const padRadius = pad.dimensions?.radius ?? 7;
-    const requiredClearance = pad.id === "mountain-alpha" ? 75 : 45;
-    if (Math.hypot(x - pad.position.x, z - pad.position.z) < (padRadius + requiredClearance)) {
-      return true;
-    }
-  }
-
-  // 2. Clear central training airfield runway & taxiways (X: -25 to 65, Z: -195 to 95)
-  if (x >= -25 && x <= 65 && z >= -195 && z <= 95) {
-    return true;
-  }
-
-  // 3. Clear downtown metropolis street core (X: 310 to 610, Z: 250 to 500)
-  if (x >= 310 && x <= 610 && z >= 250 && z <= 500) {
-    return true;
-  }
-
-  return false;
-}
+import {
+  SeededPRNG,
+  getBiomeAt,
+  isProtectedZone,
+  getDistanceToRoad,
+  WORLD_SEED,
+} from "@/lib/world/biome-system";
+import { ENV_MATERIALS, ENV_GEOMETRIES } from "./environment/environment-models";
 
 export class NatureSystem {
   public group = new THREE.Group();
 
   constructor() {
-    this.buildDenseForestPines();
-    this.buildDeciduousOaks();
-    this.buildCoastalPalms();
-    this.buildGraniteBoulders();
-    this.buildWildflowerMeadows();
+    const prng = new SeededPRNG(WORLD_SEED);
+
+    // 1. CANOPY LAYER: Distinct species with organic silhouettes
+    this.buildCanopyPines(prng);
+    this.buildCanopySpruces(prng);
+    this.buildCanopyOaks(prng);
+    this.buildCanopyBirches(prng);
+    this.buildCanopyPalms(prng);
+    this.buildCanopyWillows(prng);
+    this.buildDeadwoodSnags(prng);
+
+    // 2. UNDERSTORY & GROUND COVER: Layered shrubs, ferns & reeds
+    this.buildUnderstoryShrubs(prng);
+    this.buildAlpineJunipers(prng);
+    this.buildForestFerns(prng);
+    this.buildRiverReeds(prng);
+
+    // 3. ROCKS, BOULDERS & MOUNTAIN SCREE
+    this.buildGraniteBoulders(prng);
+    this.buildAlpineScree(prng);
+    this.buildRiverPebbleBeds(prng);
+    this.buildCoastalSeaStacks(prng);
+
+    // 4. FOREST DEBRIS & AUTHORED STORYTELLING
+    this.buildFallenLogs(prng);
+    this.buildTreeStumps(prng);
+    this.buildBeachDriftwood(prng);
+
+    // 5. SCENERY & TRAIL PROPS
+    this.buildMooringPilings(prng);
+    this.buildTrailFences(prng);
+    this.buildWaterfallEnvironment();
   }
 
-  /**
-   * Massive 28-meter full-scale conifer pine tree geometry with 6 tiered boughs
-   * and 17m canopy diameter (PUBG Erangel proportions)
-   */
-  private createPineTreeGeometry(): { trunkGeo: THREE.BufferGeometry; foliageGeo: THREE.BufferGeometry } {
-    // 1. Massive Trunk: 24m tall, 1.3m base diameter
-    const trunkGeo = new THREE.CylinderGeometry(0.55, 1.15, 24, 10);
-    trunkGeo.translate(0, 12, 0);
-
-    // 2. 6-tiered jagged conifer needle boughs spanning 17m diameter
-    const geometries: THREE.BufferGeometry[] = [];
-
-    const tiers = [
-      { y: 6.0, r: 8.5, h: 7.5 },
-      { y: 10.5, r: 7.2, h: 6.5 },
-      { y: 14.5, r: 5.8, h: 5.5 },
-      { y: 18.0, r: 4.4, h: 4.8 },
-      { y: 21.5, r: 3.0, h: 4.0 },
-      { y: 24.5, r: 1.6, h: 3.2 },
-    ];
-
-    tiers.forEach((t) => {
-      const cone = new THREE.ConeGeometry(t.r, t.h, 12);
-      cone.translate(0, t.y + t.h / 2, 0);
-      geometries.push(cone);
-    });
-
-    return { trunkGeo, foliageGeo: this.mergeGeometries(geometries) };
-  }
+  // ----------------------------------------------------------------
+  // 1. CANOPY TREES
+  // ----------------------------------------------------------------
 
   /**
-   * Mature 24-meter broadleaf oak tree with 20m wide volumetric canopy
+   * Scots Pines (Pinus Sylvestris): Towering 26m conifer canopy across Whispering Pines & Foothills
    */
-  private createOakTreeGeometry(): { trunkGeo: THREE.BufferGeometry; foliageGeo: THREE.BufferGeometry } {
-    const trunkGeo = new THREE.CylinderGeometry(0.75, 1.5, 16, 10);
-    trunkGeo.translate(0, 8, 0);
+  private buildCanopyPines(prng: SeededPRNG) {
+    const count = 1600;
+    const { trunk, foliage } = ENV_GEOMETRIES.buildScotsPine();
 
-    const geometries: THREE.BufferGeometry[] = [];
-    const clusters = [
-      { x: 0, y: 17.5, z: 0, r: 7.2 },
-      { x: -3.8, y: 15.0, z: 2.8, r: 5.5 },
-      { x: 4.2, y: 15.5, z: -2.5, r: 5.6 },
-      { x: 2.0, y: 19.8, z: 2.6, r: 5.2 },
-      { x: -2.8, y: 18.6, z: -3.2, r: 5.4 },
-      { x: 0.0, y: 22.0, z: 0.0, r: 4.2 },
-    ];
-
-    clusters.forEach((c) => {
-      const sphere = new THREE.DodecahedronGeometry(c.r, 2);
-      sphere.translate(c.x, c.y, c.z);
-      geometries.push(sphere);
-    });
-
-    return { trunkGeo, foliageGeo: this.mergeGeometries(geometries) };
-  }
-
-  /**
-   * 18-meter coastal palm tree with 7.5m drooping frond crown
-   */
-  private createPalmGeometry(): { trunkGeo: THREE.BufferGeometry; frondGeo: THREE.BufferGeometry } {
-    const trunkGeo = new THREE.CylinderGeometry(0.35, 0.65, 18, 8);
-    trunkGeo.translate(0, 9, 0);
-
-    const geometries: THREE.BufferGeometry[] = [];
-    const frondCount = 10;
-
-    for (let i = 0; i < frondCount; i++) {
-      const angle = (i / frondCount) * Math.PI * 2;
-      const frond = new THREE.PlaneGeometry(1.8, 7.5);
-      frond.rotateX(Math.PI / 3);
-      frond.rotateY(angle);
-      frond.translate(Math.sin(angle) * 2.2, 17.6, Math.cos(angle) * 2.2);
-      geometries.push(frond);
-    }
-
-    return { trunkGeo, frondGeo: this.mergeGeometries(geometries) };
-  }
-
-  /**
-   * Helper to merge buffer geometries
-   */
-  private mergeGeometries(geos: THREE.BufferGeometry[]): THREE.BufferGeometry {
-    const posList: number[] = [];
-    const normList: number[] = [];
-    const idxList: number[] = [];
-    let vertexOffset = 0;
-
-    geos.forEach((g) => {
-      const pos = g.attributes.position;
-      const norm = g.attributes.normal;
-      const idx = g.index;
-
-      for (let i = 0; i < pos.count; i++) {
-        posList.push(pos.getX(i), pos.getY(i), pos.getZ(i));
-        if (norm) {
-          normList.push(norm.getX(i), norm.getY(i), norm.getZ(i));
-        } else {
-          normList.push(0, 1, 0);
-        }
-      }
-
-      if (idx) {
-        for (let i = 0; i < idx.count; i++) {
-          idxList.push(idx.getX(i) + vertexOffset);
-        }
-      } else {
-        for (let i = 0; i < pos.count; i++) {
-          idxList.push(vertexOffset + i);
-        }
-      }
-
-      vertexOffset += pos.count;
-    });
-
-    const merged = new THREE.BufferGeometry();
-    merged.setAttribute("position", new THREE.Float32BufferAttribute(posList, 3));
-    merged.setAttribute("normal", new THREE.Float32BufferAttribute(normList, 3));
-    merged.setIndex(idxList);
-    return merged;
-  }
-
-  /**
-   * 3,500 towering conifer pine trees forming the thick Whispering Pines forest canopy
-   */
-  private buildDenseForestPines() {
-    const { trunkGeo, foliageGeo } = this.createPineTreeGeometry();
-
-    const trunkMat = new THREE.MeshStandardMaterial({
-      color: 0x2e1d11, // Dark bark
-      roughness: 0.92,
-      metalness: 0.05,
-    });
-
-    const foliageMat = new THREE.MeshStandardMaterial({
-      color: 0x163519, // Deep authentic conifer pine needle green
-      roughness: 0.8,
-      metalness: 0.06,
-      flatShading: false,
-    });
-
-    const count = 3500;
-    const trunkInst = new THREE.InstancedMesh(trunkGeo, trunkMat, count);
-    const foliageInst = new THREE.InstancedMesh(foliageGeo, foliageMat, count);
-
-    trunkInst.castShadow = true;
-    trunkInst.receiveShadow = true;
-    foliageInst.castShadow = true;
-    foliageInst.receiveShadow = true;
+    const trunkMesh = new THREE.InstancedMesh(trunk, ENV_MATERIALS.barkPine, count);
+    const foliageMesh = new THREE.InstancedMesh(foliage, ENV_MATERIALS.foliagePine, count);
+    trunkMesh.castShadow = true;
+    trunkMesh.receiveShadow = true;
+    foliageMesh.castShadow = true;
+    foliageMesh.receiveShadow = true;
 
     const dummy = new THREE.Object3D();
     dummy.position.set(0, -9999, 0);
     dummy.scale.set(0, 0, 0);
     dummy.updateMatrix();
     for (let i = 0; i < count; i++) {
-      trunkInst.setMatrixAt(i, dummy.matrix);
-      foliageInst.setMatrixAt(i, dummy.matrix);
+      trunkMesh.setMatrixAt(i, dummy.matrix);
+      foliageMesh.setMatrixAt(i, dummy.matrix);
     }
 
     let placed = 0;
     let attempts = 0;
-    const maxAttempts = count * 6;
-
-    const pineGrid = new Set<string>();
-    const pineCellSize = 13.0; // Enforces minimum 13m trunk clearance so canopies never overlap into solid blobs
+    const maxAttempts = count * 5;
 
     while (placed < count && attempts++ < maxAttempts) {
-      let x = 0;
-      let z = 0;
+      // Clustered heavily in Whispering Pines and western mountain foothills
+      const ang = prng.next() * Math.PI * 2;
+      const rad = prng.nextRange(25, 420);
+      const x = -640 + Math.cos(ang) * rad;
+      const z = 20 + Math.sin(ang) * rad;
 
-      if (placed < 2800) {
-        // Whispering Pines Forest
-        x = 310 + Math.random() * 330;
-        z = -590 + Math.random() * 340;
+      if (isProtectedZone(x, z, 10)) continue;
+      if (getDistanceToRoad(x, z) < 6.5) continue;
 
-        // Slalom Flight Corridor: Keep a 24m wide winding flight path clear through the pines
-        const trailCenterZ = -420 + Math.sin(x * 0.028) * 32;
-        if (Math.abs(z - trailCenterZ) < 12) continue;
-      } else {
-        // Mountain slopes
-        x = -640 + Math.random() * 340;
-        z = -580 + Math.random() * 280;
+      const biome = getBiomeAt(x, z);
+      if (!biome.canSupportTrees) continue;
+      if (
+        biome.primaryBiome !== "FOREST_CORE" &&
+        biome.primaryBiome !== "FOREST_EDGE" &&
+        biome.primaryBiome !== "MOUNTAIN_LOWER"
+      ) {
+        continue;
       }
 
-      // Avoid all registered helipads, runways, and downtown
-      if (isNearProtectedZone(x, z, 30)) continue;
-
-      // Check spatial grid clearance against neighboring trees
-      const gx = Math.floor(x / pineCellSize);
-      const gz = Math.floor(z / pineCellSize);
-      let overlaps = false;
-      for (let dx = -1; dx <= 1; dx++) {
-        for (let dz = -1; dz <= 1; dz++) {
-          if (pineGrid.has(`${gx + dx}_${gz + dz}`)) {
-            overlaps = true;
-            break;
-          }
-        }
-        if (overlaps) break;
-      }
-      if (overlaps) continue;
-
-      const sample = evaluateIslandElevation(x, z);
-      if (sample.elevation < 1.0 || sample.elevation > 75 || sample.slope > 0.6) continue;
-
-      pineGrid.add(`${gx}_${gz}`);
-
-      const scale = 0.85 + Math.random() * 0.45; // 24m to 35m height!
-      dummy.position.set(x, sample.elevation, z);
-      dummy.rotation.set(
-        (Math.random() - 0.5) * 0.06,
-        Math.random() * Math.PI * 2,
-        (Math.random() - 0.5) * 0.06
-      );
-      dummy.scale.set(scale, scale * (0.95 + Math.random() * 0.25), scale);
+      const scale = prng.nextRange(0.85, 1.25);
+      dummy.position.set(x, biome.elevation, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale, scale * prng.nextRange(0.95, 1.12), scale);
       dummy.updateMatrix();
 
-      trunkInst.setMatrixAt(placed, dummy.matrix);
-      foliageInst.setMatrixAt(placed, dummy.matrix);
+      trunkMesh.setMatrixAt(placed, dummy.matrix);
+      foliageMesh.setMatrixAt(placed, dummy.matrix);
       placed++;
     }
 
-    trunkInst.count = placed;
-    foliageInst.count = placed;
-    trunkInst.instanceMatrix.needsUpdate = true;
-    foliageInst.instanceMatrix.needsUpdate = true;
-
-    this.group.add(trunkInst);
-    this.group.add(foliageInst);
+    trunkMesh.count = placed;
+    foliageMesh.count = placed;
+    trunkMesh.instanceMatrix.needsUpdate = true;
+    foliageMesh.instanceMatrix.needsUpdate = true;
+    this.group.add(trunkMesh);
+    this.group.add(foliageMesh);
   }
 
   /**
-   * 1,400 mature broadleaf oaks along the river valley, airfield perimeter & meadows
+   * Norway Spruce: Slender spire conifer across forest core and mid-mountain elevations
    */
-  private buildDeciduousOaks() {
-    const { trunkGeo, foliageGeo } = this.createOakTreeGeometry();
+  private buildCanopySpruces(prng: SeededPRNG) {
+    const count = 1300;
+    const { trunk, foliage } = ENV_GEOMETRIES.buildNorwaySpruce();
 
-    const trunkMat = new THREE.MeshStandardMaterial({
-      color: 0x3d2b1c,
-      roughness: 0.9,
-      metalness: 0.04,
-    });
-
-    const foliageMat = new THREE.MeshStandardMaterial({
-      color: 0x244f1e, // Deep lush oak leaf green
-      roughness: 0.82,
-      metalness: 0.05,
-    });
-
-    const count = 1400;
-    const trunkInst = new THREE.InstancedMesh(trunkGeo, trunkMat, count);
-    const foliageInst = new THREE.InstancedMesh(foliageGeo, foliageMat, count);
-
-    trunkInst.castShadow = true;
-    trunkInst.receiveShadow = true;
-    foliageInst.castShadow = true;
-    foliageInst.receiveShadow = true;
+    const trunkMesh = new THREE.InstancedMesh(trunk, ENV_MATERIALS.barkPine, count);
+    const foliageMesh = new THREE.InstancedMesh(foliage, ENV_MATERIALS.foliageSpruce, count);
+    trunkMesh.castShadow = true;
+    trunkMesh.receiveShadow = true;
+    foliageMesh.castShadow = true;
+    foliageMesh.receiveShadow = true;
 
     const dummy = new THREE.Object3D();
     dummy.position.set(0, -9999, 0);
     dummy.scale.set(0, 0, 0);
     dummy.updateMatrix();
     for (let i = 0; i < count; i++) {
-      trunkInst.setMatrixAt(i, dummy.matrix);
-      foliageInst.setMatrixAt(i, dummy.matrix);
+      trunkMesh.setMatrixAt(i, dummy.matrix);
+      foliageMesh.setMatrixAt(i, dummy.matrix);
     }
 
     let placed = 0;
     let attempts = 0;
-    const maxAttempts = count * 6;
-    const oakGrid = new Set<string>();
-    const oakCellSize = 14.0; // Enforces minimum 14m trunk clearance for broadleaf trees
+    const maxAttempts = count * 5;
 
     while (placed < count && attempts++ < maxAttempts) {
-      let x = 0;
-      let z = 0;
+      // Distributed into mountain slopes and northern forest flank
+      const x = prng.nextRange(-950, -320);
+      const z = prng.nextRange(-680, 150);
 
-      if (placed < 350) {
-        // Airfield perimeter ring (outer clearance beyond 70m)
-        const a = Math.random() * Math.PI * 2;
-        const r = 75 + Math.random() * 110;
-        x = Math.cos(a) * r;
-        z = Math.sin(a) * r;
-      } else {
-        // River valley & meadow glades
-        const rz = -200 + Math.random() * 600;
-        const rx = -120 + Math.sin(rz * 0.03) * 40;
-        x = rx + (Math.random() - 0.5) * 160;
-        z = rz;
+      if (isProtectedZone(x, z, 10)) continue;
+      if (getDistanceToRoad(x, z) < 7.0) continue;
+
+      const biome = getBiomeAt(x, z);
+      if (!biome.canSupportTrees) continue;
+      if (
+        biome.primaryBiome !== "FOREST_CORE" &&
+        biome.primaryBiome !== "MOUNTAIN_LOWER" &&
+        biome.primaryBiome !== "MOUNTAIN_MID"
+      ) {
+        continue;
       }
 
-      // Avoid all helipads, runways, and urban downtown
-      if (isNearProtectedZone(x, z, 35)) continue;
+      // Height tapers naturally as altitude climbs towards tree line
+      const altFactor = Math.max(0.65, 1.0 - (biome.elevation - 30) / 90);
+      const scale = prng.nextRange(0.8, 1.25) * altFactor;
 
-      // Check spatial grid clearance
-      const gx = Math.floor(x / oakCellSize);
-      const gz = Math.floor(z / oakCellSize);
-      let overlaps = false;
-      for (let dx = -1; dx <= 1; dx++) {
-        for (let dz = -1; dz <= 1; dz++) {
-          if (oakGrid.has(`${gx + dx}_${gz + dz}`)) {
-            overlaps = true;
-            break;
-          }
-        }
-        if (overlaps) break;
-      }
-      if (overlaps) continue;
-
-      const sample = evaluateIslandElevation(x, z);
-      if (sample.elevation < 0.9 || sample.elevation > 45 || sample.slope > 0.45) continue;
-
-      oakGrid.add(`${gx}_${gz}`);
-
-      const scale = 0.85 + Math.random() * 0.45; // 20m to 30m height!
-      dummy.position.set(x, sample.elevation, z);
-      dummy.rotation.set(
-        (Math.random() - 0.5) * 0.06,
-        Math.random() * Math.PI * 2,
-        (Math.random() - 0.5) * 0.06
-      );
-      dummy.scale.set(scale, scale * (0.95 + Math.random() * 0.25), scale);
-      dummy.updateMatrix();
-
-      trunkInst.setMatrixAt(placed, dummy.matrix);
-      foliageInst.setMatrixAt(placed, dummy.matrix);
-      placed++;
-    }
-
-    trunkInst.count = placed;
-    foliageInst.count = placed;
-    trunkInst.instanceMatrix.needsUpdate = true;
-    foliageInst.instanceMatrix.needsUpdate = true;
-
-    this.group.add(trunkInst);
-    this.group.add(foliageInst);
-  }
-
-  /**
-   * 160 coastal palm trees lining Crescent Beach and Emerald Bay
-   */
-  private buildCoastalPalms() {
-    const { trunkGeo, frondGeo } = this.createPalmGeometry();
-
-    const trunkMat = new THREE.MeshStandardMaterial({
-      color: 0x5a432e,
-      roughness: 0.88,
-    });
-
-    const frondMat = new THREE.MeshStandardMaterial({
-      color: 0x326624,
-      roughness: 0.7,
-      side: THREE.DoubleSide,
-    });
-
-    const count = 160;
-    const trunkInst = new THREE.InstancedMesh(trunkGeo, trunkMat, count);
-    const frondInst = new THREE.InstancedMesh(frondGeo, frondMat, count);
-
-    trunkInst.castShadow = true;
-    frondInst.castShadow = true;
-
-    const dummy = new THREE.Object3D();
-    dummy.position.set(0, -9999, 0);
-    dummy.scale.set(0, 0, 0);
-    dummy.updateMatrix();
-    for (let i = 0; i < count; i++) {
-      trunkInst.setMatrixAt(i, dummy.matrix);
-      frondInst.setMatrixAt(i, dummy.matrix);
-    }
-
-    let placed = 0;
-    let attempts = 0;
-    const maxAttempts = count * 6;
-
-    const beachAngles = [-0.6, -0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2];
-
-    while (placed < count && attempts++ < maxAttempts) {
-      const baseAngle = beachAngles[placed % beachAngles.length] + (Math.random() - 0.5) * 0.25;
-      const dist = 580 + Math.random() * 120;
-      const x = Math.cos(baseAngle) * dist;
-      const z = Math.sin(baseAngle) * dist;
-
-      if (isNearProtectedZone(x, z, 28)) continue;
-
-      const sample = evaluateIslandElevation(x, z);
-      if (sample.elevation < 0.4 || sample.elevation > 4.5) continue;
-
-      const scale = 0.95 + Math.random() * 0.4;
-      dummy.position.set(x, sample.elevation, z);
-      dummy.rotation.set(
-        (Math.random() - 0.5) * 0.12,
-        Math.random() * Math.PI * 2,
-        (Math.random() - 0.5) * 0.12
-      );
+      dummy.position.set(x, biome.elevation, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
       dummy.scale.set(scale, scale, scale);
       dummy.updateMatrix();
 
-      trunkInst.setMatrixAt(placed, dummy.matrix);
-      frondInst.setMatrixAt(placed, dummy.matrix);
+      trunkMesh.setMatrixAt(placed, dummy.matrix);
+      foliageMesh.setMatrixAt(placed, dummy.matrix);
       placed++;
     }
 
-    trunkInst.count = placed;
-    frondInst.count = placed;
-    trunkInst.instanceMatrix.needsUpdate = true;
-    frondInst.instanceMatrix.needsUpdate = true;
-
-    this.group.add(trunkInst);
-    this.group.add(frondInst);
+    trunkMesh.count = placed;
+    foliageMesh.count = placed;
+    trunkMesh.instanceMatrix.needsUpdate = true;
+    foliageMesh.instanceMatrix.needsUpdate = true;
+    this.group.add(trunkMesh);
+    this.group.add(foliageMesh);
   }
 
   /**
-   * 180 mossy granite rock boulders and cliff outcrops
+   * Deciduous Oaks: Broadleaf spreading trees along forest edges, meadows, and pastures
    */
-  private buildGraniteBoulders() {
-    const rockGeo = new THREE.DodecahedronGeometry(3.5, 1);
-    const rockMat = new THREE.MeshStandardMaterial({
-      color: 0x3d434d,
-      roughness: 0.92,
-      metalness: 0.1,
-      flatShading: true,
-    });
+  private buildCanopyOaks(prng: SeededPRNG) {
+    const count = 950;
+    const { trunk, foliage } = ENV_GEOMETRIES.buildBroadleafOak();
 
-    const count = 180;
-    const rockInst = new THREE.InstancedMesh(rockGeo, rockMat, count);
-    rockInst.castShadow = true;
-    rockInst.receiveShadow = true;
+    const trunkMesh = new THREE.InstancedMesh(trunk, ENV_MATERIALS.barkOak, count);
+    const foliageMesh = new THREE.InstancedMesh(foliage, ENV_MATERIALS.foliageOak, count);
+    trunkMesh.castShadow = true;
+    trunkMesh.receiveShadow = true;
+    foliageMesh.castShadow = true;
+    foliageMesh.receiveShadow = true;
 
     const dummy = new THREE.Object3D();
     dummy.position.set(0, -9999, 0);
     dummy.scale.set(0, 0, 0);
     dummy.updateMatrix();
     for (let i = 0; i < count; i++) {
-      rockInst.setMatrixAt(i, dummy.matrix);
+      trunkMesh.setMatrixAt(i, dummy.matrix);
+      foliageMesh.setMatrixAt(i, dummy.matrix);
     }
 
     let placed = 0;
@@ -486,114 +218,986 @@ export class NatureSystem {
     const maxAttempts = count * 6;
 
     while (placed < count && attempts++ < maxAttempts) {
-      const zone = Math.random();
+      const x = prng.nextRange(-550, 480);
+      const z = prng.nextRange(-250, 420);
+
+      if (isProtectedZone(x, z, 12)) continue;
+      if (getDistanceToRoad(x, z) < 8.0) continue;
+
+      const biome = getBiomeAt(x, z);
+      if (!biome.canSupportTrees) continue;
+      if (
+        biome.primaryBiome !== "FOREST_EDGE" &&
+        biome.primaryBiome !== "LOWLAND_MEADOW" &&
+        biome.primaryBiome !== "RURAL_PASTURE"
+      ) {
+        continue;
+      }
+
+      const scale = prng.nextRange(0.85, 1.25);
+      dummy.position.set(x, biome.elevation, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale, scale, scale);
+      dummy.updateMatrix();
+
+      trunkMesh.setMatrixAt(placed, dummy.matrix);
+      foliageMesh.setMatrixAt(placed, dummy.matrix);
+      placed++;
+    }
+
+    trunkMesh.count = placed;
+    foliageMesh.count = placed;
+    trunkMesh.instanceMatrix.needsUpdate = true;
+    foliageMesh.instanceMatrix.needsUpdate = true;
+    this.group.add(trunkMesh);
+    this.group.add(foliageMesh);
+  }
+
+  /**
+   * Mountain Birches: Slender white trunks scattered through foothill groves and clearings
+   */
+  private buildCanopyBirches(prng: SeededPRNG) {
+    const count = 650;
+    const { trunk, foliage } = ENV_GEOMETRIES.buildMountainBirch();
+
+    const trunkMesh = new THREE.InstancedMesh(trunk, ENV_MATERIALS.barkBirch, count);
+    const foliageMesh = new THREE.InstancedMesh(foliage, ENV_MATERIALS.foliageBirch, count);
+    trunkMesh.castShadow = true;
+    trunkMesh.receiveShadow = true;
+    foliageMesh.castShadow = true;
+    foliageMesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) {
+      trunkMesh.setMatrixAt(i, dummy.matrix);
+      foliageMesh.setMatrixAt(i, dummy.matrix);
+    }
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 6;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      const x = prng.nextRange(-850, -100);
+      const z = prng.nextRange(-450, 250);
+
+      if (isProtectedZone(x, z, 10)) continue;
+      if (getDistanceToRoad(x, z) < 5.0) continue;
+
+      const biome = getBiomeAt(x, z);
+      if (!biome.canSupportTrees) continue;
+      if (
+        biome.primaryBiome !== "FOREST_EDGE" &&
+        biome.primaryBiome !== "MOUNTAIN_LOWER" &&
+        biome.primaryBiome !== "RIVER_BANK"
+      ) {
+        continue;
+      }
+
+      const scale = prng.nextRange(0.80, 1.20);
+      dummy.position.set(x, biome.elevation, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale, scale, scale);
+      dummy.updateMatrix();
+
+      trunkMesh.setMatrixAt(placed, dummy.matrix);
+      foliageMesh.setMatrixAt(placed, dummy.matrix);
+      placed++;
+    }
+
+    trunkMesh.count = placed;
+    foliageMesh.count = placed;
+    trunkMesh.instanceMatrix.needsUpdate = true;
+    foliageMesh.instanceMatrix.needsUpdate = true;
+    this.group.add(trunkMesh);
+    this.group.add(foliageMesh);
+  }
+
+  /**
+   * Coastal Palms: Curved palms along Pelican Cove sandy beaches and sunny coastal spurs
+   */
+  private buildCanopyPalms(prng: SeededPRNG) {
+    const count = 240;
+    const { trunk, foliage } = ENV_GEOMETRIES.buildCoastalPalm();
+
+    const trunkMesh = new THREE.InstancedMesh(trunk, ENV_MATERIALS.barkPalm, count);
+    const foliageMesh = new THREE.InstancedMesh(foliage, ENV_MATERIALS.foliagePalm, count);
+    trunkMesh.castShadow = true;
+    trunkMesh.receiveShadow = true;
+    foliageMesh.castShadow = true;
+    foliageMesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) {
+      trunkMesh.setMatrixAt(i, dummy.matrix);
+      foliageMesh.setMatrixAt(i, dummy.matrix);
+    }
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 6;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      // Clustered around Pelican Cove & Southwestern coastal headlands
+      const ang = prng.next() * Math.PI * 2;
+      const rad = prng.nextRange(15, 230);
+      const x = -720 + Math.cos(ang) * rad;
+      const z = 560 + Math.sin(ang) * rad;
+
+      if (isProtectedZone(x, z, 10)) continue;
+      if (getDistanceToRoad(x, z) < 4.5) continue;
+
+      const biome = getBiomeAt(x, z);
+      if (biome.elevation < 0.6 || biome.elevation > 7.5) continue;
+
+      const scale = prng.nextRange(0.85, 1.25);
+      dummy.position.set(x, biome.elevation, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale, scale, scale);
+      dummy.updateMatrix();
+
+      trunkMesh.setMatrixAt(placed, dummy.matrix);
+      foliageMesh.setMatrixAt(placed, dummy.matrix);
+      placed++;
+    }
+
+    trunkMesh.count = placed;
+    foliageMesh.count = placed;
+    trunkMesh.instanceMatrix.needsUpdate = true;
+    foliageMesh.instanceMatrix.needsUpdate = true;
+    this.group.add(trunkMesh);
+    this.group.add(foliageMesh);
+  }
+
+  /**
+   * River Willows: Cascading riparian foliage lining the riverbanks and lake shores
+   */
+  private buildCanopyWillows(prng: SeededPRNG) {
+    const count = 300;
+    const { trunk, foliage } = ENV_GEOMETRIES.buildRiverWillow();
+
+    const trunkMesh = new THREE.InstancedMesh(trunk, ENV_MATERIALS.barkOak, count);
+    const foliageMesh = new THREE.InstancedMesh(foliage, ENV_MATERIALS.foliageWillow, count);
+    trunkMesh.castShadow = true;
+    trunkMesh.receiveShadow = true;
+    foliageMesh.castShadow = true;
+    foliageMesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) {
+      trunkMesh.setMatrixAt(i, dummy.matrix);
+      foliageMesh.setMatrixAt(i, dummy.matrix);
+    }
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 6;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      // Along river canyon (-160, 160) or Crystal Lake shore (-320, -260)
+      const isLake = prng.next() < 0.45;
       let x = 0;
       let z = 0;
 
-      if (zone < 0.4) {
-        // Western Bluffs
-        x = -650 - Math.random() * 140;
-        z = (Math.random() - 0.5) * 500;
-      } else if (zone < 0.7) {
-        // Mountain base
-        x = -450 - Math.random() * 200;
-        z = -380 - Math.random() * 180;
+      if (isLake) {
+        const a = prng.next() * Math.PI * 2;
+        const r = prng.nextRange(95, 130);
+        x = -320 + Math.cos(a) * r;
+        z = -260 + Math.sin(a) * r;
       } else {
-        // River valley rapids
-        x = -130 + (Math.random() - 0.5) * 60;
-        z = (Math.random() - 0.5) * 450;
+        const t = prng.nextRange(-180, 420);
+        x = -160 + (prng.next() - 0.5) * 35;
+        z = t;
       }
 
-      if (isNearProtectedZone(x, z, 25)) continue;
+      if (isProtectedZone(x, z, 8)) continue;
+      if (getDistanceToRoad(x, z) < 6.0) continue;
 
-      const sample = evaluateIslandElevation(x, z);
-      const scale = 1.4 + Math.random() * 2.8;
-      dummy.position.set(x, sample.elevation + 0.5, z);
-      dummy.rotation.set(
-        Math.random() * Math.PI,
-        Math.random() * Math.PI,
-        Math.random() * Math.PI
-      );
-      dummy.scale.set(scale * 1.3, scale * 0.75, scale * 1.1);
+      const biome = getBiomeAt(x, z);
+      if (biome.elevation < 0.6 || biome.elevation > 14.0) continue;
+
+      const scale = prng.nextRange(0.85, 1.20);
+      dummy.position.set(x, biome.elevation, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale, scale, scale);
       dummy.updateMatrix();
 
-      rockInst.setMatrixAt(placed++, dummy.matrix);
+      trunkMesh.setMatrixAt(placed, dummy.matrix);
+      foliageMesh.setMatrixAt(placed, dummy.matrix);
+      placed++;
     }
 
-    rockInst.count = placed;
-    rockInst.instanceMatrix.needsUpdate = true;
-    this.group.add(rockInst);
+    trunkMesh.count = placed;
+    foliageMesh.count = placed;
+    trunkMesh.instanceMatrix.needsUpdate = true;
+    foliageMesh.instanceMatrix.needsUpdate = true;
+    this.group.add(trunkMesh);
+    this.group.add(foliageMesh);
   }
 
   /**
-   * 2,000 yellow and orange dandelions & wildflowers across meadows
+   * Deadwood Snags: Weathered bare trunks standing on high ridges and deep forest clearings
    */
-  private buildWildflowerMeadows() {
-    const count = 2000;
-    const geo = new THREE.PlaneGeometry(0.55, 0.55);
-    geo.rotateX(-Math.PI / 2);
+  private buildDeadwoodSnags(prng: SeededPRNG) {
+    const count = 220;
+    const geo = ENV_GEOMETRIES.buildDeadwoodSnag();
+    const mesh = new THREE.InstancedMesh(geo, ENV_MATERIALS.barkDeadwood, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
 
-    const canvas = document.createElement("canvas");
-    canvas.width = 128;
-    canvas.height = 128;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.fillStyle = "#facc15";
-      for (let p = 0; p < 8; p++) {
-        const ang = (p / 8) * Math.PI * 2;
-        ctx.beginPath();
-        ctx.arc(64 + Math.cos(ang) * 26, 64 + Math.sin(ang) * 26, 16, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = "#ea580c";
-      ctx.beginPath();
-      ctx.arc(64, 64, 14, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    const tex = new THREE.CanvasTexture(canvas);
-    const mat = new THREE.MeshStandardMaterial({
-      map: tex,
-      transparent: true,
-      alphaTest: 0.4,
-      roughness: 0.9,
-    });
-
-    const instanced = new THREE.InstancedMesh(geo, mat, count);
     const dummy = new THREE.Object3D();
     dummy.position.set(0, -9999, 0);
     dummy.scale.set(0, 0, 0);
     dummy.updateMatrix();
-    for (let i = 0; i < count; i++) {
-      instanced.setMatrixAt(i, dummy.matrix);
-    }
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, dummy.matrix);
 
     let placed = 0;
     let attempts = 0;
     const maxAttempts = count * 6;
 
     while (placed < count && attempts++ < maxAttempts) {
-      const a = Math.random() * Math.PI * 2;
-      const r = 25 + Math.random() * 220;
-      const x = Math.cos(a) * r;
-      const z = Math.sin(a) * r;
+      const isHighMountain = prng.next() < 0.6;
+      let x = 0;
+      let z = 0;
 
-      if (isNearProtectedZone(x, z, 15)) continue;
+      if (isHighMountain) {
+        x = prng.nextRange(-850, -450);
+        z = prng.nextRange(-850, -450);
+      } else {
+        x = prng.nextRange(-750, -450);
+        z = prng.nextRange(-150, 180);
+      }
 
-      const sample = evaluateIslandElevation(x, z);
-      if (sample.elevation < 0.9 || sample.elevation > 35) continue;
+      if (isProtectedZone(x, z, 10)) continue;
+      const biome = getBiomeAt(x, z);
+      if (biome.elevation < 4.0 || biome.elevation > 115.0) continue;
 
-      dummy.position.set(x, sample.elevation + 0.08, z);
-      dummy.rotation.y = Math.random() * Math.PI * 2;
-      const s = 0.85 + Math.random() * 0.85;
-      dummy.scale.set(s, s, s);
+      const scale = prng.nextRange(0.8, 1.25);
+      dummy.position.set(x, biome.elevation, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale, scale, scale);
       dummy.updateMatrix();
 
-      instanced.setMatrixAt(placed++, dummy.matrix);
+      mesh.setMatrixAt(placed++, dummy.matrix);
     }
 
-    instanced.count = placed;
-    instanced.instanceMatrix.needsUpdate = true;
-    this.group.add(instanced);
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  // ----------------------------------------------------------------
+  // 2. UNDERSTORY & GROUND COVER
+  // ----------------------------------------------------------------
+
+  /**
+   * Broadleaf Dogwood Understory Shrubs: Clustered under forest canopy and meadow edges
+   */
+  private buildUnderstoryShrubs(prng: SeededPRNG) {
+    const count = 2200;
+    const geo = ENV_GEOMETRIES.buildDogwoodShrub();
+    const mesh = new THREE.InstancedMesh(geo, ENV_MATERIALS.foliageShrub, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, dummy.matrix);
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 5;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      const x = prng.nextRange(-850, 300);
+      const z = prng.nextRange(-350, 380);
+
+      if (isProtectedZone(x, z, 6)) continue;
+      if (getDistanceToRoad(x, z) < 3.2) continue;
+
+      const biome = getBiomeAt(x, z);
+      if (!biome.canSupportFoliage) continue;
+      if (
+        biome.primaryBiome !== "FOREST_CORE" &&
+        biome.primaryBiome !== "FOREST_EDGE" &&
+        biome.primaryBiome !== "LOWLAND_MEADOW" &&
+        biome.primaryBiome !== "RURAL_PASTURE"
+      ) {
+        continue;
+      }
+
+      const scale = prng.nextRange(0.75, 1.45);
+      dummy.position.set(x, biome.elevation, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale, scale * prng.nextRange(0.85, 1.2), scale);
+      dummy.updateMatrix();
+
+      mesh.setMatrixAt(placed++, dummy.matrix);
+    }
+
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  /**
+   * Alpine Krummholz Juniper: Prostrate shrubs on high slopes and rocky crags
+   */
+  private buildAlpineJunipers(prng: SeededPRNG) {
+    const count = 1400;
+    const geo = ENV_GEOMETRIES.buildAlpineJuniper();
+    const mesh = new THREE.InstancedMesh(geo, ENV_MATERIALS.foliageSpruce, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, dummy.matrix);
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 5;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      const x = prng.nextRange(-950, -350);
+      const z = prng.nextRange(-950, -350);
+
+      if (isProtectedZone(x, z, 8)) continue;
+      const biome = getBiomeAt(x, z);
+      if (biome.elevation < 28.0 || biome.elevation > 125.0) continue;
+
+      const scale = prng.nextRange(0.75, 1.55);
+      dummy.position.set(x, biome.elevation, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale * 1.2, scale * 0.75, scale * 1.2);
+      dummy.updateMatrix();
+
+      mesh.setMatrixAt(placed++, dummy.matrix);
+    }
+
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  /**
+   * Woodland Sword Ferns: Dense forest floor greenery clustering under tall trees and near streams
+   */
+  private buildForestFerns(prng: SeededPRNG) {
+    const count = 2800;
+    const geo = ENV_GEOMETRIES.buildForestFern();
+    const mesh = new THREE.InstancedMesh(geo, ENV_MATERIALS.fernLeaf, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, dummy.matrix);
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 5;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      // Focused in Whispering Pines and river margins
+      const ang = prng.next() * Math.PI * 2;
+      const rad = prng.nextRange(15, 380);
+      const x = -640 + Math.cos(ang) * rad;
+      const z = 20 + Math.sin(ang) * rad;
+
+      if (isProtectedZone(x, z, 5)) continue;
+      if (getDistanceToRoad(x, z) < 2.5) continue;
+
+      const biome = getBiomeAt(x, z);
+      if (biome.elevation < 0.6 || biome.elevation > 32.0) continue;
+
+      const scale = prng.nextRange(0.8, 1.35);
+      dummy.position.set(x, biome.elevation + 0.05, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale, scale, scale);
+      dummy.updateMatrix();
+
+      mesh.setMatrixAt(placed++, dummy.matrix);
+    }
+
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  /**
+   * Freshwater Reeds & Bulrushes: Vertical shoreline vegetation along river canyon and lake perimeter
+   */
+  private buildRiverReeds(prng: SeededPRNG) {
+    const count = 1600;
+    const geo = ENV_GEOMETRIES.buildRiverReeds();
+    const mesh = new THREE.InstancedMesh(geo, ENV_MATERIALS.reedMarsh, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, dummy.matrix);
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 5;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      const isLake = prng.next() < 0.55;
+      let x = 0;
+      let z = 0;
+
+      if (isLake) {
+        // Tight around Crystal Mountain Lake waterline
+        const a = prng.next() * Math.PI * 2;
+        const r = prng.nextRange(92, 118);
+        x = -320 + Math.cos(a) * r;
+        z = -260 + Math.sin(a) * r;
+      } else {
+        // Along descending river corridor
+        const t = prng.nextRange(-180, 520);
+        x = -150 + (prng.next() - 0.5) * 26;
+        z = t;
+      }
+
+      if (isProtectedZone(x, z, 4)) continue;
+      const biome = getBiomeAt(x, z);
+      if (biome.elevation < 0.3 || biome.elevation > 11.5) continue;
+
+      const scale = prng.nextRange(0.85, 1.45);
+      dummy.position.set(x, biome.elevation, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale, scale, scale);
+      dummy.updateMatrix();
+
+      mesh.setMatrixAt(placed++, dummy.matrix);
+    }
+
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  // ----------------------------------------------------------------
+  // 3. ROCKS, BOULDERS & MOUNTAIN SCREE
+  // ----------------------------------------------------------------
+
+  /**
+   * Glacial Granite Giant Boulders: Massive monolithic rocks anchoring natural vignettes
+   */
+  private buildGraniteBoulders(prng: SeededPRNG) {
+    const count = 480;
+    const geo = ENV_GEOMETRIES.buildGraniteBoulder();
+    const mesh = new THREE.InstancedMesh(geo, ENV_MATERIALS.rockGranite, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, dummy.matrix);
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 6;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      const zone = prng.next();
+      let x = 0;
+      let z = 0;
+
+      if (zone < 0.45) {
+        // Mountain flanks
+        x = prng.nextRange(-850, -450);
+        z = prng.nextRange(-850, -450);
+      } else if (zone < 0.75) {
+        // Whispering Pines clearings & ridges
+        x = prng.nextRange(-850, -420);
+        z = prng.nextRange(-180, 220);
+      } else {
+        // Western bluffs
+        x = -680 - prng.next() * 120;
+        z = prng.nextRange(-100, 300);
+      }
+
+      if (isProtectedZone(x, z, 10)) continue;
+      if (getDistanceToRoad(x, z) < 5.0) continue;
+
+      const biome = getBiomeAt(x, z);
+      const scale = prng.nextRange(0.75, 1.65);
+
+      // Embedded slightly into ground for natural weight
+      dummy.position.set(x, biome.elevation + 0.35, z);
+      dummy.rotation.set(
+        prng.next() * 0.4,
+        prng.next() * Math.PI * 2,
+        prng.next() * 0.4
+      );
+      dummy.scale.set(scale * 1.25, scale * 0.85, scale * 1.15);
+      dummy.updateMatrix();
+
+      mesh.setMatrixAt(placed++, dummy.matrix);
+    }
+
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  /**
+   * Alpine Scree & Talus Chutes: Angular rock fragments covering high mountain slopes
+   */
+  private buildAlpineScree(prng: SeededPRNG) {
+    const count = 950;
+    const geo = ENV_GEOMETRIES.buildMountainScree();
+    const mesh = new THREE.InstancedMesh(geo, ENV_MATERIALS.rockScree, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, dummy.matrix);
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 5;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      // Clustered heavily on steep Mount Apex slopes (>45m MSL)
+      const x = prng.nextRange(-900, -420);
+      const z = prng.nextRange(-900, -420);
+
+      if (isProtectedZone(x, z, 10)) continue;
+      const biome = getBiomeAt(x, z);
+      if (biome.elevation < 35.0 || biome.elevation > 142.0) continue;
+
+      const scale = prng.nextRange(0.65, 1.85);
+      dummy.position.set(x, biome.elevation + 0.15, z);
+      dummy.rotation.set(
+        prng.next() * Math.PI,
+        prng.next() * Math.PI,
+        prng.next() * Math.PI
+      );
+      dummy.scale.set(scale, scale * 0.75, scale);
+      dummy.updateMatrix();
+
+      mesh.setMatrixAt(placed++, dummy.matrix);
+    }
+
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  /**
+   * Riverbed Cobblestone Beds: Smooth rounded stones along river bends and lake shoreline
+   */
+  private buildRiverPebbleBeds(prng: SeededPRNG) {
+    const count = 650;
+    const geo = ENV_GEOMETRIES.buildRiverPebbleBed();
+    const mesh = new THREE.InstancedMesh(geo, ENV_MATERIALS.rockRiver, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, dummy.matrix);
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 5;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      const isLake = prng.next() < 0.45;
+      let x = 0;
+      let z = 0;
+
+      if (isLake) {
+        const a = prng.next() * Math.PI * 2;
+        const r = prng.nextRange(92, 114);
+        x = -320 + Math.cos(a) * r;
+        z = -260 + Math.sin(a) * r;
+      } else {
+        const t = prng.nextRange(-190, 480);
+        x = -155 + (prng.next() - 0.5) * 22;
+        z = t;
+      }
+
+      if (isProtectedZone(x, z, 5)) continue;
+      const biome = getBiomeAt(x, z);
+      if (biome.elevation < 0.3 || biome.elevation > 12.0) continue;
+
+      const scale = prng.nextRange(0.7, 1.5);
+      dummy.position.set(x, biome.elevation + 0.05, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale, scale, scale);
+      dummy.updateMatrix();
+
+      mesh.setMatrixAt(placed++, dummy.matrix);
+    }
+
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  /**
+   * Coastal Sea Stacks: Dramatic marine crags in surf waters along western cliffs and Pelican Cove
+   */
+  private buildCoastalSeaStacks(prng: SeededPRNG) {
+    const count = 130;
+    const geo = ENV_GEOMETRIES.buildSeaStackBoulder();
+    const mesh = new THREE.InstancedMesh(geo, ENV_MATERIALS.rockCoastal, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, dummy.matrix);
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 6;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      // Along western bluffs and Pelican outer waters
+      const ang = prng.nextRange(2.0, 3.8);
+      const rad = prng.nextRange(880, 1150);
+      const x = Math.cos(ang) * rad;
+      const z = Math.sin(ang) * rad;
+
+      const sample = evaluateIslandElevation(x, z);
+      // Positioned in shallow breaking water or rocky shoreline (-0.5m to +5.0m)
+      if (sample.elevation < -1.5 || sample.elevation > 6.0) continue;
+
+      const scale = prng.nextRange(0.85, 1.85);
+      dummy.position.set(x, Math.max(0.1, sample.elevation), z);
+      dummy.rotation.set(
+        prng.next() * 0.2,
+        prng.next() * Math.PI * 2,
+        prng.next() * 0.2
+      );
+      dummy.scale.set(scale, scale * prng.nextRange(0.9, 1.4), scale);
+      dummy.updateMatrix();
+
+      mesh.setMatrixAt(placed++, dummy.matrix);
+    }
+
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  // ----------------------------------------------------------------
+  // 4. FOREST DEBRIS & STORYTELLING
+  // ----------------------------------------------------------------
+
+  /**
+   * Fallen Mossy Logs: Grounded timber logs in forest groves, riverbanks, and clearings
+   */
+  private buildFallenLogs(prng: SeededPRNG) {
+    const count = 360;
+    const geo = ENV_GEOMETRIES.buildFallenLog();
+    const mesh = new THREE.InstancedMesh(geo, ENV_MATERIALS.woodLog, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, dummy.matrix);
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 5;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      const x = prng.nextRange(-850, -250);
+      const z = prng.nextRange(-250, 320);
+
+      if (isProtectedZone(x, z, 8)) continue;
+      if (getDistanceToRoad(x, z) < 4.5) continue;
+
+      const biome = getBiomeAt(x, z);
+      if (biome.elevation < 1.2 || biome.elevation > 35.0) continue;
+
+      const scale = prng.nextRange(0.8, 1.35);
+      dummy.position.set(x, biome.elevation + 0.1, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale, scale, scale);
+      dummy.updateMatrix();
+
+      mesh.setMatrixAt(placed++, dummy.matrix);
+    }
+
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  /**
+   * Weathered Tree Stumps: Cut stumps and lightning shattered trunks
+   */
+  private buildTreeStumps(prng: SeededPRNG) {
+    const count = 420;
+    const geo = ENV_GEOMETRIES.buildTreeStump();
+    const mesh = new THREE.InstancedMesh(geo, ENV_MATERIALS.woodLog, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, dummy.matrix);
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 5;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      const x = prng.nextRange(-800, 150);
+      const z = prng.nextRange(-220, 280);
+
+      if (isProtectedZone(x, z, 6)) continue;
+      if (getDistanceToRoad(x, z) < 3.5) continue;
+
+      const biome = getBiomeAt(x, z);
+      if (biome.elevation < 1.0 || biome.elevation > 40.0) continue;
+
+      const scale = prng.nextRange(0.8, 1.35);
+      dummy.position.set(x, biome.elevation, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale, scale, scale);
+      dummy.updateMatrix();
+
+      mesh.setMatrixAt(placed++, dummy.matrix);
+    }
+
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  /**
+   * Beach Driftwood: Sun-bleached twisted timber scattered across Pelican Cove sand
+   */
+  private buildBeachDriftwood(prng: SeededPRNG) {
+    const count = 180;
+    const geo = ENV_GEOMETRIES.buildDriftwood();
+    const mesh = new THREE.InstancedMesh(geo, ENV_MATERIALS.woodDrift, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, dummy.matrix);
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 5;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      const a = prng.next() * Math.PI * 2;
+      const r = prng.nextRange(20, 200);
+      const x = -720 + Math.cos(a) * r;
+      const z = 560 + Math.sin(a) * r;
+
+      const sample = evaluateIslandElevation(x, z);
+      if (sample.elevation < 0.25 || sample.elevation > 3.5) continue;
+
+      const scale = prng.nextRange(0.8, 1.35);
+      dummy.position.set(x, sample.elevation + 0.1, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale, scale, scale);
+      dummy.updateMatrix();
+
+      mesh.setMatrixAt(placed++, dummy.matrix);
+    }
+
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  // ----------------------------------------------------------------
+  // 5. SCENERY & TRAIL PROPS
+  // ----------------------------------------------------------------
+
+  /**
+   * Coastal Mooring Pilings: Clustered timber posts along Pelican Cove pier and port shore
+   */
+  private buildMooringPilings(prng: SeededPRNG) {
+    const count = 65;
+    const geo = ENV_GEOMETRIES.buildCoastalMooringPost();
+    const mesh = new THREE.InstancedMesh(geo, ENV_MATERIALS.woodFence, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, dummy.matrix);
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 5;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      const isPelican = prng.next() < 0.65;
+      let x = 0;
+      let z = 0;
+
+      if (isPelican) {
+        const a = prng.nextRange(1.8, 3.2);
+        const r = prng.nextRange(110, 190);
+        x = -720 + Math.cos(a) * r;
+        z = 560 + Math.sin(a) * r;
+      } else {
+        x = prng.nextRange(280, 480);
+        z = prng.nextRange(820, 910);
+      }
+
+      const sample = evaluateIslandElevation(x, z);
+      if (sample.elevation < 0.2 || sample.elevation > 4.2) continue;
+
+      const scale = prng.nextRange(0.9, 1.2);
+      dummy.position.set(x, sample.elevation, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(scale, scale, scale);
+      dummy.updateMatrix();
+
+      mesh.setMatrixAt(placed++, dummy.matrix);
+    }
+
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  /**
+   * Rustic Split-Rail Trail Fences: Delimiting nature paths and ranch borders
+   */
+  private buildTrailFences(prng: SeededPRNG) {
+    const count = 90;
+    const geo = ENV_GEOMETRIES.buildSplitRailFence();
+    const mesh = new THREE.InstancedMesh(geo, ENV_MATERIALS.woodFence, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    dummy.position.set(0, -9999, 0);
+    dummy.scale.set(0, 0, 0);
+    dummy.updateMatrix();
+    for (let i = 0; i < count; i++) mesh.setMatrixAt(i, dummy.matrix);
+
+    let placed = 0;
+    let attempts = 0;
+    const maxAttempts = count * 5;
+
+    while (placed < count && attempts++ < maxAttempts) {
+      const x = prng.nextRange(-480, 280);
+      const z = prng.nextRange(-120, 240);
+
+      if (isProtectedZone(x, z, 8)) continue;
+      const roadDist = getDistanceToRoad(x, z);
+      // Positioned along roadsides (4m to 12m away)
+      if (roadDist < 3.5 || roadDist > 14.0) continue;
+
+      const biome = getBiomeAt(x, z);
+      if (biome.elevation < 1.2 || biome.elevation > 25.0) continue;
+
+      dummy.position.set(x, biome.elevation, z);
+      dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
+      dummy.scale.set(1.0, 1.0, 1.0);
+      dummy.updateMatrix();
+
+      mesh.setMatrixAt(placed++, dummy.matrix);
+    }
+
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  /**
+   * Cascade Falls Environment: Dark wet boulders and spray mist volume around waterfall
+   */
+  private buildWaterfallEnvironment() {
+    const waterfallGroup = new THREE.Group();
+
+    // 12 wet dark boulders flanking the waterfall chute
+    const boulderGeo = ENV_GEOMETRIES.buildGraniteBoulder();
+    const wetRockMat = new THREE.MeshStandardMaterial({
+      color: 0x1f2429,
+      roughness: 0.18,
+      metalness: 0.45, // wet sheen
+      flatShading: true,
+    });
+
+    const boulderOffsets = [
+      { x: -245, y: 7.2, z: -205, s: 1.4 },
+      { x: -238, y: 6.5, z: -198, s: 1.2 },
+      { x: -232, y: 5.4, z: -192, s: 1.6 },
+      { x: -224, y: 3.8, z: -185, s: 1.5 },
+      { x: -252, y: 8.0, z: -212, s: 1.3 },
+      { x: -218, y: 3.2, z: -178, s: 1.7 },
+      { x: -248, y: 7.0, z: -196, s: 1.1 },
+      { x: -228, y: 4.5, z: -188, s: 1.3 },
+    ];
+
+    boulderOffsets.forEach((b) => {
+      const rock = new THREE.Mesh(boulderGeo, wetRockMat);
+      rock.position.set(b.x, b.y, b.z);
+      rock.scale.set(b.s, b.s * 0.85, b.s);
+      rock.rotation.set(0.2, Math.random() * Math.PI, 0.2);
+      rock.castShadow = true;
+      rock.receiveShadow = true;
+      waterfallGroup.add(rock);
+    });
+
+    // Cascade Falls Spray Mist Volume
+    const mistGeo = new THREE.SphereGeometry(14, 8, 8);
+    const mistMat = new THREE.MeshBasicMaterial({
+      color: 0xdff4fc,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false,
+    });
+    const mistSphere = new THREE.Mesh(mistGeo, mistMat);
+    mistSphere.position.set(-232, 4.5, -190);
+    mistSphere.scale.set(1.4, 0.6, 1.2);
+    waterfallGroup.add(mistSphere);
+
+    this.group.add(waterfallGroup);
   }
 }

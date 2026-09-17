@@ -18,27 +18,27 @@ export class WorldEnvironment {
   }
 
   private buildAtmosphere(scene: THREE.Scene) {
-    // Sky color and aerial perspective distance fog
-    scene.background = new THREE.Color(0xbfe3f7);
-    scene.fog = new THREE.FogExp2(0xcde6f7, 0.0018);
+    // Atmospheric sky color and natural aerial perspective distance fog (700m to 5200m)
+    scene.background = new THREE.Color(0xbbe4f9);
+    scene.fog = new THREE.Fog(0xcfe7f8, 700, 5200);
 
-    // Ambient Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.90);
+    // Balanced Ambient Lighting for realistic shadow contrast
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
     this.group.add(ambientLight);
 
     // Primary High-Resolution Sun Directional Light with PCFSoft Shadows
-    this.sunLight = new THREE.DirectionalLight(0xfffaea, 2.5);
-    this.sunLight.position.set(120, 200, 90);
+    this.sunLight = new THREE.DirectionalLight(0xfffaee, 2.6);
+    this.sunLight.position.set(220, 360, 160);
     this.sunLight.castShadow = true;
     this.sunLight.shadow.mapSize.width = 2048;
     this.sunLight.shadow.mapSize.height = 2048;
     this.sunLight.shadow.camera.near = 10;
-    this.sunLight.shadow.camera.far = 650;
-    this.sunLight.shadow.camera.left = -220;
-    this.sunLight.shadow.camera.right = 220;
-    this.sunLight.shadow.camera.top = 220;
-    this.sunLight.shadow.camera.bottom = -220;
-    this.sunLight.shadow.bias = -0.0004;
+    this.sunLight.shadow.camera.far = 850;
+    this.sunLight.shadow.camera.left = -320;
+    this.sunLight.shadow.camera.right = 320;
+    this.sunLight.shadow.camera.top = 320;
+    this.sunLight.shadow.camera.bottom = -320;
+    this.sunLight.shadow.bias = -0.0003;
     this.group.add(this.sunLight);
 
     // 3D Visual Glowing Sun in Sky Dome
@@ -97,36 +97,35 @@ export class WorldEnvironment {
       depthWrite: false,
     });
 
+    // Realistic high-altitude cloud decks (280m - 420m) well above Mount Apex (145m)
     const cloudClusterConfigs = [
-      { x: -280, y: 95, z: -200, scale: 1.4 },
-      { x: -160, y: 115, z: -310, scale: 1.2 },
-      { x: -60, y: 105, z: -150, scale: 1.0 },
-      { x: 80, y: 120, z: -250, scale: 1.6 },
-      { x: 220, y: 100, z: -180, scale: 1.3 },
-      { x: 340, y: 115, z: -80, scale: 1.5 },
-      { x: -320, y: 108, z: 20, scale: 1.3 },
-      { x: -190, y: 110, z: 90, scale: 1.1 },
-      { x: -40, y: 125, z: 120, scale: 1.5 },
-      { x: 110, y: 98, z: 60, scale: 1.2 },
-      { x: 260, y: 112, z: 140, scale: 1.4 },
-      { x: -260, y: 118, z: 260, scale: 1.3 },
-      { x: -110, y: 102, z: 320, scale: 1.5 },
-      { x: 50, y: 110, z: 240, scale: 1.1 },
-      { x: 190, y: 125, z: 300, scale: 1.6 },
-      { x: 310, y: 100, z: 280, scale: 1.3 },
-      { x: 0, y: 130, z: -350, scale: 1.7 },
-      { x: 0, y: 120, z: 0, scale: 1.2 },
+      { x: -950, y: 310, z: -800, scale: 2.4 },
+      { x: -620, y: 340, z: -1100, scale: 2.8 },
+      { x: -280, y: 290, z: -550, scale: 2.1 },
+      { x: 150, y: 325, z: -750, scale: 2.5 },
+      { x: 680, y: 350, z: -620, scale: 2.2 },
+      { x: 1100, y: 300, z: -300, scale: 2.6 },
+      { x: -1100, y: 320, z: 100, scale: 2.5 },
+      { x: -750, y: 295, z: 420, scale: 2.0 },
+      { x: -350, y: 360, z: 250, scale: 2.7 },
+      { x: 200, y: 330, z: 180, scale: 2.2 },
+      { x: 750, y: 310, z: 450, scale: 2.6 },
+      { x: 1200, y: 340, z: 650, scale: 2.9 },
+      { x: -500, y: 305, z: 900, scale: 2.3 },
+      { x: 0, y: 350, z: 800, scale: 2.8 },
+      { x: 450, y: 320, z: 1050, scale: 2.4 },
+      { x: -150, y: 380, z: -150, scale: 3.0 },
     ];
 
     const puffOffsets = [
-      { x: 0, y: 0, z: 0, r: 10 },
-      { x: 8, y: 1.5, z: 2, r: 8.5 },
-      { x: -8, y: 1, z: -2, r: 8.5 },
-      { x: 3, y: 4.5, z: -1, r: 7.5 },
-      { x: -4, y: 4, z: 1, r: 7 },
-      { x: 14, y: -1, z: 1, r: 6.5 },
-      { x: -13, y: -0.5, z: 2, r: 6.5 },
-      { x: 0, y: -2, z: 6, r: 6 },
+      { x: 0, y: 0, z: 0, r: 16 },
+      { x: 14, y: 3, z: 4, r: 13 },
+      { x: -14, y: 2, z: -4, r: 13 },
+      { x: 5, y: 8, z: -2, r: 11 },
+      { x: -6, y: 7, z: 3, r: 10 },
+      { x: 24, y: -2, z: 2, r: 10 },
+      { x: -22, y: -1, z: 4, r: 10 },
+      { x: 0, y: -3, z: 12, r: 9 },
     ];
 
     cloudClusterConfigs.forEach((coord) => {

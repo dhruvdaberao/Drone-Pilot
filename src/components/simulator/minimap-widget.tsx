@@ -113,12 +113,13 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
 
   // Current Sector Tag
   const sectorName = useMemo(() => {
-    if (Math.hypot(droneX, droneZ) < 180) return "ACADEMY";
-    if (droneX < -200 && droneZ < -200) return "MT APEX";
-    if (droneX > 200 && droneZ < -200) return "FOREST";
-    if (droneX > 250 && droneZ > 200) return "METROPOLIS";
-    if (droneX < -200 && droneZ > 100) return "PELICAN COVE";
-    if (droneZ > 350) return "HARBOR DOCKS";
+    if (Math.hypot(droneX, droneZ) < 220) return "ACADEMY";
+    if (droneX < -250 && droneZ < -250) return "MT APEX";
+    if (droneX < -250 && droneZ >= -250 && droneZ <= 280) return "FOREST";
+    if (droneX < -250 && droneZ > 280) return "PELICAN COVE";
+    if (droneX > 350 && droneZ > 520) return "HARBOR DOCKS";
+    if (droneX > 350 && droneZ <= 520) return "METROPOLIS";
+    if (droneX >= -250 && droneX <= 80 && droneZ > 80) return "RIVER CANYON";
     return "ARCHIPELAGO";
   }, [droneX, droneZ]);
 
@@ -189,42 +190,42 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
               strokeLinejoin="round"
             />
 
-            {/* 5. Local Academy Runway Strip (Centered at 0, 0 in World) */}
-            <g transform={`translate(${CENTER - droneX * SCALE}, ${CENTER - droneZ * SCALE})`}>
-              {/* Asphalt Runway: 240m long x 24m wide */}
+            {/* 5. Local Academy Runway Strip (Centered at x: 25, z: -50 in World) */}
+            <g transform={`translate(${CENTER + (25 - droneX) * SCALE}, ${CENTER + (-50 - droneZ) * SCALE})`}>
+              {/* Asphalt Runway: 260m long x 32m wide */}
               <rect
-                x={-120 * SCALE}
-                y={-12 * SCALE}
-                width={240 * SCALE}
-                height={24 * SCALE}
+                x={-16 * SCALE}
+                y={-130 * SCALE}
+                width={32 * SCALE}
+                height={260 * SCALE}
                 rx={2}
                 fill="#0f172a"
                 stroke="#94a3b8"
                 strokeWidth="1"
               />
-              {/* Runway Threshold Marks */}
+              {/* Threshold Marks */}
               <line
-                x1={-115 * SCALE}
-                y1={-9 * SCALE}
-                x2={-115 * SCALE}
-                y2={9 * SCALE}
+                x1={-12 * SCALE}
+                y1={-125 * SCALE}
+                x2={12 * SCALE}
+                y2={-125 * SCALE}
                 stroke="#ffffff"
                 strokeWidth="1.5"
               />
               <line
-                x1={115 * SCALE}
-                y1={-9 * SCALE}
-                x2={115 * SCALE}
-                y2={9 * SCALE}
+                x1={-12 * SCALE}
+                y1={125 * SCALE}
+                x2={12 * SCALE}
+                y2={125 * SCALE}
                 stroke="#ffffff"
                 strokeWidth="1.5"
               />
               {/* White Centerline */}
               <line
-                x1={-110 * SCALE}
-                y1={0}
-                x2={110 * SCALE}
-                y2={0}
+                x1={0}
+                y1={-120 * SCALE}
+                x2={0}
+                y2={120 * SCALE}
                 stroke="#ffffff"
                 strokeWidth="1.2"
                 strokeDasharray="4 4"

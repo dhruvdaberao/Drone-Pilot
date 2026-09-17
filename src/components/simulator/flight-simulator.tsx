@@ -21,6 +21,7 @@ import { WorldScene } from "./world-scene";
 import { ModularDrone } from "./modular-drone";
 import { ChaseCameraController, CameraMode } from "./chase-camera";
 import { TelemetryHUD } from "./telemetry-hud";
+import { FastTravelBase } from "./base-switcher-hud";
 import { IslandMapModal } from "./island-map-modal";
 import { NavigationWaypoint } from "./minimap-widget";
 import { SimulationLoadingScreen } from "./loading/simulation-loading-screen";
@@ -29,11 +30,29 @@ import { TutorialOverlay } from "./tutorial-overlay";
 import { FlightAnalysisModal } from "./analysis/flight-analysis-modal";
 import { FlightReplayModal } from "./replay/flight-replay-modal";
 import { PhysicsDebugHUD } from "./debug/physics-debug-hud";
+import { CrashReviveOverlay } from "./crash-revive-overlay";
 import { RemoteDroneManager } from "./multiplayer/remote-drone-manager";
 import { SpawnSystem } from "@/lib/world/spawn-system";
 import { SpawnConfiguration } from "@/lib/world/world-types";
 import { HELIPADS } from "@/lib/world/helipad-definitions";
 import { useAuth } from "@/context/auth-context";
+import { AudioManager } from "@/lib/audio/audio-manager";
+import { DroneAudio } from "@/lib/audio/drone-audio";
+import { WindAudio } from "@/lib/audio/wind-audio";
+import { EnvironmentZoneAudio } from "@/lib/audio/environment-zones";
+import { SFXEvents } from "@/lib/audio/sfx-events";
+import { REGION_LIST } from "@/lib/world/region-definitions";
+
+function getWindExposure(x: number, z: number): number {
+  for (const r of REGION_LIST) {
+    if (x >= r.bounds.minX && x <= r.bounds.maxX && z >= r.bounds.minZ && z <= r.bounds.maxZ) {
+      if (r.category === 'highlands' || r.category === 'maritime' || r.category === 'ocean') return 1.0;
+      if (r.category === 'nature') return 0.3;
+      if (r.category === 'urban') return 0.2;
+    }
+  }
+  return 0.6;
+}
 
 interface FlightSimulatorProps {
   selectedDrone: DroneModel;
@@ -45,6 +64,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
   const inputManagerRef = useRef<InputManager | null>(null);
   const cameraControllerRef = useRef<ChaseCameraController | null>(null);
   const physicsEngineRef = useRef<FlightPhysicsEngine | null>(null);
+  const droneMeshRef = useRef<ModularDrone | null>(null);
   const flightRecorderRef = useRef<FlightRecorder>(new FlightRecorder());
   const multiplayerClientRef = useRef<MultiplayerClient | null>(null);
   const remoteDroneManagerRef = useRef<RemoteDroneManager | null>(null);
@@ -75,6 +95,64 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
 
   const spawnConfigRef = useRef<SpawnConfiguration>(initialSpawn);
 
+  // Audio Refs
+  const audioManagerRef = useRef<AudioManager | null>(null);
+  const droneAudioRef = useRef<DroneAudio | null>(null);
+  const windAudioRef = useRef<WindAudio | null>(null);
+  const envZoneAudioRef = useRef<EnvironmentZoneAudio | null>(null);
+  const sfxEventsRef = useRef<SFXEvents | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const hasInitAudioRef = useRef(false);
+
+  const initAudio = useCallback(() => {
+    if (hasInitAudioRef.current) return;
+    hasInitAudioRef.current = true;
+    
+    const am = AudioManager.getInstance();
+    am.init();
+    const ctx = am.getContext();
+    if (!ctx) return;
+    audioManagerRef.current = am;
+
+    const droneGain = am.getChannel('drone');
+    if (droneGain) droneAudioRef.current = new DroneAudio(ctx, droneGain);
+
+    const envGain = am.getChannel('environment');
+    if (envGain) {
+      windAudioRef.current = new WindAudio(ctx, envGain);
+      envZoneAudioRef.current = new EnvironmentZoneAudio(ctx, envGain);
+    }
+
+    const sfxGain = am.getChannel('sfx');
+    if (sfxGain) sfxEventsRef.current = new SFXEvents(ctx, sfxGain);
+
+    droneAudioRef.current?.start();
+    windAudioRef.current?.start();
+    envZoneAudioRef.current?.start();
+    sfxEventsRef.current?.playMotorStart();
+    
+    setIsMuted(am.isMuted);
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    const am = AudioManager.getInstance();
+    setIsMuted(am.toggleMute());
+  }, []);
+
+  useEffect(() => {
+    const handleUserGesture = () => {
+      initAudio();
+      document.removeEventListener('click', handleUserGesture);
+      document.removeEventListener('keydown', handleUserGesture);
+    };
+    document.addEventListener('click', handleUserGesture);
+    document.addEventListener('keydown', handleUserGesture);
+    return () => {
+      document.removeEventListener('click', handleUserGesture);
+      document.removeEventListener('keydown', handleUserGesture);
+    };
+  }, [initAudio]);
+
   // Callsign for multiplayer matches authenticated pilot name
   const callsign = pilotName;
 
@@ -83,7 +161,14 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [activeWaypoint, setActiveWaypoint] = useState<NavigationWaypoint | null>(null);
   const [isEnvironmentOpen, setIsEnvironmentOpen] = useState(false);
-  const [isTutorialOpen, setIsTutorialOpen] = useState(true);
+  // Flight Coach only opens automatically for first-time pilots
+  const [isTutorialOpen, setIsTutorialOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      const hasCompleted = localStorage.getItem("drone_pilot_flight_coach_completed");
+      return !hasCompleted;
+    }
+    return false;
+  });
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [isReplayOpen, setIsReplayOpen] = useState(false);
   const [isDebugOpen, setIsDebugOpen] = useState(() => {
@@ -165,6 +250,16 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     }
   }, []);
 
+  // In-Place Drone Revive & Field Repair
+  const handleReviveHere = useCallback(() => {
+    crashTriggeredRef.current = false;
+    if (physicsEngineRef.current) {
+      const newTelem = physicsEngineRef.current.revive();
+      droneMeshRef.current?.setDamaged(false);
+      setTelemetry({ ...newTelem });
+    }
+  }, []);
+
   // Reset to Selected Spawn Helipad
   const handleReset = useCallback(() => {
     crashTriggeredRef.current = false;
@@ -177,6 +272,39 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         sp.position.z,
         sp.rotation.yaw
       );
+      droneMeshRef.current?.setDamaged(false);
+      setTelemetry({ ...physicsEngineRef.current.generateTelemetry() });
+    }
+  }, []);
+
+  // Fast Travel Teleport to any Island Base
+  const handleTeleportBase = useCallback((base: FastTravelBase) => {
+    crashTriggeredRef.current = false;
+    if (physicsEngineRef.current) {
+      const pe = physicsEngineRef.current;
+      pe.resetCrash();
+
+      const groundElev = pe.elevationQueryFn
+        ? pe.elevationQueryFn(base.position.x, base.position.z)
+        : base.position.y;
+      const safeFloor = Math.max(base.position.y, groundElev + 0.25);
+      const safeHoverY = safeFloor + 1.2; // Hover cleanly 1.2m above helipad / base
+
+      pe.reset(
+        base.position.x,
+        safeHoverY,
+        base.position.z,
+        (base.headingDeg * Math.PI) / 180
+      );
+      pe.isArmed = true;
+      pe.isHoverMode = true;
+      pe.targetAltitude = safeHoverY;
+      pe.velX = 0;
+      pe.velY = 0;
+      pe.velZ = 0;
+
+      droneMeshRef.current?.setDamaged(false);
+      setTelemetry({ ...pe.generateTelemetry() });
     }
   }, []);
 
@@ -186,6 +314,9 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       inputManagerRef.current.toggleHoverAssist();
       const current = inputManagerRef.current.isHoverAssist();
       physicsEngineRef.current.isHoverMode = current;
+      if (current) {
+        physicsEngineRef.current.targetAltitude = physicsEngineRef.current.posY;
+      }
       setIsHoverMode(current);
     }
   }, []);
@@ -250,6 +381,13 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     handleReset();
   }, [handleReset]);
 
+  const handleDismissTutorial = useCallback(() => {
+    setIsTutorialOpen(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("drone_pilot_flight_coach_completed", "true");
+    }
+  }, []);
+
   // Keybindings for Debug & Hotkeys
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -303,6 +441,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     const droneMesh = new ModularDrone(droneDef, pilotName);
     scene.add(droneMesh.group);
     scene.add(droneMesh.groundShadowMesh);
+    droneMeshRef.current = droneMesh;
 
     // 6. MULTIPLAYER REMOTE DRONES LAYER
     const remoteDroneMgr = new RemoteDroneManager();
@@ -379,7 +518,14 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       const dy = e.clientY - lastMouseY;
       lastMouseX = e.clientX;
       lastMouseY = e.clientY;
-      chaseCam.setOrbitDelta(dx, dy);
+
+      // Mouse-aim flight steering: dragging cursor horizontally turns drone heading (Yaw)
+      physics.yaw -= dx * 0.006;
+      if (physics.yaw > Math.PI * 2) physics.yaw -= Math.PI * 2;
+      if (physics.yaw < 0) physics.yaw += Math.PI * 2;
+
+      // Vertical mouse movement tilts camera viewing pitch only (not up/down drone altitude)
+      chaseCam.setOrbitDelta(0, dy);
     };
 
     const onMouseUp = () => {
@@ -432,12 +578,14 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       // Check for impact / crash incident
       if (curTelemetry.isCrashed && !crashTriggeredRef.current) {
         crashTriggeredRef.current = true;
+        sfxEventsRef.current?.playCrash();
         const report = flightRecorderRef.current.generateAnalysis(
           selectedDrone.name,
           physics.crashState
         );
         setAnalysisReport(report);
-        setIsAnalysisOpen(true);
+        // Sync telemetry immediately so the CrashReviveOverlay displays without delay
+        setTelemetry({ ...curTelemetry });
       }
 
       // Update 3D Drone Transform & Props
@@ -449,6 +597,21 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
 
       // Update Follow Camera
       chaseCam.update(curTelemetry, dt);
+
+      // Update Audio
+      if (droneAudioRef.current) {
+        const throttleValue = (curTelemetry.rotorRpmPercent || 0) / 100;
+        droneAudioRef.current.update(throttleValue, throttleValue * 5000, curTelemetry.groundSpeed);
+      }
+      if (windAudioRef.current) {
+        windAudioRef.current.update(curTelemetry.altitudeMsl || curTelemetry.altitude, curTelemetry.groundSpeed, getWindExposure(curTelemetry.position.x, curTelemetry.position.z));
+      }
+      if (envZoneAudioRef.current) {
+        envZoneAudioRef.current.update(curTelemetry.position.x, curTelemetry.position.z);
+      }
+      if (audioManagerRef.current) {
+        audioManagerRef.current.update(dt, elapsed, chaseCam.camera.position);
+      }
 
       // Update World Animations (Waves, Windsock, Beacon strobes, traffic, grass wind, downwash)
       const droneWorldPos = new THREE.Vector3(
@@ -511,6 +674,19 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       {/* Three.js Canvas Container */}
       <div ref={containerRef} className="w-full h-full cursor-crosshair" />
 
+      {/* Audio Mute/Unmute Toggle */}
+      <button 
+        onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+        className="absolute bottom-6 right-6 z-40 bg-black/50 hover:bg-black/80 text-white p-3 rounded-full backdrop-blur-md transition-colors"
+        title={isMuted ? "Unmute Audio" : "Mute Audio"}
+      >
+        {isMuted ? (
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+        )}
+      </button>
+
       {/* Loading Screen Overlay */}
       {isLoading && <SimulationLoadingScreen onReady={handleLoadingReady} />}
 
@@ -556,13 +732,14 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         remotePlayers={remotePlayers}
         callsign={callsign}
         activeWaypoint={activeWaypoint}
+        onTeleportBase={handleTeleportBase}
       />
 
       {/* Live Tutorial Overlay */}
       {isTutorialOpen && (
         <TutorialOverlay
           telemetry={telemetry}
-          onDismiss={() => setIsTutorialOpen(false)}
+          onDismiss={handleDismissTutorial}
         />
       )}
 
@@ -591,6 +768,16 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         activeWaypoint={activeWaypoint}
         onSelectWaypoint={setActiveWaypoint}
       />
+
+      {/* Tactical Crash Notification & In-Place Revive HUD */}
+      {telemetry.isCrashed && (
+        <CrashReviveOverlay
+          crashState={physicsEngineRef.current?.crashState || null}
+          onReviveHere={handleReviveHere}
+          onResetToBase={handleReset}
+          onOpenAnalysis={handleManualDebrief}
+        />
+      )}
 
       {/* Post-Flight Debrief & Incident Analysis Modal */}
       {analysisReport && (

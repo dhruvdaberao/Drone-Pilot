@@ -71,7 +71,7 @@ export class WaterSystem {
     });
 
     this.waterfallMesh = new THREE.Mesh(fallGeo, this.waterfallMat);
-    this.waterfallMesh.position.set(-250, 4.8, -165);
+    this.waterfallMesh.position.set(-270, 6.0, -210);
     this.waterfallMesh.rotation.x = 0.35; // Angle forward down the cliff
     this.group.add(this.waterfallMesh);
 
@@ -80,9 +80,9 @@ export class WaterSystem {
     this.mistGeo = new THREE.BufferGeometry();
 
     for (let i = 0; i < this.mistCount; i++) {
-      this.mistPositions[i * 3] = -246 + (Math.random() - 0.5) * 16;
-      this.mistPositions[i * 3 + 1] = 2.2 + Math.random() * 2.5;
-      this.mistPositions[i * 3 + 2] = -162 + (Math.random() - 0.5) * 8;
+      this.mistPositions[i * 3] = -270 + (Math.random() - 0.5) * 16;
+      this.mistPositions[i * 3 + 1] = 2.8 + Math.random() * 2.5;
+      this.mistPositions[i * 3 + 2] = -205 + (Math.random() - 0.5) * 8;
     }
     this.mistGeo.setAttribute("position", new THREE.BufferAttribute(this.mistPositions, 3));
 
@@ -100,6 +100,7 @@ export class WaterSystem {
 
   public update(dt: number, elapsed: number) {
     this.ocean.update(dt, elapsed);
+    this.freshwater.update(dt, elapsed);
 
     // Scroll waterfall foam downwards
     if (this.waterfallMat.map) {

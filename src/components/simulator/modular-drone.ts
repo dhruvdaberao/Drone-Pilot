@@ -16,8 +16,16 @@ interface PropellerAssembly {
 export class ModularDrone {
   public group = new THREE.Group();
   public groundShadowMesh!: THREE.Mesh;
-  private def: DroneDefinition;
+  public def: DroneDefinition;
   private propellers: PropellerAssembly[] = [];
+  private armGroups: THREE.Group[] = [];
+  private armOriginalAngles: number[] = [];
+  private propGroups: THREE.Group[] = [];
+  public isDamaged = false;
+  private smokeParticles: THREE.Points | null = null;
+  private smokePositions!: Float32Array;
+  private sparkParticles: THREE.Points | null = null;
+  private sparkPositions!: Float32Array;
   private nameTagSprite: THREE.Sprite | null = null;
   private pilotName = "PILOT";
 
@@ -373,11 +381,20 @@ export class ModularDrone {
         direction: motor.direction,
       });
 
+      this.armGroups.push(armGroup);
+      this.armOriginalAngles.push(angle);
+      this.propGroups.push(propGroup);
+
       this.group.add(armGroup);
     });
 
     // ----------------------------------------------------
-    // 5. ENABLE REAL 3D SHADOW CASTING ON ALL DRONE MESHES
+    // 5. CRASH SMOKE & SPARK PARTICLE EMITTERS
+    // ----------------------------------------------------
+    this.buildCrashFX();
+
+    // ----------------------------------------------------
+    // 6. ENABLE REAL 3D SHADOW CASTING ON ALL DRONE MESHES
     // ----------------------------------------------------
     this.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
@@ -386,7 +403,7 @@ export class ModularDrone {
     });
 
     // ----------------------------------------------------
-    // 6. DEDICATED GROUND CONTACT SHADOW DECAL
+    // 7. DEDICATED GROUND CONTACT SHADOW DECAL
     // Stays strictly on ground level (Y = 0.33m), NEVER in the sky!
     // ----------------------------------------------------
     const shadowCanvas = document.createElement("canvas");
@@ -414,13 +431,136 @@ export class ModularDrone {
     );
     this.groundShadowMesh.rotation.x = -Math.PI / 2;
     this.groundShadowMesh.position.set(0, 0.445, 0); // Strictly locked to ground & helipad surface!
-    // NOTE: NOT added to this.group! Added directly to the scene.
+  }
+
+  /**
+   * Builds billowing smoke and sparking particle systems for visual crash damage
+   */
+  private buildCrashFX() {
+    // 1. Billowing Dark Smoke
+    const smokeCount = 50;
+    this.smokePositions = new Float32Array(smokeCount * 3);
+    for (let i = 0; i < smokeCount; i++) {
+      this.smokePositions[i * 3] = (Math.random() - 0.5) * 0.2;
+      this.smokePositions[i * 3 + 1] = Math.random() * 0.9;
+      this.smokePositions[i * 3 + 2] = (Math.random() - 0.5) * 0.2;
+    }
+    const smokeGeo = new THREE.BufferGeometry();
+    smokeGeo.setAttribute("position", new THREE.BufferAttribute(this.smokePositions, 3));
+    const smokeMat = new THREE.PointsMaterial({
+      color: 0x1f2937,
+      size: 0.25,
+      transparent: true,
+      opacity: 0.75,
+      depthWrite: false,
+    });
+    this.smokeParticles = new THREE.Points(smokeGeo, smokeMat);
+    this.smokeParticles.visible = false;
+    this.group.add(this.smokeParticles);
+
+    // 2. High-Voltage Electrical Sparks
+    const sparkCount = 35;
+    this.sparkPositions = new Float32Array(sparkCount * 3);
+    for (let i = 0; i < sparkCount; i++) {
+      this.sparkPositions[i * 3] = (Math.random() - 0.5) * 0.25;
+      this.sparkPositions[i * 3 + 1] = Math.random() * 0.4;
+      this.sparkPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.25;
+    }
+    const sparkGeo = new THREE.BufferGeometry();
+    sparkGeo.setAttribute("position", new THREE.BufferAttribute(this.sparkPositions, 3));
+    const sparkMat = new THREE.PointsMaterial({
+      color: 0xffaa00,
+      size: 0.09,
+      transparent: true,
+      opacity: 0.95,
+      depthWrite: false,
+    });
+    this.sparkParticles = new THREE.Points(sparkGeo, sparkMat);
+    this.sparkParticles.visible = false;
+    this.group.add(this.sparkParticles);
+  }
+
+  /**
+   * Sets the visual damage state (bent arms, shattered props, smoke/sparks)
+   */
+  public setDamaged(damaged: boolean) {
+    this.isDamaged = damaged;
+
+    if (damaged) {
+      // Dislodge / bend motor arms at jarring impact angles
+      if (this.armGroups[0]) {
+        this.armGroups[0].rotation.z = -0.65;
+        this.armGroups[0].rotation.x = 0.45;
+      }
+      if (this.armGroups[1]) {
+        this.armGroups[1].rotation.z = 0.52;
+        this.armGroups[1].rotation.x = -0.38;
+      }
+      // Shatter/hide damaged propellers
+      if (this.propGroups[0]) {
+        this.propGroups[0].visible = false;
+      }
+      if (this.propGroups[1]) {
+        this.propGroups[1].scale.set(0.25, 0.25, 0.25);
+      }
+      if (this.smokeParticles) this.smokeParticles.visible = true;
+      if (this.sparkParticles) this.sparkParticles.visible = true;
+    } else {
+      // Restore all motor arms to original factory angles
+      this.armGroups.forEach((arm, i) => {
+        arm.rotation.set(0, this.armOriginalAngles[i] || 0, 0);
+      });
+      // Restore all propellers
+      this.propGroups.forEach((prop) => {
+        prop.visible = true;
+        prop.scale.set(1, 1, 1);
+      });
+      if (this.smokeParticles) this.smokeParticles.visible = false;
+      if (this.sparkParticles) this.sparkParticles.visible = false;
+    }
   }
 
   /**
    * Updates drone transforms and spinning propeller animations
    */
   public update(telemetry: TelemetryState, dt: number) {
+    // Check damage / crash state transition
+    const isCrashed = !!telemetry.isCrashed;
+    if (isCrashed !== this.isDamaged) {
+      this.setDamaged(isCrashed);
+    }
+
+    // Animate crash VFX (billowing smoke and flickering sparks)
+    if (this.isDamaged) {
+      if (this.smokePositions && this.smokeParticles) {
+        for (let i = 0; i < this.smokePositions.length / 3; i++) {
+          this.smokePositions[i * 3 + 1] += dt * 0.75;
+          this.smokePositions[i * 3] += (Math.random() - 0.5) * dt * 0.15;
+          this.smokePositions[i * 3 + 2] += (Math.random() - 0.5) * dt * 0.15;
+          if (this.smokePositions[i * 3 + 1] > 1.6) {
+            this.smokePositions[i * 3 + 1] = 0.05;
+            this.smokePositions[i * 3] = (Math.random() - 0.5) * 0.2;
+            this.smokePositions[i * 3 + 2] = (Math.random() - 0.5) * 0.2;
+          }
+        }
+        this.smokeParticles.geometry.attributes.position.needsUpdate = true;
+      }
+
+      if (this.sparkPositions && this.sparkParticles) {
+        for (let i = 0; i < this.sparkPositions.length / 3; i++) {
+          this.sparkPositions[i * 3 + 1] += (Math.random() - 0.45) * dt * 1.8;
+          this.sparkPositions[i * 3] += (Math.random() - 0.5) * dt * 1.4;
+          this.sparkPositions[i * 3 + 2] += (Math.random() - 0.5) * dt * 1.4;
+          if (this.sparkPositions[i * 3 + 1] > 0.7 || this.sparkPositions[i * 3 + 1] < 0) {
+            this.sparkPositions[i * 3 + 1] = Math.random() * 0.2;
+            this.sparkPositions[i * 3] = (Math.random() - 0.5) * 0.25;
+            this.sparkPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.25;
+          }
+        }
+        this.sparkParticles.geometry.attributes.position.needsUpdate = true;
+      }
+    }
+
     // 1. Synchronize drone position & 3D rotation
     this.group.position.set(telemetry.position.x, telemetry.position.y, telemetry.position.z);
     this.group.rotation.order = "YXZ";

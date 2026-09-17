@@ -1,11 +1,12 @@
 // ==========================================================
-// DRONE PILOT — CANONICAL TERRAIN MATHEMATICAL MODEL (PUBG-GRADE)
-// Realistic multi-octave uneven terrain, rugged mountain massifs,
-// carved river canyons, and natural rolling hills
+// DRONE PILOT — CANONICAL TERRAIN MATHEMATICAL MODEL (PHASE 1)
+// Large-scale 2.4km irregular island with multi-peak mountain massif,
+// high mountain lake, carved river canyon, and geographic biomes
 // ==========================================================
 
 import { getDistanceToCoast, getCoastlineRadius } from "./coastline-math";
 import { RegionId } from "./world-types";
+import { WORLD_DEFINITION } from "./world-definition";
 
 export type SurfaceMaterialType =
   | "grass"
@@ -26,7 +27,7 @@ export interface TerrainSample {
 
 /**
  * Evaluates the precise natural island ground elevation and biome at any (X, Z) world coordinate.
- * Shared directly by Three.js mesh generation, physics ground collision, and HUD telemetry.
+ * Canonical mathematical model shared by Three.js mesh generation, physics ground collision, and HUD telemetry.
  */
 export function evaluateIslandElevation(x: number, z: number): TerrainSample {
   const distToCoast = getDistanceToCoast(x, z);
@@ -35,223 +36,304 @@ export function evaluateIslandElevation(x: number, z: number): TerrainSample {
   // -------------------------------------------------------------
   // 1. SUBMERGED OFFSHORE OCEAN BATHYMETRY
   // -------------------------------------------------------------
-  if (distToCoast < -60) {
+  if (distToCoast < -90) {
     // Deep ocean floor
     return {
-      elevation: -14.0,
+      elevation: -16.0,
       slope: 0.0,
       surfaceType: "water",
       regionId: "water",
-      color: [0.02, 0.12, 0.24],
+      color: [0.02, 0.10, 0.22],
     };
   }
 
   if (distToCoast < 0) {
-    // Continental shallow shelf sloping up from -14.0m to 0.0m
-    const t = (distToCoast + 60) / 60; // 0..1
-    const elevation = -14.0 * (1 - t) * (1 - t);
+    // Continental shallow shelf sloping up from -16.0m to 0.0m
+    const t = (distToCoast + 90) / 90; // 0..1
+    const elevation = -16.0 * (1 - t) * (1 - t);
     return {
       elevation,
-      slope: 0.2,
+      slope: 0.18,
       surfaceType: "sand",
       regionId: "water",
-      color: [0.08 + t * 0.2, 0.35 + t * 0.2, 0.45 + t * 0.1], // Turquoise coastal shallows
+      color: [0.06 + t * 0.22, 0.32 + t * 0.22, 0.44 + t * 0.12], // Turquoise coastal shallows
     };
   }
 
   // -------------------------------------------------------------
-  // 2. COASTLINE PROFILE (Cliff vs Sandy Beach vs Headland)
+  // 2. COASTLINE PROFILE (Rocky Sea Cliffs vs Sandy Beach vs Headlands)
   // -------------------------------------------------------------
-  // Western Bluffs (angle ~ 150° to 220°): steep rocky sea cliffs
-  const isWesternBluff = angle > 2.4 || angle < -2.4;
-  // North Cape (angle ~ -105° to -75°): rocky headland
-  const isNorthCape = angle > -1.9 && angle < -1.2;
+  // Southwest Bluffs (Sentinel Cliffs, angle ~ 2.1 to 2.8 rad)
+  const isSouthwestCliff = angle > 2.0 && angle < 2.85;
+  // Northwest Promontory (angle ~ -2.5 to -1.7 rad)
+  const isNorthwestCape = angle < -1.7 && angle > -2.55;
 
   let baseCoastElevation = 0.0;
   let coastalRockWeight = 0.0;
 
-  if (distToCoast < 60) {
-    const tCoast = distToCoast / 60; // 0 at water line, 1 inland
+  if (distToCoast < 80) {
+    const tCoast = distToCoast / 80; // 0 at water line, 1 inland
 
-    if (isWesternBluff) {
-      // Steep rock cliff rising abruptly from sea level up to 18-24m
-      const cliffHeight = 18.0 + Math.sin(z * 0.04) * 5.0;
-      baseCoastElevation = Math.pow(tCoast, 0.35) * cliffHeight;
-      coastalRockWeight = 0.9;
-    } else if (isNorthCape) {
-      // Rocky peninsula headland bluffs (12-16m)
-      baseCoastElevation = Math.pow(tCoast, 0.42) * 14.0;
-      coastalRockWeight = 0.7;
+    if (isSouthwestCliff) {
+      // Sheer oceanic granite cliffs rising 18m to 24m above waves
+      const cliffHeight = 20.0 + Math.sin(z * 0.03) * 4.0;
+      baseCoastElevation = Math.pow(tCoast, 0.3) * cliffHeight;
+      coastalRockWeight = 0.95;
+    } else if (isNorthwestCape) {
+      // Craggy rocky cape headland (14m to 18m)
+      baseCoastElevation = Math.pow(tCoast, 0.38) * 16.0;
+      coastalRockWeight = 0.8;
     } else {
-      // Gentle sandy beaches (Crescent Beach, Emerald Bay, East shore)
-      baseCoastElevation = Math.sin((tCoast * Math.PI) / 2) * 1.6;
+      // Gentle sandy beaches (Pelican Cove crescent, East Metropolis shore, Harbor bay)
+      baseCoastElevation = Math.sin((tCoast * Math.PI) / 2) * 1.8;
       coastalRockWeight = 0.05;
     }
   }
 
   // -------------------------------------------------------------
-  // 3. NATURAL UNEVEN MULTI-OCTAVE INLAND RELIEF
+  // 3. NATURAL MULTI-TIER GEOGRAPHIC ELEVATION MODEL
+  // Mountains -> Foothills -> Valleys -> Plains -> Coastal Lowlands
   // -------------------------------------------------------------
-  // Macro rolling hills (180m-350m wavelength, 6m-14m amplitude)
+
+  // A. Broad Geographic Regional Swells
+  // Northeast Emerald Hills (X: 300 to 950, Z: -800 to -150)
+  const distEmeraldHills = Math.hypot(x - 550, z - (-480));
+  const emeraldHillsWeight = Math.max(0, 1 - distEmeraldHills / 450);
+  const emeraldHillsElev =
+    Math.pow(emeraldHillsWeight, 1.8) * 32.0 +
+    Math.sin(x * 0.015 + z * 0.012) * 6.0 * emeraldHillsWeight;
+
+  // Western Forest Highlands (X: -950 to -350, Z: -200 to 350)
+  const distForestHills = Math.hypot(x - (-650), z - 80);
+  const forestHillsWeight = Math.max(0, 1 - distForestHills / 420);
+  const forestHillsElev =
+    Math.pow(forestHillsWeight, 1.5) * 22.0 +
+    (Math.sin(x * 0.018) * Math.cos(z * 0.016) * 5.5 +
+      Math.cos(x * 0.03 + z * 0.02) * 2.8) *
+      forestHillsWeight;
+
+  // Southeast Agricultural Terraces (X: 200 to 600, Z: 0 to 500)
+  const distPlains = Math.hypot(x - 400, z - 250);
+  const plainsWeight = Math.max(0, 1 - distPlains / 350);
+  const plainsElev =
+    Math.pow(plainsWeight, 1.4) * 8.5 +
+    Math.sin(x * 0.012 - z * 0.014) * 3.0 * plainsWeight;
+
+  // Background Natural Undulation (Macro + Meso + Micro)
   const macroHills =
-    (Math.sin(x * 0.014 + 0.3) * Math.cos(z * 0.012 - 0.5) +
-      Math.sin((x + z) * 0.009) * 0.5) *
-    7.5;
+    (Math.sin(x * 0.009 + 0.3) * Math.cos(z * 0.008 - 0.5) +
+      Math.sin((x * 0.6 + z * 0.8) * 0.007) * 0.7) *
+    9.5;
 
-  // Medium terrain swells & natural ridges (60m-100m wavelength, 2.5m-5m amplitude)
   const swells =
-    (Math.cos(x * 0.035) * Math.sin(z * 0.032) +
-      Math.sin(x * 0.028 - z * 0.022)) *
-    2.8;
+    (Math.cos(x * 0.024) * Math.sin(z * 0.022) +
+      Math.sin(x * 0.018 - z * 0.015)) *
+    4.0;
 
-  // Micro surface bumpiness & natural soil relief (15m-30m wavelength, 0.6m-1.2m amplitude)
   const microNoise =
-    (Math.sin(x * 0.09) * Math.cos(z * 0.085) +
-      Math.cos(x * 0.065 + z * 0.06)) *
-    0.75;
+    (Math.sin(x * 0.065) * Math.cos(z * 0.060) +
+      Math.cos(x * 0.045 + z * 0.042)) *
+    1.1;
 
-  let inlandElevation = 4.2 + macroHills + swells + microNoise;
+  // Base undulating inland terrain (5m - 20m)
+  let inlandElevation =
+    5.5 +
+    macroHills +
+    swells +
+    microNoise +
+    emeraldHillsElev +
+    forestHillsElev +
+    plainsElev;
+
   let activeRegion: RegionId = "training";
   let surface: SurfaceMaterialType = "grass";
 
-  // A. CENTRAL TRAINING ACADEMY (Center at 0, 0)
+  // B. NORTHWEST MOUNT APEX MASSIF (Connected alpine mountain system)
+  // Peak 1: Apex Summit at (-620, -720), 145m MSL
+  const distPeak1 = Math.hypot(x - (-620), z - (-720));
+  // Peak 2: North Crest at (-450, -850), 118m MSL
+  const distPeak2 = Math.hypot(x - (-450), z - (-850));
+  // Peak 3: West Sentinel at (-780, -550), 102m MSL
+  const distPeak3 = Math.hypot(x - (-780), z - (-550));
+
+  const distMtnCenter = Math.hypot(x - (-620), z - (-700));
+
+  if (distMtnCenter < 750) {
+    activeRegion = "mountain";
+    const mtnEnvelope = Math.max(0, 1 - distMtnCenter / 750);
+    const mtnWeight = Math.pow(mtnEnvelope, 1.35);
+
+    // Peak 1: Apex Summit (145m)
+    const p1Weight = Math.max(0, 1 - distPeak1 / 400);
+    const p1Elev = Math.pow(p1Weight, 2.1) * 142.0;
+
+    // Peak 2: North Crest (118m)
+    const p2Weight = Math.max(0, 1 - distPeak2 / 340);
+    const p2Elev = Math.pow(p2Weight, 2.0) * 114.0;
+
+    // Peak 3: West Sentinel (102m)
+    const p3Weight = Math.max(0, 1 - distPeak3 / 320);
+    const p3Elev = Math.pow(p3Weight, 2.0) * 98.0;
+
+    // Connecting Knife-Edge Ridgelines between peaks
+    // Ridge 1: Apex Summit to North Crest
+    const ridge1Dist = distanceToSegment(x, z, -620, -720, -450, -850);
+    const ridge1Weight = Math.max(0, 1 - ridge1Dist / 95);
+    const ridge1Elev = Math.pow(ridge1Weight, 1.8) * 116.0;
+
+    // Ridge 2: Apex Summit to West Sentinel
+    const ridge2Dist = distanceToSegment(x, z, -620, -720, -780, -550);
+    const ridge2Weight = Math.max(0, 1 - ridge2Dist / 90);
+    const ridge2Elev = Math.pow(ridge2Weight, 1.8) * 104.0;
+
+    // Ridge 3: South Spur towards Weather Station & Lake
+    const ridge3Dist = distanceToSegment(x, z, -620, -720, -580, -560);
+    const ridge3Weight = Math.max(0, 1 - ridge3Dist / 85);
+    const ridge3Elev = Math.pow(ridge3Weight, 1.7) * 78.0;
+
+    // Craggy alpine geological noise (scree chutes, couloirs, and rock ribs)
+    const alpineDetail =
+      Math.abs(Math.sin(x * 0.018 + z * 0.016)) * 18.0 +
+      Math.abs(Math.cos(x * 0.028 - z * 0.024)) * 12.0 +
+      Math.sin(x * 0.05 + z * 0.04) * 4.0;
+
+    const massifElev =
+      Math.max(p1Elev, p2Elev, p3Elev, ridge1Elev, ridge2Elev, ridge3Elev) +
+      alpineDetail * mtnWeight;
+
+    // Weather Station Helipad Terrace at (-580, -560) at 48.0m MSL
+    const distToMtnPad = Math.hypot(x - (-580), z - (-560));
+    if (distToMtnPad < 70) {
+      const tPad = Math.max(0, (distToMtnPad - 24) / 46);
+      const smoothPad = tPad * tPad * (3 - 2 * tPad);
+      // North slopes up into summit spur, South slopes down into foothill valley
+      const terraceHeight =
+        z < -560
+          ? 48.0 + (massifElev - 48.0) * smoothPad
+          : 48.0 * (1 - smoothPad * 0.45);
+      inlandElevation = terraceHeight;
+    } else {
+      inlandElevation = Math.max(inlandElevation, 4.5 + massifElev);
+    }
+
+    if (inlandElevation > 28.0) {
+      surface = inlandElevation > 108.0 ? "scree" : "rock";
+    }
+  }
+
+  // C. EXTENSIVE FOOTHILL SYSTEM (Transition from Mountain Massif to Plains)
+  // Wrapping around southeastern flank of Mount Apex (X: -450 to -100, Z: -550 to -200)
+  const distFoothills = Math.hypot(x - (-280), z - (-380));
+  if (distFoothills < 320 && activeRegion !== "mountain") {
+    const fWeight = Math.max(0, 1 - distFoothills / 320);
+    const foothillHeight =
+      Math.pow(fWeight, 1.4) * 36.0 +
+      (Math.sin(x * 0.022) * Math.cos(z * 0.02) * 7.0 +
+        Math.cos(x * 0.035 + z * 0.03) * 4.0) *
+        fWeight;
+    inlandElevation = Math.max(inlandElevation, 6.0 + foothillHeight);
+  }
+
+  // D. CRYSTAL MOUNTAIN LAKE BASIN (Natural mountain reservoir bowl at -320, -260)
+  const distLake = Math.hypot(x - (-320), z - (-260));
+  if (distLake < 145) {
+    activeRegion = "river";
+    const tLake = distLake / 145;
+    // Bowl depression where lake water rests at Y = 8.5m MSL
+    const basinDepth = (1 - tLake * tLake) * 6.5;
+    inlandElevation = Math.min(inlandElevation, 8.5 - basinDepth);
+    if (inlandElevation < 8.6) {
+      surface = "mud";
+    }
+  }
+
+  // E. VALLEY RIVER CANYON & TERRACES (Descending from lake waterfall to ocean estuary)
+  if (z > -220 && z < 960 && x > -380 && x < 80) {
+    const pZ = (z + 220) / (940 + 220); // 0 at lake, 1 at ocean
+    const riverX = -270 + pZ * 190 + Math.sin(pZ * Math.PI * 2.5) * 45;
+    const distToRiver = Math.abs(x - riverX);
+
+    // Terraced river corridor (canyon gorge within 45m, bluff shelf within 90m)
+    if (distToRiver < 90) {
+      activeRegion = "river";
+      const waterSurfaceY = Math.max(0.12, 8.5 * (1 - pZ));
+      const bedElevation = waterSurfaceY - 1.4;
+
+      if (distToRiver < 36) {
+        // Deep water channel
+        const tChannel = distToRiver / 36;
+        inlandElevation = bedElevation + tChannel * 0.9;
+        surface = "mud";
+      } else {
+        // Canyon walls rising to ambient terrain
+        const tWall = (distToRiver - 36) / 54;
+        const smoothWall = tWall * tWall * (3 - 2 * tWall);
+        const canyonTop = waterSurfaceY + 4.8;
+        inlandElevation = (bedElevation + 0.9) * (1 - smoothWall) + Math.max(canyonTop, inlandElevation) * smoothWall;
+        if (tWall < 0.4) {
+          surface = "rock";
+        }
+      }
+    }
+  }
+
+  // F. CENTRAL FLIGHT ACADEMY PLATEAU (Center at 0, 0)
   const distCenter = Math.hypot(x, z);
-  if (distCenter < 160) {
+  if (distCenter < 240) {
     activeRegion = "training";
-    // Smooth transition from perfectly leveled pad (radius 30m at 1.2m) into natural terrain
-    if (distCenter < 30) {
+    // Leveled runway & apron plateau at 1.2m MSL blending into gentle meadow
+    if (distCenter < 65) {
       inlandElevation = 1.2;
     } else {
-      const t = (distCenter - 30) / 130;
+      const t = (distCenter - 65) / 175;
       const smoothT = t * t * (3 - 2 * t);
       inlandElevation = 1.2 * (1 - smoothT) + inlandElevation * smoothT;
     }
     surface = "grass";
   }
 
-  // B. MOUNT APEX HIGHLANDS (North-West Quadrant, Summit Peak at -450, -560)
-  const distApexPeak = Math.hypot(x - (-450), z - (-560));
-  if (distApexPeak < 520) {
-    activeRegion = "mountain";
-    const mtnWeight = Math.cos((distApexPeak / 520) * (Math.PI / 2));
-    
-    // Main mountain massif towering up to 135m MSL at the summit peak
-    const massifElevation = mtnWeight * mtnWeight * 128.0;
-    
-    // Sharp geological ridges and crags
-    const crags =
-      Math.abs(Math.sin(x * 0.022 + z * 0.016)) * 16.0 +
-      Math.cos(x * 0.038 - z * 0.028) * 8.0;
-
-    // Engineered Weather Station Helipad Terrace at (-480, -450) at elevation 28.5m
-    const distToMtnPad = Math.hypot(x - (-480), z - (-450));
-    if (distToMtnPad < 55) {
-      // Wide level helipad terrace with smooth edge blend
-      const tPad = Math.max(0, (distToMtnPad - 25) / 30);
-      const smoothPad = tPad * tPad * (3 - 2 * tPad);
-      // South of terrace (z > -450) slopes down towards valley; North slopes up towards summit
-      const ambientHeight = z < -450 ? (28.5 + (massifElevation + crags * 0.4 - 28.5) * smoothPad) : (28.5 * (1 - smoothPad * 0.35));
-      inlandElevation = ambientHeight;
-    } else {
-      inlandElevation = Math.max(
-        inlandElevation,
-        1.5 + massifElevation + crags * mtnWeight
-      );
-    }
-
-    if (inlandElevation > 22.0) {
-      surface = inlandElevation > 85.0 ? "scree" : "rock";
-    }
-  }
-
-  // C. CRYSTAL MOUNTAIN LAKE BASIN (Saddle at -280, -180)
-  const distLake = Math.hypot(x - (-280), z - (-180));
-  if (distLake < 115) {
-    // Lake basin depression (lake water plane rests at Y = 7.5m)
-    const tLake = distLake / 115;
-    const basinDepth = (1 - tLake) * 5.2;
-    inlandElevation = Math.min(inlandElevation, 7.5 - basinDepth);
-    if (inlandElevation < 7.5) {
-      surface = "mud";
-      activeRegion = "river";
-    }
-  }
-
-  // D. VALLEY RIVER CORRIDOR (Carved canyon from lake south to ocean estuary)
-  if (z > -160 && z < 700 && x > -360 && x < 200) {
-    const riverX = -180 + (z + 160) * 0.42 - Math.pow((z - 200) * 0.012, 2) * 2.5;
-    const distToRiver = Math.abs(x - riverX);
-
-    if (distToRiver < 60) {
-      activeRegion = "river";
-      const tRiver = distToRiver / 60;
-      const channelDepression = (1 - tRiver * tRiver) * 4.2; // 4.2m carved gorge
-      
-      const riverProgress = (z + 160) / (680 + 160);
-      const waterSurfaceY = Math.max(0.2, 7.2 * (1 - riverProgress));
-      
-      const bedElevation = waterSurfaceY - 0.9;
-      inlandElevation = Math.min(
-        inlandElevation - channelDepression,
-        bedElevation + tRiver * 3.2
-      );
-
-      if (distToRiver < 22) {
-        surface = "mud";
-      }
-    }
-  }
-
-  // E. WHISPERING PINES FOREST (North-East Quadrant, center ~ 450, -420)
-  const distForest = Math.hypot(x - 450, z - (-420));
-  if (distForest < 420 && activeRegion !== "river") {
+  // G. WEST: WHISPERING PINES FOREST (Center ~ -640, 20)
+  const distForest = Math.hypot(x - (-640), z - 20);
+  if (distForest < 480 && activeRegion !== "river" && activeRegion !== "mountain") {
     activeRegion = "forest";
-    // Rolling woodland ridges (5m to 16m)
-    const forestHills =
-      Math.sin(x * 0.018) * Math.cos(z * 0.018) * 5.5 +
-      Math.cos(x * 0.032 + z * 0.024) * 3.2 +
-      6.5;
-
-    const distToForestPad = Math.hypot(x - 450, z - (-420));
-    if (distToForestPad < 24) {
-      const tPad = distToForestPad / 24;
-      inlandElevation = 4.0 + (forestHills - 4.0) * (tPad * tPad);
-    } else {
-      inlandElevation = Math.max(inlandElevation, forestHills);
+    // Ranger Station helipad clearing at (-620, -40) at 5.5m MSL
+    const distToForestPad = Math.hypot(x - (-620), z - (-40));
+    if (distToForestPad < 32) {
+      const tPad = distToForestPad / 32;
+      inlandElevation = 5.5 * (1 - tPad * tPad) + inlandElevation * (tPad * tPad);
     }
     surface = "grass";
   }
 
-  // F. DOWNTOWN METROPOLIS (South-East Quadrant, center ~ 460, 360)
-  const distCity = Math.hypot(x - 460, z - 360);
-  if (distCity < 320 && activeRegion !== "river") {
+  // H. EAST: DOWNTOWN METROPOLIS (Skyscraper plateau, center ~ 720, 320)
+  const distCity = Math.hypot(x - 720, z - 320);
+  if (distCity < 420 && activeRegion !== "river") {
     activeRegion = "city";
-    // Leveled urban commercial terrace at ~2.5m
-    const distToCityAlpha = Math.hypot(x - 350, z - 320);
-    if (distToCityAlpha < 20) {
-      inlandElevation = 2.5; // Foundation under terminal
+    // Foundation under vertiport terminal at 2.5m MSL
+    const distToCityAlpha = Math.hypot(x - 640, z - 320);
+    if (distToCityAlpha < 42) {
+      inlandElevation = 2.5;
     } else {
       const cityPlane = 2.5 + Math.sin(x * 0.012) * 0.5;
-      inlandElevation = cityPlane;
+      const tCity = Math.min(1, (distCity - 120) / 280);
+      inlandElevation = cityPlane * (1 - tCity) + inlandElevation * tCity;
     }
     surface = "grass";
   }
 
-  // G. HARBOR INDUSTRIAL PARK (South, center ~ 120, 620)
-  const distInd = Math.hypot(x - 120, z - 620);
-  if (distInd < 260 && activeRegion !== "river") {
+  // I. SOUTH/SOUTHEAST: HARBOR INDUSTRIAL PARK (Center ~ 380, 780)
+  const distInd = Math.hypot(x - 380, z - 780);
+  if (distInd < 350 && activeRegion !== "river") {
     activeRegion = "industrial";
-    inlandElevation = 1.8;
+    const tInd = Math.min(1, distInd / 320);
+    inlandElevation = 1.8 * (1 - tInd) + inlandElevation * tInd;
     surface = "grass";
   }
 
-  // H. PELICAN COVE & BLUFFS (South-West Quadrant, center ~ -580, 320)
-  const distCoast = Math.hypot(x - (-580), z - 320);
-  if (distCoast < 320 && activeRegion !== "river") {
+  // J. SOUTHWEST: PELICAN COVE (Center ~ -720, 580)
+  const distCoast = Math.hypot(x - (-720), z - 580);
+  if (distCoast < 380 && activeRegion !== "river") {
     activeRegion = "coast";
-    if (distToCoast < 60) {
-      surface = "sand";
-    }
   }
 
   // -------------------------------------------------------------
@@ -259,67 +341,114 @@ export function evaluateIslandElevation(x: number, z: number): TerrainSample {
   // -------------------------------------------------------------
   let finalElevation = inlandElevation;
 
-  if (distToCoast < 60) {
-    const t = distToCoast / 60;
+  if (distToCoast < 85) {
+    const t = distToCoast / 85;
     finalElevation = baseCoastElevation * (1 - t) + inlandElevation * t;
     if (coastalRockWeight > 0.4) {
       surface = "rock";
-    } else if (distToCoast < 32 && !isWesternBluff && !isNorthCape) {
+    } else if (distToCoast < 42 && !isSouthwestCliff && !isNorthwestCape) {
       surface = "sand";
     }
   }
 
-  // Calculate approximate terrain slope from neighboring gradient
-  const eps = 2.0;
-  const hx = (Math.sin((x + eps) * 0.014) - Math.sin((x - eps) * 0.014)) * 3.5;
-  const hz = (Math.cos((z + eps) * 0.012) - Math.cos((z - eps) * 0.012)) * 3.5;
-  const slope = Math.min(1.0, Math.hypot(hx, hz) / (2 * eps));
+  // Calculate terrain slope from local elevation gradients
+  const eps = 2.5;
+  const hx = (Math.sin((x + eps) * 0.014) - Math.sin((x - eps) * 0.014)) * 4.2;
+  const hz = (Math.cos((z + eps) * 0.012) - Math.cos((z - eps) * 0.012)) * 4.2;
+  let slope = Math.min(1.0, Math.hypot(hx, hz) / (2 * eps));
 
-  // If slope > 0.45, rock face breaks through grass
-  if (slope > 0.45 && finalElevation > 3.0 && surface !== "sand") {
+  // Increase slope sensitivity in mountain / cliff zones
+  if (activeRegion === "mountain" || isSouthwestCliff || isNorthwestCape) {
+    const mtnSlopeFactor = Math.min(1.0, finalElevation / 80.0);
+    slope = Math.min(1.0, slope + mtnSlopeFactor * 0.35);
+  }
+
+  // Steep rock outcrops breaking through vegetation
+  if (slope > 0.38 && finalElevation > 10.0 && surface !== "sand") {
     surface = "rock";
   }
 
   // -------------------------------------------------------------
-  // 5. COLOR SPLATTING FOR VERTEX SHADING
+  // 5. CONTINUOUS BIOME COLOR SPLATTING FOR VERTEX SHADING
   // -------------------------------------------------------------
-  let color: [number, number, number] = [0.24, 0.42, 0.18]; // Deep Lush Forest Grass Green
+  // Smoothly blended RGB palette based on elevation, slope, and surface type
+  let r = 0.25;
+  let g = 0.44;
+  let b = 0.18;
 
-  switch (surface) {
-    case "sand":
-      // Warm golden dune sand
-      color = [0.84, 0.73, 0.50];
-      break;
-    case "rock":
-      // Weathered dark granite rock
-      color = [0.42, 0.42, 0.40];
-      break;
-    case "scree":
-      // High mountain snow/granite scree
-      color = finalElevation > 95.0 ? [0.88, 0.90, 0.94] : [0.55, 0.55, 0.52];
-      break;
-    case "mud":
-      // Wet dark riverbed mud
-      color = [0.32, 0.26, 0.18];
-      break;
-    case "grass":
-    default:
-      // Height-modulated lush grass green
-      if (finalElevation > 14.0) {
-        // Alpine high meadow
-        color = [0.28, 0.38, 0.18];
-      } else {
-        // Lowland vibrant meadow
-        color = [0.24, 0.44, 0.18];
-      }
-      break;
+  if (surface === "sand") {
+    // Golden dune sand with subtle wetness near water
+    const wetness = Math.max(0, 1 - Math.max(0, finalElevation) / 1.5);
+    r = 0.85 * (1 - wetness * 0.25);
+    g = 0.74 * (1 - wetness * 0.25);
+    b = 0.50 * (1 - wetness * 0.30);
+  } else if (surface === "mud") {
+    // Dark river silt / lake sediment
+    r = 0.28;
+    g = 0.23;
+    b = 0.16;
+  } else if (surface === "scree" || finalElevation > 105.0) {
+    // Alpine summit granite / snow / scree
+    const snowWeight = Math.max(0, Math.min(1, (finalElevation - 110.0) / 28.0));
+    r = 0.52 * (1 - snowWeight) + 0.90 * snowWeight;
+    g = 0.54 * (1 - snowWeight) + 0.92 * snowWeight;
+    b = 0.56 * (1 - snowWeight) + 0.96 * snowWeight;
+  } else if (surface === "rock" || slope > 0.42) {
+    // Stratified weathered granite rock
+    const rockSlope = Math.min(1.0, slope);
+    r = 0.42 * (1 - rockSlope * 0.15);
+    g = 0.41 * (1 - rockSlope * 0.15);
+    b = 0.40 * (1 - rockSlope * 0.10);
+  } else {
+    // Continuous Vegetation Gradient:
+    // Lowland lush meadow (0m-20m) -> Highland alpine grass (20m-70m)
+    const altFactor = Math.max(0, Math.min(1, finalElevation / 65.0));
+
+    // Lowland lush grass: [0.26, 0.46, 0.18]
+    // Highland olive alpine: [0.34, 0.40, 0.19]
+    // Forest deep emerald: [0.20, 0.34, 0.16]
+    if (activeRegion === "forest") {
+      r = 0.20 * (1 - altFactor) + 0.28 * altFactor;
+      g = 0.35 * (1 - altFactor) + 0.38 * altFactor;
+      b = 0.16 * (1 - altFactor) + 0.19 * altFactor;
+    } else {
+      r = 0.26 * (1 - altFactor) + 0.36 * altFactor;
+      g = 0.46 * (1 - altFactor) + 0.38 * altFactor;
+      b = 0.18 * (1 - altFactor) + 0.20 * altFactor;
+    }
+
+    // Blend rock into grass on steeper slopes (0.28 - 0.42)
+    if (slope > 0.28) {
+      const rockBlend = (slope - 0.28) / (0.42 - 0.28);
+      r = r * (1 - rockBlend) + 0.42 * rockBlend;
+      g = g * (1 - rockBlend) + 0.41 * rockBlend;
+      b = b * (1 - rockBlend) + 0.40 * rockBlend;
+    }
   }
 
   return {
-    elevation: Math.max(-14.0, finalElevation),
+    elevation: Math.max(-16.0, finalElevation),
     slope,
     surfaceType: surface,
     regionId: activeRegion,
-    color,
+    color: [r, g, b],
   };
+}
+
+/**
+ * Helper: distance from point (px, pz) to line segment (x1, z1) -> (x2, z2)
+ */
+function distanceToSegment(
+  px: number,
+  pz: number,
+  x1: number,
+  z1: number,
+  x2: number,
+  z2: number
+): number {
+  const l2 = (x2 - x1) * (x2 - x1) + (z2 - z1) * (z2 - z1);
+  if (l2 === 0) return Math.hypot(px - x1, pz - z1);
+  let t = ((px - x1) * (x2 - x1) + (pz - z1) * (z2 - z1)) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t * (x2 - x1)), pz - (z1 + t * (z2 - z1)));
 }

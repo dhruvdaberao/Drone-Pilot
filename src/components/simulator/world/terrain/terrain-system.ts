@@ -1,5 +1,5 @@
 // ==========================================================
-// DRONE PILOT — REALISTIC TERRAIN SYSTEM (PUBG-GRADE ENVIRONMENT)
+// DRONE PILOT — REALISTIC TERRAIN SYSTEM (PHASE 1)
 // Multi-textured PBR heightfield, PBR runway & golden shoreline
 // ==========================================================
 
@@ -20,12 +20,12 @@ export class TerrainSystem {
   }
 
   /**
-   * Main island landmass heightfield with 25,600 PBR vertices, micro-relief normal map,
-   * and multi-biome vertex color modulation
+   * Main island landmass heightfield with 58,081 PBR vertices, micro-relief normal map,
+   * and multi-biome vertex color modulation across 3000m span
    */
   private buildIslandHeightfield() {
-    const width = 2400; // Covers 2000m island + 200m coastal shelf on all sides
-    const segments = 220; // 10.9m resolution per vertex (48,841 smooth vertices)
+    const width = 3000; // Covers 2400m island + 300m coastal shelf on all sides
+    const segments = 240; // 12.5m resolution per vertex (58,081 smooth vertices)
     const geo = new THREE.PlaneGeometry(width, width, segments, segments);
     geo.rotateX(-Math.PI / 2);
 
@@ -40,7 +40,7 @@ export class TerrainSystem {
 
       pos.setY(i, sample.elevation);
 
-      // Vertex color splatting to modulate grass/rock/sand tones
+      // Vertex color splatting to modulate grass/rock/sand/mud tones
       colors[i * 3] = sample.color[0];
       colors[i * 3 + 1] = sample.color[1];
       colors[i * 3 + 2] = sample.color[2];
@@ -70,10 +70,11 @@ export class TerrainSystem {
 
   /**
    * Realistic asphalt runway at the central Training Academy with FAA striping & threshold lights
+   * Positioned at x: 25, z: -50, length: 260m, width: 32m
    */
   private buildAirfieldRunway() {
     const runwayWidth = 32;
-    const runwayLength = 220;
+    const runwayLength = 260;
     const runwayGeo = new THREE.PlaneGeometry(runwayWidth, runwayLength);
     runwayGeo.rotateX(-Math.PI / 2);
 
@@ -88,13 +89,12 @@ export class TerrainSystem {
     });
 
     this.runwayMesh = new THREE.Mesh(runwayGeo, tarmacMat);
-    // Positioned beside the main academy apron: x=20, z=-40
-    this.runwayMesh.position.set(20, 1.22, -40);
+    this.runwayMesh.position.set(25, 1.22, -50);
     this.runwayMesh.receiveShadow = true;
     this.group.add(this.runwayMesh);
 
     // Runway edge lights (elevated LED fixtures)
-    const lightCount = 18;
+    const lightCount = 22;
     const lightGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.45, 8);
     const lightMatWhite = new THREE.MeshStandardMaterial({
       color: 0xffffff,
@@ -108,9 +108,9 @@ export class TerrainSystem {
     let idx = 0;
 
     for (let side = -1; side <= 1; side += 2) {
-      const lx = 20 + side * (runwayWidth / 2 + 1.2);
+      const lx = 25 + side * (runwayWidth / 2 + 1.2);
       for (let j = 0; j < lightCount; j++) {
-        const lz = -40 - runwayLength / 2 + (j / (lightCount - 1)) * runwayLength;
+        const lz = -50 - runwayLength / 2 + (j / (lightCount - 1)) * runwayLength;
         dummy.position.set(lx, 1.4, lz);
         dummy.updateMatrix();
         edgeInstanced.setMatrixAt(idx++, dummy.matrix);
@@ -120,7 +120,7 @@ export class TerrainSystem {
     this.group.add(edgeInstanced);
 
     // Threshold green end lights
-    const threshCount = 8;
+    const threshCount = 10;
     const threshGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.45, 8);
     const threshMat = new THREE.MeshStandardMaterial({
       color: 0x00ff66,
@@ -130,9 +130,9 @@ export class TerrainSystem {
     const threshInstanced = new THREE.InstancedMesh(threshGeo, threshMat, threshCount * 2);
     let tidx = 0;
     for (let end = -1; end <= 1; end += 2) {
-      const ez = -40 + end * (runwayLength / 2 - 2);
+      const ez = -50 + end * (runwayLength / 2 - 2);
       for (let k = 0; k < threshCount; k++) {
-        const ex = 20 - runwayWidth / 2 + (k / (threshCount - 1)) * runwayWidth;
+        const ex = 25 - runwayWidth / 2 + (k / (threshCount - 1)) * runwayWidth;
         dummy.position.set(ex, 1.4, ez);
         dummy.updateMatrix();
         threshInstanced.setMatrixAt(tidx++, dummy.matrix);
@@ -143,10 +143,10 @@ export class TerrainSystem {
   }
 
   /**
-   * Realistic shoreline beach dunes with golden sand PBR texture
+   * Realistic shoreline beach dunes with golden sand PBR texture along gentle coast sectors
    */
   private buildShorelineDetails() {
-    const sampleCount = 120;
+    const sampleCount = 140;
     const step = (Math.PI * 2) / sampleCount;
 
     const beachPositions: number[] = [];
@@ -157,10 +157,10 @@ export class TerrainSystem {
       const a2 = (i + 1) * step;
 
       // Filter: only generate sandy beach strips along non-cliff coastlines
-      const isWesternCliff = a1 > 2.4 || a1 < -2.4;
-      const isNorthCape = a1 > -1.9 && a1 < -1.2;
+      const isSouthwestCliff = a1 > 2.0 && a1 < 2.85;
+      const isNorthwestCape = a1 < -1.7 && a1 > -2.55;
 
-      if (isWesternCliff || isNorthCape) continue;
+      if (isSouthwestCliff || isNorthwestCape) continue;
 
       const r1 = getCoastlineRadius(a1);
       const r2 = getCoastlineRadius(a2);
@@ -170,10 +170,10 @@ export class TerrainSystem {
       const xOut2 = Math.cos(a2) * r2;
       const zOut2 = Math.sin(a2) * r2;
 
-      const xIn1 = Math.cos(a1) * (r1 - 42);
-      const zIn1 = Math.sin(a1) * (r1 - 42);
-      const xIn2 = Math.cos(a2) * (r2 - 42);
-      const zIn2 = Math.sin(a2) * (r2 - 42);
+      const xIn1 = Math.cos(a1) * (r1 - 48);
+      const zIn1 = Math.sin(a1) * (r1 - 48);
+      const xIn2 = Math.cos(a2) * (r2 - 48);
+      const zIn2 = Math.sin(a2) * (r2 - 48);
 
       const yIn1 = evaluateIslandElevation(xIn1, zIn1).elevation + 0.05;
       const yIn2 = evaluateIslandElevation(xIn2, zIn2).elevation + 0.05;

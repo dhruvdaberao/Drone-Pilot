@@ -121,6 +121,8 @@ export interface TelemetryState {
   flightPath: Array<{ x: number; z: number }>;
   payloadMassKg?: number;
   isCrashed?: boolean;
+  isCeilingLimitReached?: boolean;
+  isGroundLimitReached?: boolean;
 }
 
 export interface PhysicsDebugTelemetry {

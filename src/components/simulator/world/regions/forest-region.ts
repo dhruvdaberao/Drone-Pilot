@@ -1,19 +1,17 @@
 // ==========================================================
-// DRONE PILOT — REGION 2: WHISPERING PINES FOREST
-// Ranger Outpost, Watchtower, Timber Helipad & Forest Ambience
+// DRONE PILOT — REGION 2: WHISPERING PINES FOREST (PHASE 1)
+// Ranger Outpost, Watchtower, Timber Helipad & Western Woodland
 // ==========================================================
 
 import * as THREE from "three";
 import { HELIPADS } from "@/lib/world/helipad-definitions";
 import { createHelipadMesh } from "../helipad-mesh";
-import { AssetManager } from "../asset-manager";
 
 export class ForestRegion {
   public group = new THREE.Group();
-  private assetMgr = AssetManager.getInstance();
 
   constructor() {
-    // 1. Forest Ranger Helipad
+    // 1. Forest Ranger Helipad at (-620, 5.5, -40)
     const pad = createHelipadMesh(HELIPADS["forest-alpha"]);
     this.group.add(pad);
 
@@ -27,9 +25,9 @@ export class ForestRegion {
   /**
    * Ranger station cabin and elevated fire lookout watchtower
    */
-  private async buildRangerStation() {
+  private buildRangerStation() {
     const stationGroup = new THREE.Group();
-    stationGroup.position.set(435, 4.0, -405);
+    stationGroup.position.set(-635, 5.5, -25);
 
     // Rustic wood cabin base
     const cabinMat = new THREE.MeshStandardMaterial({ color: 0x4a3728, roughness: 0.9 });
@@ -49,7 +47,7 @@ export class ForestRegion {
 
     // Fire Lookout Watchtower (18m elevated wooden observation deck)
     const towerGroup = new THREE.Group();
-    towerGroup.position.set(475, 4.0, -440);
+    towerGroup.position.set(-595, 5.5, -60);
 
     const legMat = new THREE.MeshStandardMaterial({ color: 0x3d2817, roughness: 0.9 });
     const legGeo = new THREE.CylinderGeometry(0.22, 0.28, 18, 6);
@@ -98,15 +96,15 @@ export class ForestRegion {
     const postGeo = new THREE.CylinderGeometry(0.18, 0.22, 2.4, 6);
 
     const corners = [
-      { x: 420, z: -390 },
-      { x: 480, z: -390 },
-      { x: 480, z: -450 },
-      { x: 420, z: -450 },
+      { x: -650, z: -10 },
+      { x: -590, z: -10 },
+      { x: -590, z: -70 },
+      { x: -650, z: -70 },
     ];
 
     corners.forEach((c) => {
       const post = new THREE.Mesh(postGeo, postMat);
-      post.position.set(c.x, 4.0 + 1.2, c.z);
+      post.position.set(c.x, 5.5 + 1.2, c.z);
       post.castShadow = true;
       this.group.add(post);
     });

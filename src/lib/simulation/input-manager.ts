@@ -21,6 +21,12 @@ export class InputManager {
   private triggerCameraToggle = false;
   private hoverAssistActive = true;
 
+  // Double-tap movement lock state
+  private lockedPitch = 0;  // -1, 0, or 1
+  private lockedRoll = 0;   // -1, 0, or 1
+  private lastKeyTime: Record<string, number> = {};
+  private readonly DOUBLE_TAP_MS = 350;
+
   private onKeyDownBound: (e: KeyboardEvent) => void;
   private onKeyUpBound: (e: KeyboardEvent) => void;
 
@@ -48,20 +54,53 @@ export class InputManager {
       return;
     }
 
-    this.keys[e.code] = true;
+    const code = e.code;
 
-    if (e.code === "KeyR") {
+    // Double-tap detection for movement lock (W/A/S/D)
+    if (["KeyW", "KeyS", "KeyA", "KeyD"].includes(code) && !e.repeat) {
+      const now = Date.now();
+      const lastTime = this.lastKeyTime[code] || 0;
+      if (now - lastTime < this.DOUBLE_TAP_MS) {
+        // Double-tap detected — toggle lock for this direction
+        if (code === "KeyW") {
+          this.lockedPitch = this.lockedPitch === 1 ? 0 : 1;
+          this.lockedRoll = 0;
+        } else if (code === "KeyS") {
+          this.lockedPitch = this.lockedPitch === -1 ? 0 : -1;
+          this.lockedRoll = 0;
+        } else if (code === "KeyD") {
+          this.lockedRoll = this.lockedRoll === 1 ? 0 : 1;
+          this.lockedPitch = 0;
+        } else if (code === "KeyA") {
+          this.lockedRoll = this.lockedRoll === -1 ? 0 : -1;
+          this.lockedPitch = 0;
+        }
+      } else {
+        // Single tap — clear any existing lock when pressing a different direction
+        if ((code === "KeyW" || code === "KeyS") && this.lockedRoll !== 0) {
+          this.lockedRoll = 0;
+        }
+        if ((code === "KeyA" || code === "KeyD") && this.lockedPitch !== 0) {
+          this.lockedPitch = 0;
+        }
+      }
+      this.lastKeyTime[code] = now;
+    }
+
+    this.keys[code] = true;
+
+    if (code === "KeyR") {
       this.triggerReset = true;
     }
-    if (e.code === "KeyH") {
+    if (code === "KeyH") {
       this.hoverAssistActive = !this.hoverAssistActive;
     }
-    if (e.code === "KeyV") {
+    if (code === "KeyV") {
       this.triggerCameraToggle = true;
     }
 
     // Prevent default scroll on Space/Arrows during flight
-    if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+    if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(code)) {
       e.preventDefault();
     }
   }
@@ -107,6 +146,20 @@ export class InputManager {
     return this.hoverAssistActive;
   }
 
+  /** Returns true if a movement direction is currently locked via double-tap */
+  public isMovementLocked(): boolean {
+    return this.lockedPitch !== 0 || this.lockedRoll !== 0;
+  }
+
+  /** Returns locked direction label for HUD indicator */
+  public getLockedDirection(): string {
+    if (this.lockedPitch === 1) return "FWD";
+    if (this.lockedPitch === -1) return "BWD";
+    if (this.lockedRoll === 1) return "RIGHT";
+    if (this.lockedRoll === -1) return "LEFT";
+    return "";
+  }
+
   /**
    * Evaluates combined input state for the current frame
    */
@@ -127,6 +180,10 @@ export class InputManager {
     let kbYaw = 0;
     if (this.keys["KeyE"]) kbYaw += 1;
     if (this.keys["KeyQ"]) kbYaw -= 1;
+
+    // Apply movement lock (double-tap): locked direction stays active even without key held
+    if (this.lockedPitch !== 0 && kbPitch === 0) kbPitch = this.lockedPitch;
+    if (this.lockedRoll !== 0 && kbRoll === 0) kbRoll = this.lockedRoll;
 
     // Combine Keyboard + Touch with priority clamp
     const throttle = Math.max(-1, Math.min(1, kbThrottle + this.touchThrottle));

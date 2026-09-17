@@ -96,3 +96,73 @@ export interface CoastlinePoint {
   angleRad: number;
   distance: number;
 }
+
+export type LandmarkCategory =
+  | "summit"
+  | "lake"
+  | "waterfall"
+  | "tower"
+  | "bridge"
+  | "facility"
+  | "cliff"
+  | "airfield"
+  | "monument";
+
+export interface LandmarkDefinition {
+  id: string;
+  name: string;
+  category: LandmarkCategory;
+  regionId: RegionId;
+  position: Vector3D;
+  elevationMsl: number;
+  callsign: string;
+  description: string;
+  icon?: string;
+}
+
+export interface RoadPolyline {
+  id: string;
+  name: string;
+  type: "highway" | "arterial" | "switchback" | "rural" | "bridge";
+  widthMeters: number;
+  points: Vector3D[]; // Sequenced world waypoints
+  hasBridge?: boolean;
+}
+
+export interface RoadNetworkDefinition {
+  primaryHighways: RoadPolyline[];
+  connectors: RoadPolyline[];
+  mountainPasses: RoadPolyline[];
+  bridges: RoadPolyline[];
+}
+
+export interface WaterwayDefinition {
+  riverCenterline: Vector3D[];
+  lakeCenter: Vector3D;
+  lakeRadiusMeters: number;
+  waterfallLocation: Vector3D;
+  estuaryExit: Vector3D;
+}
+
+export interface TerrainConfiguration {
+  worldWidthMeters: number;
+  worldLengthMeters: number;
+  islandWidthMeters: number;
+  islandLengthMeters: number;
+  seaLevelMsl: number;
+  maxElevationMsl: number;
+  lakeElevationMsl: number;
+  bathymetryDepthMsl: number;
+}
+
+export interface WorldDefinition {
+  id: string;
+  name: string;
+  version: string;
+  terrain: TerrainConfiguration;
+  regions: Record<RegionId, RegionDefinition>;
+  helipads: Record<string, Helipad>;
+  landmarks: Record<string, LandmarkDefinition>;
+  roads: RoadNetworkDefinition;
+  waterways: WaterwayDefinition;
+}

@@ -14,7 +14,8 @@ export class TerrainTextures {
   private static normalTexture: THREE.CanvasTexture | null = null;
 
   /**
-   * Generates a photorealistic lush grass diffuse texture with micro-variations
+   * Generates a tactile micro-surface albedo texture with natural organic grain.
+   * Modulates luminance so that vertex color splatting accurately displays rock, sand, scree, and grass.
    */
   public static getGrassTexture(): THREE.CanvasTexture {
     if (this.grassTexture) return this.grassTexture;
@@ -26,27 +27,36 @@ export class TerrainTextures {
     const ctx = canvas.getContext("2d");
 
     if (ctx) {
-      // Base vibrant meadow green
-      ctx.fillStyle = "#3c6128";
+      // Lush, organic meadow green base with depth
+      ctx.fillStyle = "#385e25";
       ctx.fillRect(0, 0, size, size);
 
-      // Micro grass blade clusters & soil tonal variation
-      const tones = ["#477230", "#325321", "#588738", "#2a431c", "#5c793d", "#365824"];
-      for (let i = 0; i < 28000; i++) {
+      // Multi-tone organic grass blade fibers & turf texture
+      const grassShades = [
+        "#2e4f1e",
+        "#436e2d",
+        "#4e7f35",
+        "#3a6227",
+        "#578d3b",
+        "#274218",
+        "#629b43",
+        "#6fa94b",
+      ];
+      for (let i = 0; i < 45000; i++) {
         const x = Math.random() * size;
         const y = Math.random() * size;
-        const w = 1 + Math.random() * 2.5;
-        const h = 2 + Math.random() * 5.0;
-        ctx.fillStyle = tones[Math.floor(Math.random() * tones.length)];
+        const w = 1 + Math.random() * 2.0;
+        const h = 2.5 + Math.random() * 5.0;
+        ctx.fillStyle = grassShades[Math.floor(Math.random() * grassShades.length)];
         ctx.fillRect(x, y, w, h);
       }
 
-      // Soil flecks & organic variation
-      ctx.fillStyle = "rgba(45, 35, 20, 0.12)";
-      for (let i = 0; i < 600; i++) {
+      // Earthy humus & fine loam soil specks
+      ctx.fillStyle = "rgba(45, 35, 20, 0.15)";
+      for (let i = 0; i < 1800; i++) {
         const cx = Math.random() * size;
         const cy = Math.random() * size;
-        const r = 2 + Math.random() * 6;
+        const r = 1.0 + Math.random() * 3.0;
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
         ctx.fill();
@@ -56,7 +66,7 @@ export class TerrainTextures {
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(80, 80);
+    tex.repeat.set(120, 120);
     tex.colorSpace = THREE.SRGBColorSpace;
     this.grassTexture = tex;
     return tex;

@@ -27,34 +27,31 @@ export class MotorMixer {
       return outputs;
     }
 
+    // Calculate differential offsets
+    const diffs = new Array<number>(count).fill(0);
+    let maxAbsDiff = 0;
+
     for (let i = 0; i < count; i++) {
       const m = motors[i];
       // Pitch: front motors decrease, rear motors increase
-      const pitchWeight = m.position.z !== 0 ? -Math.sign(m.position.z) * 0.45 : 0;
+      const pitchWeight = m.position.z !== 0 ? -Math.sign(m.position.z) * 0.35 : 0;
       // Roll: right motors decrease, left motors increase
-      const rollWeight = m.position.x !== 0 ? -Math.sign(m.position.x) * 0.45 : 0;
+      const rollWeight = m.position.x !== 0 ? -Math.sign(m.position.x) * 0.35 : 0;
       // Yaw: reaction torque based on motor spin direction
-      const yawWeight = m.direction * 0.25;
+      const yawWeight = m.direction * 0.20;
 
-      const motorOut = throttle + (pitch * pitchWeight) + (roll * rollWeight) + (yaw * yawWeight);
-      outputs[i] = motorOut;
+      const diff = (pitch * pitchWeight) + (roll * rollWeight) + (yaw * yawWeight);
+      diffs[i] = diff;
+      if (Math.abs(diff) > maxAbsDiff) maxAbsDiff = Math.abs(diff);
     }
 
-    // Dynamic Headroom Desaturation
-    let maxVal = 0;
+    // Dynamic Headroom: preserve collective throttle priority
+    // Scale differential offsets if they would clip beyond [0.05, 1.0]
+    const maxHeadroom = Math.max(0.08, Math.min(throttle - 0.05, 1.0 - throttle));
+    const scaleFactor = maxAbsDiff > maxHeadroom ? maxHeadroom / maxAbsDiff : 1.0;
+
     for (let i = 0; i < count; i++) {
-      if (outputs[i] > maxVal) maxVal = outputs[i];
-    }
-    if (maxVal > 1.0) {
-      const excess = maxVal - 1.0;
-      for (let i = 0; i < count; i++) {
-        outputs[i] = Math.max(0, outputs[i] - excess * 0.7);
-      }
-    }
-
-    // Clamp
-    for (let i = 0; i < count; i++) {
-      outputs[i] = Math.max(0, Math.min(1.0, outputs[i]));
+      outputs[i] = Math.max(0, Math.min(1.0, throttle + diffs[i] * scaleFactor));
     }
 
     return outputs;

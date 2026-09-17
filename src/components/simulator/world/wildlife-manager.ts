@@ -58,112 +58,261 @@ export class WildlifeManager {
   } {
     const root = new THREE.Group();
 
-    const hideMat = new THREE.MeshStandardMaterial({ color: 0x8d5524, roughness: 0.85 });
-    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f4, roughness: 0.8 });
-    const antlerMat = new THREE.MeshStandardMaterial({ color: 0x473c33, roughness: 0.7 });
+    // Natural PBR fur materials
+    const coatMat = new THREE.MeshStandardMaterial({
+      color: 0x93562a, // Warm rich reddish-brown coat
+      roughness: 0.82,
+      metalness: 0.05,
+    });
+    const dorsalMat = new THREE.MeshStandardMaterial({
+      color: 0x5a3114, // Darker dorsal spine ridge
+      roughness: 0.88,
+    });
+    const whiteMat = new THREE.MeshStandardMaterial({
+      color: 0xf5f0ea, // Soft cream/white underbelly, throat & rump
+      roughness: 0.78,
+    });
+    const antlerMat = new THREE.MeshStandardMaterial({
+      color: 0x5c4d3c, // Weathered bone antler
+      roughness: 0.65,
+      metalness: 0.1,
+    });
+    const hoofMat = new THREE.MeshStandardMaterial({
+      color: 0x1c1917, // Black cleft keratin hooves
+      roughness: 0.45,
+    });
+    const eyeMat = new THREE.MeshStandardMaterial({
+      color: 0x0a0a0a, // Dark reflective deer eyes
+      roughness: 0.1,
+      metalness: 0.8,
+    });
 
-    // 1. Torso: barrel body
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.65, 1.35), hideMat);
-    body.position.y = 1.05;
-    body.castShadow = true;
-    root.add(body);
+    // 1. Anatomical Torso: Barrel ribcage + sloping flank
+    const ribcage = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.32, 0.38, 0.75, 8),
+      coatMat
+    );
+    ribcage.rotation.x = Math.PI / 2;
+    ribcage.position.set(0, 1.08, 0.22);
+    ribcage.castShadow = true;
+    root.add(ribcage);
 
-    // White underbelly / rump patch
-    const rump = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.45, 0.25), whiteMat);
-    rump.position.set(0, 1.1, -0.65);
+    // Haunches / Hindquarters
+    const haunches = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.36, 0.30, 0.65, 8),
+      coatMat
+    );
+    haunches.rotation.x = Math.PI / 2;
+    haunches.position.set(0, 1.06, -0.42);
+    haunches.castShadow = true;
+    root.add(haunches);
+
+    // Dark dorsal spine stripe
+    const spine = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.04, 1.35),
+      dorsalMat
+    );
+    spine.position.set(0, 1.38, -0.08);
+    root.add(spine);
+
+    // White underbelly & throat bib
+    const underbelly = new THREE.Mesh(
+      new THREE.BoxGeometry(0.36, 0.14, 0.7),
+      whiteMat
+    );
+    underbelly.position.set(0, 0.82, 0.15);
+    root.add(underbelly);
+
+    // White rump patch
+    const rump = new THREE.Mesh(
+      new THREE.SphereGeometry(0.24, 6, 6),
+      whiteMat
+    );
+    rump.scale.set(1.0, 1.1, 0.65);
+    rump.position.set(0, 1.12, -0.74);
     root.add(rump);
 
-    // 2. Neck & Head (hinged at front of torso: z = 0.55, y = 1.25)
-    const neck = new THREE.Group();
-    neck.position.set(0, 1.25, 0.55);
+    // Tail (erect with white underside)
+    const tail = new THREE.Mesh(
+      new THREE.ConeGeometry(0.06, 0.25, 5),
+      coatMat
+    );
+    tail.rotation.x = -Math.PI / 3;
+    tail.position.set(0, 1.18, -0.82);
+    root.add(tail);
 
-    const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.65, 6), hideMat);
-    neckMesh.rotation.x = -Math.PI / 4;
-    neckMesh.position.set(0, 0.25, 0.2);
+    // 2. Neck & Head (Hinged at chest: y = 1.2, z = 0.55)
+    const neck = new THREE.Group();
+    neck.position.set(0, 1.18, 0.52);
+
+    // Muscular curved neck
+    const neckMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.15, 0.24, 0.72, 8),
+      coatMat
+    );
+    neckMesh.rotation.x = -Math.PI / 3.8;
+    neckMesh.position.set(0, 0.30, 0.22);
     neckMesh.castShadow = true;
     neck.add(neckMesh);
 
-    // Head
+    // White throat patch
+    const throat = new THREE.Mesh(
+      new THREE.BoxGeometry(0.14, 0.42, 0.12),
+      whiteMat
+    );
+    throat.position.set(0, 0.24, 0.34);
+    throat.rotation.x = -Math.PI / 3.8;
+    neck.add(throat);
+
+    // Sculpted Head (hinged at neck apex)
     const head = new THREE.Group();
-    head.position.set(0, 0.52, 0.42);
+    head.position.set(0, 0.58, 0.45);
 
-    const headMesh = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, 0.42), hideMat);
-    headMesh.castShadow = true;
-    head.add(headMesh);
+    // Cranium
+    const cranium = new THREE.Mesh(
+      new THREE.BoxGeometry(0.24, 0.22, 0.32),
+      coatMat
+    );
+    cranium.castShadow = true;
+    head.add(cranium);
 
-    // Snout
-    const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.2), whiteMat);
-    muzzle.position.set(0, -0.04, 0.25);
+    // Tapered Muzzle / Snout
+    const muzzle = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.14, 0.32, 6),
+      coatMat
+    );
+    muzzle.rotation.x = Math.PI / 2;
+    muzzle.position.set(0, -0.04, 0.28);
+    muzzle.castShadow = true;
     head.add(muzzle);
 
-    // Antlers (for stags)
-    if (hasAntlers) {
-      const beamGeo = new THREE.CylinderGeometry(0.025, 0.04, 0.55, 5);
-      const tineGeo = new THREE.CylinderGeometry(0.018, 0.025, 0.25, 4);
+    // Black nose tip & chin
+    const nose = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 0.08, 0.08),
+      hoofMat
+    );
+    nose.position.set(0, -0.02, 0.44);
+    head.add(nose);
 
-      // Left antler main beam
+    // Dark eyes (lateral placement)
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.035, 5, 5), eyeMat);
+    eyeL.position.set(-0.13, 0.04, 0.12);
+    head.add(eyeL);
+
+    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.035, 5, 5), eyeMat);
+    eyeR.position.set(0.13, 0.04, 0.12);
+    head.add(eyeR);
+
+    // Sculpted alert ears
+    const earGeo = new THREE.ConeGeometry(0.05, 0.22, 5);
+    earGeo.scale(1.2, 1.0, 0.4);
+
+    const earL = new THREE.Mesh(earGeo, coatMat);
+    earL.position.set(-0.14, 0.16, -0.06);
+    earL.rotation.set(-0.3, -0.4, -0.6);
+    head.add(earL);
+
+    const earR = new THREE.Mesh(earGeo, coatMat);
+    earR.position.set(0.14, 0.16, -0.06);
+    earR.rotation.set(-0.3, 0.4, 0.6);
+    head.add(earR);
+
+    // Majestic branching antlers for stags
+    if (hasAntlers) {
+      const beamGeo = new THREE.CylinderGeometry(0.02, 0.035, 0.55, 5);
+      const tineGeo = new THREE.CylinderGeometry(0.012, 0.02, 0.22, 4);
+
+      // Left main beam
       const beamL = new THREE.Mesh(beamGeo, antlerMat);
-      beamL.position.set(-0.14, 0.32, -0.05);
-      beamL.rotation.set(-0.3, 0, -0.4);
+      beamL.position.set(-0.12, 0.34, -0.02);
+      beamL.rotation.set(-0.25, 0, -0.38);
       head.add(beamL);
 
-      const tineL = new THREE.Mesh(tineGeo, antlerMat);
-      tineL.position.set(-0.24, 0.42, 0.05);
-      tineL.rotation.set(0.4, 0, -0.8);
-      head.add(tineL);
+      // Left brow tine & crown tines
+      const browL = new THREE.Mesh(tineGeo, antlerMat);
+      browL.position.set(-0.18, 0.32, 0.08);
+      browL.rotation.set(0.55, 0, -0.65);
+      head.add(browL);
 
-      // Right antler
+      const crownL = new THREE.Mesh(tineGeo, antlerMat);
+      crownL.position.set(-0.24, 0.54, -0.05);
+      crownL.rotation.set(-0.2, 0.4, -0.85);
+      head.add(crownL);
+
+      // Right main beam
       const beamR = new THREE.Mesh(beamGeo, antlerMat);
-      beamR.position.set(0.14, 0.32, -0.05);
-      beamR.rotation.set(-0.3, 0, 0.4);
+      beamR.position.set(0.12, 0.34, -0.02);
+      beamR.rotation.set(-0.25, 0, 0.38);
       head.add(beamR);
 
-      const tineR = new THREE.Mesh(tineGeo, antlerMat);
-      tineR.position.set(0.24, 0.42, 0.05);
-      tineR.rotation.set(0.4, 0, 0.8);
-      head.add(tineR);
+      // Right brow tine & crown tines
+      const browR = new THREE.Mesh(tineGeo, antlerMat);
+      browR.position.set(0.18, 0.32, 0.08);
+      browR.rotation.set(0.55, 0, 0.65);
+      head.add(browR);
+
+      const crownR = new THREE.Mesh(tineGeo, antlerMat);
+      crownR.position.set(0.24, 0.54, -0.05);
+      crownR.rotation.set(-0.2, -0.4, 0.85);
+      head.add(crownR);
     }
 
     neck.add(head);
     root.add(neck);
 
-    // 3. Legs (4 slender limbs)
-    const legGeo = new THREE.BoxGeometry(0.12, 0.85, 0.14);
+    // 3. Anatomical Legs (4 slender limbs with muscular shoulders/thighs + hooves)
+    const createLimb = (isRear: boolean) => {
+      const legRoot = new THREE.Group();
 
-    // Left Front
-    const leftFrontLeg = new THREE.Group();
-    leftFrontLeg.position.set(-0.22, 0.85, 0.45);
-    const lfMesh = new THREE.Mesh(legGeo, hideMat);
-    lfMesh.position.y = -0.42;
-    lfMesh.castShadow = true;
-    leftFrontLeg.add(lfMesh);
+      // Upper limb / thigh / shoulder
+      const upperGeo = new THREE.CylinderGeometry(
+        isRear ? 0.14 : 0.11,
+        0.08,
+        0.48,
+        6
+      );
+      const upper = new THREE.Mesh(upperGeo, coatMat);
+      upper.position.y = -0.22;
+      upper.castShadow = true;
+      legRoot.add(upper);
+
+      // Slender lower cannon bone
+      const lowerGeo = new THREE.CylinderGeometry(0.06, 0.045, 0.48, 6);
+      const lower = new THREE.Mesh(lowerGeo, coatMat);
+      lower.position.y = -0.62;
+      lower.castShadow = true;
+      legRoot.add(lower);
+
+      // Black keratin hoof
+      const hoof = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08, 0.08, 0.11),
+        hoofMat
+      );
+      hoof.position.set(0, -0.88, 0.02);
+      hoof.castShadow = true;
+      legRoot.add(hoof);
+
+      return legRoot;
+    };
+
+    // Left Front (hip at x: -0.20, y: 0.92, z: 0.45)
+    const leftFrontLeg = createLimb(false);
+    leftFrontLeg.position.set(-0.20, 0.92, 0.45);
     root.add(leftFrontLeg);
 
     // Right Front
-    const rightFrontLeg = new THREE.Group();
-    rightFrontLeg.position.set(0.22, 0.85, 0.45);
-    const rfMesh = new THREE.Mesh(legGeo, hideMat);
-    rfMesh.position.y = -0.42;
-    rfMesh.castShadow = true;
-    rightFrontLeg.add(rfMesh);
+    const rightFrontLeg = createLimb(false);
+    rightFrontLeg.position.set(0.20, 0.92, 0.45);
     root.add(rightFrontLeg);
 
-    // Left Back
-    const leftBackLeg = new THREE.Group();
-    leftBackLeg.position.set(-0.22, 0.85, -0.45);
-    const lbMesh = new THREE.Mesh(legGeo, hideMat);
-    lbMesh.position.y = -0.42;
-    lbMesh.castShadow = true;
-    leftBackLeg.add(lbMesh);
+    // Left Back (haunch at x: -0.20, y: 0.92, z: -0.45)
+    const leftBackLeg = createLimb(true);
+    leftBackLeg.position.set(-0.20, 0.92, -0.45);
     root.add(leftBackLeg);
 
     // Right Back
-    const rightBackLeg = new THREE.Group();
-    rightBackLeg.position.set(0.22, 0.85, -0.45);
-    const rbMesh = new THREE.Mesh(legGeo, hideMat);
-    rbMesh.position.y = -0.42;
-    rbMesh.castShadow = true;
-    rightBackLeg.add(rbMesh);
+    const rightBackLeg = createLimb(true);
+    rightBackLeg.position.set(0.20, 0.92, -0.45);
     root.add(rightBackLeg);
 
     return { root, neck, head, leftFrontLeg, rightFrontLeg, leftBackLeg, rightBackLeg };
@@ -174,12 +323,14 @@ export class WildlifeManager {
    */
   private spawnDeerHerds() {
     const herdConfigs = [
-      // Herd 1: Whispering Pines clearing (center ~ 420, -380) - 18 deer
-      { cx: 420, cz: -380, count: 18, radius: 65 },
+      // Herd 1: Whispering Pines Forest Sanctuary (center ~ -620, -40) - 20 deer
+      { cx: -620, cz: -40, count: 20, radius: 75 },
       // Herd 2: Valley River riparian meadow (center ~ -100, 180) - 15 deer
       { cx: -100, cz: 180, count: 15, radius: 55 },
-      // Herd 3: Mount Apex foothills (center ~ -380, -320) - 14 deer
-      { cx: -380, cz: -320, count: 14, radius: 50 },
+      // Herd 3: Mount Apex southwest foothill glade (center ~ -460, -140) - 14 deer
+      { cx: -460, cz: -140, count: 14, radius: 55 },
+      // Herd 4: Emerald Foothills agricultural pasture (center ~ 260, 220) - 16 deer
+      { cx: 260, cz: 220, count: 16, radius: 65 },
     ];
 
     herdConfigs.forEach((cfg) => {
@@ -192,7 +343,7 @@ export class WildlifeManager {
         const x = cfg.cx + Math.cos(a) * r;
         const z = cfg.cz + Math.sin(a) * r;
 
-        const elev = evaluateIslandElevation(x, z).elevation;
+        const elev = Math.max(0.5, evaluateIslandElevation(x, z).elevation);
         deer.root.position.set(x, elev, z);
         deer.root.rotation.y = Math.random() * Math.PI * 2;
 
@@ -340,6 +491,9 @@ export class WildlifeManager {
   public update(dt: number, elapsed: number) {
     // 1. Update Deer Herds
     for (const d of this.deer) {
+      // Strictly anchor hooves to the physical terrain surface every frame (zero floating)
+      d.root.position.y = Math.max(0.5, evaluateIslandElevation(d.root.position.x, d.root.position.z).elevation);
+
       d.grazePhase += dt;
 
       // Natural grazing cycle: neck bows down to eat grass, lifts up to inspect surroundings
@@ -367,7 +521,7 @@ export class WildlifeManager {
           const dist = 3 + Math.random() * 8;
           const tx = d.centerPos.x + Math.cos(ang) * dist;
           const tz = d.centerPos.z + Math.sin(ang) * dist;
-          const ty = evaluateIslandElevation(tx, tz).elevation;
+          const ty = Math.max(0.5, evaluateIslandElevation(tx, tz).elevation);
           d.targetPos.set(tx, ty, tz);
         }
       }
@@ -380,7 +534,7 @@ export class WildlifeManager {
         if (dist > 0.2) {
           dir.normalize();
           cur.addScaledVector(dir, 1.2 * dt);
-          cur.y = evaluateIslandElevation(cur.x, cur.z).elevation;
+          cur.y = Math.max(0.5, evaluateIslandElevation(cur.x, cur.z).elevation);
 
           const heading = Math.atan2(dir.x, dir.z);
           d.root.rotation.y = THREE.MathUtils.lerp(d.root.rotation.y, heading, dt * 3);

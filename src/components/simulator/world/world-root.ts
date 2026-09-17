@@ -23,6 +23,8 @@ import { RiverRegion } from "./regions/river-region";
 import { CityRegion } from "./regions/city-region";
 import { IndustrialRegion } from "./regions/industrial-region";
 import { CoastRegion } from "./regions/coast-region";
+import { RuralSystem } from "./regions/rural-system";
+import { CityDistrictSystem } from "./city/city-district-system";
 import { HELIPADS } from "@/lib/world/helipad-definitions";
 
 export class WorldRoot {
@@ -41,6 +43,7 @@ export class WorldRoot {
   public traffic: TrafficManager;
   public npcs: NPCManager;
   public wildlife: WildlifeManager;
+  public rural: RuralSystem;
 
   // Regional Landmarks
   public trainingRegion: TrainingRegion;
@@ -50,6 +53,9 @@ export class WorldRoot {
   public cityRegion: CityRegion;
   public industrialRegion: IndustrialRegion;
   public coastRegion: CoastRegion;
+
+  // Phase 3: Enhanced City Districts
+  public cityDistricts: CityDistrictSystem;
 
   constructor(scene: THREE.Scene) {
     // 1. Atmosphere, Sun, Shadows, Lighting & Clouds
@@ -113,6 +119,14 @@ export class WorldRoot {
     this.coastRegion = new CoastRegion();
     this.group.add(this.coastRegion.group);
 
+    // 12b. Phase 3: Multi-District City with Building Variety, Street Furniture, Parks & Parking
+    this.cityDistricts = new CityDistrictSystem();
+    this.group.add(this.cityDistricts.group);
+
+    // 13. Rural Settlements, Farmsteads, Windmills & Camps
+    this.rural = new RuralSystem();
+    this.group.add(this.rural.group);
+
     scene.add(this.group);
   }
 
@@ -129,8 +143,15 @@ export class WorldRoot {
       }
     }
 
-    // Otherwise return physical terrain heightfield elevation
-    return this.terrain.getElevationAt(x, z);
+    // Check if drone is over Crystal Mountain Lake freshwater surface (8.5m MSL)
+    const distLake = Math.hypot(x - (-320), z - (-260));
+    if (distLake <= 110) {
+      return 8.5;
+    }
+
+    // Otherwise return physical terrain heightfield elevation, clamped to sea level over ocean
+    const terrainElev = this.terrain.getElevationAt(x, z);
+    return Math.max(0.0, terrainElev);
   }
 
   /**
@@ -143,6 +164,7 @@ export class WorldRoot {
     this.traffic.update(dt);
     this.npcs.update(dt, elapsed);
     this.wildlife.update(dt, elapsed);
+    this.rural.update(dt);
 
     if (dronePos) {
       this.rotorWash.update(dt, elapsed, dronePos, thrust);
@@ -151,6 +173,7 @@ export class WorldRoot {
     this.trainingRegion.update(dt, elapsed);
     this.mountainRegion.update(dt, elapsed);
     this.cityRegion.update(dt, elapsed);
+    this.cityDistricts.update(dt, elapsed);
     this.forestRegion.update(dt, elapsed);
   }
 }

@@ -13,7 +13,7 @@ export class InstancedGrass {
   private timeUniform = { value: 0 };
   private dronePosUniform = { value: new THREE.Vector3(0, 100, 0) };
 
-  constructor(instanceCount = 14000) {
+  constructor(instanceCount = 28000) {
     this.buildGrassMesh(instanceCount);
   }
 
@@ -21,8 +21,8 @@ export class InstancedGrass {
    * Generates a 3-blade cross-quad geometry for full 360-degree volumetric thickness
    */
   private createCrossQuadGeometry(): THREE.BufferGeometry {
-    const w = 1.1; // Width of tuft
-    const h = 0.95; // Height of tuft
+    const w = 1.7; // Width of tuft
+    const h = 1.35; // Height of tuft
 
     // 3 intersecting vertical planes at 0, 60, and 120 degrees
     const positions: number[] = [];
@@ -213,68 +213,107 @@ export class InstancedGrass {
     this.instancedMesh.receiveShadow = true;
     this.instancedMesh.castShadow = true;
 
-    // Distribute grass tufts across the island
-    const dummy = new THREE.Object3D();
-    let placed = 0;
-
-    // Distribute clusters:
-    // 1. High density in Central Training Area & Academy Grounds (radius 180m)
-    // 2. High density in Forest region & River Valley
-    // 3. Medium density across meadows and hills
-    while (placed < count) {
-      // Pick a random spot across the 1800m island
-      let x = 0;
-      let z = 0;
-
-      // 40% placed in academy/training fields
-      if (Math.random() < 0.4) {
-        const rad = 25 + Math.random() * 160;
-        const ang = Math.random() * Math.PI * 2;
-        x = Math.cos(ang) * rad;
-        z = Math.sin(ang) * rad;
-      } else {
-        x = (Math.random() - 0.5) * 1600;
-        z = (Math.random() - 0.5) * 1500;
-      }
-
-      // Avoid runway and helipad tarmac
-      const distToRunway = Math.hypot(x - 20, z - (-40));
-      if (distToRunway < 22) continue; // runway clearing
-      const distToCenterPad = Math.hypot(x, z);
-      if (distToCenterPad < 9) continue; // helipad clearing
-
-      const sample = evaluateIslandElevation(x, z);
-
-      // Grass only grows between 0.8m and 32m elevation, on gentle slopes, and not under water
-      if (sample.elevation < 0.8 || sample.elevation > 38 || sample.slope > 0.45) {
-        continue;
-      }
-
-      const scale = 0.75 + Math.random() * 0.65;
-      dummy.position.set(x, sample.elevation, z);
-      dummy.rotation.set(
-        (Math.random() - 0.5) * 0.1,
-        Math.random() * Math.PI * 2,
-        (Math.random() - 0.5) * 0.1
-      );
-      dummy.scale.set(scale, scale * (0.9 + Math.random() * 0.3), scale);
-      dummy.updateMatrix();
-
-      this.instancedMesh.setMatrixAt(placed, dummy.matrix);
-      placed++;
-    }
-
-    this.instancedMesh.instanceMatrix.needsUpdate = true;
+    this.repositionGrassGrid(0, 0);
     this.group.add(this.instancedMesh);
   }
 
+  private lastGridCenter = new THREE.Vector2(9999, 9999);
+
   /**
-   * Update wind swaying and drone downwash displacement every frame
+   * Repositions dense grass tufts within an 85m radius around the drone
    */
-  public update(dt: number, elapsed: number, dronePos?: THREE.Vector3) {
+  private repositionGrassGrid(centerX: number, centerZ: number) {
+    const dummy = new THREE.Object3D();
+    const count = this.instancedMesh.count;
+    const gridSide = Math.floor(Math.sqrt(count)); // ~167x167 = 27889
+    const spacing = 2.1; // 2.1m spacing covers 350m diameter
+    const halfSpan = (gridSide * spacing) / 2;
+
+    let index = 0;
+    for (let gx = 0; gx < gridSide && index < count; gx++) {
+      for (let gz = 0; gz < gridSide && index < count; gz++) {
+        // Jittered grid placement
+        const jitterX = (Math.sin(gx * 12.3 + gz * 4.7) * 0.5) * spacing;
+        const jitterZ = (Math.cos(gx * 5.1 - gz * 8.9) * 0.5) * spacing;
+
+        const x = centerX - halfSpan + gx * spacing + jitterX;
+        const z = centerZ - halfSpan + gz * spacing + jitterZ;
+
+        const distFromCenter = Math.hypot(x - centerX, z - centerZ);
+        if (distFromCenter > halfSpan) {
+          // Outside circle - hide
+          dummy.position.set(0, -999, 0);
+          dummy.scale.set(0, 0, 0);
+          dummy.updateMatrix();
+          this.instancedMesh.setMatrixAt(index++, dummy.matrix);
+          continue;
+        }
+
+        // Avoid runway and helipads
+        const distToRunway = Math.hypot(x - 20, z - (-40));
+        const distToCenterPad = Math.hypot(x, z);
+        if (distToRunway < 18 || distToCenterPad < 8) {
+          dummy.position.set(0, -999, 0);
+          dummy.scale.set(0, 0, 0);
+          dummy.updateMatrix();
+          this.instancedMesh.setMatrixAt(index++, dummy.matrix);
+          continue;
+        }
+
+        const sample = evaluateIslandElevation(x, z);
+
+        // Don't spawn on water or cliff rocks
+        if (sample.elevation < 0.6 || sample.slope > 0.5) {
+          dummy.position.set(0, -999, 0);
+          dummy.scale.set(0, 0, 0);
+          dummy.updateMatrix();
+          this.instancedMesh.setMatrixAt(index++, dummy.matrix);
+          continue;
+        }
+
+        // Distance fade at outer perimeter
+        const fade = Math.max(0.3, 1.0 - (distFromCenter / halfSpan) * 0.5);
+        const scale = (1.0 + Math.abs(Math.sin(gx * 3.3 + gz)) * 0.5) * fade;
+
+        dummy.position.set(x, sample.elevation, z);
+        dummy.rotation.set(
+          (Math.sin(gx) * 0.08),
+          (gx * 17 + gz * 23) % Math.PI,
+          (Math.cos(gz) * 0.08)
+        );
+        dummy.scale.set(scale, scale * 1.3, scale);
+        dummy.updateMatrix();
+
+        this.instancedMesh.setMatrixAt(index++, dummy.matrix);
+      }
+    }
+
+    // Hide any remaining instances
+    while (index < count) {
+      dummy.position.set(0, -999, 0);
+      dummy.scale.set(0, 0, 0);
+      dummy.updateMatrix();
+      this.instancedMesh.setMatrixAt(index++, dummy.matrix);
+    }
+
+    this.instancedMesh.instanceMatrix.needsUpdate = true;
+    this.lastGridCenter.set(centerX, centerZ);
+  }
+
+  /**
+   * Update wind swaying and drone downwash displacement every frame,
+   * and dynamically shift the dense grass clipmap as the drone flies
+   */
+  public update(_dt: number, elapsed: number, dronePos?: THREE.Vector3) {
     this.timeUniform.value = elapsed;
     if (dronePos) {
       this.dronePosUniform.value.copy(dronePos);
+
+      // Reposition grass clipmap around the drone when moving > 4.5m
+      const distMoved = this.lastGridCenter.distanceTo(new THREE.Vector2(dronePos.x, dronePos.z));
+      if (distMoved > 4.5) {
+        this.repositionGrassGrid(dronePos.x, dronePos.z);
+      }
     }
   }
 }

@@ -17,6 +17,7 @@ import {
 import { MotorMixer } from "./motor-mixer";
 import { BatteryModel } from "./battery-model";
 import { EnvironmentModel } from "./environment-model";
+import { checkObstacleCollision } from "./obstacles";
 
 export class FlightPhysicsEngine {
   private def: DroneDefinition;
@@ -59,6 +60,7 @@ export class FlightPhysicsEngine {
   public flightTime = 0.0;
   public isHoverMode = true;
   public groundLevel = 1.445;
+  public targetAltitude = 1.445;
   public isAutoLanding = false;
   public payloadMass = 0.0; // kg
 
@@ -69,6 +71,8 @@ export class FlightPhysicsEngine {
 
   // Crash State
   public crashState: CrashState | null = null;
+  public isCeilingLimitReached = false;
+  public isGroundLimitReached = false;
 
   // Breadcrumbs path history
   private breadcrumbs: Array<{ x: number; z: number }> = [{ x: 0, z: 0 }];
@@ -131,10 +135,13 @@ export class FlightPhysicsEngine {
     this.isArmed = false;
     this.flightTime = 0.0;
     this.isHoverMode = true;
+    this.targetAltitude = this.groundLevel;
     this.isAutoLanding = false;
     this.rotorRpm = 0;
     this.motorOutputs = new Array(this.def.motorCount).fill(0);
     this.crashState = null;
+    this.isCeilingLimitReached = false;
+    this.isGroundLimitReached = false;
     this.battery.reset(100.0);
 
     this.breadcrumbs = [{ x: Math.round(spawnX), z: Math.round(spawnZ) }];
@@ -167,11 +174,26 @@ export class FlightPhysicsEngine {
     }
 
     // Dynamic ground elevation query
+    let surfaceElevation = 0.0;
     if (this.elevationQueryFn) {
-      this.groundLevel = this.elevationQueryFn(this.posX, this.posZ) + 0.245;
+      surfaceElevation = Math.max(0.0, this.elevationQueryFn(this.posX, this.posZ));
+    }
+    this.groundLevel = surfaceElevation + 0.245;
+
+    // Hard floor clamp: drone can NEVER penetrate below terrain or water surface
+    if (this.posY < this.groundLevel) {
+      this.posY = this.groundLevel;
+      if (this.velY < 0) this.velY = 0;
     }
 
     const onGround = this.posY <= this.groundLevel + 0.02;
+
+    // Ground limit advisory: if pilot commands throttle down while already touching ground
+    if (onGround && input.throttle < -0.05) {
+      this.isGroundLimitReached = true;
+    } else {
+      this.isGroundLimitReached = false;
+    }
 
     // Auto-arm on throttle or stick input
     if (!this.isArmed) {
@@ -211,16 +233,29 @@ export class FlightPhysicsEngine {
       } else if (this.isHoverMode) {
         // Tilt thrust compensation: auto-boosts collective thrust when pitched/rolled
         // so that Ty = T * cos(pitch) * cos(roll) == mg, maintaining level altitude
-        const cosTilt = Math.max(0.45, Math.cos(this.pitch) * Math.cos(this.roll));
+        const cosTilt = Math.max(0.40, Math.cos(this.pitch) * Math.cos(this.roll));
         const tiltCompensation = 1.0 / cosTilt;
         const baseHoverThrottle = (hoverWeight / this.def.maximumThrust) * tiltCompensation;
 
-        const verticalDelta = input.throttle * (1.0 - (hoverWeight / this.def.maximumThrust)) * 0.85;
-        commandedThrottle = baseHoverThrottle + verticalDelta;
-
-        // Active vertical hover damping
-        if (Math.abs(input.throttle) < 0.05 && !onGround) {
-          commandedThrottle -= (this.velY * (totalMass * 3.5)) / this.def.maximumThrust;
+        if (Math.abs(input.throttle) > 0.05) {
+          // Pilot is commanding manual climb or descent
+          const verticalDelta = input.throttle * (input.throttle > 0 ? (1.0 - (hoverWeight / this.def.maximumThrust)) * 0.85 : 0.45);
+          commandedThrottle = baseHoverThrottle + verticalDelta;
+          this.targetAltitude = this.posY;
+        } else if (!onGround) {
+          // Closed-loop altitude hold: locks altitude when moving forward/backward/sideways
+          if (this.targetAltitude < this.groundLevel + 0.1) {
+            this.targetAltitude = this.posY;
+          }
+          const altError = this.targetAltitude - this.posY;
+          // PD altitude regulator
+          const pGain = 3.5;
+          const dGain = 2.8;
+          const altCorrection = ((altError * pGain - this.velY * dGain) * totalMass) / this.def.maximumThrust;
+          commandedThrottle = baseHoverThrottle + Math.max(-0.30, Math.min(0.45, altCorrection));
+        } else {
+          commandedThrottle = baseHoverThrottle * 0.5;
+          this.targetAltitude = this.posY;
         }
       } else {
         commandedThrottle = Math.max(0, (input.throttle + 1) / 2);
@@ -348,25 +383,80 @@ export class FlightPhysicsEngine {
     this.posY += this.velY * clampedDt;
     this.posZ += this.velZ * clampedDt;
 
+    // Dynamic ground elevation query at new coordinates
+    if (this.elevationQueryFn) {
+      this.groundLevel = Math.max(0.0, this.elevationQueryFn(this.posX, this.posZ)) + 0.245;
+    }
+
+    // Absolute hard ground/water floor clamp - zero penetration
+    if (this.posY < this.groundLevel) {
+      this.posY = this.groundLevel;
+      if (this.velY < 0) this.velY = 0;
+    }
+
+    // Enforce strict flight ceiling (250m MSL)
+    const MAX_FLIGHT_CEILING = 250.0;
+    if (this.posY >= MAX_FLIGHT_CEILING) {
+      this.posY = MAX_FLIGHT_CEILING;
+      if (this.velY > 0) this.velY = 0;
+      if (input.throttle > 0.05) {
+        this.isCeilingLimitReached = true;
+      } else {
+        this.isCeilingLimitReached = false;
+      }
+    } else {
+      this.isCeilingLimitReached = false;
+    }
+
     // ----------------------------------------------------
     // 7. GROUND & OBSTACLE COLLISION DETECTION
     // ----------------------------------------------------
+    // Check 3D Building, Skyscraper, Bridge, Windmill & Tower Collisions
+    const obsHit = checkObstacleCollision(this.posX, this.posY, this.posZ, 0.55);
+    if (obsHit) {
+      const impactSpeed = Math.max(2.0, Math.sqrt(this.velX * this.velX + this.velY * this.velY + this.velZ * this.velZ));
+      const kineticEnergy = 0.5 * totalMass * impactSpeed * impactSpeed;
+      const objectLabel = obsHit.type === "skyscraper" || obsHit.type === "building" || obsHit.type === "warehouse"
+        ? "building"
+        : obsHit.type;
+
+      this.posY = Math.max(this.groundLevel, this.posY);
+      this.crashState = {
+        isCrashed: true,
+        impactSpeedKmh: Math.round(impactSpeed * 3.6 * 10) / 10,
+        impactSpeedMs: Math.round(impactSpeed * 10) / 10,
+        impactLocation: { x: this.posX, y: this.posY, z: this.posZ },
+        kineticEnergyJoules: Math.round(kineticEnergy),
+        primaryCause: `You have crashed into a ${objectLabel}! (${obsHit.name})`,
+        impactNormal: { x: 0, y: 1, z: 0 },
+        timestamp: Date.now(),
+      };
+
+      this.velX = 0;
+      this.velY = 0;
+      this.velZ = 0;
+      this.isArmed = false;
+      return this.generateTelemetry();
+    }
+
     if (this.posY <= this.groundLevel) {
+      this.posY = this.groundLevel;
+      if (this.velY < 0) this.velY = 0;
       const impactSpeed = Math.sqrt(this.velX * this.velX + this.velY * this.velY + this.velZ * this.velZ);
       const tiltAngleDeg = Math.max(Math.abs(this.pitch), Math.abs(this.roll)) * (180 / Math.PI);
 
       // Crash Criteria: Hard impact (> 6.2 m/s) or extreme tilt (> 42°)
       if (impactSpeed > 6.2 || (impactSpeed > 3.0 && tiltAngleDeg > 42)) {
         const kineticEnergy = 0.5 * totalMass * impactSpeed * impactSpeed;
-        let cause = "Excessive vertical descent velocity exceeding airframe tolerance.";
-        if (tiltAngleDeg > 42) cause = "Attitude instability: aircraft struck ground in banked attitude (" + tiltAngleDeg.toFixed(0) + "°).";
-        else if (Math.abs(this.velX) + Math.abs(this.velZ) > 5.0) cause = "High-speed horizontal impact with terrain.";
+        let cause = "You have crashed into the ground! (Excessive vertical descent rate)";
+        if (tiltAngleDeg > 42) cause = `You have crashed into the terrain! (Loss of control at ${tiltAngleDeg.toFixed(0)}° bank angle)`;
+        else if (Math.abs(this.velX) + Math.abs(this.velZ) > 5.0) cause = "You have crashed into the terrain! (High-speed horizontal impact)";
 
         this.crashState = {
           isCrashed: true,
           impactSpeedKmh: Math.round(impactSpeed * 3.6 * 10) / 10,
           impactSpeedMs: Math.round(impactSpeed * 10) / 10,
-          impactLocation: { x: this.posX, y: this.posY, z: this.posZ },
+          impactLocation: { x: this.posX, y: this.groundLevel, z: this.posZ },
           kineticEnergyJoules: Math.round(kineticEnergy),
           primaryCause: cause,
           impactNormal: { x: 0, y: 1, z: 0 },
@@ -407,10 +497,6 @@ export class FlightPhysicsEngine {
       this.posZ = Math.sign(this.posZ) * maxBound;
       this.velZ *= -0.3;
     }
-    if (this.posY > 250.0) {
-      this.posY = 250.0;
-      if (this.velY > 0) this.velY = 0;
-    }
 
     // Breadcrumbs tracking
     if (this.flightTime - this.lastBreadcrumbTime > 0.5) {
@@ -428,7 +514,7 @@ export class FlightPhysicsEngine {
     return this.generateTelemetry();
   }
 
-  private generateTelemetry(): TelemetryState {
+  public generateTelemetry(): TelemetryState {
     const horizontalSpeedMs = Math.hypot(this.velX, this.velZ);
     const groundSpeedKmh = Math.round(horizontalSpeedMs * 3.6 * 10) / 10;
     const altitudeMeters = Math.max(0, Math.round((this.posY - this.groundLevel) * 10) / 10);
@@ -471,6 +557,8 @@ export class FlightPhysicsEngine {
       flightPath: this.breadcrumbs,
       payloadMassKg: this.payloadMass,
       isCrashed: !!this.crashState?.isCrashed,
+      isCeilingLimitReached: this.isCeilingLimitReached,
+      isGroundLimitReached: this.isGroundLimitReached,
     };
   }
 
@@ -511,5 +599,41 @@ export class FlightPhysicsEngine {
       groundElevationMsl: Math.round(this.groundLevel * 10) / 10,
       radarAgl: Math.max(0, Math.round((this.posY - this.groundLevel) * 10) / 10),
     };
+  }
+
+  /**
+   * Field Repair & In-Place Drone Revive
+   * Restores airframe, clears crash state, stabilizes attitude, and locks hover altitude right on the spot.
+   */
+  public revive(targetX?: number, targetY?: number, targetZ?: number): TelemetryState {
+    this.crashState = null;
+    if (targetX !== undefined) this.posX = targetX;
+    if (targetZ !== undefined) this.posZ = targetZ;
+
+    const ground = this.elevationQueryFn ? this.elevationQueryFn(this.posX, this.posZ) : 1.2;
+    let safeY = targetY !== undefined ? Math.max(targetY, ground + 2.0) : Math.max(this.posY + 1.5, ground + 2.0);
+
+    // If colliding with an obstacle, step upwards until clear of obstacle bounding volume
+    for (let attempts = 0; attempts < 10; attempts++) {
+      const obs = checkObstacleCollision(this.posX, safeY, this.posZ, 0.65);
+      if (!obs) break;
+      safeY = obs.box.maxY + 2.5; // Clear rooftop / structure
+    }
+
+    this.posY = safeY;
+    this.velX = 0;
+    this.velY = 0;
+    this.velZ = 0;
+    this.pitch = 0;
+    this.roll = 0;
+    this.pitchRate = 0;
+    this.rollRate = 0;
+    this.yawRate = 0;
+
+    this.isArmed = true;
+    this.isHoverMode = true;
+    this.targetAltitude = this.posY;
+    this.motorOutputs = [0.65, 0.65, 0.65, 0.65];
+    return this.generateTelemetry();
   }
 }

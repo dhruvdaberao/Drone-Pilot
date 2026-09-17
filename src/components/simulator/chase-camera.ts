@@ -22,7 +22,7 @@ export class ChaseCameraController {
   public isOrbiting = false;
 
   constructor(fov = 55, aspect = 16 / 9) {
-    this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 900);
+    this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.2, 5000);
     this.camera.position.set(0, 3.2, 5.2);
   }
 

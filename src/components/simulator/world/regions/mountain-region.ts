@@ -1,6 +1,6 @@
 // ==========================================================
-// DRONE PILOT — REGION 3: MOUNT APEX HIGHLANDS
-// Foundation: Mountain Weather Pad, Peak Silhouettes, Summit Mast
+// DRONE PILOT — REGION 3: MOUNT APEX HIGHLANDS (PHASE 1)
+// Weather Station Pad (48m), Summit Peak Spire (145m), Overlook & Strobe
 // ==========================================================
 
 import * as THREE from "three";
@@ -10,21 +10,25 @@ import { createHelipadMesh } from "../helipad-mesh";
 export class MountainRegion {
   public group = new THREE.Group();
   private summitStrobe!: THREE.Mesh;
+  private apexPeakStrobe!: THREE.Mesh;
   private animatables: Array<(elapsed: number) => void> = [];
 
   constructor() {
-    // 1. Mountain Peak Helipad (elevation 28.5m)
+    // 1. Mountain Peak Helipad (elevation 48.0m MSL)
     const pad = createHelipadMesh(HELIPADS["mountain-alpha"]);
     this.group.add(pad);
 
-    // 2. High-Altitude Meteorological Weather Station & Research Shelter
+    // 2. High-Altitude Meteorological Weather Station & Shelter
     this.buildWeatherStation();
 
-    // 3. Communications Mast & Red Hazard Warning Strobe
-    this.buildSummitMast();
+    // 3. Terrace Communications Mast & Red Hazard Warning Strobe
+    this.buildTerraceMast();
 
     // 4. Overlook Safety Guardrails
     this.buildSafetyPerimeter();
+
+    // 5. Mount Apex Summit Landmark Spire & High-Altitude Strobe (145m MSL)
+    this.buildApexSummitSpire();
   }
 
   /**
@@ -32,9 +36,9 @@ export class MountainRegion {
    */
   private buildWeatherStation() {
     const stationGroup = new THREE.Group();
-    const baseX = -498;
-    const baseY = 28.5;
-    const baseZ = -450;
+    const baseX = -598;
+    const baseY = 48.0;
+    const baseZ = -560;
     stationGroup.position.set(baseX, baseY, baseZ);
 
     // Reinforced weather station shelter cabin
@@ -105,20 +109,19 @@ export class MountainRegion {
   }
 
   /**
-   * 18m lattice summit communications mast with flashing red aviation hazard strobe
+   * 18m terrace communications mast with flashing red hazard strobe
    */
-  private buildSummitMast() {
-    const mastX = -498;
-    const mastY = 28.5;
-    const mastZ = -464;
+  private buildTerraceMast() {
+    const mastX = -598;
+    const mastY = 48.0;
+    const mastZ = -574;
 
     const mastMat = new THREE.MeshStandardMaterial({
-      color: 0xd97706, // High-visibility hazard orange
+      color: 0xd97706, // Hazard orange
       metalness: 0.8,
       roughness: 0.3,
     });
 
-    // Vertical lattice mast structure
     const mastHeight = 18.0;
     const mast = new THREE.Mesh(
       new THREE.CylinderGeometry(0.25, 0.45, mastHeight, 6),
@@ -128,7 +131,6 @@ export class MountainRegion {
     mast.castShadow = true;
     this.group.add(mast);
 
-    // Hazard strobe lamp
     this.summitStrobe = new THREE.Mesh(
       new THREE.SphereGeometry(0.5, 8, 8),
       new THREE.MeshBasicMaterial({ color: 0xff2222 })
@@ -142,42 +144,76 @@ export class MountainRegion {
    */
   private buildSafetyPerimeter() {
     const railMat = new THREE.MeshStandardMaterial({
-      color: 0xfacc15, // Caution yellow
+      color: 0xfacc15,
       metalness: 0.6,
       roughness: 0.4,
     });
 
     const segments = [
-      { x: -468, z: -450, rot: Math.PI / 2, len: 24 },
-      { x: -480, z: -438, rot: 0, len: 24 },
-      { x: -480, z: -462, rot: 0, len: 24 },
+      { x: -568, z: -560, rot: Math.PI / 2, len: 24 },
+      { x: -580, z: -548, rot: 0, len: 24 },
+      { x: -580, z: -572, rot: 0, len: 24 },
     ];
 
     segments.forEach((s) => {
       const topRail = new THREE.Mesh(new THREE.BoxGeometry(s.len, 0.1, 0.1), railMat);
-      topRail.position.set(s.x, 28.5 + 1.1, s.z);
+      topRail.position.set(s.x, 48.0 + 1.1, s.z);
       topRail.rotation.y = s.rot;
       this.group.add(topRail);
 
       const midRail = new THREE.Mesh(new THREE.BoxGeometry(s.len, 0.08, 0.08), railMat);
-      midRail.position.set(s.x, 28.5 + 0.55, s.z);
+      midRail.position.set(s.x, 48.0 + 0.55, s.z);
       midRail.rotation.y = s.rot;
       this.group.add(midRail);
 
-      // Posts
       for (let p = -s.len / 2; p <= s.len / 2; p += 4) {
         const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.1, 6), railMat);
         const px = s.x + (s.rot === 0 ? p : 0);
         const pz = s.z + (s.rot !== 0 ? p : 0);
-        post.position.set(px, 28.5 + 0.55, pz);
+        post.position.set(px, 48.0 + 0.55, pz);
         this.group.add(post);
       }
     });
   }
 
+  /**
+   * Mount Apex Summit Spire (145m MSL) with flashing red aviation beacon visible across island
+   */
+  private buildApexSummitSpire() {
+    const summitX = -620;
+    const summitY = 145.0;
+    const summitZ = -720;
+
+    const spireMat = new THREE.MeshStandardMaterial({
+      color: 0xe2e8f0,
+      metalness: 0.9,
+      roughness: 0.2,
+    });
+
+    // 24m spire structure
+    const spire = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.15, 0.6, 24, 6),
+      spireMat
+    );
+    spire.position.set(summitX, summitY + 12, summitZ);
+    spire.castShadow = true;
+    this.group.add(spire);
+
+    this.apexPeakStrobe = new THREE.Mesh(
+      new THREE.SphereGeometry(0.8, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xff1111 })
+    );
+    this.apexPeakStrobe.position.set(summitX, summitY + 24.5, summitZ);
+    this.group.add(this.apexPeakStrobe);
+  }
+
   public update(_dt: number, elapsed: number) {
+    const strobeState = Math.floor(elapsed * 2.5) % 2 === 0;
     if (this.summitStrobe) {
-      this.summitStrobe.visible = Math.floor(elapsed * 2.5) % 2 === 0;
+      this.summitStrobe.visible = strobeState;
+    }
+    if (this.apexPeakStrobe) {
+      this.apexPeakStrobe.visible = !strobeState;
     }
     for (let i = 0; i < this.animatables.length; i++) {
       this.animatables[i](elapsed);

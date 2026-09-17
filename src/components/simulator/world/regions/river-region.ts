@@ -1,6 +1,6 @@
 // ==========================================================
-// DRONE PILOT — REGION 4: VALLEY RIVER & CANYON
-// Foundation: River Overlook Pad, Arched Bridge, Water Channel
+// DRONE PILOT — REGION 4: VALLEY RIVER & CANYON (PHASE 1)
+// River Overlook Pad, Canyon Observation Platform & Bridge Abutment
 // ==========================================================
 
 import * as THREE from "three";
@@ -11,49 +11,35 @@ export class RiverRegion {
   public group = new THREE.Group();
 
   constructor() {
-    // 1. Valley Observation Helipad
+    // 1. Valley Observation Helipad at (-160, 3.5, 160)
     const pad = createHelipadMesh(HELIPADS["river-alpha"]);
     this.group.add(pad);
 
-    // 2. Arched Stone Bridge across the valley
-    this.buildStoneBridge();
-
-    // 3. River Bed Water Channel Segment
-    this.buildRiverChannel();
+    // 2. Canyon Observation Deck beside the pad
+    this.buildObservationPlatform();
   }
 
-  private buildStoneBridge() {
-    const bridgeMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.85 });
-    const span = new THREE.Mesh(new THREE.BoxGeometry(12, 1.4, 38), bridgeMat);
-    span.position.set(-105, 2.2, 140);
-    span.rotation.y = 0.5;
-    span.castShadow = true;
-    this.group.add(span);
+  private buildObservationPlatform() {
+    const deckMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
+    const platform = new THREE.Mesh(new THREE.BoxGeometry(16, 0.8, 16), deckMat);
+    platform.position.set(-160, 3.1, 160);
+    platform.castShadow = true;
+    platform.receiveShadow = true;
+    this.group.add(platform);
 
-    // Guardrails
-    [-5.5, 5.5].forEach((offset) => {
-      const rail = new THREE.Mesh(
-        new THREE.BoxGeometry(0.5, 0.9, 38),
-        new THREE.MeshStandardMaterial({ color: 0x334155 })
-      );
-      rail.position.set(-105 + Math.cos(0.5) * offset, 3.35, 140 - Math.sin(0.5) * offset);
-      rail.rotation.y = 0.5;
+    // Safety perimeter railing
+    const railMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.6 });
+    const sides = [
+      { x: 0, z: -8, rot: 0 },
+      { x: 0, z: 8, rot: 0 },
+      { x: -8, z: 0, rot: Math.PI / 2 },
+    ];
+    sides.forEach((s) => {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(16, 0.08, 0.08), railMat);
+      rail.position.set(-160 + s.x, 3.5 + 1.0, 160 + s.z);
+      rail.rotation.y = s.rot;
       this.group.add(rail);
     });
-  }
-
-  private buildRiverChannel() {
-    const waterMat = new THREE.MeshStandardMaterial({
-      color: 0x0284c7,
-      roughness: 0.1,
-      metalness: 0.85,
-      transparent: true,
-      opacity: 0.9,
-    });
-    const river = new THREE.Mesh(new THREE.BoxGeometry(24, 0.4, 180), waterMat);
-    river.position.set(-110, 0.6, 140);
-    river.rotation.y = 0.35;
-    this.group.add(river);
   }
 
   public update(_dt: number, _elapsed: number) {
