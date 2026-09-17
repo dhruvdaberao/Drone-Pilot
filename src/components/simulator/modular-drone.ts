@@ -894,15 +894,19 @@ export class ModularDrone {
     // 3. Smooth Physical-to-Visual Attitude Interpolation & Hover Micro-Dynamics
     const targetPos = new THREE.Vector3(telemetry.position.x, telemetry.position.y, telemetry.position.z);
     
-    // Calculate subtle organic hover micro-corrections when airborne (altitude > 0.08m)
+    // Calculate subtle organic hover micro-corrections ONLY when hovering at low speeds (< 3 km/h)
     let microPitch = 0;
     let microRoll = 0;
     const isAirborne = telemetry.altitude > 0.08 && !isCrashed;
     if (isAirborne) {
-      const time = performance.now() * 0.003;
-      // High-frequency, microscopic PID twitches (0.15° - 0.25° amplitude)
-      microPitch = Math.sin(time * 3.8) * 0.004 + Math.cos(time * 7.1) * 0.002;
-      microRoll = Math.cos(time * 4.2) * 0.004 + Math.sin(time * 6.5) * 0.002;
+      const speedKmh = telemetry.groundSpeed || 0;
+      // Fade out completely as speed increases above 3 km/h to eliminate WASD vibration
+      const hoverFactor = Math.max(0, Math.min(1, 1.0 - (speedKmh / 3.0)));
+      if (hoverFactor > 0.01) {
+        const time = performance.now() * 0.002;
+        microPitch = (Math.sin(time * 2.8) * 0.003 + Math.cos(time * 5.1) * 0.0015) * hoverFactor;
+        microRoll = (Math.cos(time * 3.2) * 0.003 + Math.sin(time * 4.5) * 0.0015) * hoverFactor;
+      }
     }
 
     const targetPitch = telemetry.rotation.pitch + microPitch;

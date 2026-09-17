@@ -13,7 +13,7 @@ import {
   getDistanceToRoad,
   WORLD_SEED,
 } from "@/lib/world/biome-system";
-import { ENV_MATERIALS, ENV_GEOMETRIES } from "./environment/environment-models";
+import { ENV_MATERIALS, ENV_GEOMETRIES, FOLIAGE_WIND_UNIFORM } from "./environment/environment-models";
 
 export class NatureSystem {
   public group = new THREE.Group();
@@ -1252,4 +1252,12 @@ export class NatureSystem {
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     this.group.add(mesh);
   }
+
+  /**
+   * Updates dynamic environmental animations such as canopy wind sway
+   */
+  public update(dt: number, elapsed: number) {
+    FOLIAGE_WIND_UNIFORM.value = elapsed;
+  }
 }
+

@@ -242,7 +242,7 @@ export function IslandMapModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 font-mono select-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 font-mono select-none">
       {/* Click outside backdrop to close */}
       <div
         className="absolute inset-0 cursor-pointer pointer-events-auto"
@@ -250,54 +250,54 @@ export function IslandMapModal({
         aria-label="Close Map Backdrop"
       />
 
-      {/* Main Recon Panel Container */}
-      <div className="relative z-10 w-full max-w-5xl max-h-[95vh] bg-neutral-950 border-2 border-neutral-700/80 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_30px_rgba(255,85,0,0.15)] flex flex-col overflow-hidden text-neutral-100 animate-in zoom-in-95 duration-200 pointer-events-auto">
+      {/* Main Recon Panel Container — Minimal Premium White Card */}
+      <div className="relative z-10 w-full max-w-5xl max-h-[95vh] bg-white border border-neutral-200/90 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.25)] flex flex-col overflow-hidden text-neutral-900 animate-in zoom-in-95 duration-200 pointer-events-auto">
         
         {/* Header Bar */}
-        <header className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-neutral-800 bg-neutral-900/90 shrink-0">
+        <header className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-neutral-200 bg-white shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-neutral-800 border border-neutral-700 flex items-center justify-center text-[#ff5500] shadow-inner">
+            <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-200 flex items-center justify-center text-[#ff5500] shadow-xs">
               <Compass className="h-4 w-4 text-[#ff5500]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-heading font-extrabold text-sm sm:text-base tracking-wider uppercase text-white">
-                  Tactical Island Reconnaissance
+                <h2 className="font-heading font-extrabold text-sm sm:text-base tracking-wider uppercase text-neutral-900">
+                  Tactical Island Map
                 </h2>
-                <span className="bg-[#ff5500]/20 border border-[#ff5500]/60 text-[#ff5500] text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider flex items-center gap-1">
+                <span className="bg-orange-50 border border-orange-200 text-[#ff5500] text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#ff5500] animate-ping" />
                   Live GPS
                 </span>
               </div>
-              <p className="text-[10px] text-neutral-400 hidden sm:block">
-                Canonical Island Grid 2.4km × 2.2km • Topographical Architecture & Navigation
+              <p className="text-[10px] text-neutral-500 hidden sm:block">
+                Island Grid 2.4km × 2.2km • Topographical Architecture & Waypoints
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             {/* Telemetry Coordinate Pill */}
-            <div className="hidden md:flex items-center gap-2.5 bg-black/60 px-3 py-1.5 rounded-lg border border-neutral-700/80 text-xs">
+            <div className="hidden md:flex items-center gap-2.5 bg-neutral-50 px-3 py-1.5 rounded-lg border border-neutral-200 text-xs text-neutral-700">
               <span className="text-neutral-400 text-[10px]">POS:</span>
-              <strong className="text-white font-mono">
+              <strong className="text-neutral-900 font-mono">
                 X:{telemetry.position.x.toFixed(0)}m Z:{telemetry.position.z.toFixed(0)}m
               </strong>
-              <span className="text-neutral-600">|</span>
+              <span className="text-neutral-300">|</span>
               <span className="text-neutral-400 text-[10px]">ALT:</span>
               <strong className="text-[#ff5500] font-mono">{telemetry.altitude.toFixed(1)}m</strong>
-              <span className="text-neutral-600">|</span>
+              <span className="text-neutral-300">|</span>
               <span className="text-neutral-400 text-[10px]">HDG:</span>
-              <strong className="text-white font-mono">{telemetry.heading}°</strong>
+              <strong className="text-neutral-900 font-mono">{telemetry.heading}°</strong>
             </div>
 
             {/* Close Button */}
             <button
               type="button"
               onClick={onClose}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 active:scale-95 text-white text-xs font-bold border border-neutral-600 shadow-md transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 text-xs font-bold border border-neutral-200 transition-all cursor-pointer"
               title="Close Map (Esc)"
             >
-              <X className="h-4 w-4 text-neutral-300" />
+              <X className="h-4 w-4 text-neutral-600" />
               <span className="hidden sm:inline">Close</span>
             </button>
           </div>
@@ -307,41 +307,72 @@ export function IslandMapModal({
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
           
           {/* Main Topographical Map Viewport */}
-          <div className="flex-1 bg-[#050811] relative overflow-hidden flex items-center justify-center p-2 sm:p-4 min-h-[350px] sm:min-h-[480px]">
+          <div className="flex-1 bg-neutral-100 relative overflow-hidden flex items-center justify-center p-2 sm:p-4 min-h-[350px] sm:min-h-[480px]">
             
-            {/* Interactive Zoom Toolbar */}
-            <div className="absolute top-4 left-4 z-20 flex items-center gap-1 bg-neutral-900/90 border border-neutral-700/80 rounded-xl p-1 shadow-xl backdrop-blur-md">
+            {/* Multi-Level Zoom Toolbar (100%, 160%, 240%) */}
+            <div className="absolute top-4 left-4 z-20 flex items-center gap-1 bg-white/95 border border-neutral-200/90 rounded-xl p-1 shadow-md backdrop-blur-md">
               <button
-                onClick={() => setZoomLevel((z) => Math.min(2.5, z + 0.3))}
-                className="p-1.5 rounded-lg hover:bg-neutral-800 text-neutral-300 hover:text-white transition-colors cursor-pointer"
-                title="Zoom In (+)"
-              >
-                <ZoomIn className="h-3.5 w-3.5" />
-              </button>
-              <button
-                onClick={() => setZoomLevel((z) => Math.max(0.8, z - 0.3))}
-                className="p-1.5 rounded-lg hover:bg-neutral-800 text-neutral-300 hover:text-white transition-colors cursor-pointer"
+                onClick={() => setZoomLevel((z) => Math.max(0.8, Math.round((z - 0.3) * 10) / 10))}
+                className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-neutral-950 transition-colors cursor-pointer"
                 title="Zoom Out (-)"
               >
                 <ZoomOut className="h-3.5 w-3.5" />
               </button>
-              <div className="h-4 w-px bg-neutral-700 mx-0.5" />
+              
+              <div className="h-4 w-px bg-neutral-200 mx-0.5" />
+
               <button
                 onClick={() => setZoomLevel(1.0)}
-                className="px-2 py-1 rounded-lg hover:bg-neutral-800 text-[10px] font-bold text-neutral-300 hover:text-white transition-colors cursor-pointer"
-                title="Reset View (100%)"
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold font-mono transition-all cursor-pointer ${
+                  zoomLevel === 1.0
+                    ? "bg-[#ff5500] text-white shadow-xs"
+                    : "text-neutral-700 hover:bg-neutral-100"
+                }`}
+                title="Full Island Overview (100%)"
               >
                 100%
+              </button>
+              <button
+                onClick={() => setZoomLevel(1.6)}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold font-mono transition-all cursor-pointer ${
+                  zoomLevel === 1.6
+                    ? "bg-[#ff5500] text-white shadow-xs"
+                    : "text-neutral-700 hover:bg-neutral-100"
+                }`}
+                title="Regional Sector View (160%)"
+              >
+                160%
+              </button>
+              <button
+                onClick={() => setZoomLevel(2.4)}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold font-mono transition-all cursor-pointer ${
+                  zoomLevel === 2.4
+                    ? "bg-[#ff5500] text-white shadow-xs"
+                    : "text-neutral-700 hover:bg-neutral-100"
+                }`}
+                title="Tactical Focus View (240%)"
+              >
+                240%
+              </button>
+
+              <div className="h-4 w-px bg-neutral-200 mx-0.5" />
+
+              <button
+                onClick={() => setZoomLevel((z) => Math.min(2.8, Math.round((z + 0.3) * 10) / 10))}
+                className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-neutral-950 transition-colors cursor-pointer"
+                title="Zoom In (+)"
+              >
+                <ZoomIn className="h-3.5 w-3.5" />
               </button>
             </div>
 
             {/* Topographical SVG Map Canvas */}
             <svg
               viewBox={`0 0 ${SVG_CANVAS_SIZE} ${SVG_CANVAS_SIZE}`}
-              className="w-full h-full max-w-[720px] max-h-[720px] rounded-xl border border-neutral-800/80 shadow-2xl bg-[#081726] transition-transform duration-300 ease-out"
+              className="w-full h-full max-w-[720px] max-h-[720px] rounded-xl border border-neutral-200/90 shadow-lg bg-[#081726] transition-transform duration-300 ease-out"
               style={{
                 transform: `scale(${zoomLevel})`,
-                transformOrigin: `${droneSvg.x}px ${droneSvg.y}px`,
+                transformOrigin: zoomLevel <= 1.05 ? "center center" : `${droneSvg.x}px ${droneSvg.y}px`,
               }}
             >
               <defs>
@@ -645,24 +676,24 @@ export function IslandMapModal({
             </svg>
           </div>
 
-          {/* Tactical Info & Waypoint Selector Sidebar */}
-          <div className="w-full lg:w-84 bg-neutral-900 border-t lg:border-t-0 lg:border-l border-neutral-800 flex flex-col justify-between p-4 overflow-y-auto max-h-[40vh] lg:max-h-none text-xs">
+          {/* Tactical Info & Waypoint Selector Sidebar — White Theme */}
+          <div className="w-full lg:w-84 bg-neutral-50/90 border-t lg:border-t-0 lg:border-l border-neutral-200 flex flex-col justify-between p-4 overflow-y-auto max-h-[40vh] lg:max-h-none text-xs">
             
             <div className="space-y-4">
               {/* Active Target Banner */}
-              <div className="p-3 rounded-xl bg-black/60 border border-[#ff5500]/60 space-y-2">
+              <div className="p-3.5 rounded-xl bg-white border border-neutral-200 shadow-xs space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
                     <Target className="h-3.5 w-3.5 text-[#ff5500]" />
-                    <span>NAVIGATION WAYPOINT</span>
+                    <span>WAYPOINT TARGET</span>
                   </div>
-                  <span className="text-[10px] font-bold text-[#ff5500] font-mono bg-orange-950/60 px-2 py-0.5 rounded border border-[#ff5500]/40">
+                  <span className="text-[10px] font-bold text-[#ff5500] font-mono bg-orange-50 px-2 py-0.5 rounded border border-orange-200">
                     BEARING {navStats.bearing}°
                   </span>
                 </div>
 
                 <div className="flex justify-between items-baseline">
-                  <h3 className="font-heading font-extrabold text-sm text-white uppercase">
+                  <h3 className="font-heading font-extrabold text-sm text-neutral-900 uppercase">
                     {activeTarget.name}
                   </h3>
                   <strong className="text-base text-[#ff5500] font-mono">
@@ -670,27 +701,27 @@ export function IslandMapModal({
                   </strong>
                 </div>
 
-                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                <p className="text-[11px] text-neutral-600 leading-relaxed">
                   {activeTarget.description}
                 </p>
 
                 <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-[10px]">
-                  <div className="p-1.5 rounded bg-neutral-800/80 border border-neutral-700">
+                  <div className="p-2 rounded-lg bg-neutral-50 border border-neutral-200">
                     <span className="text-neutral-500 block">EST FLIGHT TIME</span>
-                    <strong className="text-white">~{navStats.etaSec}s @ cruise</strong>
+                    <strong className="text-neutral-900">~{navStats.etaSec}s @ cruise</strong>
                   </div>
-                  <div className="p-1.5 rounded bg-neutral-800/80 border border-neutral-700">
+                  <div className="p-2 rounded-lg bg-neutral-50 border border-neutral-200">
                     <span className="text-neutral-500 block">PAD ELEVATION</span>
-                    <strong className="text-emerald-400">{activeTarget.elevation}</strong>
+                    <strong className="text-emerald-700">{activeTarget.elevation}</strong>
                   </div>
                 </div>
               </div>
 
               {/* Waypoints & Helipads List */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                <div className="flex items-center justify-between text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
                   <span>DESIGNATED STATIONS ({TACTICAL_POIS.length})</span>
-                  <span className="text-neutral-500">CLICK TO TRACK</span>
+                  <span className="text-neutral-400">CLICK TO TRACK</span>
                 </div>
 
                 <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
@@ -702,24 +733,24 @@ export function IslandMapModal({
                         key={poi.id}
                         type="button"
                         onClick={() => handleSelectTarget(poi)}
-                        className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all border cursor-pointer ${
+                        className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all border cursor-pointer ${
                           isSelected
-                            ? "bg-[#ff5500]/15 border-[#ff5500] text-white"
-                            : "bg-neutral-800/50 border-neutral-700/60 hover:bg-neutral-800 text-neutral-300"
+                            ? "bg-orange-50/80 border-[#ff5500] text-neutral-950 shadow-xs"
+                            : "bg-white border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 text-neutral-800"
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <span
-                            className={`w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] font-mono border ${
+                            className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] font-mono border ${
                               isSelected
-                                ? "bg-[#ff5500] text-black border-[#ff5500]"
-                                : "bg-neutral-900 text-[#22c55e] border-neutral-700"
+                                ? "bg-[#ff5500] text-white border-[#ff5500]"
+                                : "bg-neutral-100 text-emerald-700 border-neutral-200"
                             }`}
                           >
                             H
                           </span>
                           <div>
-                            <span className="font-bold block text-xs leading-tight">
+                            <span className="font-bold block text-xs leading-tight text-neutral-900">
                               {poi.name}
                             </span>
                             <span className="text-[10px] text-neutral-500">
@@ -728,7 +759,7 @@ export function IslandMapModal({
                           </div>
                         </div>
 
-                        <span className="text-xs font-mono font-bold text-neutral-300">
+                        <span className={`text-xs font-mono font-bold ${isSelected ? "text-[#ff5500]" : "text-neutral-600"}`}>
                           {d.toFixed(0)}m
                         </span>
                       </button>
@@ -739,11 +770,11 @@ export function IslandMapModal({
             </div>
 
             {/* Bottom Actions */}
-            <div className="pt-3 border-t border-neutral-800 flex items-center justify-between gap-2">
+            <div className="pt-3 border-t border-neutral-200 flex items-center justify-between gap-2">
               <button
                 type="button"
                 onClick={() => handleSelectTarget(TACTICAL_POIS[0])}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700 text-xs font-bold transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-200 text-xs font-bold transition-all cursor-pointer shadow-xs"
               >
                 <Crosshair className="h-3.5 w-3.5 text-[#ff5500]" />
                 <span>Return Home (Alpha)</span>
@@ -752,7 +783,7 @@ export function IslandMapModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-extrabold transition-all cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-[#ff5500] hover:bg-[#e04b00] active:scale-95 text-white text-xs font-extrabold transition-all cursor-pointer shadow-md"
               >
                 Resume Flight
               </button>

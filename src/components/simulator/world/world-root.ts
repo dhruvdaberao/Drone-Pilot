@@ -161,9 +161,10 @@ export class WorldRoot {
     this.environment.update(dt, elapsed);
     this.water.update(dt, elapsed);
     this.grass.update(dt, elapsed, dronePos);
+    this.nature.update(dt, elapsed);
     this.traffic.update(dt);
-    this.npcs.update(dt, elapsed);
-    this.wildlife.update(dt, elapsed);
+    this.npcs.update(dt, elapsed, dronePos);
+    this.wildlife.update(dt, elapsed, dronePos);
     this.rural.update(dt);
 
     if (dronePos) {

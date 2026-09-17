@@ -11,6 +11,8 @@ export class FreshwaterMesh {
 
   private riverMat!: THREE.MeshStandardMaterial;
   private lakeMat!: THREE.MeshStandardMaterial;
+  private riverFlowTex!: THREE.CanvasTexture;
+  private riverNormalTex!: THREE.CanvasTexture;
 
   constructor() {
     this.buildMountainLake();
@@ -153,15 +155,48 @@ export class FreshwaterMesh {
   }
 
   /**
+   * Procedural churning rapids & stream streaks texture for directional flow
+   */
+  private createRiverFlowTexture(): THREE.CanvasTexture {
+    const size = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.fillStyle = "#0284c7"; // Luminous blue-cyan river base
+      ctx.fillRect(0, 0, size, size);
+
+      // Downstream flow streak lines
+      ctx.fillStyle = "#ffffff";
+      for (let i = 0; i < 550; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        const w = 1.2 + Math.random() * 3.5;
+        const h = 25 + Math.random() * 80;
+        ctx.globalAlpha = 0.18 + Math.random() * 0.42;
+        ctx.fillRect(x, y, w, h);
+      }
+      ctx.globalAlpha = 1.0;
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2, 16);
+    return tex;
+  }
+
+  /**
    * Continuous river water ribbon and stone embankments descending through canyon to ocean delta
    */
   private buildRiverCorridor() {
-    const segments = 96;
+    const segments = 128;
     const riverPositions: number[] = [];
+    const riverUvs: number[] = [];
     const bankPositions: number[] = [];
 
     const zStart = -210;
-    const zEnd = 930;
+    const zEnd = 940;
     const zStep = (zEnd - zStart) / segments;
 
     for (let i = 0; i < segments; i++) {
@@ -200,6 +235,10 @@ export class FreshwaterMesh {
       riverPositions.push(...left1, ...right1, ...left2);
       riverPositions.push(...left2, ...right1, ...right2);
 
+      // UV coordinates: u=0..1 across river, v follows downstream length
+      riverUvs.push(0, p1 * 28, 1, p1 * 28, 0, p2 * 28);
+      riverUvs.push(0, p2 * 28, 1, p1 * 28, 1, p2 * 28);
+
       // Left Bank (sloping up from water to canyon wall)
       const bLeftOuter1 = [x1 - halfWidth1 - bankWidth, y1 + 1.2, z1];
       const bLeftOuter2 = [x2 - halfWidth2 - bankWidth, y2 + 1.2, z2];
@@ -222,6 +261,10 @@ export class FreshwaterMesh {
       "position",
       new THREE.Float32BufferAttribute(riverPositions, 3)
     );
+    riverGeo.setAttribute(
+      "uv",
+      new THREE.Float32BufferAttribute(riverUvs, 2)
+    );
     riverGeo.computeVertexNormals();
 
     this.riverPosAttr = riverGeo.attributes.position as THREE.BufferAttribute;
@@ -231,14 +274,19 @@ export class FreshwaterMesh {
       this.initialRiverY[i] = this.riverPosAttr.getY(i);
     }
 
+    this.riverFlowTex = this.createRiverFlowTexture();
+    this.riverNormalTex = this.createWaterNormal();
+
     this.riverMat = new THREE.MeshStandardMaterial({
-      color: 0x22d3ee, // Bright turquoise river
-      roughness: 0.14,
-      metalness: 0.45,
-      normalMap: this.waveNormalTex,
-      normalScale: new THREE.Vector2(1.0, 1.0),
+      color: 0x38bdf8, // Luminous clear cyan-blue river
+      map: this.riverFlowTex,
+      roughness: 0.10, // Glossy reflective water surface
+      metalness: 0.35,
+      normalMap: this.riverNormalTex,
+      normalScale: new THREE.Vector2(1.5, 1.5),
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.86,
+      envMapIntensity: 2.0,
     });
 
     const riverMesh = new THREE.Mesh(riverGeo, this.riverMat);
@@ -261,6 +309,37 @@ export class FreshwaterMesh {
     const riverBankMesh = new THREE.Mesh(bankGeo, bankMat);
     riverBankMesh.receiveShadow = true;
     this.group.add(riverBankMesh);
+
+    // Scattered natural river boulders in rapids and sandbars
+    const boulderGeo = new THREE.DodecahedronGeometry(1.4, 1);
+    const boulderMat = new THREE.MeshStandardMaterial({
+      color: 0x2d3748,
+      roughness: 0.3,
+      metalness: 0.25,
+    });
+
+    for (let b = 0; b < 28; b++) {
+      const p = (b + 1) / 30;
+      const z = zStart + p * (zEnd - zStart);
+      const centerX =
+        -270 +
+        p * 190 +
+        Math.sin(p * Math.PI * 2.5) * 45 +
+        Math.cos(p * Math.PI * 6.0) * 8;
+      const halfW = 12 + p * 18;
+      const waterY = Math.max(0.12, 8.5 * (1 - p));
+
+      // Alternate left and right shallow waters
+      const offset = (Math.sin(b * 3.7) * 0.6) * halfW;
+      const boulder = new THREE.Mesh(boulderGeo, boulderMat);
+      boulder.position.set(centerX + offset, waterY - 0.2, z);
+      boulder.rotation.set(b * 0.4, b * 0.9, b * 0.2);
+      const scale = 0.8 + Math.abs(Math.sin(b * 1.5)) * 0.7;
+      boulder.scale.set(scale, scale * 0.8, scale);
+      boulder.castShadow = true;
+      boulder.receiveShadow = true;
+      this.group.add(boulder);
+    }
   }
 
   private riverPosAttr!: THREE.BufferAttribute;
@@ -274,17 +353,26 @@ export class FreshwaterMesh {
         const z = this.riverPosAttr.getZ(i);
         const baseY = this.initialRiverY[i];
         const ripple =
-          Math.sin(elapsed * 4.5 - z * 0.08) * 0.14 +
-          Math.cos(elapsed * 3.2 + z * 0.14) * 0.08;
+          Math.sin(elapsed * 4.8 - z * 0.08) * 0.12 +
+          Math.cos(elapsed * 3.5 + z * 0.14) * 0.06;
         this.riverPosAttr.setY(i, baseY + ripple);
       }
       this.riverPosAttr.needsUpdate = true;
     }
 
-    // 2. Flow ripples rapidly downstream and shimmer in sunlight
+    // 2. Stream rapids flow visibly downstream along river spline
+    if (this.riverFlowTex) {
+      this.riverFlowTex.offset.y = -(elapsed * 0.45) % 1;
+    }
+    if (this.riverNormalTex) {
+      this.riverNormalTex.offset.y = -(elapsed * 0.35) % 1;
+      this.riverNormalTex.offset.x = (elapsed * 0.05) % 1;
+    }
+
+    // 3. Calm mountain lake surface ripples
     if (this.waveNormalTex) {
-      this.waveNormalTex.offset.x = (elapsed * 0.06) % 1;
-      this.waveNormalTex.offset.y = (elapsed * 0.12) % 1;
+      this.waveNormalTex.offset.x = (elapsed * 0.035) % 1;
+      this.waveNormalTex.offset.y = (elapsed * 0.025) % 1;
     }
   }
 }

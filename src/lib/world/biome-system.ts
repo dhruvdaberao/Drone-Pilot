@@ -142,7 +142,46 @@ function distToSegment(px: number, pz: number, x1: number, z1: number, x2: numbe
 }
 
 /**
- * Returns true if (x, z) lies within an exclusion zone (runway, helipad, city core, industrial park)
+ * Strict hydrology query: returns true if (x, z) lies within or directly adjacent to any body of water
+ * (Ocean, Crystal Lake, Mountain Waterfall plunge pool, or Winding River corridor)
+ */
+export function isWaterLocation(x: number, z: number, margin = 2.0): boolean {
+  // 1. Ocean Water (elevation threshold accounting for animated wave crests)
+  const elev = evaluateIslandElevation(x, z).elevation;
+  if (elev < 0.65 + margin * 0.1) {
+    return true;
+  }
+
+  // 2. Crystal Mountain Lake (basin center at -320, -260 with 110m radius + margin)
+  const distLake = Math.hypot(x - (-320), z - (-260));
+  if (distLake < 122 + margin) {
+    return true;
+  }
+
+  // 3. Mountain Waterfall Cliff Face & Plunge Pool (-260, -205)
+  const distWaterfall = Math.hypot(x - (-260), z - (-205));
+  if (distWaterfall < 22 + margin) {
+    return true;
+  }
+
+  // 4. Winding River Corridor (-210 to 950)
+  const riverZStart = -210;
+  const riverZEnd = 950;
+  if (z >= riverZStart - 15 && z <= riverZEnd + 15) {
+    const p = Math.max(0, Math.min(1, (z - riverZStart) / (riverZEnd - riverZStart)));
+    const riverCenterX = -270 + p * 190 + Math.sin(p * Math.PI * 2.5) * 45 + Math.cos(p * Math.PI * 6.0) * 8;
+    const halfWidth = 12 + p * 18;
+    const distFromRiverCenter = Math.abs(x - riverCenterX);
+    if (distFromRiverCenter < halfWidth + 4.0 + margin) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Returns true if (x, z) lies within an exclusion zone (runway, helipad, city core, industrial park, or water bodies)
  */
 export function isProtectedZone(x: number, z: number, extraBuffer = 0): boolean {
   // 1. Central Flight Academy Runway 09/27 & Taxiways
@@ -168,29 +207,9 @@ export function isProtectedZone(x: number, z: number, extraBuffer = 0): boolean 
     return true;
   }
 
-  // 5. Deep Ocean Water exclusion
-  const elev = evaluateIslandElevation(x, z).elevation;
-  if (elev < 0.25) {
+  // 5. Hydrologic Water Exclusion (Strictly guarantees trees, shrubs & rocks never spawn in water)
+  if (isWaterLocation(x, z, extraBuffer)) {
     return true;
-  }
-
-  // 6. Crystal Mountain Lake exclusion (110m radius + 15m buffer)
-  const distLake = Math.hypot(x - (-320), z - (-260));
-  if (distLake < 125 + extraBuffer) {
-    return true;
-  }
-
-  // 7. River corridor exclusion — check distance to meandering river centerline
-  const riverZStart = -210;
-  const riverZEnd = 930;
-  if (z >= riverZStart - 20 && z <= riverZEnd + 20) {
-    const p = Math.max(0, Math.min(1, (z - riverZStart) / (riverZEnd - riverZStart)));
-    const riverCenterX = -270 + p * 190 + Math.sin(p * Math.PI * 2.5) * 45 + Math.cos(p * Math.PI * 6.0) * 8;
-    const halfWidth = 12 + p * 18; // River width expands from 24m to 60m
-    const distFromRiverCenter = Math.abs(x - riverCenterX);
-    if (distFromRiverCenter < halfWidth + 10 + extraBuffer) { // 10m buffer around river banks
-      return true;
-    }
   }
 
   return false;

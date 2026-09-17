@@ -17,6 +17,8 @@ export class EnvironmentZoneAudio {
   private destination: GainNode;
   
   private zones: Record<ZoneType, ZoneAudioNode>;
+  private waterfallNode: ZoneAudioNode;
+  private readonly WATERFALL_POS = { x: -260, z: -205 };
   private isPlaying: boolean = false;
   
   private currentZone: ZoneType = 'default';
@@ -38,6 +40,9 @@ export class EnvironmentZoneAudio {
       industrial: this.createZoneNode('lowpass', 150, 1.0, 0.04),
       default: this.createZoneNode('lowpass', 100, 1.0, 0.01)
     };
+
+    // Positional cascade waterfall roar node
+    this.waterfallNode = this.createZoneNode('bandpass', 520, 0.8, 0.08);
 
     // Setup LFO for coast
     this.setupCoastLFO();
@@ -113,6 +118,14 @@ export class EnvironmentZoneAudio {
       zone.source = source;
     });
 
+    // Start positional waterfall audio source
+    const wfSource = this.context.createBufferSource();
+    wfSource.buffer = noiseBuffer;
+    wfSource.loop = true;
+    wfSource.connect(this.waterfallNode.filter);
+    wfSource.start();
+    this.waterfallNode.source = wfSource;
+
     if (this.lfoOscillator && this.lfoGain) {
        this.lfoGain.connect(this.zones.coast.gain.gain);
        this.lfoOscillator.start();
@@ -133,6 +146,12 @@ export class EnvironmentZoneAudio {
         zone.source = null;
       }
     });
+
+    if (this.waterfallNode.source) {
+      this.waterfallNode.source.stop();
+      this.waterfallNode.source.disconnect();
+      this.waterfallNode.source = null;
+    }
 
     if (this.lfoOscillator) {
         this.lfoOscillator.stop();
@@ -192,5 +211,17 @@ export class EnvironmentZoneAudio {
         }
       });
     }
+
+    // Positional acoustic falloff for the mountain waterfall
+    const t = this.context.currentTime;
+    const distW = Math.hypot(droneX - this.WATERFALL_POS.x, droneZ - this.WATERFALL_POS.z);
+    if (distW < 140) {
+      const falloff = Math.max(0, 1.0 - distW / 140.0);
+      const targetGain = Math.pow(falloff, 1.6) * this.waterfallNode.maxGain;
+      this.waterfallNode.gain.gain.setTargetAtTime(targetGain, t, 0.15);
+    } else {
+      this.waterfallNode.gain.gain.setTargetAtTime(0, t, 0.15);
+    }
   }
 }
+

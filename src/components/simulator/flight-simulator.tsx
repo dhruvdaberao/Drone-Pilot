@@ -231,6 +231,8 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
 
   // Tactical Dropzone Briefing state
   const [showDropBriefing, setShowDropBriefing] = useState(false);
+  const [autoMoveLocked, setAutoMoveLocked] = useState("");
+  const autoMoveLockedRef = useRef("");
 
   // Stable loading ready callback
   const handleLoadingReady = useCallback(() => {
@@ -579,7 +581,13 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       const elapsed = clock.getElapsedTime();
 
       // Read Input
-      const input = inputManager.getInput();
+      const input = inputManager.getInput(dt);
+
+      const lockedDir = inputManager.getLockedDirection();
+      if (lockedDir !== autoMoveLockedRef.current) {
+        autoMoveLockedRef.current = lockedDir;
+        setAutoMoveLocked(lockedDir);
+      }
 
       if (input.cameraToggle) {
         setCameraMode(chaseCam.cycleMode());
@@ -749,6 +757,11 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         callsign={callsign}
         activeWaypoint={activeWaypoint}
         onTeleportBase={handleTeleportBase}
+        autoMoveLocked={autoMoveLocked}
+        onCancelAutoMove={() => {
+          inputManagerRef.current?.cancelMovementLock();
+          setAutoMoveLocked("");
+        }}
       />
 
       {/* Live Tutorial Overlay */}

@@ -306,6 +306,8 @@ interface TelemetryHUDProps {
   callsign?: string;
   activeWaypoint?: NavigationWaypoint | null;
   onTeleportBase?: (base: FastTravelBase) => void;
+  autoMoveLocked?: string;
+  onCancelAutoMove?: () => void;
 }
 
 export function TelemetryHUD({
@@ -332,10 +334,13 @@ export function TelemetryHUD({
   callsign,
   activeWaypoint,
   onTeleportBase,
+  autoMoveLocked,
+  onCancelAutoMove,
 }: TelemetryHUDProps) {
   const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
   const [isToolsOpen, setIsToolsOpen] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   const controlsRef = useRef<HTMLDivElement>(null);
   const toolsRef = useRef<HTMLDivElement>(null);
@@ -814,12 +819,41 @@ export function TelemetryHUD({
           </div>
         </div>
 
+        {/* Auto-Move Active Indicator Badge */}
+        {autoMoveLocked && (
+          <div className="fixed bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 border-2 border-[#FF5500] shadow-[0_4px_20px_rgba(255,85,0,0.25)] backdrop-blur-md text-xs font-mono font-bold text-neutral-900 animate-pulse select-none pointer-events-auto">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#FF5500] shadow-[0_0_8px_#FF5500]" />
+            <span>AUTO-MOVE: {autoMoveLocked} [LOCKED]</span>
+            {onCancelAutoMove && (
+              <button
+                type="button"
+                onClick={onCancelAutoMove}
+                className="ml-1 px-1.5 py-0.5 rounded bg-neutral-100 hover:bg-neutral-200 text-[10px] text-neutral-600 active:scale-95 cursor-pointer font-sans"
+                title="Cancel Auto-Move"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        )}
+
         {/* ==================================================== */}
         {/* BOTTOM-RIGHT: COMPACT UTILITY DOCK + MINIMAP CIRCLE  */}
         {/* ==================================================== */}
         <div className="flex items-end gap-1 sm:gap-3 pointer-events-auto origin-bottom-right scale-[0.75] sm:scale-100">
-          {/* Compact Aviation Controls Dock */}
-          <div className="flex flex-col items-end gap-2">
+          {/* Mobile Collapsible Toggle on small screens (<640px) */}
+          <button
+            type="button"
+            onClick={() => setIsMobileDrawerOpen((prev) => !prev)}
+            className="sm:hidden flex items-center gap-1 px-2 py-1.5 rounded-xl bg-white/95 border border-neutral-200 shadow-md text-[10px] font-bold text-neutral-800 cursor-pointer active:scale-95 mb-1"
+            title="Toggle Secondary Controls Drawer"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5 text-[#FF5500]" />
+            <span>{isMobileDrawerOpen ? "Hide" : "Dock"}</span>
+          </button>
+
+          {/* Compact Aviation Controls Dock (Collapsible on mobile <640px) */}
+          <div className={`flex-col items-end gap-2 ${isMobileDrawerOpen ? "flex" : "hidden sm:flex"}`}>
             {/* Upper Dock Row: Yaw Rotate (Q / E) & Land Button */}
             <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-xl border border-neutral-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
               {/* Yaw Left (↺ Q) */}

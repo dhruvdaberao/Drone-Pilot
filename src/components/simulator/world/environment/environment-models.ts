@@ -263,6 +263,43 @@ export const ENV_MATERIALS = {
   }),
 };
 
+// Global wind sway uniform for foliage
+export const FOLIAGE_WIND_UNIFORM = { value: 0 };
+
+function applyFoliageWind(mat: THREE.MeshStandardMaterial, swayIntensity: number = 0.22) {
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uFoliageWind = FOLIAGE_WIND_UNIFORM;
+    shader.vertexShader = `
+      uniform float uFoliageWind;
+      ${shader.vertexShader}
+    `;
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <begin_vertex>",
+      `
+      #include <begin_vertex>
+      // Apply wind sway to tree canopies and foliage
+      float h = max(0.0, position.y);
+      float sway = sin(uFoliageWind * 1.8 + position.x * 0.35 + position.z * 0.25) * ${swayIntensity.toFixed(2)} * (0.2 + h * 0.08);
+      float swayZ = cos(uFoliageWind * 1.3 + position.x * 0.2 - position.z * 0.3) * ${(swayIntensity * 0.7).toFixed(2)} * (0.2 + h * 0.08);
+      transformed.x += sway;
+      transformed.z += swayZ;
+      `
+    );
+  };
+}
+
+// Hook wind shader into foliage materials
+applyFoliageWind(ENV_MATERIALS.foliagePine, 0.18);
+applyFoliageWind(ENV_MATERIALS.foliageSpruce, 0.16);
+applyFoliageWind(ENV_MATERIALS.foliageOak, 0.24);
+applyFoliageWind(ENV_MATERIALS.foliageBirch, 0.28);
+applyFoliageWind(ENV_MATERIALS.foliageWillow, 0.32);
+applyFoliageWind(ENV_MATERIALS.foliagePalm, 0.25);
+applyFoliageWind(ENV_MATERIALS.foliageShrub, 0.15);
+applyFoliageWind(ENV_MATERIALS.fernLeaf, 0.20);
+applyFoliageWind(ENV_MATERIALS.reedMarsh, 0.30);
+
+
 // ==========================================================
 // 2. GEOMETRY GENERATORS
 // ==========================================================

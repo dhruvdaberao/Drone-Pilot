@@ -76,7 +76,11 @@ export class InputManager {
           this.lockedPitch = 0;
         }
       } else {
-        // Single tap — clear any existing lock when pressing a different direction
+        // Single tap — clear opposing or perpendicular lock immediately
+        if (code === "KeyW" && this.lockedPitch === -1) this.lockedPitch = 0;
+        if (code === "KeyS" && this.lockedPitch === 1) this.lockedPitch = 0;
+        if (code === "KeyA" && this.lockedRoll === 1) this.lockedRoll = 0;
+        if (code === "KeyD" && this.lockedRoll === -1) this.lockedRoll = 0;
         if ((code === "KeyW" || code === "KeyS") && this.lockedRoll !== 0) {
           this.lockedRoll = 0;
         }
@@ -146,6 +150,12 @@ export class InputManager {
     return this.hoverAssistActive;
   }
 
+  // Slew-rate smoothing states (eliminates sharp 1-frame twitching)
+  private smoothedThrottle = 0;
+  private smoothedPitch = 0;
+  private smoothedRoll = 0;
+  private smoothedYaw = 0;
+
   /** Returns true if a movement direction is currently locked via double-tap */
   public isMovementLocked(): boolean {
     return this.lockedPitch !== 0 || this.lockedRoll !== 0;
@@ -160,10 +170,16 @@ export class InputManager {
     return "";
   }
 
+  /** Explicitly unlocks movement lock */
+  public cancelMovementLock() {
+    this.lockedPitch = 0;
+    this.lockedRoll = 0;
+  }
+
   /**
-   * Evaluates combined input state for the current frame
+   * Evaluates combined input state for the current frame with slew-rate smoothing
    */
-  public getInput(): FlightInput {
+  public getInput(dt: number = 0.016): FlightInput {
     // Keyboard inputs
     let kbThrottle = 0;
     if (this.keys["Space"]) kbThrottle += 1;
@@ -191,6 +207,16 @@ export class InputManager {
     const roll = Math.max(-1, Math.min(1, kbRoll + this.touchRoll));
     const yaw = Math.max(-1, Math.min(1, kbYaw + this.touchYaw));
 
+    // Slew-rate filtering: eliminate abrupt 1-frame acceleration spikes
+    const slewRate = 18.0;
+    const safeDt = Math.min(0.05, Math.max(0.001, dt));
+    const alpha = Math.min(1.0, safeDt * slewRate);
+
+    this.smoothedPitch += (pitch - this.smoothedPitch) * alpha;
+    this.smoothedRoll += (roll - this.smoothedRoll) * alpha;
+    this.smoothedYaw += (yaw - this.smoothedYaw) * alpha;
+    this.smoothedThrottle += (throttle - this.smoothedThrottle) * alpha;
+
     const reset = this.triggerReset;
     this.triggerReset = false;
 
@@ -198,10 +224,10 @@ export class InputManager {
     this.triggerCameraToggle = false;
 
     return {
-      throttle,
-      pitch,
-      roll,
-      yaw,
+      throttle: Math.abs(this.smoothedThrottle) < 0.001 ? 0 : this.smoothedThrottle,
+      pitch: Math.abs(this.smoothedPitch) < 0.001 ? 0 : this.smoothedPitch,
+      roll: Math.abs(this.smoothedRoll) < 0.001 ? 0 : this.smoothedRoll,
+      yaw: Math.abs(this.smoothedYaw) < 0.001 ? 0 : this.smoothedYaw,
       hoverHold: this.hoverAssistActive,
       reset,
       cameraToggle,

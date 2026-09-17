@@ -17,10 +17,14 @@ export class OceanMesh {
   constructor() {
     this.buildDeepOceanPlane();
     this.buildCoastalShallowShelf();
+    this.buildShorelineFoamRibbon();
   }
 
   private oceanMat!: THREE.MeshStandardMaterial;
+  private shelfMat!: THREE.MeshStandardMaterial;
+  private foamMat!: THREE.MeshStandardMaterial;
   private waveNormalTex!: THREE.CanvasTexture;
+  private foamTex!: THREE.CanvasTexture;
 
   /**
    * 4000m x 4000m continuous deep ocean expanse with sparkling wave normals
@@ -59,20 +63,22 @@ export class OceanMesh {
         for (let x = 0; x < size; x++) {
           const u = (x / size) * Math.PI * 16;
           const v = (y / size) * Math.PI * 16;
-          // Multi-harmonic wave gradients for sharp sun sparkle
+          // Multi-harmonic Gerstner-like wave gradients for sharp sun sparkle
           const dx =
-            Math.sin(u) * 0.45 +
-            Math.sin(u * 2.3 + v * 1.5) * 0.3 +
-            Math.cos(u * 4.7 - v * 2.1) * 0.15;
+            Math.sin(u * 1.0) * 0.40 +
+            Math.sin(u * 2.3 + v * 1.5) * 0.32 +
+            Math.cos(u * 4.7 - v * 2.1) * 0.18 +
+            Math.sin(u * 8.2 + v * 6.4) * 0.10;
           const dy =
-            Math.cos(v) * 0.45 +
-            Math.cos(v * 2.1 - u * 1.7) * 0.3 +
-            Math.sin(v * 4.3 + u * 2.9) * 0.15;
-          const r = Math.floor((dx * 0.42 + 0.5) * 255);
-          const g = Math.floor((dy * 0.42 + 0.5) * 255);
+            Math.cos(v * 1.0) * 0.40 +
+            Math.cos(v * 2.1 - u * 1.7) * 0.32 +
+            Math.sin(v * 4.3 + u * 2.9) * 0.18 +
+            Math.cos(v * 7.8 - u * 5.6) * 0.10;
+          const r = Math.floor((dx * 0.45 + 0.5) * 255);
+          const g = Math.floor((dy * 0.45 + 0.5) * 255);
           const idx = (y * size + x) * 4;
-          imgData.data[idx] = r;
-          imgData.data[idx + 1] = g;
+          imgData.data[idx] = Math.max(0, Math.min(255, r));
+          imgData.data[idx + 1] = Math.max(0, Math.min(255, g));
           imgData.data[idx + 2] = 255;
           imgData.data[idx + 3] = 255;
         }
@@ -82,17 +88,18 @@ export class OceanMesh {
     this.waveNormalTex = new THREE.CanvasTexture(canvas);
     this.waveNormalTex.wrapS = THREE.RepeatWrapping;
     this.waveNormalTex.wrapT = THREE.RepeatWrapping;
-    this.waveNormalTex.repeat.set(64, 64);
+    this.waveNormalTex.repeat.set(48, 48);
 
+    // Vibrant tropical ocean: Azure `#0284c7` with high sunlight specular shine & lower roughness
     this.oceanMat = new THREE.MeshStandardMaterial({
-      color: 0x0891b2, // Bright tropical turquoise — lighter & more natural
-      roughness: 0.12, // Slightly rough for scattered sunlight sparkle
-      metalness: 0.55, // Lower metalness for more natural water look
+      color: 0x0284c7, // Vibrant deep ocean azure
+      roughness: 0.08, // Very low roughness for sunlight specular highlights & shine
+      metalness: 0.28, // Natural dielectric water reflectance
       normalMap: this.waveNormalTex,
-      normalScale: new THREE.Vector2(1.2, 1.2), // Strong normal map for visible wave ripples
+      normalScale: new THREE.Vector2(1.8, 1.8), // Crisply visible animated wave crests
       transparent: true,
-      opacity: 0.88,
-      envMapIntensity: 1.5, // Bright sky reflections
+      opacity: 0.84,
+      envMapIntensity: 2.2, // Bright sun glints and sky reflections
     });
 
     const ocean = new THREE.Mesh(geo, this.oceanMat);
@@ -105,7 +112,7 @@ export class OceanMesh {
    * Submerged turquoise shallow water shelf along beach contours
    */
   private buildCoastalShallowShelf() {
-    const sampleCount = 96;
+    const sampleCount = 128;
     const step = (Math.PI * 2) / sampleCount;
 
     const shelfPositions: number[] = [];
@@ -117,26 +124,26 @@ export class OceanMesh {
       const r1 = getCoastlineRadius(a1);
       const r2 = getCoastlineRadius(a2);
 
-      // Inner edge at waterline (r), outer shelf 45m out to sea
-      const xIn1 = Math.cos(a1) * r1;
-      const zIn1 = Math.sin(a1) * r1;
-      const xIn2 = Math.cos(a2) * r2;
-      const zIn2 = Math.sin(a2) * r2;
+      // Inner edge at waterline (r), outer shelf 55m out to sea
+      const xIn1 = Math.cos(a1) * (r1 + 2);
+      const zIn1 = Math.sin(a1) * (r1 + 2);
+      const xIn2 = Math.cos(a2) * (r2 + 2);
+      const zIn2 = Math.sin(a2) * (r2 + 2);
 
-      const xOut1 = Math.cos(a1) * (r1 + 45);
-      const zOut1 = Math.sin(a1) * (r1 + 45);
-      const xOut2 = Math.cos(a2) * (r2 + 45);
-      const zOut2 = Math.sin(a2) * (r2 + 45);
+      const xOut1 = Math.cos(a1) * (r1 + 55);
+      const zOut1 = Math.sin(a1) * (r1 + 55);
+      const xOut2 = Math.cos(a2) * (r2 + 55);
+      const zOut2 = Math.sin(a2) * (r2 + 55);
 
       // Triangle 1
-      shelfPositions.push(xIn1, 0.02, zIn1);
-      shelfPositions.push(xOut1, -0.05, zOut1);
-      shelfPositions.push(xIn2, 0.02, zIn2);
+      shelfPositions.push(xIn1, 0.08, zIn1);
+      shelfPositions.push(xOut1, -0.04, zOut1);
+      shelfPositions.push(xIn2, 0.08, zIn2);
 
       // Triangle 2
-      shelfPositions.push(xIn2, 0.02, zIn2);
-      shelfPositions.push(xOut1, -0.05, zOut1);
-      shelfPositions.push(xOut2, -0.05, zOut2);
+      shelfPositions.push(xIn2, 0.08, zIn2);
+      shelfPositions.push(xOut1, -0.04, zOut1);
+      shelfPositions.push(xOut2, -0.04, zOut2);
     }
 
     const shelfGeo = new THREE.BufferGeometry();
@@ -146,16 +153,118 @@ export class OceanMesh {
     );
     shelfGeo.computeVertexNormals();
 
-    const shelfMat = new THREE.MeshStandardMaterial({
-      color: 0x0ea5e9, // Tropical turquoise cyan
-      roughness: 0.12,
-      metalness: 0.6,
+    this.shelfMat = new THREE.MeshStandardMaterial({
+      color: 0x06b6d4, // Luminous tropical cyan shallow water
+      roughness: 0.06,
+      metalness: 0.22,
+      normalMap: this.waveNormalTex,
+      normalScale: new THREE.Vector2(1.4, 1.4),
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.72,
+      envMapIntensity: 2.0,
     });
 
-    const shelfMesh = new THREE.Mesh(shelfGeo, shelfMat);
+    const shelfMesh = new THREE.Mesh(shelfGeo, this.shelfMat);
     this.group.add(shelfMesh);
+  }
+
+  /**
+   * Procedural seafoam texture for animated surf breakers
+   */
+  private createFoamTexture(): THREE.CanvasTexture {
+    const size = 256;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, size, size);
+
+      ctx.fillStyle = "#e0f2fe";
+      for (let i = 0; i < 400; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        const r = 1.5 + Math.random() * 5.0;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = "#ffffff";
+      for (let i = 0; i < 600; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        const r = 0.8 + Math.random() * 2.5;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(32, 2);
+    return tex;
+  }
+
+  /**
+   * Animated shoreline surf foam ribbon lapping against beaches and coastal rocks
+   */
+  private buildShorelineFoamRibbon() {
+    const sampleCount = 128;
+    const step = (Math.PI * 2) / sampleCount;
+
+    const foamPositions: number[] = [];
+
+    for (let i = 0; i < sampleCount; i++) {
+      const a1 = i * step;
+      const a2 = (i + 1) * step;
+
+      const r1 = getCoastlineRadius(a1);
+      const r2 = getCoastlineRadius(a2);
+
+      // Surf foam ribbon from 3m inland (wet sand) to 9m offshore
+      const xIn1 = Math.cos(a1) * (r1 - 3);
+      const zIn1 = Math.sin(a1) * (r1 - 3);
+      const xIn2 = Math.cos(a2) * (r2 - 3);
+      const zIn2 = Math.sin(a2) * (r2 - 3);
+
+      const xOut1 = Math.cos(a1) * (r1 + 9);
+      const zOut1 = Math.sin(a1) * (r1 + 9);
+      const xOut2 = Math.cos(a2) * (r2 + 9);
+      const zOut2 = Math.sin(a2) * (r2 + 9);
+
+      // Triangle 1
+      foamPositions.push(xIn1, 0.16, zIn1);
+      foamPositions.push(xOut1, 0.12, zOut1);
+      foamPositions.push(xIn2, 0.16, zIn2);
+
+      // Triangle 2
+      foamPositions.push(xIn2, 0.16, zIn2);
+      foamPositions.push(xOut1, 0.12, zOut1);
+      foamPositions.push(xOut2, 0.12, zOut2);
+    }
+
+    const foamGeo = new THREE.BufferGeometry();
+    foamGeo.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(foamPositions, 3)
+    );
+    foamGeo.computeVertexNormals();
+
+    this.foamTex = this.createFoamTexture();
+    this.foamMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: this.foamTex,
+      roughness: 0.4,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.65,
+      depthWrite: false,
+    });
+
+    const foamMesh = new THREE.Mesh(foamGeo, this.foamMat);
+    this.group.add(foamMesh);
   }
 
   /**
@@ -172,9 +281,9 @@ export class OceanMesh {
       // Calculate distance to coast to smoothly dampen waves near shoreline
       const distCoast = getDistanceToCoast(x, z);
       // Offshore distCoast < 0; inland > 0
-      // Damping factor: 0 when inside island, 1 when > 60m offshore
+      // Damping factor: 0 when inside island, 1 when > 55m offshore
       const dampFactor =
-        distCoast >= 0 ? 0.0 : Math.min(1.0, -distCoast / 60.0);
+        distCoast >= 0 ? 0.0 : Math.min(1.0, -distCoast / 55.0);
 
       if (dampFactor <= 0.01) {
         this.posAttr.setY(i, this.initialY[i]);
@@ -183,18 +292,18 @@ export class OceanMesh {
 
       // 1. Primary Ocean Swell (rolling in from South-West at 225 deg, wavelength ~110m)
       const k1 = 0.057; // 2 * PI / 110
-      const phase1 = elapsed * 1.5 + (x * 0.707 + z * 0.707) * k1;
-      const swell1 = Math.sin(phase1) * 1.4;
+      const phase1 = elapsed * 1.6 + (x * 0.707 + z * 0.707) * k1;
+      const swell1 = Math.sin(phase1) * 1.6;
 
-      // 2. Secondary Cross-Swell (choppier wave train, wavelength ~48m)
-      const k2 = 0.13; // 2 * PI / 48
-      const phase2 = elapsed * 2.2 + (x * -0.5 + z * 0.866) * k2;
-      const swell2 = Math.sin(phase2) * 0.7;
+      // 2. Secondary Cross-Swell (choppier wave train, wavelength ~46m)
+      const k2 = 0.136; // 2 * PI / 46
+      const phase2 = elapsed * 2.4 + (x * -0.5 + z * 0.866) * k2;
+      const swell2 = Math.sin(phase2) * 0.85;
 
-      // 3. High-frequency surface chop (wavelength ~22m)
-      const k3 = 0.28;
-      const phase3 = elapsed * 3.1 + (x * 0.9 + z * -0.4) * k3;
-      const swell3 = Math.cos(phase3) * 0.35;
+      // 3. High-frequency surface chop (wavelength ~20m)
+      const k3 = 0.31;
+      const phase3 = elapsed * 3.4 + (x * 0.9 + z * -0.4) * k3;
+      const swell3 = Math.cos(phase3) * 0.42;
 
       const totalDisplacement = (swell1 + swell2 + swell3) * dampFactor;
       this.posAttr.setY(i, this.initialY[i] + totalDisplacement);
@@ -203,8 +312,14 @@ export class OceanMesh {
 
     // Animate wave normal offset for moving sea ripples
     if (this.waveNormalTex) {
-      this.waveNormalTex.offset.x = (elapsed * 0.045) % 1;
-      this.waveNormalTex.offset.y = (elapsed * 0.035) % 1;
+      this.waveNormalTex.offset.x = (elapsed * 0.048) % 1;
+      this.waveNormalTex.offset.y = (elapsed * 0.038) % 1;
+    }
+
+    // Animate surf foam pulsing and washing up the beach
+    if (this.foamMat && this.foamTex) {
+      this.foamTex.offset.x = (elapsed * 0.08) % 1;
+      this.foamMat.opacity = 0.52 + Math.sin(elapsed * 1.8) * 0.22;
     }
   }
 }

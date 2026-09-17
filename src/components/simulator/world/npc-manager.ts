@@ -8,6 +8,7 @@ import { evaluateIslandElevation } from "@/lib/world/terrain-math";
 
 interface NPCCharacter {
   root: THREE.Group;
+  headGroup: THREE.Group;
   leftLeg: THREE.Object3D;
   rightLeg: THREE.Object3D;
   leftArm: THREE.Object3D;
@@ -44,6 +45,7 @@ export class NPCManager {
     isMarshal?: boolean;
   }): {
     root: THREE.Group;
+    headGroup: THREE.Group;
     leftLeg: THREE.Object3D;
     rightLeg: THREE.Object3D;
     leftArm: THREE.Object3D;
@@ -104,20 +106,23 @@ export class NPCManager {
     }
 
     // 2. Head, Cap / Helmet & Aviation Headset
+    const headGroup = new THREE.Group();
+    headGroup.position.set(0, 1.58, 0);
+
     const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.10, 0.16, 6), skinMat);
-    neck.position.y = 1.58;
-    root.add(neck);
+    neck.position.y = 0;
+    headGroup.add(neck);
 
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), skinMat);
     head.scale.set(1.0, 1.15, 1.0);
-    head.position.y = 1.72;
+    head.position.y = 0.14;
     head.castShadow = true;
-    root.add(head);
+    headGroup.add(head);
 
     // Polarized sunglasses / aviator visor
     const visor = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.12), visorMat);
-    visor.position.set(0, 1.74, 0.10);
-    root.add(visor);
+    visor.position.set(0, 0.16, 0.10);
+    headGroup.add(visor);
 
     // Baseball cap / flightline hardhat
     const capMat = new THREE.MeshStandardMaterial({
@@ -125,13 +130,15 @@ export class NPCManager {
       roughness: 0.5,
     });
     const capDome = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), capMat);
-    capDome.position.set(0, 1.76, 0);
-    root.add(capDome);
+    capDome.position.set(0, 0.18, 0);
+    headGroup.add(capDome);
 
     // Cap visor bill
     const capBill = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.02, 0.12), capMat);
-    capBill.position.set(0, 1.76, 0.14);
-    root.add(capBill);
+    capBill.position.set(0, 0.18, 0.14);
+    headGroup.add(capBill);
+
+    root.add(headGroup);
 
     // 3. Articulated Legs with Flight Boots
     const createLeg = (xOffset: number) => {
@@ -217,7 +224,7 @@ export class NPCManager {
       rightArm.add(wandR);
     }
 
-    return { root, leftLeg, rightLeg, leftArm, rightArm };
+    return { root, headGroup, leftLeg, rightLeg, leftArm, rightArm };
   }
 
   /**
@@ -471,18 +478,61 @@ export class NPCManager {
   }
 
   /**
-   * Frame-by-frame walk cycle animation and patrol waypoint tracking
+   * Frame-by-frame walk cycle animation, patrol waypoint tracking, and drone reactive tracking
    */
-  public update(dt: number, elapsed: number) {
+  public update(dt: number, elapsed: number, dronePos?: THREE.Vector3) {
     for (const npc of this.npcs) {
+      const curPos = npc.root.position;
+      let dist3d = 999;
+      let distHoriz = 999;
+      if (dronePos) {
+        dist3d = curPos.distanceTo(dronePos);
+        distHoriz = Math.hypot(dronePos.x - curPos.x, dronePos.z - curPos.z);
+      }
+
+      const isDroneNear = dist3d < 16;
+
       if (npc.isMarshal) {
-        // Marshaller waving wands in circular takeoff guide motion
-        npc.leftArm.rotation.x = -Math.PI / 2 + Math.sin(elapsed * 4) * 0.4;
-        npc.rightArm.rotation.x = -Math.PI / 2 - Math.sin(elapsed * 4) * 0.4;
-        npc.leftArm.rotation.z = Math.sin(elapsed * 2) * 0.3;
-        npc.rightArm.rotation.z = -Math.sin(elapsed * 2) * 0.3;
+        if (isDroneNear && dronePos) {
+          // Marshaller actively guides approaching drone with rapid wand waving
+          npc.leftArm.rotation.x = -Math.PI / 1.8 + Math.sin(elapsed * 7) * 0.5;
+          npc.rightArm.rotation.x = -Math.PI / 1.8 - Math.sin(elapsed * 7) * 0.5;
+          npc.leftArm.rotation.z = Math.sin(elapsed * 4) * 0.4;
+          npc.rightArm.rotation.z = -Math.sin(elapsed * 4) * 0.4;
+          
+          const lookHeading = Math.atan2(dronePos.x - curPos.x, dronePos.z - curPos.z);
+          npc.root.rotation.y = THREE.MathUtils.lerp(npc.root.rotation.y, lookHeading, dt * 5);
+          const pitch = Math.atan2(dronePos.y - (curPos.y + 1.6), Math.max(1, distHoriz));
+          npc.headGroup.rotation.x = THREE.MathUtils.lerp(npc.headGroup.rotation.x, -pitch, dt * 6);
+        } else {
+          // Marshaller waving wands in steady circular guidance motion
+          npc.leftArm.rotation.x = -Math.PI / 2 + Math.sin(elapsed * 4) * 0.4;
+          npc.rightArm.rotation.x = -Math.PI / 2 - Math.sin(elapsed * 4) * 0.4;
+          npc.leftArm.rotation.z = Math.sin(elapsed * 2) * 0.3;
+          npc.rightArm.rotation.z = -Math.sin(elapsed * 2) * 0.3;
+          npc.headGroup.rotation.x = THREE.MathUtils.lerp(npc.headGroup.rotation.x, 0, dt * 3);
+        }
         continue;
       }
+
+      if (isDroneNear && dronePos) {
+        // Pedestrian stops, faces drone, and tilts head up to watch the drone fly by!
+        const lookHeading = Math.atan2(dronePos.x - curPos.x, dronePos.z - curPos.z);
+        npc.root.rotation.y = THREE.MathUtils.lerp(npc.root.rotation.y, lookHeading, dt * 4);
+
+        const pitch = Math.atan2(dronePos.y - (curPos.y + 1.6), Math.max(1, distHoriz));
+        npc.headGroup.rotation.x = THREE.MathUtils.lerp(npc.headGroup.rotation.x, -pitch, dt * 6);
+
+        // Stand idle, gentle breathing
+        npc.leftLeg.rotation.x = THREE.MathUtils.lerp(npc.leftLeg.rotation.x, 0, dt * 5);
+        npc.rightLeg.rotation.x = THREE.MathUtils.lerp(npc.rightLeg.rotation.x, 0, dt * 5);
+        npc.leftArm.rotation.x = THREE.MathUtils.lerp(npc.leftArm.rotation.x, Math.sin(elapsed * 1.5) * 0.05, dt * 4);
+        npc.rightArm.rotation.x = THREE.MathUtils.lerp(npc.rightArm.rotation.x, -Math.sin(elapsed * 1.5) * 0.05, dt * 4);
+        continue;
+      }
+
+      // Reset head tilt when drone is far
+      npc.headGroup.rotation.x = THREE.MathUtils.lerp(npc.headGroup.rotation.x, 0, dt * 4);
 
       if (npc.isWalking) {
         const segDist = npc.p1.distanceTo(npc.p2);
@@ -505,7 +555,7 @@ export class NPCManager {
             target.x - npc.root.position.x,
             target.z - npc.root.position.z
           );
-          npc.root.rotation.y = heading;
+          npc.root.rotation.y = THREE.MathUtils.lerp(npc.root.rotation.y, heading, dt * 6);
 
           // Leg & arm swing walk cycles
           const walkCycle = Math.sin(elapsed * 7.5);

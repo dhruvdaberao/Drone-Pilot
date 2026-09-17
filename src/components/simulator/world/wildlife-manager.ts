@@ -6,6 +6,8 @@
 import * as THREE from "three";
 import { evaluateIslandElevation } from "@/lib/world/terrain-math";
 
+type DeerState = "IDLE" | "WANDER" | "DRINK" | "ALERT" | "FLEE";
+
 interface GrazingDeer {
   root: THREE.Group;
   neck: THREE.Object3D;
@@ -19,6 +21,9 @@ interface GrazingDeer {
   walkTimer: number;
   isWalking: boolean;
   grazePhase: number;
+  state: DeerState;
+  fleeTimer: number;
+  isDrinkingSpot?: boolean;
 }
 
 interface SoaringBird {
@@ -31,6 +36,7 @@ interface SoaringBird {
   speed: number;
   angle: number;
   flapFrequency: number;
+  scatterTimer?: number;
 }
 
 export class WildlifeManager {
@@ -322,7 +328,7 @@ export class WildlifeManager {
    * Spawns 45+ deer in 3 natural grazing herds across forest clearings and river valleys
    */
   private spawnDeerHerds() {
-    const herdConfigs = [
+    const herdConfigs: { cx: number; cz: number; count: number; radius: number; isDrinking?: boolean }[] = [
       // Herd 1: Whispering Pines Forest Sanctuary (center ~ -620, -40) - 20 deer
       { cx: -620, cz: -40, count: 20, radius: 75 },
       // Herd 2: Valley River riparian meadow (center ~ -100, 180) - 15 deer
@@ -331,6 +337,10 @@ export class WildlifeManager {
       { cx: -460, cz: -140, count: 14, radius: 55 },
       // Herd 4: Emerald Foothills agricultural pasture (center ~ 260, 220) - 16 deer
       { cx: 260, cz: 220, count: 16, radius: 65 },
+      // Herd 5: Crystal Lake Shore drinking deer (center ~ -320, -170) - 8 deer
+      { cx: -320, cz: -170, count: 8, radius: 24, isDrinking: true },
+      // Herd 6: Winding River Shore drinking deer (center ~ -150, 150) - 6 deer
+      { cx: -150, cz: 150, count: 6, radius: 18, isDrinking: true },
     ];
 
     herdConfigs.forEach((cfg) => {
@@ -359,6 +369,9 @@ export class WildlifeManager {
           walkTimer: Math.random() * 8,
           isWalking: false,
           grazePhase: Math.random() * Math.PI * 2,
+          state: cfg.isDrinking ? "DRINK" : "IDLE",
+          fleeTimer: 0,
+          isDrinkingSpot: !!cfg.isDrinking,
         });
       }
     });
@@ -488,24 +501,102 @@ export class WildlifeManager {
   /**
    * Frame-by-frame animation update for deer grazing and bird flight kinematics
    */
-  public update(dt: number, elapsed: number) {
+  /**
+   * Frame-by-frame animation update for deer grazing, drinking, fleeing, alert states,
+   * and bird flight kinematics with reactive evasion.
+   */
+  public update(dt: number, elapsed: number, dronePos?: THREE.Vector3) {
     // 1. Update Deer Herds
     for (const d of this.deer) {
       // Strictly anchor hooves to the physical terrain surface every frame (zero floating)
       d.root.position.y = Math.max(0.5, evaluateIslandElevation(d.root.position.x, d.root.position.z).elevation);
 
-      d.grazePhase += dt;
+      const cur = d.root.position;
+      let distToDrone = 999;
+      if (dronePos) {
+        distToDrone = cur.distanceTo(dronePos);
+      }
 
-      // Natural grazing cycle: neck bows down to eat grass, lifts up to inspect surroundings
+      // State determination based on drone proximity
+      if (distToDrone < 18) {
+        d.state = "FLEE";
+        d.fleeTimer = 3.5;
+      } else if (d.fleeTimer > 0) {
+        d.fleeTimer -= dt;
+        if (d.fleeTimer <= 0) {
+          d.state = d.isDrinkingSpot ? "DRINK" : "IDLE";
+        }
+      } else if (distToDrone < 32) {
+        d.state = "ALERT";
+      } else if (d.isDrinkingSpot) {
+        d.state = "DRINK";
+      } else {
+        d.state = d.isWalking ? "WANDER" : "IDLE";
+      }
+
+      // ----------------- STATE BEHAVIORS -----------------
+      if (d.state === "FLEE" && dronePos) {
+        // Flee rapidly away from drone
+        const fleeDir = new THREE.Vector3().subVectors(cur, dronePos).setY(0);
+        if (fleeDir.lengthSq() > 0.001) {
+          fleeDir.normalize();
+          cur.addScaledVector(fleeDir, 4.2 * dt);
+          cur.y = Math.max(0.5, evaluateIslandElevation(cur.x, cur.z).elevation);
+
+          const fleeHeading = Math.atan2(fleeDir.x, fleeDir.z);
+          d.root.rotation.y = THREE.MathUtils.lerp(d.root.rotation.y, fleeHeading, dt * 6);
+        }
+
+        // Fast escape gallop / trot
+        const gallop = Math.sin(elapsed * 14);
+        d.leftFrontLeg.rotation.x = gallop * 0.75;
+        d.rightFrontLeg.rotation.x = -gallop * 0.75;
+        d.leftBackLeg.rotation.x = -gallop * 0.75;
+        d.rightBackLeg.rotation.x = gallop * 0.75;
+
+        // Head and neck erect and alarmed
+        d.neck.rotation.x = THREE.MathUtils.lerp(d.neck.rotation.x, -0.35, dt * 6);
+        d.head.rotation.x = THREE.MathUtils.lerp(d.head.rotation.x, 0.2, dt * 6);
+        continue;
+      }
+
+      if (d.state === "ALERT" && dronePos) {
+        // Alert posture: freeze, neck upright, look directly at drone
+        d.leftFrontLeg.rotation.x = THREE.MathUtils.lerp(d.leftFrontLeg.rotation.x, 0, dt * 5);
+        d.rightFrontLeg.rotation.x = THREE.MathUtils.lerp(d.rightFrontLeg.rotation.x, 0, dt * 5);
+        d.leftBackLeg.rotation.x = THREE.MathUtils.lerp(d.leftBackLeg.rotation.x, 0, dt * 5);
+        d.rightBackLeg.rotation.x = THREE.MathUtils.lerp(d.rightBackLeg.rotation.x, 0, dt * 5);
+
+        d.neck.rotation.x = THREE.MathUtils.lerp(d.neck.rotation.x, -0.32, dt * 4);
+        d.head.rotation.x = THREE.MathUtils.lerp(d.head.rotation.x, 0.15, dt * 4);
+
+        const lookAngle = Math.atan2(dronePos.x - cur.x, dronePos.z - cur.z);
+        d.root.rotation.y = THREE.MathUtils.lerp(d.root.rotation.y, lookAngle, dt * 4);
+        continue;
+      }
+
+      if (d.state === "DRINK") {
+        // Drinking by the lake or river: neck bows deep to water surface, rhythmic lapping
+        d.leftFrontLeg.rotation.x = THREE.MathUtils.lerp(d.leftFrontLeg.rotation.x, 0, dt * 5);
+        d.rightFrontLeg.rotation.x = THREE.MathUtils.lerp(d.rightFrontLeg.rotation.x, 0, dt * 5);
+        d.leftBackLeg.rotation.x = THREE.MathUtils.lerp(d.leftBackLeg.rotation.x, 0, dt * 5);
+        d.rightBackLeg.rotation.x = THREE.MathUtils.lerp(d.rightBackLeg.rotation.x, 0, dt * 5);
+
+        d.neck.rotation.x = THREE.MathUtils.lerp(d.neck.rotation.x, 0.95, dt * 3);
+        const lap = Math.sin(elapsed * 6) * 0.06;
+        d.head.rotation.x = THREE.MathUtils.lerp(d.head.rotation.x, -0.42 + lap, dt * 4);
+        continue;
+      }
+
+      // Normal grazing / wandering state
+      d.grazePhase += dt;
       const grazeCycle = Math.sin(d.grazePhase * 0.6);
       const isEating = grazeCycle > -0.2;
 
       if (isEating) {
-        // Neck down eating grass
         d.neck.rotation.x = THREE.MathUtils.lerp(d.neck.rotation.x, 0.75, dt * 2);
         d.head.rotation.x = THREE.MathUtils.lerp(d.head.rotation.x, -0.35, dt * 2);
       } else {
-        // Neck upright looking around
         d.neck.rotation.x = THREE.MathUtils.lerp(d.neck.rotation.x, -0.15, dt * 2);
         d.head.rotation.x = THREE.MathUtils.lerp(d.head.rotation.x, 0.1, dt * 2);
       }
@@ -527,7 +618,6 @@ export class WildlifeManager {
       }
 
       if (d.isWalking) {
-        const cur = d.root.position;
         const dir = new THREE.Vector3().subVectors(d.targetPos, cur);
         const dist = dir.length();
 
@@ -555,9 +645,24 @@ export class WildlifeManager {
       }
     }
 
-    // 2. Update Soaring Birds & Coastal Flocks
+    // 2. Update Soaring Birds & Coastal Flocks with Reactive Evasion
     for (const b of this.birds) {
-      b.angle += b.speed * dt;
+      let isNearDrone = false;
+      if (dronePos && b.root.position.distanceTo(dronePos) < 26) {
+        isNearDrone = true;
+        b.scatterTimer = 2.0;
+      } else if (b.scatterTimer && b.scatterTimer > 0) {
+        b.scatterTimer -= dt;
+        isNearDrone = true;
+      }
+
+      const effectiveSpeed = isNearDrone ? b.speed * 1.6 : b.speed;
+      b.angle += effectiveSpeed * dt;
+
+      if (isNearDrone) {
+        // Gain altitude quickly when startled by drone
+        b.altitude = Math.min(140, b.altitude + 5.0 * dt);
+      }
 
       const x = b.center.x + Math.cos(b.angle) * b.radius;
       const z = b.center.z + Math.sin(b.angle) * b.radius;
@@ -568,19 +673,26 @@ export class WildlifeManager {
       const dirSign = b.speed >= 0 ? 1 : -1;
       const heading = b.angle + (dirSign > 0 ? Math.PI / 2 : -Math.PI / 2);
       b.root.rotation.y = -heading;
-      b.root.rotation.z = dirSign * 0.25; // Bank into turn
+      b.root.rotation.z = dirSign * (isNearDrone ? 0.45 : 0.25); // Steep bank if startled
 
-      // Periodic flap vs long majestic glide
-      const glidePhase = Math.sin(elapsed * 0.35 + b.radius);
-      const isGliding = glidePhase > 0.2;
-
-      if (isGliding) {
-        b.leftWing.rotation.z = THREE.MathUtils.lerp(b.leftWing.rotation.z, 0.04, 0.1);
-        b.rightWing.rotation.z = THREE.MathUtils.lerp(b.rightWing.rotation.z, -0.04, 0.1);
-      } else {
-        const flap = Math.sin(elapsed * b.flapFrequency * Math.PI * 2) * 0.45;
+      // Fluttering flaps vs glide
+      if (isNearDrone) {
+        // Fast panic flapping
+        const flap = Math.sin(elapsed * 4.2 * Math.PI * 2) * 0.55;
         b.leftWing.rotation.z = flap;
         b.rightWing.rotation.z = -flap;
+      } else {
+        const glidePhase = Math.sin(elapsed * 0.35 + b.radius);
+        const isGliding = glidePhase > 0.2;
+
+        if (isGliding) {
+          b.leftWing.rotation.z = THREE.MathUtils.lerp(b.leftWing.rotation.z, 0.04, 0.1);
+          b.rightWing.rotation.z = THREE.MathUtils.lerp(b.rightWing.rotation.z, -0.04, 0.1);
+        } else {
+          const flap = Math.sin(elapsed * b.flapFrequency * Math.PI * 2) * 0.45;
+          b.leftWing.rotation.z = flap;
+          b.rightWing.rotation.z = -flap;
+        }
       }
     }
   }

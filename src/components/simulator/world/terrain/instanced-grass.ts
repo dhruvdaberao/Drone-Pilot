@@ -88,15 +88,15 @@ export class InstancedGrass {
     const ctxA = canvasAlpha.getContext("2d");
 
     if (ctxD && ctxA) {
-      ctxD.fillStyle = "#1e3012";
+      ctxD.fillStyle = "#2d4a1d";
       ctxD.fillRect(0, 0, size, size);
 
       ctxA.fillStyle = "#000000";
       ctxA.fillRect(0, 0, size, size);
 
-      // Draw dense multi-tone grass blades
-      const bladeColors = ["#4c782b", "#629938", "#385e1e", "#7dbb42", "#2e4a19", "#8bbd4c"];
-      const bladeCount = 90;
+      // Draw dense multi-tone lush stylized grass blades
+      const bladeColors = ["#4d7c0f", "#65a30d", "#84cc16", "#3f6212", "#a3e635", "#558b1a"];
+      const bladeCount = 110;
 
       for (let b = 0; b < bladeCount; b++) {
         const rootX = (size * 0.1) + Math.random() * (size * 0.8);
@@ -188,22 +188,23 @@ export class InstancedGrass {
         // Instance world position
         vec4 instanceWorldPos = instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
 
-        // Wind wave ripple equation
-        float windWave = sin(uTime * 2.8 + instanceWorldPos.x * 0.08 + instanceWorldPos.z * 0.06);
-        float windGust = cos(uTime * 1.4 + instanceWorldPos.x * 0.03 - instanceWorldPos.z * 0.04) * 0.6;
-        float totalWind = (windWave + windGust) * 0.22 * heightFactor;
+        // Visibly rolling wind wave ripples across meadows
+        float wave1 = sin(uTime * 3.2 + instanceWorldPos.x * 0.05 + instanceWorldPos.z * 0.04);
+        float wave2 = sin(uTime * 5.2 + instanceWorldPos.x * 0.11 - instanceWorldPos.z * 0.08) * 0.42;
+        float gust = cos(uTime * 1.5 + instanceWorldPos.x * 0.025 + instanceWorldPos.z * 0.02) * 0.65;
+        float totalWind = (wave1 + wave2 + gust) * 0.48 * heightFactor;
 
-        transformed.x += totalWind * 0.8;
-        transformed.z += totalWind * 0.6;
+        transformed.x += totalWind * 0.85;
+        transformed.z += totalWind * 0.55;
 
         // Drone downwash deflection when drone is low overhead
         float distToDrone = distance(instanceWorldPos.xyz, uDronePos);
-        if (distToDrone < 12.0) {
-          float washStrength = (1.0 - distToDrone / 12.0) * heightFactor;
+        if (distToDrone < 14.0) {
+          float washStrength = (1.0 - distToDrone / 14.0) * heightFactor;
           vec3 pushDir = normalize(instanceWorldPos.xyz - uDronePos);
-          transformed.x += pushDir.x * washStrength * 0.6;
-          transformed.z += pushDir.z * washStrength * 0.6;
-          transformed.y -= washStrength * 0.2;
+          transformed.x += pushDir.x * washStrength * 0.85;
+          transformed.z += pushDir.z * washStrength * 0.85;
+          transformed.y -= washStrength * 0.35;
         }
         `
       );
