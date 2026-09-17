@@ -90,22 +90,42 @@ export class OceanMesh {
     this.waveNormalTex.wrapT = THREE.RepeatWrapping;
     this.waveNormalTex.repeat.set(48, 48);
 
-    // Vibrant tropical ocean: Azure `#0284c7` with high sunlight specular shine & lower roughness
+    // Vibrant tropical ocean: Azure `#0284c7` with broad angle visibility & Fresnel sky reflection
     this.oceanMat = new THREE.MeshStandardMaterial({
       color: 0x0284c7, // Vibrant deep ocean azure
-      roughness: 0.08, // Very low roughness for sunlight specular highlights & shine
-      metalness: 0.28, // Natural dielectric water reflectance
+      roughness: 0.18, // Balanced roughness so sun glints and wave highlights remain visible from all camera angles
+      metalness: 0.22,
       normalMap: this.waveNormalTex,
-      normalScale: new THREE.Vector2(1.8, 1.8), // Crisply visible animated wave crests
+      normalScale: new THREE.Vector2(2.0, 2.0),
       transparent: true,
-      opacity: 0.84,
-      envMapIntensity: 2.2, // Bright sun glints and sky reflections
+      opacity: 0.88,
+      envMapIntensity: 2.5,
     });
+    this.applyWaterFresnel(this.oceanMat, new THREE.Color(0xa5f3fc));
 
     const ocean = new THREE.Mesh(geo, this.oceanMat);
     ocean.position.y = WORLD_CONFIG.seaLevel;
     ocean.receiveShadow = true;
     this.group.add(ocean);
+  }
+
+  private applyWaterFresnel(mat: THREE.MeshStandardMaterial, tint: THREE.Color) {
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.uFresnelTint = { value: tint };
+      shader.fragmentShader = `
+        uniform vec3 uFresnelTint;
+        ${shader.fragmentShader}
+      `;
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <dithering_fragment>",
+        `
+        #include <dithering_fragment>
+        float fDot = clamp(dot(normalize(vNormal), normalize(vViewPosition)), 0.0, 1.0);
+        float fresnelTerm = pow(1.0 - fDot, 3.2);
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, uFresnelTint, fresnelTerm * 0.55);
+        `
+      );
+    };
   }
 
   /**
@@ -155,14 +175,15 @@ export class OceanMesh {
 
     this.shelfMat = new THREE.MeshStandardMaterial({
       color: 0x06b6d4, // Luminous tropical cyan shallow water
-      roughness: 0.06,
-      metalness: 0.22,
+      roughness: 0.16,
+      metalness: 0.20,
       normalMap: this.waveNormalTex,
-      normalScale: new THREE.Vector2(1.4, 1.4),
+      normalScale: new THREE.Vector2(1.5, 1.5),
       transparent: true,
-      opacity: 0.72,
-      envMapIntensity: 2.0,
+      opacity: 0.76,
+      envMapIntensity: 2.2,
     });
+    this.applyWaterFresnel(this.shelfMat, new THREE.Color(0xcffafe));
 
     const shelfMesh = new THREE.Mesh(shelfGeo, this.shelfMat);
     this.group.add(shelfMesh);

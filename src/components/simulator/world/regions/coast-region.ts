@@ -172,7 +172,12 @@ export class CoastRegion {
 
     // 4. Shoreline Boulders
     const boulderGeo = new THREE.DodecahedronGeometry(1.5, 1);
-    const boulderMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.9 });
+    const boulderMat = new THREE.MeshStandardMaterial({
+      color: 0x7c858e, // Natural coastal granite
+      roughness: 0.90,
+      metalness: 0.03,
+      flatShading: true,
+    });
     const boulderPos = [
       { x: -735, z: 540 }, { x: -745, z: 575 }, { x: -740, z: 610 }
     ];

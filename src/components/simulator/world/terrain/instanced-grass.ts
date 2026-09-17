@@ -5,6 +5,8 @@
 
 import * as THREE from "three";
 import { evaluateIslandElevation } from "@/lib/world/terrain-math";
+import { isWaterAt } from "@/lib/world/hydrology-mask";
+import { getDistanceToRoad } from "@/lib/world/biome-system";
 
 export class InstancedGrass {
   public group = new THREE.Group();
@@ -13,7 +15,7 @@ export class InstancedGrass {
   private timeUniform = { value: 0 };
   private dronePosUniform = { value: new THREE.Vector3(0, 100, 0) };
 
-  constructor(instanceCount = 28000) {
+  constructor(instanceCount = 18000) {
     this.buildGrassMesh(instanceCount);
   }
 
@@ -130,10 +132,16 @@ export class InstancedGrass {
 
     const diffuse = new THREE.CanvasTexture(canvasDiff);
     diffuse.colorSpace = THREE.SRGBColorSpace;
+    diffuse.generateMipmaps = true;
+    diffuse.minFilter = THREE.LinearMipmapLinearFilter;
+    diffuse.magFilter = THREE.LinearFilter;
 
     const alpha = new THREE.CanvasTexture(canvasAlpha);
+    alpha.generateMipmaps = true;
+    alpha.minFilter = THREE.LinearMipmapLinearFilter;
+    alpha.magFilter = THREE.LinearFilter;
 
-    // Also attempt to load the Poly Haven 4K texture asynchronously
+    // Also attempt to load the Poly Haven 4K texture asynchronously if present
     const loader = new THREE.TextureLoader();
     loader.load("/textures/nature/grass_medium_01_diff_4k.jpg", (tex) => {
       tex.colorSpace = THREE.SRGBColorSpace;
@@ -159,11 +167,12 @@ export class InstancedGrass {
       map: textures.diffuse,
       alphaMap: textures.alpha,
       transparent: true,
-      alphaTest: 0.35,
-      roughness: 0.85,
-      metalness: 0.05,
+      alphaTest: 0.50, // Crisp threshold avoids noisy fuzzy screen-door dither
+      roughness: 0.88,
+      metalness: 0.02,
       side: THREE.DoubleSide,
       shadowSide: THREE.DoubleSide,
+      depthWrite: true,
     });
 
     // Inject wind animation vertex shader
@@ -261,9 +270,27 @@ export class InstancedGrass {
           continue;
         }
 
+        // Exclude all lakes, rivers, plunge pools, and water bodies
+        if (isWaterAt(x, z, 2.5)) {
+          dummy.position.set(0, -999, 0);
+          dummy.scale.set(0, 0, 0);
+          dummy.updateMatrix();
+          this.instancedMesh.setMatrixAt(index++, dummy.matrix);
+          continue;
+        }
+
+        // Avoid asphalt roads, highways, and street corridors
+        if (getDistanceToRoad(x, z) < 4.2) {
+          dummy.position.set(0, -999, 0);
+          dummy.scale.set(0, 0, 0);
+          dummy.updateMatrix();
+          this.instancedMesh.setMatrixAt(index++, dummy.matrix);
+          continue;
+        }
+
         const sample = evaluateIslandElevation(x, z);
 
-        // Don't spawn on water or cliff rocks
+        // Don't spawn on steep cliff rocks or beaches
         if (sample.elevation < 0.6 || sample.slope > 0.5) {
           dummy.position.set(0, -999, 0);
           dummy.scale.set(0, 0, 0);

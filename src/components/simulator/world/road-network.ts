@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { WORLD_DEFINITION } from "@/lib/world/world-definition";
 import { RoadPolyline, Vector3D } from "@/lib/world/world-types";
 import { evaluateIslandElevation } from "@/lib/world/terrain-math";
+import { queryHydrology } from "@/lib/world/hydrology-mask";
 
 export class RoadNetwork {
   public group = new THREE.Group();
@@ -72,9 +73,10 @@ export class RoadNetwork {
     });
 
     // 3. Southern Coastal Connector (Pelican Cove -> Estuary -> Harbor Port)
-    const coastalConnector: RoadPolyline = {
-      id: "road-southern-coastal",
-      name: "Southern Archipelago Coastal Scenic Highway",
+    // Cleanly split at bridge abutments so no road ribbon is rendered underwater
+    const coastalConnectorWest: RoadPolyline = {
+      id: "road-southern-coastal-west",
+      name: "Southern Coastal Highway West",
       type: "highway",
       widthMeters: 10,
       points: [
@@ -82,12 +84,22 @@ export class RoadNetwork {
         { x: -580, y: 2.2, z: 660 },
         { x: -400, y: 2.4, z: 740 },
         { x: -260, y: 2.6, z: 800 },
-        { x: -140, y: 3.2, z: 840 }, // Estuary approach
-        { x: -40, y: 3.2, z: 860 },  // Estuary cross
+        { x: -140, y: 3.2, z: 840 }, // West bridge abutment
+      ],
+    };
+    this.buildRoadRibbon(coastalConnectorWest, true);
+
+    const coastalConnectorEast: RoadPolyline = {
+      id: "road-southern-coastal-east",
+      name: "Southern Coastal Highway East",
+      type: "highway",
+      widthMeters: 10,
+      points: [
+        { x: -40, y: 3.2, z: 860 },  // East bridge abutment
         { x: 60, y: 1.3, z: 880 },   // Connect to harbor highway
       ],
     };
-    this.buildRoadRibbon(coastalConnector, true);
+    this.buildRoadRibbon(coastalConnectorEast, true);
 
     // 4. Mountain Switchback Pass
     WORLD_DEFINITION.roads.mountainPasses.forEach((road) => {
@@ -109,7 +121,7 @@ export class RoadNetwork {
         { x: -140, y: 3.2, z: 840 },
         { x: -40, y: 3.2, z: 860 },
       ],
-      hasBridge: true,
+      hasBridge: false, // Marine viaduct causeway
     });
 
     // 6. Terminus Loops & Cul-de-Sacs (Ensures roads never end abruptly into grass)
@@ -164,13 +176,12 @@ export class RoadNetwork {
 
     const getRoadElevation = (x: number, z: number): number => {
       const terrainY = evaluateIslandElevation(x, z).elevation;
-      // Lake area clearance (Lake surface is 8.5m)
-      const distToLake = Math.hypot(x - (-320), z - (-260));
-      let minFloor = 1.35;
-      if (distToLake < 135) {
-        minFloor = 9.3;
+      const hydro = queryHydrology(x, z, terrainY);
+      if (hydro.isWater) {
+        // Enforce road elevation stays safely above water level
+        return Math.max(terrainY + 0.22, hydro.waterElevation + 1.2);
       }
-      return Math.max(terrainY + 0.22, minFloor);
+      return Math.max(terrainY + 0.22, 1.35);
     };
 
     for (let i = 0; i < rawPoints.length - 1; i++) {
@@ -364,14 +375,24 @@ export class RoadNetwork {
       bridgeGroup.add(cap);
     });
 
+    // Solid concrete abutment anchorage blocks embedded into canyon terrain rims
+    [-length / 2, length / 2].forEach((ax) => {
+      const abutmentGeo = new THREE.BoxGeometry(6.0, 5.5, w + 1.6);
+      const abutment = new THREE.Mesh(abutmentGeo, this.bridgeMat);
+      abutment.position.set(ax, -2.0, 0);
+      abutment.receiveShadow = true;
+      abutment.castShadow = true;
+      bridgeGroup.add(abutment);
+    });
+
     // 4. Specific Bridge Engineering Typologies (Cable-stayed / Suspension)
-    if (bridge.id === "bridge-valley" || bridge.id === "bridge-estuary" || bridge.hasBridge) {
+    if (bridge.id === "bridge-valley") {
       // ----------------------------------------------------
       // GRAND RIVER CANYON SUSPENSION / CABLE-STAYED BRIDGE
       // ----------------------------------------------------
       const towerDist = length * 0.28;
       const towerHeight = 22.0; // Rises 22m above road deck
-      const towerBaseDepth = 12.0; // Extends down to canyon bed
+      const towerBaseDepth = 14.0; // Extends down to canyon bed
 
       // Steel Truss Undercarriage beneath the deck
       const trussHeight = 2.4;
@@ -599,18 +620,25 @@ export class RoadNetwork {
       new THREE.Vector3(-400, 2.4, 740),
       new THREE.Vector3(-580, 2.2, 660),
       new THREE.Vector3(-720, 2.0, 560), // Pelican Cove Overlook
-      // 4. Coastal-to-Academy Arterial
-      new THREE.Vector3(-540, 1.8, 480),
-      new THREE.Vector3(-320, 1.6, 340),
-      new THREE.Vector3(-50, 1.2, 60),
+      // 4. Southern Coastal Highway to West Bridge Abutment
+      new THREE.Vector3(-540, 2.8, 480),
+      new THREE.Vector3(-320, 4.5, 340),
+      new THREE.Vector3(-180, 9.8, 140), // West Bridge Abutment
       // 5. Forest Ranger Station Loop
-      new THREE.Vector3(-220, 1.8, 10),
-      new THREE.Vector3(-440, 3.2, 0),
-      new THREE.Vector3(-620, 5.5, -40), // Forest Ranger Station
-      new THREE.Vector3(-440, 3.2, 0),
-      new THREE.Vector3(-220, 1.8, 10),
-      new THREE.Vector3(-50, 1.2, 0),    // Academy Airfield
-      // 6. Academy-to-City Expressway
+      new THREE.Vector3(-300, 5.5, 70),
+      new THREE.Vector3(-440, 4.8, 10),
+      new THREE.Vector3(-620, 5.5, -40), // Forest Ranger Station Turnaround
+      new THREE.Vector3(-440, 4.8, 10),
+      new THREE.Vector3(-300, 5.5, 70),
+      new THREE.Vector3(-180, 9.8, 140), // West Bridge Abutment
+      // 6. Grand Valley Suspension Bridge Crossing (High above river canyon)
+      new THREE.Vector3(-140, 9.8, 160), // Mid-span above river
+      new THREE.Vector3(-100, 9.8, 180), // East Bridge Abutment
+      // 7. Bridge-to-Academy Approach
+      new THREE.Vector3(-75, 4.2, 120),
+      new THREE.Vector3(-50, 1.2, 60),
+      new THREE.Vector3(-50, 1.2, 0),    // Academy Airfield Loop
+      // 8. Academy-to-City Expressway
       new THREE.Vector3(180, 1.4, 60),
       new THREE.Vector3(360, 1.8, 160),
       new THREE.Vector3(540, 2.2, 240),

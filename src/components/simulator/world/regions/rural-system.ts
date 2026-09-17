@@ -156,8 +156,8 @@ export class RuralSystem {
    */
   private buildLakesideCampgrounds() {
     const camps = [
-      { x: -360, z: -170, tents: 3 },
-      { x: -180, z: 70, tents: 2 },
+      { x: -250, z: -120, tents: 3 }, // Scenic ridge overlooking Crystal Lake
+      { x: -110, z: 80, tents: 2 },   // Valley meadow east of river canyon
     ];
 
     const tentMat1 = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.8 });
@@ -166,7 +166,7 @@ export class RuralSystem {
     camps.forEach((c) => {
       const elev = evaluateIslandElevation(c.x, c.z).elevation;
       const campGroup = new THREE.Group();
-      campGroup.position.set(c.x, Math.max(8.6, elev), c.z);
+      campGroup.position.set(c.x, elev, c.z);
 
       for (let i = 0; i < c.tents; i++) {
         const ang = (i / c.tents) * Math.PI * 2;

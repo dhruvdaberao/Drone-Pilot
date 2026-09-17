@@ -208,34 +208,34 @@ export const ENV_MATERIALS = {
     side: THREE.DoubleSide,
   }),
 
-  // Granite Boulder: Glacial speckled dark slate
+  // Granite Boulder: Glacial speckled natural granite
   rockGranite: new THREE.MeshStandardMaterial({
-    color: 0x434850,
-    roughness: 0.92,
-    metalness: 0.12,
+    color: 0x7a8591,
+    roughness: 0.90,
+    metalness: 0.03,
     flatShading: true,
   }),
 
-  // Mountain Scree: Weathered alpine gray-brown talus
+  // Mountain Scree: Weathered alpine gray talus
   rockScree: new THREE.MeshStandardMaterial({
-    color: 0x5a5854,
-    roughness: 0.96,
-    metalness: 0.08,
+    color: 0x8a929b,
+    roughness: 0.95,
+    metalness: 0.02,
     flatShading: true,
   }),
 
-  // River Cobblestone: Smooth water-sheen dark river pebble
+  // River Cobblestone: Smooth weathered river stone
   rockRiver: new THREE.MeshStandardMaterial({
-    color: 0x363d42,
-    roughness: 0.45,
-    metalness: 0.25,
+    color: 0x6e7882,
+    roughness: 0.82,
+    metalness: 0.04,
   }),
 
   // Coastal Sea Stack: Algae/salt-weathered sandstone
   rockCoastal: new THREE.MeshStandardMaterial({
-    color: 0x595248,
+    color: 0x82796e,
     roughness: 0.88,
-    metalness: 0.10,
+    metalness: 0.04,
     flatShading: true,
   }),
 

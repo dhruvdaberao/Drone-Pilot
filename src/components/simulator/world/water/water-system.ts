@@ -103,7 +103,12 @@ export class WaterSystem {
 
     // Rocky cliff face behind waterfall
     const cliffGeo = new THREE.BoxGeometry(28, 15, 4);
-    const cliffMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.92, metalness: 0.1 });
+    const cliffMat = new THREE.MeshStandardMaterial({
+      color: 0x687480, // Weathered natural mountain rock face
+      roughness: 0.94,
+      metalness: 0.03,
+      flatShading: true,
+    });
     const cliffMesh = new THREE.Mesh(cliffGeo, cliffMat);
     cliffMesh.position.set(-278, 6.0, -220);
     cliffMesh.rotation.y = Math.PI / 4;
@@ -115,20 +120,21 @@ export class WaterSystem {
       color: 0x06b6d4, // Vibrant turquoise plunge pool
       transparent: true,
       opacity: 0.85,
-      roughness: 0.08,
-      metalness: 0.6,
+      roughness: 0.16,
+      metalness: 0.25,
     });
     const poolMesh = new THREE.Mesh(poolGeo, poolMat);
     poolMesh.rotation.x = -Math.PI / 2;
     poolMesh.position.set(-258, 2.05, -198);
     this.group.add(poolMesh);
 
-    // Wet dark boulders surrounding pool base and splash zone
+    // Natural weathered boulders surrounding pool base and splash zone
     const boulderGeo = new THREE.DodecahedronGeometry(1.8, 1);
     const boulderMat = new THREE.MeshStandardMaterial({
-      color: 0x1e293b,
-      roughness: 0.25,
-      metalness: 0.2,
+      color: 0x6e7884, // Natural river granite
+      roughness: 0.85,
+      metalness: 0.04,
+      flatShading: true,
     });
     const boulderPositions = [
       { x: -248, y: 1.6, z: -200 },
@@ -156,8 +162,8 @@ export class WaterSystem {
       color: 0x38bdf8,
       transparent: true,
       opacity: 0.82,
-      roughness: 0.12,
-      metalness: 0.5,
+      roughness: 0.16,
+      metalness: 0.25,
     });
     const streamMesh = new THREE.Mesh(streamGeo, streamMat);
     streamMesh.rotation.x = -Math.PI / 2;
@@ -165,7 +171,7 @@ export class WaterSystem {
     streamMesh.position.set(-248, 1.95, -182);
     this.group.add(streamMesh);
 
-    // 3. Dense Spray Mist Emitter (350 rising particles)
+    // 3. Dense Spray Mist Emitter with soft circular radial particles
     this.mistPositions = new Float32Array(this.mistCount * 3);
     this.mistGeo = new THREE.BufferGeometry();
 
@@ -176,11 +182,27 @@ export class WaterSystem {
     }
     this.mistGeo.setAttribute("position", new THREE.BufferAttribute(this.mistPositions, 3));
 
+    // Soft radial gradient for natural fluffy mist particles
+    const mistCanvas = document.createElement("canvas");
+    mistCanvas.width = 64;
+    mistCanvas.height = 64;
+    const mCtx = mistCanvas.getContext("2d");
+    if (mCtx) {
+      const grad = mCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grad.addColorStop(0, "rgba(240, 249, 255, 0.85)");
+      grad.addColorStop(0.4, "rgba(240, 249, 255, 0.40)");
+      grad.addColorStop(1, "rgba(240, 249, 255, 0.0)");
+      mCtx.fillStyle = grad;
+      mCtx.fillRect(0, 0, 64, 64);
+    }
+    const mistTex = new THREE.CanvasTexture(mistCanvas);
+
     const mistMat = new THREE.PointsMaterial({
       color: 0xf0f9ff,
-      size: 1.2,
+      size: 2.8,
+      map: mistTex,
       transparent: true,
-      opacity: 0.50,
+      opacity: 0.45,
       depthWrite: false,
     });
 

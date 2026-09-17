@@ -11,7 +11,7 @@ export class RiverRegion {
   public group = new THREE.Group();
 
   constructor() {
-    // 1. Valley Observation Helipad at (-160, 3.5, 160)
+    // 1. Valley Observation Helipad at (-85, 10.0, 195)
     const pad = createHelipadMesh(HELIPADS["river-alpha"]);
     this.group.add(pad);
 
@@ -22,7 +22,7 @@ export class RiverRegion {
   private buildObservationPlatform() {
     const deckMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
     const platform = new THREE.Mesh(new THREE.BoxGeometry(16, 0.8, 16), deckMat);
-    platform.position.set(-160, 3.1, 160);
+    platform.position.set(-85, 9.6, 195);
     platform.castShadow = true;
     platform.receiveShadow = true;
     this.group.add(platform);
@@ -36,7 +36,7 @@ export class RiverRegion {
     ];
     sides.forEach((s) => {
       const rail = new THREE.Mesh(new THREE.BoxGeometry(16, 0.08, 0.08), railMat);
-      rail.position.set(-160 + s.x, 3.5 + 1.0, 160 + s.z);
+      rail.position.set(-85 + s.x, 10.0 + 1.0, 195 + s.z);
       rail.rotation.y = s.rot;
       this.group.add(rail);
     });

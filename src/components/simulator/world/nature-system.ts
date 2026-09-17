@@ -13,6 +13,7 @@ import {
   getDistanceToRoad,
   WORLD_SEED,
 } from "@/lib/world/biome-system";
+import { isWaterAt, getRiverCrossSectionAtZ } from "@/lib/world/hydrology-mask";
 import { ENV_MATERIALS, ENV_GEOMETRIES, FOLIAGE_WIND_UNIFORM } from "./environment/environment-models";
 
 export class NatureSystem {
@@ -94,6 +95,7 @@ export class NatureSystem {
       const z = 20 + Math.sin(ang) * rad;
 
       if (isProtectedZone(x, z, 10)) continue;
+      if (isWaterAt(x, z, 4.0)) continue;
       if (getDistanceToRoad(x, z) < 6.5) continue;
 
       const biome = getBiomeAt(x, z);
@@ -158,6 +160,7 @@ export class NatureSystem {
       const z = prng.nextRange(-680, 150);
 
       if (isProtectedZone(x, z, 10)) continue;
+      if (isWaterAt(x, z, 4.0)) continue;
       if (getDistanceToRoad(x, z) < 7.0) continue;
 
       const biome = getBiomeAt(x, z);
@@ -224,6 +227,7 @@ export class NatureSystem {
       const z = prng.nextRange(-250, 420);
 
       if (isProtectedZone(x, z, 12)) continue;
+      if (isWaterAt(x, z, 4.0)) continue;
       if (getDistanceToRoad(x, z) < 8.0) continue;
 
       const biome = getBiomeAt(x, z);
@@ -287,6 +291,7 @@ export class NatureSystem {
       const z = prng.nextRange(-450, 250);
 
       if (isProtectedZone(x, z, 10)) continue;
+      if (isWaterAt(x, z, 4.0)) continue;
       if (getDistanceToRoad(x, z) < 5.0) continue;
 
       const biome = getBiomeAt(x, z);
@@ -353,6 +358,7 @@ export class NatureSystem {
       const z = 560 + Math.sin(ang) * rad;
 
       if (isProtectedZone(x, z, 10)) continue;
+      if (isWaterAt(x, z, 1.5)) continue;
       if (getDistanceToRoad(x, z) < 4.5) continue;
 
       const biome = getBiomeAt(x, z);
@@ -405,23 +411,28 @@ export class NatureSystem {
     const maxAttempts = count * 6;
 
     while (placed < count && attempts++ < maxAttempts) {
-      // Along river canyon (-160, 160) or Crystal Lake shore (-320, -260)
+      // Along river canyon or Crystal Lake outer shore
       const isLake = prng.next() < 0.45;
       let x = 0;
       let z = 0;
 
       if (isLake) {
         const a = prng.next() * Math.PI * 2;
-        const r = prng.nextRange(95, 130);
+        const r = prng.nextRange(130, 150); // Outside water on upper lake bank
         x = -320 + Math.cos(a) * r;
         z = -260 + Math.sin(a) * r;
       } else {
-        const t = prng.nextRange(-180, 420);
-        x = -160 + (prng.next() - 0.5) * 35;
-        z = t;
+        const zCoord = prng.nextRange(-180, 520);
+        const river = getRiverCrossSectionAtZ(zCoord);
+        if (!river.inRiverRange) continue;
+        const side = prng.next() < 0.5 ? -1 : 1;
+        const distFromCenter = river.halfWidth + prng.nextRange(3.5, 14.0);
+        x = river.centerX + side * distFromCenter;
+        z = zCoord;
       }
 
       if (isProtectedZone(x, z, 8)) continue;
+      if (isWaterAt(x, z, 2.5)) continue;
       if (getDistanceToRoad(x, z) < 6.0) continue;
 
       const biome = getBiomeAt(x, z);
@@ -526,6 +537,7 @@ export class NatureSystem {
       const z = prng.nextRange(-350, 380);
 
       if (isProtectedZone(x, z, 6)) continue;
+      if (isWaterAt(x, z, 3.0)) continue;
       if (getDistanceToRoad(x, z) < 3.2) continue;
 
       const biome = getBiomeAt(x, z);
@@ -539,10 +551,10 @@ export class NatureSystem {
         continue;
       }
 
-      const scale = prng.nextRange(0.75, 1.45);
+      const scale = prng.nextRange(0.7, 1.4);
       dummy.position.set(x, biome.elevation, z);
       dummy.rotation.set(0, prng.next() * Math.PI * 2, 0);
-      dummy.scale.set(scale, scale * prng.nextRange(0.85, 1.2), scale);
+      dummy.scale.set(scale, scale, scale);
       dummy.updateMatrix();
 
       mesh.setMatrixAt(placed++, dummy.matrix);
@@ -554,7 +566,7 @@ export class NatureSystem {
   }
 
   /**
-   * Alpine Krummholz Juniper: Prostrate shrubs on high slopes and rocky crags
+   * Alpine Krummholz Juniper: Stunted prostrate conifers across windy alpine ridges
    */
   private buildAlpineJunipers(prng: SeededPRNG) {
     const count = 1400;
@@ -578,6 +590,7 @@ export class NatureSystem {
       const z = prng.nextRange(-950, -350);
 
       if (isProtectedZone(x, z, 8)) continue;
+      if (isWaterAt(x, z, 4.0)) continue;
       const biome = getBiomeAt(x, z);
       if (biome.elevation < 28.0 || biome.elevation > 125.0) continue;
 
@@ -623,6 +636,7 @@ export class NatureSystem {
       const z = 20 + Math.sin(ang) * rad;
 
       if (isProtectedZone(x, z, 5)) continue;
+      if (isWaterAt(x, z, 3.0)) continue;
       if (getDistanceToRoad(x, z) < 2.5) continue;
 
       const biome = getBiomeAt(x, z);
@@ -668,21 +682,24 @@ export class NatureSystem {
       let z = 0;
 
       if (isLake) {
-        // Tight around Crystal Mountain Lake waterline
+        // Upper shore embankment gravel collar around lake (126m - 138m)
         const a = prng.next() * Math.PI * 2;
-        const r = prng.nextRange(92, 118);
+        const r = prng.nextRange(126, 138);
         x = -320 + Math.cos(a) * r;
         z = -260 + Math.sin(a) * r;
       } else {
-        // Along descending river corridor
-        const t = prng.nextRange(-180, 520);
-        x = -150 + (prng.next() - 0.5) * 26;
-        z = t;
+        // Along the river water edge bank
+        const zCoord = prng.nextRange(-180, 520);
+        const river = getRiverCrossSectionAtZ(zCoord);
+        if (!river.inRiverRange) continue;
+        const side = prng.next() < 0.5 ? -1 : 1;
+        x = river.centerX + side * (river.halfWidth + prng.nextRange(0.8, 5.0));
+        z = zCoord;
       }
 
       if (isProtectedZone(x, z, 4)) continue;
       const biome = getBiomeAt(x, z);
-      if (biome.elevation < 0.3 || biome.elevation > 11.5) continue;
+      if (biome.elevation < 0.3 || biome.elevation > 12.0) continue;
 
       const scale = prng.nextRange(0.85, 1.45);
       dummy.position.set(x, biome.elevation, z);
@@ -839,13 +856,16 @@ export class NatureSystem {
 
       if (isLake) {
         const a = prng.next() * Math.PI * 2;
-        const r = prng.nextRange(92, 114);
+        const r = prng.nextRange(126, 138); // Lake gravel embankment
         x = -320 + Math.cos(a) * r;
         z = -260 + Math.sin(a) * r;
       } else {
-        const t = prng.nextRange(-190, 480);
-        x = -155 + (prng.next() - 0.5) * 22;
-        z = t;
+        const zCoord = prng.nextRange(-190, 480);
+        const river = getRiverCrossSectionAtZ(zCoord);
+        if (!river.inRiverRange) continue;
+        const side = prng.next() < 0.5 ? -1 : 1;
+        x = river.centerX + side * (river.halfWidth + prng.nextRange(0.5, 4.0));
+        z = zCoord;
       }
 
       if (isProtectedZone(x, z, 5)) continue;
@@ -944,6 +964,7 @@ export class NatureSystem {
       const z = prng.nextRange(-250, 320);
 
       if (isProtectedZone(x, z, 8)) continue;
+      if (isWaterAt(x, z, 3.0)) continue;
       if (getDistanceToRoad(x, z) < 4.5) continue;
 
       const biome = getBiomeAt(x, z);
@@ -988,6 +1009,7 @@ export class NatureSystem {
       const z = prng.nextRange(-220, 280);
 
       if (isProtectedZone(x, z, 6)) continue;
+      if (isWaterAt(x, z, 3.0)) continue;
       if (getDistanceToRoad(x, z) < 3.5) continue;
 
       const biome = getBiomeAt(x, z);
@@ -1157,12 +1179,12 @@ export class NatureSystem {
   private buildWaterfallEnvironment() {
     const waterfallGroup = new THREE.Group();
 
-    // 12 wet dark boulders flanking the waterfall chute
+    // 12 natural boulders flanking the waterfall chute
     const boulderGeo = ENV_GEOMETRIES.buildGraniteBoulder();
     const wetRockMat = new THREE.MeshStandardMaterial({
-      color: 0x1f2429,
-      roughness: 0.18,
-      metalness: 0.45, // wet sheen
+      color: 0x6e7884, // Natural river granite
+      roughness: 0.85,
+      metalness: 0.04,
       flatShading: true,
     });
 
@@ -1265,6 +1287,7 @@ export class NatureSystem {
         const z = fc.z + Math.sin(ang) * dist;
 
         if (isProtectedZone(x, z, 5)) continue;
+        if (isWaterAt(x, z, 3.0)) continue;
         if (getDistanceToRoad(x, z) < 3.5) continue;
 
         const elev = evaluateIslandElevation(x, z).elevation;
@@ -1334,6 +1357,7 @@ export class NatureSystem {
           const elev = evaluateIslandElevation(wx, wz).elevation;
 
           if (elev < 1.0) continue;
+          if (isWaterAt(wx, wz, 3.0)) continue;
 
           const blockWidth = (tierRadius * angleStep) * 1.05;
           const blockHeight = 1.1 + t * 0.2;
