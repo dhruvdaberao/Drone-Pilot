@@ -13,9 +13,9 @@ export function createHelipadMesh(helipad: Helipad): THREE.Group {
   group.rotation.y = (helipad.headingDeg * Math.PI) / 180;
 
   const radius = helipad.dimensions.radius || helipad.dimensions.width / 2;
-  const padHeight = 0.28; // 28cm thick reinforced foundation slab
+  const padHeight = 0.45; // 45cm thick reinforced foundation slab to prevent terrain bleed-through
   const surfaceY = helipad.elevation;
-  const centerY = surfaceY - padHeight / 2;
+  const centerY = surfaceY - padHeight / 2 + 0.05;
 
   // 1. Platform Base Cylinder Slab
   const colorBySurface: Record<string, number> = {
@@ -45,14 +45,14 @@ export function createHelipadMesh(helipad: Helipad): THREE.Group {
     roughness: 0.75,
     metalness: 0.12,
     polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -4,
   });
 
   const surfaceGeo = new THREE.CircleGeometry(radius * 0.99, 32);
   surfaceGeo.rotateX(-Math.PI / 2);
   const surfaceMesh = new THREE.Mesh(surfaceGeo, surfaceMat);
-  surfaceMesh.position.y = surfaceY + 0.005;
+  surfaceMesh.position.y = surfaceY + 0.055;
   surfaceMesh.receiveShadow = true;
   group.add(surfaceMesh);
 

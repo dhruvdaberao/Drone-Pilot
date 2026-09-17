@@ -277,31 +277,47 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     }
   }, []);
 
-  // Fast Travel Teleport to any Island Base
+  // Fast Travel Teleport to any Island Base — cleanly flies over helipad at current altitude
   const handleTeleportBase = useCallback((base: FastTravelBase) => {
     crashTriggeredRef.current = false;
+    setIsAnalysisOpen(false);
     if (physicsEngineRef.current) {
       const pe = physicsEngineRef.current;
       pe.resetCrash();
+      pe.crashState = null;
 
       const groundElev = pe.elevationQueryFn
         ? pe.elevationQueryFn(base.position.x, base.position.z)
         : base.position.y;
       const safeFloor = Math.max(base.position.y, groundElev + 0.25);
-      const safeHoverY = safeFloor + 1.2; // Hover cleanly 1.2m above helipad / base
 
-      pe.reset(
-        base.position.x,
-        safeHoverY,
-        base.position.z,
-        (base.headingDeg * Math.PI) / 180
-      );
-      pe.isArmed = true;
-      pe.isHoverMode = true;
-      pe.targetAltitude = safeHoverY;
+      // Maintain current altitude AGL (at least 6.0m safe overhead hover)
+      const currentAgl = Math.max(6.0, pe.posY - pe.groundLevel);
+      const targetHoverY = safeFloor + currentAgl;
+
+      pe.posX = base.position.x;
+      pe.posY = targetHoverY;
+      pe.posZ = base.position.z;
+      pe.groundLevel = safeFloor;
+      pe.yaw = (base.headingDeg * Math.PI) / 180;
+      pe.pitch = 0;
+      pe.roll = 0;
+      pe.pitchRate = 0;
+      pe.rollRate = 0;
+      pe.yawRate = 0;
       pe.velX = 0;
       pe.velY = 0;
       pe.velZ = 0;
+      pe.accelX = 0;
+      pe.accelY = 0;
+      pe.accelZ = 0;
+      pe.isArmed = true;
+      pe.isHoverMode = true;
+      pe.targetAltitude = targetHoverY;
+      pe.rotorRpm = 4200;
+      pe.motorOutputs = pe.motorOutputs.map(() => 0.60);
+      pe.isCeilingLimitReached = false;
+      pe.isGroundLimitReached = false;
 
       droneMeshRef.current?.setDamaged(false);
       setTelemetry({ ...pe.generateTelemetry() });
@@ -677,13 +693,13 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       {/* Audio Mute/Unmute Toggle */}
       <button 
         onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-        className="absolute bottom-6 right-6 z-40 bg-black/50 hover:bg-black/80 text-white p-3 rounded-full backdrop-blur-md transition-colors"
+        className="absolute bottom-6 right-6 z-40 bg-white/95 hover:bg-white text-neutral-800 p-3 rounded-full backdrop-blur-md transition-all border border-neutral-200/90 shadow-[0_8px_25px_rgba(0,0,0,0.12)] active:scale-95 cursor-pointer"
         title={isMuted ? "Unmute Audio" : "Mute Audio"}
       >
         {isMuted ? (
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
         ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#FF5500]"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
         )}
       </button>
 
@@ -693,14 +709,14 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       {/* Tactical Dropzone Deployment Briefing Banner */}
       {!isLoading && showDropBriefing && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-black/90 backdrop-blur-md text-white border-2 border-[#FF5500] px-4 py-2 rounded-xl shadow-[0_8px_30px_rgba(255,85,0,0.3)] flex items-center gap-3 font-mono select-none">
+          <div className="bg-white/95 backdrop-blur-md text-neutral-900 border border-neutral-200/90 px-4 py-2 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center gap-3 font-mono select-none">
             <div className="w-2.5 h-2.5 rounded-full bg-[#FF5500] animate-ping shrink-0" />
             <div className="text-xs">
               <span className="text-[#FF5500] font-black uppercase tracking-wider">DROPZONE DEPLOYMENT: </span>
-              <span className="font-bold text-white">
+              <span className="font-bold text-neutral-900">
                 {HELIPADS[initialSpawn.helipadId]?.name || "Island Helipad"}
               </span>
-              <span className="text-neutral-400 text-[10px] ml-2 hidden sm:inline">
+              <span className="text-neutral-500 text-[10px] ml-2 hidden sm:inline">
                 [{initialSpawn.regionId.toUpperCase()} • ELEV {initialSpawn.groundElevation.toFixed(1)}m]
               </span>
             </div>

@@ -228,22 +228,22 @@ export const WORLD_OBSTACLES: ObstacleBox[] = [
   {
     name: "Mount Apex Summit Radio Mast",
     type: "mast",
-    minX: -624,
-    maxX: -616,
+    minX: -638,
+    maxX: -630,
     minY: 145.0,
     maxY: 172.0,
-    minZ: -724,
-    maxZ: -716,
+    minZ: -738,
+    maxZ: -730,
   },
   {
     name: "Whispering Pines Watchtower",
     type: "mast",
-    minX: -626,
-    maxX: -614,
+    minX: -601,
+    maxX: -589,
     minY: 5.5,
     maxY: 24.0,
-    minZ: -46,
-    maxZ: -34,
+    minZ: -66,
+    maxZ: -54,
   },
 ];
 
@@ -254,6 +254,8 @@ export interface ObstacleHitResult {
   box: ObstacleBox;
 }
 
+import { HELIPAD_LIST } from "@/lib/world/helipad-definitions";
+
 /**
  * Checks whether an aircraft sphere intersects any registered island building, bridge, or tower
  */
@@ -263,6 +265,17 @@ export function checkObstacleCollision(
   z: number,
   droneRadius = 0.55
 ): ObstacleHitResult | null {
+  // Designated Helipad Landing Clearances:
+  // If the drone is inside the perimeter of any official island helipad and at or above
+  // its platform surface, it is safely in an operational landing zone, never colliding with obstacles.
+  for (const h of HELIPAD_LIST) {
+    const rad = (h.dimensions.radius || h.dimensions.width / 2) + 0.5;
+    const distSq = (x - h.position.x) * (x - h.position.x) + (z - h.position.z) * (z - h.position.z);
+    if (distSq <= rad * rad && y >= h.elevation - 0.35) {
+      return null;
+    }
+  }
+
   for (const obs of WORLD_OBSTACLES) {
     // If the drone is at or above the rooftop surface (e.g. landing on rooftop helipad/skyport),
     // it is resting/hovering safely on the roof, not colliding with building walls.

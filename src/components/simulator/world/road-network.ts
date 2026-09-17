@@ -26,24 +26,24 @@ export class RoadNetwork {
       roughness: 0.86,
       metalness: 0.08,
       polygonOffset: true,
-      polygonOffsetFactor: -1,
-      polygonOffsetUnits: -1,
+      polygonOffsetFactor: -3,
+      polygonOffsetUnits: -3,
     });
 
     this.markingMat = new THREE.MeshStandardMaterial({
       color: 0xfacc15, // Aviation / highway yellow
       roughness: 0.4,
       polygonOffset: true,
-      polygonOffsetFactor: -2,
-      polygonOffsetUnits: -2,
+      polygonOffsetFactor: -4,
+      polygonOffsetUnits: -4,
     });
 
     this.whiteLineMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       roughness: 0.4,
       polygonOffset: true,
-      polygonOffsetFactor: -2,
-      polygonOffsetUnits: -2,
+      polygonOffsetFactor: -4,
+      polygonOffsetUnits: -4,
     });
 
     this.bridgeMat = new THREE.MeshStandardMaterial({
@@ -124,20 +124,28 @@ export class RoadNetwork {
    */
   private buildTurnaroundApron(cx: number, cz: number, radius: number, _name: string) {
     const sample = evaluateIslandElevation(cx, cz);
-    const y = Math.max(1.3, sample.elevation + 0.12);
+    const y = Math.max(1.35, sample.elevation + 0.18);
 
-    const circleGeo = new THREE.CircleGeometry(radius, 28);
+    // Reinforced concrete curb foundation so terrain never bleeds through
+    const curbGeo = new THREE.CylinderGeometry(radius * 1.01, radius * 1.03, 0.40, 32);
+    const curbMesh = new THREE.Mesh(curbGeo, this.bridgeMat);
+    curbMesh.position.set(cx, y - 0.20, cz);
+    curbMesh.receiveShadow = true;
+    this.group.add(curbMesh);
+
+    // Asphalt surface disc
+    const circleGeo = new THREE.CircleGeometry(radius, 32);
     circleGeo.rotateX(-Math.PI / 2);
     const circleMesh = new THREE.Mesh(circleGeo, this.roadMat);
-    circleMesh.position.set(cx, y, cz);
+    circleMesh.position.set(cx, y + 0.01, cz);
     circleMesh.receiveShadow = true;
     this.group.add(circleMesh);
 
     // Circular white marking ring
-    const ringGeo = new THREE.RingGeometry(radius - 2.5, radius - 2.0, 28);
+    const ringGeo = new THREE.RingGeometry(radius - 2.5, radius - 2.0, 32);
     ringGeo.rotateX(-Math.PI / 2);
     const ringMesh = new THREE.Mesh(ringGeo, this.whiteLineMat);
-    ringMesh.position.set(cx, y + 0.02, cz);
+    ringMesh.position.set(cx, y + 0.025, cz);
     ringMesh.receiveShadow = true;
     this.group.add(ringMesh);
   }
@@ -162,7 +170,7 @@ export class RoadNetwork {
       if (distToLake < 135) {
         minFloor = 9.3;
       }
-      return Math.max(terrainY + 0.12, minFloor);
+      return Math.max(terrainY + 0.22, minFloor);
     };
 
     for (let i = 0; i < rawPoints.length - 1; i++) {

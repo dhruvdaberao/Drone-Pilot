@@ -133,7 +133,7 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
       title="Tactical Radar GPS — Click to open Full Island Map (M)"
     >
       {/* Outer Tactical Bezel Frame */}
-      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-neutral-950/90 border-2 border-neutral-700/80 shadow-[0_12px_30px_rgba(0,0,0,0.6),0_0_15px_rgba(255,85,0,0.15)] relative overflow-hidden flex items-center justify-center backdrop-blur-md">
+      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-white/95 border-2 border-neutral-300 shadow-[0_8px_30px_rgba(0,0,0,0.15),0_0_15px_rgba(255,85,0,0.12)] relative overflow-hidden flex items-center justify-center backdrop-blur-md">
         
         {/* Dynamic SVG Radar Canvas */}
         <svg viewBox="0 0 200 200" className="w-full h-full">
@@ -317,20 +317,20 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
         </svg>
 
         {/* Top Radar Sector Header Pill */}
-        <div className="absolute top-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-black/80 border border-neutral-700/80 text-[8px] font-mono font-bold text-neutral-200 tracking-wider flex items-center gap-1 shadow-sm">
+        <div className="absolute top-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-white/95 border border-neutral-200 text-[8px] font-mono font-bold text-neutral-800 tracking-wider flex items-center gap-1 shadow-sm">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           <span>{sectorName}</span>
         </div>
 
         {/* Bottom Distance to Target Pill ("Where we want to go") */}
-        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-black/85 border border-[#ff5500]/60 text-[8px] font-mono font-bold text-neutral-100 tracking-tight flex items-center gap-1 shadow-sm whitespace-nowrap">
+        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-white/95 border border-[#ff5500]/60 text-[8px] font-mono font-bold text-neutral-800 tracking-tight flex items-center gap-1 shadow-sm whitespace-nowrap">
           <Target className="h-2.5 w-2.5 text-[#ff5500]" />
           <span>{targetWaypoint.name}: {targetRel.dist.toFixed(0)}m</span>
         </div>
 
         {/* Hover Expand Prompt */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center pointer-events-none">
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/90 text-white border border-[#ff5500] text-[9px] font-bold px-2 py-1 rounded shadow-lg font-mono tracking-wider">
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-neutral-900/90 text-white border border-[#ff5500] text-[9px] font-bold px-2 py-1 rounded shadow-lg font-mono tracking-wider">
             EXPAND (M)
           </span>
         </div>

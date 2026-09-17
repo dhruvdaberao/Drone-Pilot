@@ -250,27 +250,32 @@ export function evaluateIslandElevation(x: number, z: number): TerrainSample {
   // E. VALLEY RIVER CANYON & TERRACES (Descending from lake waterfall to ocean estuary)
   if (z > -220 && z < 960 && x > -380 && x < 80) {
     const pZ = (z + 220) / (940 + 220); // 0 at lake, 1 at ocean
-    const riverX = -270 + pZ * 190 + Math.sin(pZ * Math.PI * 2.5) * 45;
+    // Exact river centerline matching freshwater-mesh.ts
+    const riverX =
+      -270 +
+      pZ * 190 +
+      Math.sin(pZ * Math.PI * 2.5) * 45 +
+      Math.cos(pZ * Math.PI * 6.0) * 8;
     const distToRiver = Math.abs(x - riverX);
+    const halfWidth = 12 + pZ * 18; // 12m at lake -> 30m at estuary
 
-    // Terraced river corridor (canyon gorge within 45m, bluff shelf within 90m)
-    if (distToRiver < 90) {
+    // Generous river canyon corridor ensuring water is never covered by terrain
+    if (distToRiver < halfWidth + 55) {
       activeRegion = "river";
       const waterSurfaceY = Math.max(0.12, 8.5 * (1 - pZ));
-      const bedElevation = waterSurfaceY - 1.4;
+      const bedElevation = waterSurfaceY - 1.8;
 
-      if (distToRiver < 36) {
-        // Deep water channel
-        const tChannel = distToRiver / 36;
-        inlandElevation = bedElevation + tChannel * 0.9;
+      if (distToRiver < halfWidth + 6) {
+        // Deep water channel completely beneath river surface
+        inlandElevation = bedElevation;
         surface = "mud";
       } else {
-        // Canyon walls rising to ambient terrain
-        const tWall = (distToRiver - 36) / 54;
+        // Canyon walls rising smoothly to ambient terrain
+        const tWall = (distToRiver - (halfWidth + 6)) / 49;
         const smoothWall = tWall * tWall * (3 - 2 * tWall);
-        const canyonTop = waterSurfaceY + 4.8;
-        inlandElevation = (bedElevation + 0.9) * (1 - smoothWall) + Math.max(canyonTop, inlandElevation) * smoothWall;
-        if (tWall < 0.4) {
+        const canyonTop = waterSurfaceY + 3.8;
+        inlandElevation = bedElevation * (1 - smoothWall) + Math.max(canyonTop, inlandElevation) * smoothWall;
+        if (tWall < 0.35) {
           surface = "rock";
         }
       }
@@ -298,9 +303,15 @@ export function evaluateIslandElevation(x: number, z: number): TerrainSample {
     activeRegion = "forest";
     // Ranger Station helipad clearing at (-620, -40) at 5.5m MSL
     const distToForestPad = Math.hypot(x - (-620), z - (-40));
-    if (distToForestPad < 32) {
-      const tPad = distToForestPad / 32;
-      inlandElevation = 5.5 * (1 - tPad * tPad) + inlandElevation * (tPad * tPad);
+    if (distToForestPad < 48) {
+      if (distToForestPad <= 22) {
+        // Completely flat platform for helipad & vehicle turnaround
+        inlandElevation = 5.42;
+      } else {
+        const tPad = (distToForestPad - 22) / 26;
+        const smoothPad = tPad * tPad * (3 - 2 * tPad);
+        inlandElevation = 5.42 * (1 - smoothPad) + inlandElevation * smoothPad;
+      }
     }
     surface = "grass";
   }

@@ -167,65 +167,60 @@ export function BaseSwitcherHUD({ onTeleport }: BaseSwitcherHUDProps) {
       <div className="relative pointer-events-auto">
         <button
           onClick={() => setIsOpen((prev) => !prev)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-900/85 hover:bg-neutral-800 text-white font-mono text-xs font-bold border border-white/20 shadow-lg backdrop-blur-md transition-all cursor-pointer active:scale-95"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/95 hover:bg-white text-neutral-900 font-mono text-xs font-bold border border-neutral-200/90 shadow-sm backdrop-blur-md transition-all cursor-pointer active:scale-95"
           title="Switch between flight bases across the island"
         >
-          <MapPin className="h-3.5 w-3.5 text-[#FF5500] animate-pulse" />
-          <span className="hidden sm:inline">BASE:</span>
-          <span className="text-[#FF5500] truncate max-w-[120px] sm:max-w-[160px]">
+          <MapPin className="h-3.5 w-3.5 text-[#FF5500]" />
+          <span className="hidden sm:inline text-neutral-600">BASE:</span>
+          <span className="text-[#FF5500] font-extrabold truncate max-w-[120px] sm:max-w-[150px]">
             {selectedBase.category}
           </span>
           <ChevronDown className={`h-3.5 w-3.5 text-neutral-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
         </button>
 
-        {/* Dropdown Menu Modal */}
+        {/* Dropdown Menu Modal — Compact Premium White Card */}
         {isOpen && (
-          <div className="absolute top-10 left-0 sm:left-auto sm:right-0 w-80 sm:w-96 rounded-2xl bg-neutral-950/95 backdrop-blur-2xl border border-white/20 shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-200 font-mono text-white select-none">
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#FF5500]" />
-                <span className="text-xs font-black tracking-wider uppercase text-white">
-                  ISLAND FLIGHT BASES
+          <div className="absolute top-10 left-0 sm:left-auto sm:right-0 w-72 sm:w-80 rounded-2xl bg-white/98 backdrop-blur-2xl border border-neutral-200/90 shadow-[0_16px_40px_rgba(0,0,0,0.15)] p-2.5 z-50 animate-in fade-in zoom-in-95 duration-200 font-sans text-neutral-900 select-none">
+            <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-neutral-100">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-[#FF5500]" />
+                <span className="text-xs font-bold tracking-wider uppercase text-neutral-900">
+                  Island Bases
                 </span>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 text-neutral-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                className="p-1 text-neutral-400 hover:text-neutral-800 rounded-md hover:bg-neutral-100 transition-colors cursor-pointer"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
 
-            <p className="text-[11px] text-neutral-400 mb-2.5">
-              Select any base to instantaneously fast-travel your drone with safe altitude & landing clearance:
-            </p>
-
-            <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
+            <div className="space-y-1 max-h-[260px] overflow-y-auto pr-0.5">
               {ISLAND_BASES.map((b) => {
                 const isCurrent = selectedBase.id === b.id;
                 return (
                   <div
                     key={b.id}
                     onClick={() => handleSelect(b)}
-                    className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
+                    className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center gap-2.5 ${
                       isCurrent
-                        ? "bg-[#FF5500]/20 border-[#FF5500]/60 text-white shadow-inner"
-                        : "bg-white/5 hover:bg-white/10 border-white/10 text-neutral-200"
+                        ? "bg-orange-50/90 border-[#FF5500] shadow-sm"
+                        : "bg-neutral-50/70 hover:bg-neutral-100/90 border-neutral-200/60 text-neutral-800"
                     }`}
                   >
-                    <div className="p-2 rounded-lg bg-black/40 border border-white/10 shrink-0 mt-0.5">
+                    <div className="p-1.5 rounded-lg bg-white border border-neutral-200/80 shrink-0 text-[#FF5500] shadow-2xs">
                       {getBaseIcon(b.iconType)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs truncate text-white">{b.name}</span>
-                        <span className="text-[10px] font-extrabold text-[#FF5500] shrink-0 ml-1">
+                        <span className="font-semibold text-xs truncate text-neutral-900">{b.name}</span>
+                        <span className="text-[10px] font-mono font-bold text-[#FF5500] shrink-0 ml-1">
                           {b.elevationMsl}m
                         </span>
                       </div>
-                      <div className="text-[10px] text-neutral-400 mt-0.5">{b.region}</div>
-                      <div className="text-[10px] text-neutral-400/80 line-clamp-1 mt-0.5">
-                        {b.description}
+                      <div className="text-[10px] text-neutral-500 font-normal truncate mt-0.5">
+                        {b.region}
                       </div>
                     </div>
                   </div>
@@ -238,9 +233,9 @@ export function BaseSwitcherHUD({ onTeleport }: BaseSwitcherHUDProps) {
 
       {/* Floating Tactical Teleport Confirmation Toast */}
       {toastMessage && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300 font-mono">
-          <div className="px-4 py-2 rounded-xl bg-neutral-950/90 border border-[#FF5500]/70 text-[#FF5500] text-xs font-black shadow-[0_0_20px_rgba(255,85,0,0.4)] backdrop-blur-md flex items-center gap-2">
-            <Sparkles className="h-4 w-4 animate-spin" />
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300 font-sans">
+          <div className="px-3.5 py-1.5 rounded-xl bg-white/95 border border-[#FF5500] text-neutral-900 text-xs font-semibold shadow-lg backdrop-blur-md flex items-center gap-2">
+            <Sparkles className="h-3.5 w-3.5 text-[#FF5500]" />
             <span>{toastMessage}</span>
           </div>
         </div>

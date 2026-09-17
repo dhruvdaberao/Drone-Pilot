@@ -241,37 +241,37 @@ function DirectionalJoystick({ onMove, className = "" }: DirectionalJoystickProp
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-neutral-950/85 border border-neutral-700/80 shadow-[0_8px_25px_rgba(0,0,0,0.6)] relative flex items-center justify-center cursor-grab active:cursor-grabbing touch-none backdrop-blur-md"
+        className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white/95 border-2 border-neutral-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.12)] relative flex items-center justify-center cursor-grab active:cursor-grabbing touch-none backdrop-blur-md"
         style={{ touchAction: "none" }}
-        title="Tactical Flight Direction Pad (WASD)"
+        title="Flight Direction Pad (WASD)"
       >
         {/* Cardinal Key Indicators */}
-        <span className="absolute top-1.5 text-[9px] font-bold font-mono text-neutral-400 pointer-events-none">
+        <span className="absolute top-1.5 text-[9px] font-extrabold font-mono text-neutral-700 pointer-events-none">
           ▲ W
         </span>
-        <span className="absolute bottom-1.5 text-[9px] font-bold font-mono text-neutral-400 pointer-events-none">
+        <span className="absolute bottom-1.5 text-[9px] font-extrabold font-mono text-neutral-700 pointer-events-none">
           ▼ S
         </span>
-        <span className="absolute left-2 text-[9px] font-bold font-mono text-neutral-400 pointer-events-none">
+        <span className="absolute left-2 text-[9px] font-extrabold font-mono text-neutral-700 pointer-events-none">
           ◀ A
         </span>
-        <span className="absolute right-2 text-[9px] font-bold font-mono text-neutral-400 pointer-events-none">
+        <span className="absolute right-2 text-[9px] font-extrabold font-mono text-neutral-700 pointer-events-none">
           D ▶
         </span>
 
-        {/* Laser Reticle Rings */}
-        <div className="w-12 h-12 rounded-full border border-neutral-700/60 pointer-events-none" />
-        <div className="w-4 h-4 rounded-full border border-neutral-600/70 pointer-events-none" />
+        {/* Reticle Rings */}
+        <div className="w-12 h-12 rounded-full border border-neutral-200 pointer-events-none" />
+        <div className="w-4 h-4 rounded-full border border-neutral-300 pointer-events-none" />
 
         {/* Draggable Thumbstick Puck */}
         <div
-          className="absolute w-10 h-10 rounded-full bg-neutral-900 border border-neutral-600 flex items-center justify-center font-bold shadow-lg pointer-events-none"
+          className="absolute w-10 h-10 rounded-full bg-white border-2 border-neutral-300 flex items-center justify-center font-bold shadow-md pointer-events-none"
           style={{
             transform: `translate3d(${stickPos.x}px, ${stickPos.y}px, 0)`,
             transition: isActive ? "none" : "transform 0.12s ease-out",
           }}
         >
-          <div className="w-2 h-2 rounded-full bg-[#FF5500] shadow-[0_0_8px_#FF5500]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#FF5500] shadow-[0_0_6px_#FF5500]" />
         </div>
       </div>
     </div>
@@ -780,8 +780,8 @@ export function TelemetryHUD({
 
           {/* 2. Altitude Control Buttons (SPACE / SHIFT) */}
           <div className="flex flex-col items-center gap-1 select-none">
-            <div className="flex flex-col items-center gap-1.5 bg-neutral-950/85 backdrop-blur-md p-1.5 rounded-2xl border border-neutral-700/80 shadow-[0_8px_25px_rgba(0,0,0,0.6)]">
-              <span className="text-[8px] font-extrabold text-neutral-400 uppercase tracking-widest px-1">
+            <div className="flex flex-col items-center gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-neutral-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
+              <span className="text-[8px] font-extrabold text-neutral-500 uppercase tracking-widest px-1">
                 ALTITUDE
               </span>
 
@@ -791,7 +791,7 @@ export function TelemetryHUD({
                 onPointerDown={(e) => { e.preventDefault(); onThrottle(1); }}
                 onPointerUp={(e) => { e.preventDefault(); onThrottle(0); }}
                 onPointerLeave={(e) => { e.preventDefault(); onThrottle(0); }}
-                className="flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-neutral-900/90 hover:bg-neutral-800 active:bg-[#FF5500] active:text-white border border-neutral-700/80 text-neutral-200 text-xs font-bold transition-all cursor-pointer select-none shadow-xs active:scale-95 w-full"
+                className="flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100 active:bg-[#FF5500] active:text-white border border-neutral-200/90 text-neutral-800 text-xs font-bold transition-all cursor-pointer select-none shadow-xs active:scale-95 w-full"
                 title="Climb / Throttle Up (SPACE)"
               >
                 <ArrowUp className="h-3.5 w-3.5 text-[#FF5500]" />
@@ -804,10 +804,10 @@ export function TelemetryHUD({
                 onPointerDown={(e) => { e.preventDefault(); onThrottle(-1); }}
                 onPointerUp={(e) => { e.preventDefault(); onThrottle(0); }}
                 onPointerLeave={(e) => { e.preventDefault(); onThrottle(0); }}
-                className="flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-neutral-900/90 hover:bg-neutral-800 active:bg-[#FF5500] active:text-white border border-neutral-700/80 text-neutral-200 text-xs font-bold transition-all cursor-pointer select-none shadow-xs active:scale-95 w-full"
+                className="flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100 active:bg-[#FF5500] active:text-white border border-neutral-200/90 text-neutral-800 text-xs font-bold transition-all cursor-pointer select-none shadow-xs active:scale-95 w-full"
                 title="Descend / Throttle Down (SHIFT / C)"
               >
-                <ArrowDown className="h-3.5 w-3.5 text-neutral-400" />
+                <ArrowDown className="h-3.5 w-3.5 text-neutral-500" />
                 <span className="text-[10px] font-extrabold font-mono">SHIFT</span>
               </button>
             </div>
@@ -821,14 +821,14 @@ export function TelemetryHUD({
           {/* Compact Aviation Controls Dock */}
           <div className="flex flex-col items-end gap-2">
             {/* Upper Dock Row: Yaw Rotate (Q / E) & Land Button */}
-            <div className="flex items-center gap-1.5 bg-neutral-950/85 backdrop-blur-md p-1.5 rounded-xl border border-neutral-700/80 shadow-[0_8px_25px_rgba(0,0,0,0.6)]">
+            <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-xl border border-neutral-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
               {/* Yaw Left (↺ Q) */}
               <button
                 type="button"
                 onPointerDown={(e) => { e.preventDefault(); onYaw(-1); }}
                 onPointerUp={(e) => { e.preventDefault(); onYaw(0); }}
                 onPointerLeave={(e) => { e.preventDefault(); onYaw(0); }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-900/90 hover:bg-neutral-800 active:bg-[#FF5500] active:text-white text-xs font-bold text-neutral-200 border border-neutral-700/80 active:scale-95 transition-all cursor-pointer select-none font-mono"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-50 hover:bg-neutral-100 active:bg-[#FF5500] active:text-white text-xs font-bold text-neutral-800 border border-neutral-200/90 active:scale-95 transition-all cursor-pointer select-none font-mono"
                 title="Rotate Left (Q)"
               >
                 <RotateCcw className="h-3.5 w-3.5 text-[#FF5500]" />
@@ -841,14 +841,14 @@ export function TelemetryHUD({
                 onPointerDown={(e) => { e.preventDefault(); onYaw(1); }}
                 onPointerUp={(e) => { e.preventDefault(); onYaw(0); }}
                 onPointerLeave={(e) => { e.preventDefault(); onYaw(0); }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-900/90 hover:bg-neutral-800 active:bg-[#FF5500] active:text-white text-xs font-bold text-neutral-200 border border-neutral-700/80 active:scale-95 transition-all cursor-pointer select-none font-mono"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-50 hover:bg-neutral-100 active:bg-[#FF5500] active:text-white text-xs font-bold text-neutral-800 border border-neutral-200/90 active:scale-95 transition-all cursor-pointer select-none font-mono"
                 title="Rotate Right (E)"
               >
                 <span className="text-[10px]">E</span>
                 <RotateCw className="h-3.5 w-3.5 text-[#FF5500]" />
               </button>
 
-              <div className="h-4 w-px bg-neutral-700 mx-0.5" />
+              <div className="h-4 w-px bg-neutral-200 mx-0.5" />
 
               {/* Land Button */}
               <button
@@ -857,7 +857,7 @@ export function TelemetryHUD({
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold font-mono border transition-all cursor-pointer active:scale-95 shadow-xs ${
                   telemetry.flightMode === "AUTO LAND"
                     ? "bg-[#FF5500] text-white border-black animate-pulse"
-                    : "bg-neutral-900/90 text-neutral-200 border-neutral-700/80 hover:bg-neutral-800 hover:text-white"
+                    : "bg-neutral-50 text-neutral-800 border-neutral-200/90 hover:bg-neutral-100 hover:text-neutral-950"
                 }`}
                 title="Precision Auto-Landing (L)"
               >
@@ -867,21 +867,21 @@ export function TelemetryHUD({
             </div>
 
             {/* Lower Dock Row: Hover Switch, Camera View, Reset */}
-            <div className="flex items-center gap-1.5 bg-neutral-950/85 backdrop-blur-md p-1.5 rounded-xl border border-neutral-700/80 shadow-[0_8px_25px_rgba(0,0,0,0.6)]">
+            <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-xl border border-neutral-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
               {/* Hover Assist Toggle */}
               <button
                 onClick={onToggleHover}
                 className={`flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-bold font-mono transition-all border cursor-pointer active:scale-95 ${
                   isHoverMode
-                    ? "bg-neutral-800 text-white border-neutral-600"
-                    : "bg-neutral-900/80 text-neutral-400 border-neutral-800 hover:bg-neutral-800"
+                    ? "bg-neutral-100 text-neutral-900 border-neutral-300"
+                    : "bg-neutral-50 text-neutral-600 border-neutral-200/90 hover:bg-neutral-100"
                 }`}
                 title="Toggle Hover Assist (H)"
               >
                 <span className="text-[10px]">Hover</span>
                 <div
                   className={`w-2 h-2 rounded-full ${
-                    isHoverMode ? "bg-[#FF5500] shadow-[0_0_6px_#FF5500]" : "bg-neutral-600"
+                    isHoverMode ? "bg-[#FF5500] shadow-[0_0_6px_#FF5500]" : "bg-neutral-300"
                   }`}
                 />
               </button>
@@ -890,26 +890,26 @@ export function TelemetryHUD({
               <div className="relative">
                 <button
                   onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-900/90 hover:bg-neutral-800 text-xs font-bold text-neutral-200 border border-neutral-700/80 transition-all cursor-pointer active:scale-95 font-mono"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-50 hover:bg-neutral-100 text-xs font-bold text-neutral-800 border border-neutral-200/90 transition-all cursor-pointer active:scale-95 font-mono"
                   title="Switch Camera View Mode (V)"
                 >
                   <Eye className="h-3.5 w-3.5 text-[#FF5500]" />
                   <span className="text-[10px] hidden sm:inline">{cameraModeLabels[cameraMode]}</span>
-                  <ChevronDown className="h-3 w-3 text-neutral-400" />
+                  <ChevronDown className="h-3 w-3 text-neutral-500" />
                 </button>
 
                 {/* Dropdown Options */}
                 {isViewDropdownOpen && (
-                  <div className="absolute bottom-full mb-2 right-0 w-48 p-1.5 rounded-xl bg-neutral-950/95 backdrop-blur-md border border-neutral-700/80 shadow-2xl text-xs space-y-1 animate-in fade-in zoom-in-95 z-30 font-mono">
+                  <div className="absolute bottom-full mb-2 right-0 w-48 p-1.5 rounded-xl bg-white/98 backdrop-blur-md border border-neutral-200/90 shadow-2xl text-xs space-y-1 animate-in fade-in zoom-in-95 z-30 font-mono">
                     <button
                       onClick={() => {
                         onSelectCameraMode("chase");
                         setIsViewDropdownOpen(false);
                       }}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-800/80 text-neutral-200 text-left font-medium transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-100 text-neutral-800 text-left font-medium transition-colors cursor-pointer"
                     >
                       <span
-                        className={`h-2.5 w-2.5 rounded-full border border-neutral-500 flex items-center justify-center shrink-0 ${
+                        className={`h-2.5 w-2.5 rounded-full border border-neutral-300 flex items-center justify-center shrink-0 ${
                           cameraMode === "chase" ? "bg-[#FF5500]" : "bg-transparent"
                         }`}
                       />
@@ -921,10 +921,10 @@ export function TelemetryHUD({
                         onSelectCameraMode("fpv");
                         setIsViewDropdownOpen(false);
                       }}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-800/80 text-neutral-200 text-left font-medium transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-100 text-neutral-800 text-left font-medium transition-colors cursor-pointer"
                     >
                       <span
-                        className={`h-2.5 w-2.5 rounded-full border border-neutral-500 flex items-center justify-center shrink-0 ${
+                        className={`h-2.5 w-2.5 rounded-full border border-neutral-300 flex items-center justify-center shrink-0 ${
                           cameraMode === "fpv" ? "bg-[#FF5500]" : "bg-transparent"
                         }`}
                       />
@@ -936,10 +936,10 @@ export function TelemetryHUD({
                         onSelectCameraMode("topdown");
                         setIsViewDropdownOpen(false);
                       }}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-800/80 text-neutral-200 text-left font-medium transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-100 text-neutral-800 text-left font-medium transition-colors cursor-pointer"
                     >
                       <span
-                        className={`h-2.5 w-2.5 rounded-full border border-neutral-500 flex items-center justify-center shrink-0 ${
+                        className={`h-2.5 w-2.5 rounded-full border border-neutral-300 flex items-center justify-center shrink-0 ${
                           cameraMode === "topdown" ? "bg-[#FF5500]" : "bg-transparent"
                         }`}
                       />
@@ -952,10 +952,10 @@ export function TelemetryHUD({
               {/* Reset Button */}
               <button
                 onClick={onReset}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-900/90 hover:bg-neutral-800 text-xs font-bold text-neutral-200 border border-neutral-700/80 transition-all cursor-pointer active:scale-95 font-mono"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-50 hover:bg-neutral-100 text-xs font-bold text-neutral-800 border border-neutral-200/90 transition-all cursor-pointer active:scale-95 font-mono"
                 title="Reset Aircraft to Helipad (R)"
               >
-                <RotateCcw className="h-3.5 w-3.5 text-neutral-400" />
+                <RotateCcw className="h-3.5 w-3.5 text-neutral-500" />
                 <span className="text-[10px]">R</span>
               </button>
             </div>
