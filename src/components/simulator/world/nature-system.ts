@@ -51,6 +51,7 @@ export class NatureSystem {
     this.buildMooringPilings(prng);
     this.buildTrailFences(prng);
     this.buildWaterfallEnvironment();
+    this.buildMeadowFlowers(prng);
   }
 
   // ----------------------------------------------------------------
@@ -1199,5 +1200,56 @@ export class NatureSystem {
     waterfallGroup.add(mistSphere);
 
     this.group.add(waterfallGroup);
+  }
+
+  /**
+   * Instanced flower fields in empty meadow areas
+   */
+  private buildMeadowFlowers(prng: SeededPRNG) {
+    const count = 600;
+    const geo = new THREE.SphereGeometry(0.25, 6, 6);
+    const mat = new THREE.MeshStandardMaterial({ roughness: 0.8, metalness: 0 });
+    const mesh = new THREE.InstancedMesh(geo, mat, count);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    
+    const colors = [
+      new THREE.Color(0xff0000), // red
+      new THREE.Color(0xffff00), // yellow
+      new THREE.Color(0x800080), // purple
+      new THREE.Color(0xffc0cb), // pink
+      new THREE.Color(0xffffff)  // white
+    ];
+
+    const dummy = new THREE.Object3D();
+    const colorObj = new THREE.Color();
+    let placed = 0;
+    let attempts = 0;
+    
+    while (placed < count && attempts < count * 10) {
+      attempts++;
+      const x = prng.nextRange(-1000, 1000);
+      const z = prng.nextRange(-1000, 1000);
+      
+      const biome = getBiomeAt(x, z);
+      if (!biome.canSupportFoliage) continue;
+      if (biome.primaryBiome !== "LOWLAND_MEADOW" && biome.primaryBiome !== "RURAL_PASTURE") continue;
+      if (isProtectedZone(x, z, 5)) continue;
+      
+      const scale = prng.nextRange(0.5, 1.2);
+      dummy.position.set(x, biome.elevation, z);
+      dummy.scale.set(scale, scale, scale);
+      dummy.updateMatrix();
+      
+      mesh.setMatrixAt(placed, dummy.matrix);
+      colorObj.copy(colors[placed % colors.length]);
+      mesh.setColorAt(placed, colorObj);
+      placed++;
+    }
+    
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    this.group.add(mesh);
   }
 }

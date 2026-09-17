@@ -29,6 +29,9 @@ export class NPCManager {
     this.spawnFlightlineGroundCrew();
     this.spawnCityPedestrians();
     this.spawnForestRangers();
+    this.spawnBeachNPCs();
+    this.spawnIndustrialWorkers();
+    this.spawnScatteredNPCs();
   }
 
   /**
@@ -307,6 +310,39 @@ export class NPCManager {
         p1: new THREE.Vector3(740, 2.53, 340),
         p2: new THREE.Vector3(780, 2.53, 380),
       },
+      // 8 new pedestrians
+      {
+        shirtColor: 0xd946ef, pantsColor: 0x1e293b,
+        p1: new THREE.Vector3(660, 2.5, 280), p2: new THREE.Vector3(660, 2.5, 360)
+      },
+      {
+        shirtColor: 0x06b6d4, pantsColor: 0x0f172a,
+        p1: new THREE.Vector3(700, 2.5, 245), p2: new THREE.Vector3(760, 2.5, 245)
+      },
+      {
+        shirtColor: 0x84cc16, pantsColor: 0x1e293b,
+        p1: new THREE.Vector3(740, 2.5, 310), p2: new THREE.Vector3(740, 2.5, 370)
+      },
+      {
+        shirtColor: 0xf43f5e, pantsColor: 0x334155,
+        p1: new THREE.Vector3(800, 2.5, 300), p2: new THREE.Vector3(800, 2.5, 380)
+      },
+      {
+        shirtColor: 0x3b82f6, pantsColor: 0x111827,
+        p1: new THREE.Vector3(650, 2.5, 400), p2: new THREE.Vector3(720, 2.5, 400)
+      },
+      {
+        shirtColor: 0x10b981, pantsColor: 0x1e293b,
+        p1: new THREE.Vector3(730, 2.5, 210), p2: new THREE.Vector3(730, 2.5, 190)
+      },
+      {
+        shirtColor: 0xf59e0b, pantsColor: 0x111827,
+        p1: new THREE.Vector3(720, 2.5, 200), p2: new THREE.Vector3(750, 2.5, 200)
+      },
+      {
+        shirtColor: 0x8b5cf6, pantsColor: 0x334155,
+        p1: new THREE.Vector3(680, 2.5, 350), p2: new THREE.Vector3(680, 2.5, 420)
+      }
     ];
 
     pedConfigs.forEach((cfg, i) => {
@@ -364,6 +400,73 @@ export class NPCManager {
       p2: new THREE.Vector3(-280, 8.6, -250),
       t: 0.6,
       dir: 1,
+    });
+  }
+
+  private spawnBeachNPCs() {
+    const configs = [
+      { p1: new THREE.Vector3(-715, 0.8, 520), p2: new THREE.Vector3(-715, 0.8, 550), shirt: 0xff0000, pants: 0xffffff },
+      { p1: new THREE.Vector3(-725, 0.8, 530), p2: new THREE.Vector3(-725, 0.8, 560), shirt: 0x00ff00, pants: 0xeeeeee },
+      { p1: new THREE.Vector3(-710, 0.8, 580), p2: new THREE.Vector3(-730, 0.8, 600), shirt: 0xffff00, pants: 0xff00ff },
+      { p1: new THREE.Vector3(-720, 0.8, 610), p2: new THREE.Vector3(-740, 0.8, 610), shirt: 0x00ffff, pants: 0x0000ff },
+      { p1: new THREE.Vector3(-735, 0.8, 590), p2: new THREE.Vector3(-720, 0.8, 570), shirt: 0xffa500, pants: 0xffffff }
+    ];
+
+    configs.forEach((cfg, i) => {
+      const npc = this.createHumanoid({ shirtColor: cfg.shirt, pantsColor: cfg.pants });
+      this.group.add(npc.root);
+      this.npcs.push({
+        ...npc,
+        isWalking: true, walkSpeed: 1.0 + (i % 2) * 0.2,
+        p1: cfg.p1, p2: cfg.p2, t: i / configs.length, dir: 1
+      });
+    });
+  }
+
+  private spawnIndustrialWorkers() {
+    for (let i = 0; i < 6; i++) {
+      const npc = this.createHumanoid({ vestColor: 0xfacc15, pantsColor: 0x1e293b }); // yellow high-vis
+      this.group.add(npc.root);
+      const startX = 380 + (Math.random() - 0.5) * 40;
+      const startZ = 780 + (Math.random() - 0.5) * 40;
+      const endX = startX + (Math.random() - 0.5) * 20;
+      const endZ = startZ + (Math.random() - 0.5) * 20;
+      
+      this.npcs.push({
+        ...npc,
+        isWalking: true, walkSpeed: 1.2,
+        p1: new THREE.Vector3(startX, 1.8, startZ),
+        p2: new THREE.Vector3(endX, 1.8, endZ),
+        t: Math.random(), dir: 1
+      });
+    }
+  }
+
+  private spawnScatteredNPCs() {
+    const configs = [
+      // Hikers
+      { p1: new THREE.Vector3(-400, 15, -100), p2: new THREE.Vector3(-380, 18, -120), shirt: 0x8b4513, pants: 0x556b2f },
+      { p1: new THREE.Vector3(-450, 12, -80), p2: new THREE.Vector3(-430, 16, -60), shirt: 0xff4500, pants: 0x8b4513 },
+      { p1: new THREE.Vector3(-350, 22, -150), p2: new THREE.Vector3(-320, 25, -170), shirt: 0x2e8b57, pants: 0x000000 },
+      // Fishers
+      { p1: new THREE.Vector3(-200, 2, 100), p2: new THREE.Vector3(-210, 2, 120), shirt: 0x4682b4, pants: 0x808080 },
+      { p1: new THREE.Vector3(-150, 2, 150), p2: new THREE.Vector3(-140, 2, 170), shirt: 0x696969, pants: 0x2f4f4f },
+      { p1: new THREE.Vector3(-180, 2, 80), p2: new THREE.Vector3(-190, 2, 90), shirt: 0xa0522d, pants: 0xd2b48c }
+    ];
+
+    configs.forEach((cfg, i) => {
+      const elev1 = evaluateIslandElevation(cfg.p1.x, cfg.p1.z).elevation;
+      const elev2 = evaluateIslandElevation(cfg.p2.x, cfg.p2.z).elevation;
+      cfg.p1.y = elev1;
+      cfg.p2.y = elev2;
+
+      const npc = this.createHumanoid({ shirtColor: cfg.shirt, pantsColor: cfg.pants });
+      this.group.add(npc.root);
+      this.npcs.push({
+        ...npc,
+        isWalking: true, walkSpeed: 0.8 + (i % 3) * 0.2,
+        p1: cfg.p1, p2: cfg.p2, t: i / configs.length, dir: 1
+      });
     });
   }
 

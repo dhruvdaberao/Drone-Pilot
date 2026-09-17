@@ -770,11 +770,11 @@ export function TelemetryHUD({
       {/* Left: Direction Pad + Altitude Controls              */}
       {/* Right: Compact Utility Dock + Tactical Map Circle    */}
       {/* ---------------------------------------------------- */}
-      <footer className="w-full flex items-end justify-between pointer-events-none z-20">
+      <footer className="w-full flex items-end justify-between pointer-events-none z-20 sm:gap-2 gap-1">
         {/* ==================================================== */}
         {/* BOTTOM-LEFT: DIRECTION PAD (WASD) + ALTITUDE BUTTONS */}
         {/* ==================================================== */}
-        <div className="flex items-end gap-3 pointer-events-auto">
+        <div className="flex items-end gap-1 sm:gap-3 pointer-events-auto origin-bottom-left scale-[0.75] sm:scale-100">
           {/* 1. Virtual Flight Direction Pad (WASD) */}
           <DirectionalJoystick onMove={onMoveDirection} />
 
@@ -817,7 +817,7 @@ export function TelemetryHUD({
         {/* ==================================================== */}
         {/* BOTTOM-RIGHT: COMPACT UTILITY DOCK + MINIMAP CIRCLE  */}
         {/* ==================================================== */}
-        <div className="flex items-end gap-3 pointer-events-auto">
+        <div className="flex items-end gap-1 sm:gap-3 pointer-events-auto origin-bottom-right scale-[0.75] sm:scale-100">
           {/* Compact Aviation Controls Dock */}
           <div className="flex flex-col items-end gap-2">
             {/* Upper Dock Row: Yaw Rotate (Q / E) & Land Button */}

@@ -18,7 +18,7 @@ export class WaterSystem {
   private mistParticles!: THREE.Points;
   private mistGeo!: THREE.BufferGeometry;
   private mistPositions!: Float32Array;
-  private mistCount = 120;
+  private mistCount = 200;
 
   constructor() {
     this.ocean = new OceanMesh();
@@ -34,8 +34,8 @@ export class WaterSystem {
    * Cascading waterfall where Mountain Lake plunges over the rock cliff into the river
    */
   private buildMountainWaterfall() {
-    // 1. Cascading Water Plane: 14m wide x 6m high
-    const fallGeo = new THREE.PlaneGeometry(14, 6.2, 12, 12);
+    // 1. Cascading Water Plane: 20m wide x 10m high
+    const fallGeo = new THREE.PlaneGeometry(20, 10.0, 12, 12);
     fallGeo.rotateY(Math.PI / 4);
 
     // Procedural churning white-water texture
@@ -74,6 +74,48 @@ export class WaterSystem {
     this.waterfallMesh.position.set(-270, 6.0, -210);
     this.waterfallMesh.rotation.x = 0.35; // Angle forward down the cliff
     this.group.add(this.waterfallMesh);
+
+    // Rocky cliff face behind waterfall
+    const cliffGeo = new THREE.BoxGeometry(22, 12, 2);
+    const cliffMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9, metalness: 0.1 });
+    const cliffMesh = new THREE.Mesh(cliffGeo, cliffMat);
+    cliffMesh.position.set(-275, 6.0, -215);
+    cliffMesh.rotation.y = Math.PI / 4;
+    this.group.add(cliffMesh);
+
+    // Splash pool at the base
+    const poolGeo = new THREE.CircleGeometry(8, 32);
+    const poolMat = new THREE.MeshStandardMaterial({ color: 0x40e0d0, transparent: true, opacity: 0.8, roughness: 0.1, metalness: 0.8 });
+    const poolMesh = new THREE.Mesh(poolGeo, poolMat);
+    poolMesh.rotation.x = -Math.PI / 2;
+    poolMesh.position.set(-260, 2.0, -200);
+    this.group.add(poolMesh);
+
+    // Wet boulders around pool base
+    const boulderGeo = new THREE.DodecahedronGeometry(1.5, 1);
+    const boulderMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.2, metalness: 0.3 });
+    const boulderPositions = [
+      { x: -253, y: 1.5, z: -202 },
+      { x: -256, y: 1.5, z: -193 },
+      { x: -264, y: 1.5, z: -193 },
+      { x: -267, y: 1.5, z: -205 },
+    ];
+    boulderPositions.forEach(pos => {
+      const boulder = new THREE.Mesh(boulderGeo, boulderMat);
+      boulder.position.set(pos.x, pos.y, pos.z);
+      boulder.rotation.set(Math.random(), Math.random(), Math.random());
+      boulder.scale.set(1 + Math.random()*0.5, 1 + Math.random()*0.5, 1 + Math.random()*0.5);
+      this.group.add(boulder);
+    });
+
+    // Small stream leading away
+    const streamGeo = new THREE.PlaneGeometry(6, 20);
+    const streamMat = new THREE.MeshStandardMaterial({ color: 0x40e0d0, transparent: true, opacity: 0.7, roughness: 0.2, metalness: 0.6 });
+    const streamMesh = new THREE.Mesh(streamGeo, streamMat);
+    streamMesh.rotation.x = -Math.PI / 2;
+    streamMesh.rotation.z = Math.PI / 6;
+    streamMesh.position.set(-250, 1.9, -185);
+    this.group.add(streamMesh);
 
     // 2. Base Mist Spray Emitter
     this.mistPositions = new Float32Array(this.mistCount * 3);
