@@ -164,7 +164,7 @@ function DirectionalJoystick({ onMove, className = "" }: DirectionalJoystickProp
   const [stickPos, setStickPos] = useState({ x: 0, y: 0 });
   const [isActive, setIsActive] = useState(false);
 
-  const maxRadius = 34;
+  const maxRadius = 22;
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -235,6 +235,11 @@ function DirectionalJoystick({ onMove, className = "" }: DirectionalJoystickProp
     onMove(0, 0);
   };
 
+  const isUpActive = stickPos.y < -5;
+  const isDownActive = stickPos.y > 5;
+  const isLeftActive = stickPos.x < -5;
+  const isRightActive = stickPos.x > 5;
+
   return (
     <div className={`flex flex-col items-center select-none ${className}`}>
       <div
@@ -243,37 +248,56 @@ function DirectionalJoystick({ onMove, className = "" }: DirectionalJoystickProp
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-white/95 border-2 border-neutral-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.12)] relative flex items-center justify-center cursor-grab active:cursor-grabbing touch-none backdrop-blur-md"
+        className="w-24 h-24 sm:w-26 sm:h-26 rounded-full bg-white/95 border border-neutral-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.1)] relative flex items-center justify-center cursor-grab active:cursor-grabbing touch-none backdrop-blur-md"
         style={{ touchAction: "none" }}
         title="Flight Direction Pad (WASD)"
       >
-        {/* Cardinal Key Indicators */}
-        <span className="absolute top-1.5 text-[9px] font-extrabold font-mono text-neutral-700 pointer-events-none">
-          ▲ W
+        {/* Cardinal Key Indicators - cleanly positioned around the perimeter */}
+        <span
+          className={`absolute top-1.5 text-[10px] font-extrabold font-mono transition-colors pointer-events-none ${
+            isUpActive ? "text-[#FF5500] scale-110" : "text-neutral-400"
+          }`}
+        >
+          W
         </span>
-        <span className="absolute bottom-1.5 text-[9px] font-extrabold font-mono text-neutral-700 pointer-events-none">
-          ▼ S
+        <span
+          className={`absolute bottom-1.5 text-[10px] font-extrabold font-mono transition-colors pointer-events-none ${
+            isDownActive ? "text-[#FF5500] scale-110" : "text-neutral-400"
+          }`}
+        >
+          S
         </span>
-        <span className="absolute left-2 text-[9px] font-extrabold font-mono text-neutral-700 pointer-events-none">
-          ◀ A
+        <span
+          className={`absolute left-2 text-[10px] font-extrabold font-mono transition-colors pointer-events-none ${
+            isLeftActive ? "text-[#FF5500] scale-110" : "text-neutral-400"
+          }`}
+        >
+          A
         </span>
-        <span className="absolute right-2 text-[9px] font-extrabold font-mono text-neutral-700 pointer-events-none">
-          D ▶
+        <span
+          className={`absolute right-2 text-[10px] font-extrabold font-mono transition-colors pointer-events-none ${
+            isRightActive ? "text-[#FF5500] scale-110" : "text-neutral-400"
+          }`}
+        >
+          D
         </span>
 
-        {/* Reticle Rings */}
-        <div className="w-12 h-12 rounded-full border border-neutral-200 pointer-events-none" />
-        <div className="w-4 h-4 rounded-full border border-neutral-300 pointer-events-none" />
+        {/* Minimalist guide ring */}
+        <div className="w-14 h-14 rounded-full border border-dashed border-neutral-200 pointer-events-none" />
 
         {/* Draggable Thumbstick Puck */}
         <div
-          className="absolute w-10 h-10 rounded-full bg-white border-2 border-neutral-300 flex items-center justify-center font-bold shadow-md pointer-events-none"
+          className="absolute w-8 h-8 rounded-full bg-white border border-neutral-300 flex items-center justify-center shadow-md pointer-events-none"
           style={{
             transform: `translate3d(${stickPos.x}px, ${stickPos.y}px, 0)`,
             transition: isActive ? "none" : "transform 0.12s ease-out",
           }}
         >
-          <div className="w-2.5 h-2.5 rounded-full bg-[#FF5500] shadow-[0_0_6px_#FF5500]" />
+          <div
+            className={`w-2.5 h-2.5 rounded-full transition-all ${
+              isActive ? "bg-[#FF5500] shadow-[0_0_8px_#FF5500] scale-110" : "bg-[#FF5500]"
+            }`}
+          />
         </div>
       </div>
     </div>

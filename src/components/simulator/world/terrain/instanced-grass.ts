@@ -6,7 +6,8 @@
 import * as THREE from "three";
 import { evaluateIslandElevation } from "@/lib/world/terrain-math";
 import { isWaterAt } from "@/lib/world/hydrology-mask";
-import { getDistanceToRoad } from "@/lib/world/biome-system";
+import { getDistanceToRoad, getBiomeAt } from "@/lib/world/biome-system";
+import { EnvironmentManager } from "../environment-manager";
 
 export class InstancedGrass {
   public group = new THREE.Group();
@@ -14,6 +15,8 @@ export class InstancedGrass {
   private customMaterial!: THREE.MeshStandardMaterial;
   private timeUniform = { value: 0 };
   private dronePosUniform = { value: new THREE.Vector3(0, 100, 0) };
+  private windStrengthUniform = { value: 1.0 };
+  private windDirUniform = { value: new THREE.Vector2(0.85, 0.52) };
 
   constructor(instanceCount = 18000) {
     this.buildGrassMesh(instanceCount);
@@ -179,10 +182,14 @@ export class InstancedGrass {
     this.customMaterial.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = this.timeUniform;
       shader.uniforms.uDronePos = this.dronePosUniform;
+      shader.uniforms.uWindStrength = this.windStrengthUniform;
+      shader.uniforms.uWindDir = this.windDirUniform;
 
       shader.vertexShader = `
         uniform float uTime;
         uniform vec3 uDronePos;
+        uniform float uWindStrength;
+        uniform vec2 uWindDir;
         ${shader.vertexShader}
       `;
 
@@ -201,10 +208,10 @@ export class InstancedGrass {
         float wave1 = sin(uTime * 3.2 + instanceWorldPos.x * 0.05 + instanceWorldPos.z * 0.04);
         float wave2 = sin(uTime * 5.2 + instanceWorldPos.x * 0.11 - instanceWorldPos.z * 0.08) * 0.42;
         float gust = cos(uTime * 1.5 + instanceWorldPos.x * 0.025 + instanceWorldPos.z * 0.02) * 0.65;
-        float totalWind = (wave1 + wave2 + gust) * 0.48 * heightFactor;
+        float totalWind = (wave1 + wave2 + gust) * 0.48 * heightFactor * uWindStrength;
 
-        transformed.x += totalWind * 0.85;
-        transformed.z += totalWind * 0.55;
+        transformed.x += totalWind * uWindDir.x;
+        transformed.z += totalWind * uWindDir.y;
 
         // Drone downwash deflection when drone is low overhead
         float distToDrone = distance(instanceWorldPos.xyz, uDronePos);
@@ -223,6 +230,15 @@ export class InstancedGrass {
     this.instancedMesh.receiveShadow = true;
     this.instancedMesh.castShadow = true;
 
+    // Initialize instance color attribute for multi-biome palette tinting
+    const colorInit = new THREE.Color(0x65a30d);
+    for (let i = 0; i < count; i++) {
+      this.instancedMesh.setColorAt(i, colorInit);
+    }
+    if (this.instancedMesh.instanceColor) {
+      this.instancedMesh.instanceColor.needsUpdate = true;
+    }
+
     this.repositionGrassGrid(0, 0);
     this.group.add(this.instancedMesh);
   }
@@ -230,12 +246,14 @@ export class InstancedGrass {
   private lastGridCenter = new THREE.Vector2(9999, 9999);
 
   /**
-   * Repositions dense grass tufts within an 85m radius around the drone
+   * Repositions dense grass tufts within an 85m radius around the drone with
+   * biome-specific styling (Lowland, Meadow, Forest Floor, Mountain, Riverbank, Coastal)
    */
   private repositionGrassGrid(centerX: number, centerZ: number) {
     const dummy = new THREE.Object3D();
+    const colorObj = new THREE.Color();
     const count = this.instancedMesh.count;
-    const gridSide = Math.floor(Math.sqrt(count)); // ~167x167 = 27889
+    const gridSide = Math.floor(Math.sqrt(count));
     const spacing = 2.1; // 2.1m spacing covers 350m diameter
     const halfSpan = (gridSide * spacing) / 2;
 
@@ -290,7 +308,7 @@ export class InstancedGrass {
 
         const sample = evaluateIslandElevation(x, z);
 
-        // Don't spawn on steep cliff rocks or beaches
+        // Don't spawn on steep cliff rocks or submerged beaches
         if (sample.elevation < 0.6 || sample.slope > 0.5) {
           dummy.position.set(0, -999, 0);
           dummy.scale.set(0, 0, 0);
@@ -299,9 +317,56 @@ export class InstancedGrass {
           continue;
         }
 
+        // Natural organic clustering: occasional bare earth patches
+        const patchNoise = Math.sin(x * 0.05 + z * 0.04) * Math.cos(x * 0.03 - z * 0.06);
+        if (patchNoise > 0.68) {
+          dummy.position.set(0, -999, 0);
+          dummy.scale.set(0, 0, 0);
+          dummy.updateMatrix();
+          this.instancedMesh.setMatrixAt(index++, dummy.matrix);
+          continue;
+        }
+
+        // Biome Query & Palette Selection
+        const biome = getBiomeAt(x, z);
+        let heightMultiplier = 1.0;
+        const colorVariation = ((Math.sin(gx * 17.1 + gz * 23.9) + 1.0) * 0.5);
+
+        if (biome.primaryBiome === "RIVER_BANK" || biome.distToRiver < 22 || (sample.elevation < 3.0 && isWaterAt(x, z, 14))) {
+          // 1. RIVERBANK GRASS: lush vibrant jade riparian greens
+          const palette = [0x16a34a, 0x15803d, 0x22c55e, 0x166534];
+          colorObj.setHex(palette[Math.floor(colorVariation * palette.length) % palette.length]);
+          heightMultiplier = 1.35 + colorVariation * 0.25;
+        } else if (biome.primaryBiome === "PELICAN_BEACH" || biome.primaryBiome === "ROCKY_COAST" || biome.distToCoast < 45) {
+          // 2. COASTAL GRASS: sun-bleached dune marram grass with golden ochre tints
+          const palette = [0xd97706, 0xca8a04, 0x84cc16, 0xb45309];
+          colorObj.setHex(palette[Math.floor(colorVariation * palette.length) % palette.length]);
+          heightMultiplier = 0.9 + colorVariation * 0.3;
+        } else if (sample.elevation > 28 || biome.primaryBiome === "MOUNTAIN_MID" || biome.primaryBiome === "ALPINE_SUMMIT" || biome.primaryBiome === "MOUNTAIN_LOWER") {
+          // 3. MOUNTAIN GRASS: hardy alpine tussocks & slate-tinted tundra moss
+          const palette = [0x64748b, 0x78716c, 0xa8a29e, 0x57534e];
+          colorObj.setHex(palette[Math.floor(colorVariation * palette.length) % palette.length]);
+          heightMultiplier = 0.55 + colorVariation * 0.2;
+        } else if (biome.primaryBiome === "FOREST_CORE" || biome.primaryBiome === "FOREST_EDGE") {
+          // 4. FOREST FLOOR: deep shaded conifer moss & understory woodland greens
+          const palette = [0x2d4a1d, 0x365314, 0x3f6212, 0x1a3311];
+          colorObj.setHex(palette[Math.floor(colorVariation * palette.length) % palette.length]);
+          heightMultiplier = 0.75 + colorVariation * 0.2;
+        } else if (biome.primaryBiome === "LOWLAND_MEADOW" || biome.primaryBiome === "RURAL_PASTURE") {
+          // 5. MEADOW GRASS: lush flowering pasture emeralds
+          const palette = [0x65a30d, 0x84cc16, 0xa3e635, 0x4d7c0f];
+          colorObj.setHex(palette[Math.floor(colorVariation * palette.length) % palette.length]);
+          heightMultiplier = 1.15 + colorVariation * 0.3;
+        } else {
+          // 6. LOWLAND GRASS: balanced natural turf
+          const palette = [0x4d7c0f, 0x65a30d, 0x558b1a, 0x3f6212];
+          colorObj.setHex(palette[Math.floor(colorVariation * palette.length) % palette.length]);
+          heightMultiplier = 1.0 + colorVariation * 0.2;
+        }
+
         // Distance fade at outer perimeter
         const fade = Math.max(0.3, 1.0 - (distFromCenter / halfSpan) * 0.5);
-        const scale = (1.0 + Math.abs(Math.sin(gx * 3.3 + gz)) * 0.5) * fade;
+        const scale = (0.95 + Math.abs(Math.sin(gx * 3.3 + gz)) * 0.45) * fade;
 
         dummy.position.set(x, sample.elevation, z);
         dummy.rotation.set(
@@ -309,10 +374,12 @@ export class InstancedGrass {
           (gx * 17 + gz * 23) % Math.PI,
           (Math.cos(gz) * 0.08)
         );
-        dummy.scale.set(scale, scale * 1.3, scale);
+        dummy.scale.set(scale, scale * heightMultiplier, scale);
         dummy.updateMatrix();
 
-        this.instancedMesh.setMatrixAt(index++, dummy.matrix);
+        this.instancedMesh.setMatrixAt(index, dummy.matrix);
+        this.instancedMesh.setColorAt(index, colorObj);
+        index++;
       }
     }
 
@@ -325,15 +392,28 @@ export class InstancedGrass {
     }
 
     this.instancedMesh.instanceMatrix.needsUpdate = true;
+    if (this.instancedMesh.instanceColor) {
+      this.instancedMesh.instanceColor.needsUpdate = true;
+    }
     this.lastGridCenter.set(centerX, centerZ);
   }
 
   /**
    * Update wind swaying and drone downwash displacement every frame,
-   * and dynamically shift the dense grass clipmap as the drone flies
+   * synchronized with global wind state, and dynamically shift the grass clipmap
    */
   public update(_dt: number, elapsed: number, dronePos?: THREE.Vector3) {
     this.timeUniform.value = elapsed;
+
+    // Sync with global wind state
+    const env = EnvironmentManager.getInstance();
+    const windSpeed = env.state.windSpeed;
+    // Map wind speed: calm (<1.5m/s) -> 0.4, normal (3.5m/s) -> 1.0, storm (12m/s) -> 2.4
+    this.windStrengthUniform.value = Math.max(0.3, Math.min(2.5, windSpeed / 3.4));
+
+    const rad = THREE.MathUtils.degToRad(env.state.windDirectionDeg);
+    this.windDirUniform.value.set(Math.sin(rad), Math.cos(rad));
+
     if (dronePos) {
       this.dronePosUniform.value.copy(dronePos);
 
