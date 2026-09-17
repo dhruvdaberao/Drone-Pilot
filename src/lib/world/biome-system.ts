@@ -77,48 +77,110 @@ export function computeTerrainSlope(x: number, z: number, step = 1.5): number {
  * Canonical road centerline polylines used for clearance checking
  */
 const ROAD_CORRIDORS: Array<Array<{ x: number; z: number }>> = [
-  // Highway 1: Academy to Metropolis
+  // Highway 1: Metropolis to Harbor Parkway (14m width)
   [
-    { x: 35, z: 20 },
-    { x: 220, z: 65 },
-    { x: 440, z: 160 },
-    { x: 620, z: 280 },
-    { x: 740, z: 340 },
+    { x: 640, z: 240 },
+    { x: 640, z: 380 },
+    { x: 580, z: 540 },
+    { x: 460, z: 680 },
+    { x: 380, z: 780 },
+    { x: 260, z: 860 },
+    { x: 60, z: 880 },
   ],
-  // Highway 2: Metropolis to Harbor
+  // Highway 2: Academy to Metropolis Expressway (11m width)
   [
-    { x: 740, z: 340 },
-    { x: 680, z: 520 },
-    { x: 540, z: 680 },
-    { x: 400, z: 780 },
+    { x: 50, z: 0 },
+    { x: 180, z: 60 },
+    { x: 360, z: 160 },
+    { x: 540, z: 240 },
+    { x: 640, z: 320 },
   ],
-  // Forest Timber Road
+  // Forest Road: West bridge abutment to Forest Ranger Station
   [
-    { x: 0, z: 0 },
-    { x: -140, z: 80 },
-    { x: -320, z: 95 },
-    { x: -500, z: 60 },
-    { x: -640, z: 25 },
+    { x: -180, z: 140 },
+    { x: -300, z: 70 },
+    { x: -440, z: 10 },
+    { x: -620, z: -40 },
   ],
-  // Pelican Coastal Highway
+  // Academy to East Bridge Abutment Approach
   [
-    { x: 0, z: 0 },
-    { x: -180, z: 220 },
-    { x: -380, z: 420 },
-    { x: -580, z: 520 },
+    { x: -50, z: 0 },
+    { x: -50, z: 60 },
+    { x: -75, z: 120 },
+    { x: -100, z: 180 },
+  ],
+  // Grand Valley Suspension Bridge
+  [
+    { x: -100, z: 180 },
+    { x: -180, z: 140 },
+  ],
+  // West Pelican Coastal Highway (West bridge abutment to Pelican Cove)
+  [
+    { x: -180, z: 140 },
+    { x: -320, z: 340 },
+    { x: -540, z: 480 },
     { x: -720, z: 560 },
   ],
-  // Mountain Pass Switchbacks
+  // Southern Coastal Highway West (Pelican Cove to Estuary Bridge)
   [
-    { x: -280, z: -180 },
-    { x: -380, z: -320 },
-    { x: -490, z: -480 },
-    { x: -610, z: -640 },
+    { x: -720, z: 560 },
+    { x: -580, z: 660 },
+    { x: -400, z: 740 },
+    { x: -260, z: 800 },
+    { x: -140, z: 840 },
+  ],
+  // Southern Estuary Bridge Viaduct
+  [
+    { x: -140, z: 840 },
+    { x: -40, z: 860 },
+  ],
+  // Southern Coastal Highway East (Estuary Bridge to Harbor Highway)
+  [
+    { x: -40, z: 860 },
+    { x: 60, z: 880 },
+  ],
+  // Mountain Pass Switchbacks: Mount Apex Weather Station
+  [
+    { x: -80, z: -80 },
+    { x: -160, z: -140 },
+    { x: -180, z: -210 },
+    { x: -200, z: -310 },
+    { x: -260, z: -390 },
+    { x: -400, z: -460 },
+    { x: -500, z: -510 },
+    { x: -580, z: -560 },
+  ],
+  // Downtown Metropolis Grid: Avenue 1 (West)
+  [
+    { x: 640, z: 190 },
+    { x: 640, z: 450 },
+  ],
+  // Downtown Metropolis Grid: Avenue 2 (East)
+  [
+    { x: 780, z: 190 },
+    { x: 780, z: 450 },
+  ],
+  // Downtown Metropolis Grid: Cross Street 1 (North)
+  [
+    { x: 600, z: 240 },
+    { x: 820, z: 240 },
+  ],
+  // Downtown Metropolis Grid: Cross Street 2 (South)
+  [
+    { x: 600, z: 400 },
+    { x: 820, z: 400 },
   ],
 ];
 
+const TURNAROUND_APRONS = [
+  { x: -620, z: -40, radius: 18 },
+  { x: -720, z: 560, radius: 22 },
+  { x: -580, z: -560, radius: 16 },
+  { x: -50, z: 0, radius: 16 },
+];
+
 /**
- * Computes minimum distance from (x, z) to any paved road centerline
+ * Computes minimum distance from (x, z) to any paved road centerline or turnaround edge
  */
 export function getDistanceToRoad(x: number, z: number): number {
   let minDist = 9999;
@@ -129,6 +191,11 @@ export function getDistanceToRoad(x: number, z: number): number {
       const dist = distToSegment(x, z, p1.x, p1.z, p2.x, p2.z);
       if (dist < minDist) minDist = dist;
     }
+  }
+  for (const t of TURNAROUND_APRONS) {
+    const distCenter = Math.hypot(x - t.x, z - t.z);
+    const distEdge = Math.max(0, distCenter - t.radius);
+    if (distEdge < minDist) minDist = distEdge;
   }
   return minDist;
 }

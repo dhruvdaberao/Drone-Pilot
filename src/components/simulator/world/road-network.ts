@@ -56,6 +56,7 @@ export class RoadNetwork {
     this.buildMasterNetwork();
     this.buildDowntownGrid();
     this.buildStreetlights();
+    this.buildRoadGuardrails();
   }
 
   /**
@@ -692,5 +693,244 @@ export class RoadNetwork {
 
       this.group.add(group);
     });
+  }
+
+  /**
+   * Installs realistic galvanized steel W-beam guardrails and safety barriers along
+   * mountain switchbacks, coastal highway bluffs, bridge approaches, and sharp curves
+   */
+  private buildRoadGuardrails() {
+    const railMat = new THREE.MeshStandardMaterial({
+      color: 0xa1a1aa, // Galvanized zinc steel
+      roughness: 0.38,
+      metalness: 0.82,
+    });
+
+    const postMat = new THREE.MeshStandardMaterial({
+      color: 0x52525b, // Galvanized I-beam post
+      roughness: 0.55,
+      metalness: 0.65,
+    });
+
+    const reflectorMat = new THREE.MeshBasicMaterial({
+      color: 0xf59e0b, // Amber retroreflective delineator
+    });
+
+    interface GuardrailRun {
+      name: string;
+      roadWidth: number;
+      side: "left" | "right" | "both";
+      points: Array<{ x: number; z: number }>;
+    }
+
+    const runs: GuardrailRun[] = [
+      // 1. Mountain Pass Switchbacks (Critical cliff safety along entire Apex ascent)
+      {
+        name: "Mountain Pass Outer Cliff",
+        roadWidth: 7.5,
+        side: "left",
+        points: [
+          { x: -80, z: -80 },
+          { x: -160, z: -140 },
+          { x: -180, z: -210 },
+          { x: -200, z: -310 },
+          { x: -260, z: -390 },
+          { x: -400, z: -460 },
+          { x: -500, z: -510 },
+          { x: -580, z: -560 },
+        ],
+      },
+      {
+        name: "Mountain Pass High Ridge Dropoff",
+        roadWidth: 7.5,
+        side: "right",
+        points: [
+          { x: -220, z: -340 },
+          { x: -260, z: -390 },
+          { x: -400, z: -460 },
+          { x: -500, z: -510 },
+        ],
+      },
+      // 2. West Pelican Coastal Highway (Cliffs above cove & canyon)
+      {
+        name: "West Pelican Coastal Bluff",
+        roadWidth: 8.0,
+        side: "left",
+        points: [
+          { x: -180, z: 140 },
+          { x: -320, z: 340 },
+          { x: -540, z: 480 },
+          { x: -720, z: 560 },
+        ],
+      },
+      // 3. Southern Coastal Highway (Seaward bluff dropoff)
+      {
+        name: "Southern Coastal Sea Bluff",
+        roadWidth: 10.0,
+        side: "right",
+        points: [
+          { x: -720, z: 560 },
+          { x: -580, z: 660 },
+          { x: -400, z: 740 },
+          { x: -260, z: 800 },
+          { x: -140, z: 840 },
+        ],
+      },
+      // 4. Grand Valley Suspension Bridge Approaches (Both sides leading into bridge abutments)
+      {
+        name: "Valley Bridge West Approach",
+        roadWidth: 8.0,
+        side: "both",
+        points: [
+          { x: -240, z: 105 },
+          { x: -180, z: 140 },
+        ],
+      },
+      {
+        name: "Valley Bridge East Approach",
+        roadWidth: 8.0,
+        side: "both",
+        points: [
+          { x: -75, z: 120 },
+          { x: -100, z: 180 },
+        ],
+      },
+      // 5. Southern Estuary Maritime Bridge Approaches
+      {
+        name: "Estuary Bridge East Causeway Approach",
+        roadWidth: 10.0,
+        side: "both",
+        points: [
+          { x: -40, z: 860 },
+          { x: 30, z: 875 },
+        ],
+      },
+      // 6. Highway 1 Sharp Outer Curves
+      {
+        name: "Highway 1 Harbor Curve",
+        roadWidth: 14.0,
+        side: "left",
+        points: [
+          { x: 640, z: 380 },
+          { x: 580, z: 540 },
+          { x: 460, z: 680 },
+          { x: 380, z: 780 },
+        ],
+      },
+      // 7. Forest Timber Road Steep Ravine Edge
+      {
+        name: "Forest Timber Ravine",
+        roadWidth: 8.0,
+        side: "right",
+        points: [
+          { x: -180, z: 140 },
+          { x: -300, z: 70 },
+          { x: -440, z: 10 },
+        ],
+      },
+    ];
+
+    const guardrailGroup = new THREE.Group();
+    const postGeo = new THREE.BoxGeometry(0.12, 0.85, 0.12);
+    const reflectorGeo = new THREE.BoxGeometry(0.06, 0.12, 0.04);
+
+    runs.forEach((run) => {
+      const sidesToBuild: Array<"left" | "right"> =
+        run.side === "both" ? ["left", "right"] : [run.side];
+
+      sidesToBuild.forEach((side) => {
+        const sideSign = side === "left" ? 1 : -1;
+        const lateralOffset = run.roadWidth / 2 + 0.35;
+
+        // Subdivide road points into 3.5m spaced post stations
+        const stepSize = 3.5;
+        const posts: THREE.Vector3[] = [];
+
+        for (let seg = 0; seg < run.points.length - 1; seg++) {
+          const p1 = run.points[seg];
+          const p2 = run.points[seg + 1];
+          const segDist = Math.hypot(p2.x - p1.x, p2.z - p1.z);
+          const steps = Math.max(1, Math.round(segDist / stepSize));
+
+          for (let s = 0; s < steps; s++) {
+            const t = s / steps;
+            const cx = p1.x + (p2.x - p1.x) * t;
+            const cz = p1.z + (p2.z - p1.z) * t;
+
+            // Direction tangent
+            const dx = p2.x - p1.x;
+            const dz = p2.z - p1.z;
+            const len = Math.hypot(dx, dz) || 1;
+            const perpX = (-dz / len) * sideSign;
+            const perpZ = (dx / len) * sideSign;
+
+            const postX = cx + perpX * lateralOffset;
+            const postZ = cz + perpZ * lateralOffset;
+            const terrainY = evaluateIslandElevation(postX, postZ).elevation;
+
+            posts.push(new THREE.Vector3(postX, terrainY, postZ));
+          }
+        }
+
+        // Add final endpoint post
+        if (run.points.length > 1) {
+          const last = run.points[run.points.length - 1];
+          const prev = run.points[run.points.length - 2];
+          const dx = last.x - prev.x;
+          const dz = last.z - prev.z;
+          const len = Math.hypot(dx, dz) || 1;
+          const perpX = (-dz / len) * sideSign;
+          const perpZ = (dx / len) * sideSign;
+          const postX = last.x + perpX * lateralOffset;
+          const postZ = last.z + perpZ * lateralOffset;
+          const terrainY = evaluateIslandElevation(postX, postZ).elevation;
+          posts.push(new THREE.Vector3(postX, terrainY, postZ));
+        }
+
+        // 1. Build posts and reflectors
+        posts.forEach((p, idx) => {
+          const postMesh = new THREE.Mesh(postGeo, postMat);
+          postMesh.position.set(p.x, p.y + 0.42, p.z);
+          postMesh.castShadow = true;
+          guardrailGroup.add(postMesh);
+
+          // Retroreflective delineator every ~10.5m (every 3rd post)
+          if (idx % 3 === 0) {
+            const refl = new THREE.Mesh(reflectorGeo, reflectorMat);
+            refl.position.set(p.x, p.y + 0.72, p.z);
+            guardrailGroup.add(refl);
+          }
+        });
+
+        // 2. Build continuous W-beam steel rail connecting posts
+        for (let i = 0; i < posts.length - 1; i++) {
+          const pA = posts[i];
+          const pB = posts[i + 1];
+          const spanLen = pA.distanceTo(pB);
+          if (spanLen < 0.1) continue;
+
+          const beamGeo = new THREE.BoxGeometry(0.08, 0.32, spanLen);
+          const beam = new THREE.Mesh(beamGeo, railMat);
+
+          const mid = new THREE.Vector3().addVectors(pA, pB).multiplyScalar(0.5);
+          beam.position.set(mid.x, mid.y + 0.55, mid.z);
+
+          // Orient beam along span
+          const angle = Math.atan2(pB.x - pA.x, pB.z - pA.z);
+          beam.rotation.y = angle;
+
+          // Slope pitch along slope
+          const dy = pB.y - pA.y;
+          const pitch = Math.atan2(dy, Math.hypot(pB.x - pA.x, pB.z - pA.z));
+          beam.rotation.x = -pitch;
+
+          beam.castShadow = true;
+          beam.receiveShadow = true;
+          guardrailGroup.add(beam);
+        }
+      });
+    });
+
+    this.group.add(guardrailGroup);
   }
 }

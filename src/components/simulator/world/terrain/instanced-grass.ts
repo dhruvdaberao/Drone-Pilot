@@ -280,7 +280,25 @@ export class InstancedGrass {
         // Avoid runway and helipads
         const distToRunway = Math.hypot(x - 20, z - (-40));
         const distToCenterPad = Math.hypot(x, z);
-        if (distToRunway < 18 || distToCenterPad < 8) {
+        if (distToRunway < 26 || distToCenterPad < 12) {
+          dummy.position.set(0, -999, 0);
+          dummy.scale.set(0, 0, 0);
+          dummy.updateMatrix();
+          this.instancedMesh.setMatrixAt(index++, dummy.matrix);
+          continue;
+        }
+
+        // Avoid Downtown Metropolis city core (streets, plazas, sidewalks)
+        if (x >= 580 && x <= 850 && z >= 190 && z <= 460) {
+          dummy.position.set(0, -999, 0);
+          dummy.scale.set(0, 0, 0);
+          dummy.updateMatrix();
+          this.instancedMesh.setMatrixAt(index++, dummy.matrix);
+          continue;
+        }
+
+        // Avoid Harbor Industrial Park container docks and shipping platforms
+        if (x >= 270 && x <= 520 && z >= 670 && z <= 930) {
           dummy.position.set(0, -999, 0);
           dummy.scale.set(0, 0, 0);
           dummy.updateMatrix();
@@ -289,7 +307,7 @@ export class InstancedGrass {
         }
 
         // Exclude all lakes, rivers, plunge pools, and water bodies
-        if (isWaterAt(x, z, 2.5)) {
+        if (isWaterAt(x, z, 3.0)) {
           dummy.position.set(0, -999, 0);
           dummy.scale.set(0, 0, 0);
           dummy.updateMatrix();
@@ -297,8 +315,9 @@ export class InstancedGrass {
           continue;
         }
 
-        // Avoid asphalt roads, highways, and street corridors
-        if (getDistanceToRoad(x, z) < 4.2) {
+        // Avoid asphalt roads, highways, connectors, mountain switchbacks, and street corridors
+        // 8.5m clearance ensures zero grass blades ever penetrate 14m/11m/8m road ribbons
+        if (getDistanceToRoad(x, z) < 8.5) {
           dummy.position.set(0, -999, 0);
           dummy.scale.set(0, 0, 0);
           dummy.updateMatrix();
