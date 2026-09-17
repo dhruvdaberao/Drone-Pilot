@@ -1,7 +1,8 @@
 import { REGION_LIST } from '@/lib/world/region-definitions';
+import { getDistanceToCoast } from '@/lib/world/coastline-math';
 
 /**
- * Zone-based ambient audio with crossfading
+ * Zone-based ambient audio with crossfading and proximity gating
  */
 export type ZoneType = 'forest' | 'city' | 'coast' | 'river' | 'mountain' | 'industrial' | 'default';
 
@@ -185,38 +186,73 @@ export class EnvironmentZoneAudio {
     return 'default';
   }
 
-  public update(droneX: number, droneZ: number) {
+  public update(droneX: number, droneZ: number, droneY = 10) {
     if (!this.isPlaying) return;
-    
+
+    const t = this.context.currentTime;
     const newZone = this.determineZone(droneX, droneZ);
-    
+
     if (newZone !== this.currentZone) {
       this.currentZone = newZone;
-      const t = this.context.currentTime;
-      const crossfadeDuration = 2.5;
+      const crossfadeDuration = 2.0;
 
       Object.keys(this.zones).forEach((key) => {
         const zoneType = key as ZoneType;
         const zone = this.zones[zoneType];
-        
-        if (zoneType === newZone) {
-          // Fade in
-          zone.gain.gain.setTargetAtTime(zone.maxGain, t, crossfadeDuration / 3);
-          if (zoneType === 'coast' && this.lfoGain) {
-              this.lfoGain.gain.setTargetAtTime(zone.maxGain * 0.8, t, crossfadeDuration / 3);
+        // Ambient background zones (non-water) crossfade normally
+        if (zoneType !== 'coast' && zoneType !== 'river') {
+          if (zoneType === newZone) {
+            zone.gain.gain.setTargetAtTime(zone.maxGain, t, crossfadeDuration / 3);
+          } else {
+            zone.gain.gain.setTargetAtTime(0, t, crossfadeDuration / 3);
           }
-        } else {
-          // Fade out
-          zone.gain.gain.setTargetAtTime(0, t, crossfadeDuration / 3);
         }
       });
     }
 
-    // Positional acoustic falloff for the mountain waterfall
-    const t = this.context.currentTime;
+    // 1. PROXIMITY-GATED OCEAN SURF
+    // Water sound only comes when drone is actually close to the shoreline (< 25m) and low altitude (< 20m)
+    const distToCoast = getDistanceToCoast(droneX, droneZ);
+    const isNearShore = distToCoast < 25;
+    const isLowAltitude = droneY < 20;
+
+    let targetCoastGain = 0;
+    if (isNearShore && isLowAltitude) {
+      const proximityFactor = Math.max(0, 1.0 - Math.max(0, distToCoast) / 25.0);
+      const altFactor = Math.max(0, 1.0 - droneY / 20.0);
+      targetCoastGain = proximityFactor * altFactor * this.zones.coast.maxGain;
+    }
+    this.zones.coast.gain.gain.setTargetAtTime(targetCoastGain, t, 0.2);
+    if (this.lfoGain) {
+      this.lfoGain.gain.setTargetAtTime(targetCoastGain * 0.8, t, 0.2);
+    }
+
+    // 2. PROXIMITY-GATED RIVER & FRESHWATER
+    // Only audible when drone is within 25m of river corridor or lake and low altitude (< 18m)
+    let distToFreshwater = 9999;
+    const distToLake = Math.hypot(droneX - (-320), droneZ - (-260));
+    if (distToLake < 130) {
+      distToFreshwater = Math.min(distToFreshwater, Math.max(0, distToLake - 100));
+    }
+    if (droneZ > -220 && droneZ < 960 && droneX > -380 && droneX < 80) {
+      const pZ = (droneZ + 220) / (960 + 220);
+      const riverX = -270 + pZ * 190 + Math.sin(pZ * Math.PI * 2.5) * 45 + Math.cos(pZ * Math.PI * 6.0) * 8;
+      const dRiver = Math.abs(droneX - riverX);
+      distToFreshwater = Math.min(distToFreshwater, dRiver);
+    }
+
+    let targetRiverGain = 0;
+    if (distToFreshwater < 25 && droneY < 18) {
+      const proximityFactor = Math.max(0, 1.0 - distToFreshwater / 25.0);
+      const altFactor = Math.max(0, 1.0 - droneY / 18.0);
+      targetRiverGain = proximityFactor * altFactor * this.zones.river.maxGain;
+    }
+    this.zones.river.gain.gain.setTargetAtTime(targetRiverGain, t, 0.2);
+
+    // 3. POSITIONAL WATERFALL ROAR (Close proximity only < 38m)
     const distW = Math.hypot(droneX - this.WATERFALL_POS.x, droneZ - this.WATERFALL_POS.z);
-    if (distW < 140) {
-      const falloff = Math.max(0, 1.0 - distW / 140.0);
+    if (distW < 38 && droneY < 32) {
+      const falloff = Math.max(0, 1.0 - distW / 38.0) * Math.max(0, 1.0 - droneY / 32.0);
       const targetGain = Math.pow(falloff, 1.6) * this.waterfallNode.maxGain;
       this.waterfallNode.gain.gain.setTargetAtTime(targetGain, t, 0.15);
     } else {

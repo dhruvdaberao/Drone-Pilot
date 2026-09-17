@@ -39,15 +39,46 @@ interface SoaringBird {
   scatterTimer?: number;
 }
 
+interface GrazingSheep {
+  root: THREE.Group;
+  neck: THREE.Object3D;
+  head: THREE.Object3D;
+  leftFrontLeg: THREE.Object3D;
+  rightFrontLeg: THREE.Object3D;
+  leftBackLeg: THREE.Object3D;
+  rightBackLeg: THREE.Object3D;
+  tail: THREE.Object3D;
+  centerPos: THREE.Vector3;
+  targetPos: THREE.Vector3;
+  walkTimer: number;
+  isWalking: boolean;
+  grazePhase: number;
+  alert: boolean;
+}
+
+interface NimbleSquirrel {
+  root: THREE.Group;
+  tail: THREE.Object3D;
+  head: THREE.Object3D;
+  treePos: THREE.Vector3;
+  dashTimer: number;
+  isDashing: boolean;
+  targetPos: THREE.Vector3;
+}
+
 export class WildlifeManager {
   public group = new THREE.Group();
   private deer: GrazingDeer[] = [];
   private birds: SoaringBird[] = [];
+  private sheep: GrazingSheep[] = [];
+  private squirrels: NimbleSquirrel[] = [];
 
   constructor() {
     this.spawnDeerHerds();
     this.spawnSoaringEagles();
     this.spawnCoastalGulls();
+    this.spawnSheepHerds();
+    this.spawnSquirrels();
   }
 
   /**
@@ -695,5 +726,367 @@ export class WildlifeManager {
         }
       }
     }
+
+    // 3. Update Grazing Sheep
+    for (const s of this.sheep) {
+      s.root.position.y = Math.max(0.4, evaluateIslandElevation(s.root.position.x, s.root.position.z).elevation);
+
+      let distToDrone = 999;
+      if (dronePos) distToDrone = s.root.position.distanceTo(dronePos);
+
+      // Alert if drone is hovering close
+      s.alert = distToDrone < 22;
+
+      s.walkTimer -= dt;
+      if (s.walkTimer <= 0) {
+        s.walkTimer = s.isWalking ? 4.0 + Math.random() * 5.0 : 2.5 + Math.random() * 3.5;
+        s.isWalking = !s.isWalking;
+        if (s.isWalking) {
+          const wanderAngle = Math.random() * Math.PI * 2;
+          const wanderDist = 2.0 + Math.random() * 4.0;
+          s.targetPos.set(
+            s.centerPos.x + Math.cos(wanderAngle) * wanderDist,
+            0,
+            s.centerPos.z + Math.sin(wanderAngle) * wanderDist
+          );
+        }
+      }
+
+      if (s.isWalking && !s.alert) {
+        // Step leisurely towards wander target
+        const dir = new THREE.Vector3().subVectors(s.targetPos, s.root.position).setY(0);
+        if (dir.lengthSq() > 0.05) {
+          dir.normalize();
+          s.root.position.addScaledVector(dir, 0.65 * dt);
+          const heading = Math.atan2(dir.x, dir.z);
+          s.root.rotation.y = THREE.MathUtils.lerp(s.root.rotation.y, heading, dt * 3.0);
+
+          // Leg stepping swing
+          const step = Math.sin(elapsed * 5.5) * 0.35;
+          s.leftFrontLeg.rotation.x = step;
+          s.rightFrontLeg.rotation.x = -step;
+          s.leftBackLeg.rotation.x = -step;
+          s.rightBackLeg.rotation.x = step;
+
+          // Head lifted slightly while walking
+          s.neck.rotation.x = THREE.MathUtils.lerp(s.neck.rotation.x, -0.15, dt * 4.0);
+        } else {
+          s.isWalking = false;
+        }
+      } else if (s.alert) {
+        // Head erect, watching drone
+        s.neck.rotation.x = THREE.MathUtils.lerp(s.neck.rotation.x, -0.45, dt * 6.0);
+        s.tail.rotation.x = Math.sin(elapsed * 12) * 0.4;
+        if (distToDrone < 12 && dronePos) {
+          // Slow jog away from drone
+          const fleeDir = new THREE.Vector3().subVectors(s.root.position, dronePos).setY(0).normalize();
+          s.root.position.addScaledVector(fleeDir, 1.8 * dt);
+          s.root.rotation.y = Math.atan2(fleeDir.x, fleeDir.z);
+        }
+      } else {
+        // Peaceful Grazing: head dips down to nibble grass
+        s.grazePhase += dt * 1.5;
+        const dip = Math.sin(s.grazePhase) * 0.25 + 0.38;
+        s.neck.rotation.x = THREE.MathUtils.lerp(s.neck.rotation.x, dip, dt * 3.0);
+        s.head.rotation.x = Math.sin(s.grazePhase * 2.0) * 0.08;
+        s.tail.rotation.x = Math.sin(elapsed * 3) * 0.15;
+      }
+    }
+
+    // 4. Update Nimble Squirrels
+    for (const sq of this.squirrels) {
+      sq.root.position.y = Math.max(0.2, evaluateIslandElevation(sq.root.position.x, sq.root.position.z).elevation);
+
+      sq.dashTimer -= dt;
+      if (sq.dashTimer <= 0) {
+        sq.isDashing = !sq.isDashing;
+        sq.dashTimer = sq.isDashing ? 1.0 + Math.random() * 1.5 : 2.0 + Math.random() * 3.0;
+        if (sq.isDashing) {
+          const ang = Math.random() * Math.PI * 2;
+          const dist = 1.5 + Math.random() * 2.5;
+          sq.targetPos.set(
+            sq.treePos.x + Math.cos(ang) * dist,
+            0,
+            sq.treePos.z + Math.sin(ang) * dist
+          );
+        }
+      }
+
+      if (sq.isDashing) {
+        const dir = new THREE.Vector3().subVectors(sq.targetPos, sq.root.position).setY(0);
+        if (dir.lengthSq() > 0.04) {
+          dir.normalize();
+          sq.root.position.addScaledVector(dir, 3.2 * dt);
+          sq.root.rotation.y = Math.atan2(dir.x, dir.z);
+          // Tail ripple during dash
+          sq.tail.rotation.x = 0.5 + Math.sin(elapsed * 20) * 0.25;
+        } else {
+          sq.isDashing = false;
+        }
+      } else {
+        // Sitting upright on hind legs, twitching tail and surveying
+        sq.tail.rotation.x = 0.8 + Math.sin(elapsed * 4.0) * 0.18;
+        sq.head.rotation.y = Math.sin(elapsed * 2.5) * 0.35;
+      }
+    }
+  }
+
+  /**
+   * Procedural articulated sheep model (fluffy wool body, dark face/legs, animated neck & legs)
+   */
+  private createSheepModel(): {
+    root: THREE.Group;
+    neck: THREE.Object3D;
+    head: THREE.Object3D;
+    leftFrontLeg: THREE.Object3D;
+    rightFrontLeg: THREE.Object3D;
+    leftBackLeg: THREE.Object3D;
+    rightBackLeg: THREE.Object3D;
+    tail: THREE.Object3D;
+  } {
+    const root = new THREE.Group();
+
+    const woolMat = new THREE.MeshStandardMaterial({
+      color: 0xf5f5f0,
+      roughness: 0.95,
+      metalness: 0.02,
+    });
+    const darkMat = new THREE.MeshStandardMaterial({
+      color: 0x222222,
+      roughness: 0.8,
+    });
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x050505 });
+
+    // Main Woolly Body (rounded cloud shape)
+    const bodyMesh = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8), woolMat);
+    bodyMesh.scale.set(0.95, 0.85, 1.35);
+    bodyMesh.position.set(0, 0.65, 0);
+    bodyMesh.castShadow = true;
+    bodyMesh.receiveShadow = true;
+    root.add(bodyMesh);
+
+    // Woolly puffs adding cloud texture
+    const puffPositions = [
+      { x: -0.28, y: 0.78, z: 0.2, s: 0.38 },
+      { x: 0.28, y: 0.78, z: 0.2, s: 0.38 },
+      { x: -0.25, y: 0.75, z: -0.3, s: 0.35 },
+      { x: 0.25, y: 0.75, z: -0.3, s: 0.35 },
+      { x: 0.0, y: 0.85, z: 0.0, s: 0.42 },
+    ];
+    puffPositions.forEach((p) => {
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(p.s, 7, 7), woolMat);
+      puff.position.set(p.x, p.y, p.z);
+      root.add(puff);
+    });
+
+    // Articulated Neck & Head
+    const neckPivot = new THREE.Group();
+    neckPivot.position.set(0, 0.72, 0.58);
+
+    const head = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.36, 7), darkMat);
+    head.position.set(0, 0.08, 0.2);
+    head.rotation.x = Math.PI / 4;
+    head.castShadow = true;
+    neckPivot.add(head);
+
+    // Woolly fleece cap on head
+    const fleeceCap = new THREE.Mesh(new THREE.SphereGeometry(0.18, 7, 7), woolMat);
+    fleeceCap.position.set(0, 0.2, 0.12);
+    neckPivot.add(fleeceCap);
+
+    // Cute floppy ears
+    const earLeft = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.05, 0.07), darkMat);
+    earLeft.position.set(-0.18, 0.16, 0.14);
+    earLeft.rotation.z = -0.3;
+    neckPivot.add(earLeft);
+
+    const earRight = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.05, 0.07), darkMat);
+    earRight.position.set(0.18, 0.16, 0.14);
+    earRight.rotation.z = 0.3;
+    neckPivot.add(earRight);
+
+    // Eyes
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.025, 4, 4), eyeMat);
+    eyeL.position.set(-0.11, 0.12, 0.3);
+    neckPivot.add(eyeL);
+    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.025, 4, 4), eyeMat);
+    eyeR.position.set(0.11, 0.12, 0.3);
+    neckPivot.add(eyeR);
+
+    root.add(neckPivot);
+
+    // Legs
+    const legGeo = new THREE.CylinderGeometry(0.045, 0.04, 0.45, 6);
+    legGeo.translate(0, -0.22, 0);
+
+    const lfLeg = new THREE.Mesh(legGeo, darkMat);
+    lfLeg.position.set(-0.25, 0.45, 0.4);
+    lfLeg.castShadow = true;
+    root.add(lfLeg);
+
+    const rfLeg = new THREE.Mesh(legGeo, darkMat);
+    rfLeg.position.set(0.25, 0.45, 0.4);
+    rfLeg.castShadow = true;
+    root.add(rfLeg);
+
+    const lbLeg = new THREE.Mesh(legGeo, darkMat);
+    lbLeg.position.set(-0.25, 0.45, -0.4);
+    lbLeg.castShadow = true;
+    root.add(lbLeg);
+
+    const rbLeg = new THREE.Mesh(legGeo, darkMat);
+    rbLeg.position.set(0.25, 0.45, -0.4);
+    rbLeg.castShadow = true;
+    root.add(rbLeg);
+
+    // Little woolly tail
+    const tail = new THREE.Mesh(new THREE.SphereGeometry(0.1, 5, 5), woolMat);
+    tail.position.set(0, 0.65, -0.68);
+    root.add(tail);
+
+    return {
+      root,
+      neck: neckPivot,
+      head,
+      leftFrontLeg: lfLeg,
+      rightFrontLeg: rfLeg,
+      leftBackLeg: lbLeg,
+      rightBackLeg: rbLeg,
+      tail,
+    };
+  }
+
+  /**
+   * Spawns picturesque grazing sheep herds across island pastures and meadow hillsides
+   */
+  private spawnSheepHerds() {
+    const herdCenters = [
+      { x: 210, z: 95, count: 10 },  // Rural Farmstead pasture
+      { x: 360, z: -140, count: 8 }, // East Emerald foothill meadow
+      { x: -50, z: 240, count: 8 },  // River canyon grassy meadow
+    ];
+
+    herdCenters.forEach((herd) => {
+      for (let i = 0; i < herd.count; i++) {
+        const ang = (i / herd.count) * Math.PI * 2 + Math.random() * 0.4;
+        const rad = 4.0 + Math.random() * 18.0;
+        const sx = herd.x + Math.cos(ang) * rad;
+        const sz = herd.z + Math.sin(ang) * rad;
+        const sy = Math.max(0.4, evaluateIslandElevation(sx, sz).elevation);
+
+        const model = this.createSheepModel();
+        model.root.position.set(sx, sy, sz);
+        model.root.rotation.y = Math.random() * Math.PI * 2;
+
+        const scale = 0.85 + Math.random() * 0.25;
+        model.root.scale.set(scale, scale, scale);
+        this.group.add(model.root);
+
+        this.sheep.push({
+          ...model,
+          centerPos: new THREE.Vector3(herd.x, sy, herd.z),
+          targetPos: new THREE.Vector3(sx, sy, sz),
+          walkTimer: 2.0 + Math.random() * 6.0,
+          isWalking: Math.random() > 0.6,
+          grazePhase: Math.random() * Math.PI * 2,
+          alert: false,
+        });
+      }
+    });
+  }
+
+  /**
+   * Procedural nimble squirrel model
+   */
+  private createSquirrelModel(): {
+    root: THREE.Group;
+    tail: THREE.Object3D;
+    head: THREE.Object3D;
+  } {
+    const root = new THREE.Group();
+    const furMat = new THREE.MeshStandardMaterial({ color: 0x9e4822, roughness: 0.85 });
+    const bellyMat = new THREE.MeshStandardMaterial({ color: 0xfdebd0, roughness: 0.8 });
+    const darkMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+
+    // Torso
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.32, 7), furMat);
+    body.position.set(0, 0.18, 0);
+    body.rotation.x = 0.25;
+    body.castShadow = true;
+    root.add(body);
+
+    const belly = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.22, 0.06), bellyMat);
+    belly.position.set(0, 0.18, 0.08);
+    root.add(belly);
+
+    // Head
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.1, 7, 7), furMat);
+    head.position.set(0, 0.36, 0.08);
+    root.add(head);
+
+    // Ears
+    [-0.06, 0.06].forEach((ex) => {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.07, 4), furMat);
+      ear.position.set(ex, 0.44, 0.08);
+      root.add(ear);
+    });
+
+    // Eyes
+    [-0.06, 0.06].forEach((ex) => {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.02, 4, 4), darkMat);
+      eye.position.set(ex, 0.38, 0.16);
+      root.add(eye);
+    });
+
+    // Bushy Tail arching up over back
+    const tailPivot = new THREE.Group();
+    tailPivot.position.set(0, 0.12, -0.12);
+
+    const tailGeo = new THREE.CylinderGeometry(0.04, 0.09, 0.36, 6);
+    tailGeo.translate(0, 0.18, 0);
+    const tailMesh = new THREE.Mesh(tailGeo, furMat);
+    tailMesh.rotation.x = 0.8;
+    tailPivot.add(tailMesh);
+    root.add(tailPivot);
+
+    return { root, tail: tailPivot, head };
+  }
+
+  /**
+   * Spawns agile squirrels near tree clusters in forest & park clearings
+   */
+  private spawnSquirrels() {
+    const squirrelSpots = [
+      { x: -520, z: 20 },
+      { x: -480, z: 70 },
+      { x: -560, z: -40 },
+      { x: -440, z: -80 },
+      { x: 580, z: 240 },
+      { x: 620, z: 290 },
+      { x: 180, z: 120 },
+      { x: -120, z: 80 },
+    ];
+
+    squirrelSpots.forEach((spot) => {
+      for (let i = 0; i < 2; i++) {
+        const sx = spot.x + (Math.random() - 0.5) * 6;
+        const sz = spot.z + (Math.random() - 0.5) * 6;
+        const sy = Math.max(0.2, evaluateIslandElevation(sx, sz).elevation);
+
+        const sq = this.createSquirrelModel();
+        sq.root.position.set(sx, sy, sz);
+        sq.root.rotation.y = Math.random() * Math.PI * 2;
+        sq.root.scale.set(1.2, 1.2, 1.2);
+        this.group.add(sq.root);
+
+        this.squirrels.push({
+          ...sq,
+          treePos: new THREE.Vector3(spot.x, sy, spot.z),
+          targetPos: new THREE.Vector3(sx, sy, sz),
+          dashTimer: 1.0 + Math.random() * 3.0,
+          isDashing: false,
+        });
+      }
+    });
   }
 }

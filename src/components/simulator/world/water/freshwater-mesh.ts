@@ -195,8 +195,8 @@ export class FreshwaterMesh {
     const riverUvs: number[] = [];
     const bankPositions: number[] = [];
 
-    const zStart = -210;
-    const zEnd = 940;
+    const zStart = -220;
+    const zEnd = 960;
     const zStep = (zEnd - zStart) / segments;
 
     for (let i = 0; i < segments; i++) {
@@ -218,13 +218,13 @@ export class FreshwaterMesh {
         Math.sin(p2 * Math.PI * 2.5) * 45 +
         Math.cos(p2 * Math.PI * 6.0) * 8;
 
-      const y1 = Math.max(0.12, 8.5 * (1 - p1));
-      const y2 = Math.max(0.12, 8.5 * (1 - p2));
+      const y1 = Math.max(0.18, 8.5 * (1 - p1) + 0.08);
+      const y2 = Math.max(0.18, 8.5 * (1 - p2) + 0.08);
 
-      const halfWidth1 = 12 + p1 * 18; // Expands from 24m to 60m at estuary delta
-      const halfWidth2 = 12 + p2 * 18;
+      const halfWidth1 = 13 + p1 * 19; // Expands from 26m to 64m at estuary delta
+      const halfWidth2 = 13 + p2 * 19;
 
-      const bankWidth = 8.0;
+      const bankWidth = 10.0;
 
       // Water surface quad vertices
       const left1 = [x1 - halfWidth1, y1, z1];

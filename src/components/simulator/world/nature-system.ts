@@ -52,6 +52,7 @@ export class NatureSystem {
     this.buildTrailFences(prng);
     this.buildWaterfallEnvironment();
     this.buildMeadowFlowers(prng);
+    this.buildStoneTerraces(prng);
   }
 
   // ----------------------------------------------------------------
@@ -1205,52 +1206,162 @@ export class NatureSystem {
   /**
    * Instanced flower fields in empty meadow areas
    */
+  /**
+   * Dense vibrant wildflower fields carpeting meadows, valleys, and hillside pastures
+   */
   private buildMeadowFlowers(prng: SeededPRNG) {
-    const count = 600;
-    const geo = new THREE.SphereGeometry(0.25, 6, 6);
-    const mat = new THREE.MeshStandardMaterial({ roughness: 0.8, metalness: 0 });
-    const mesh = new THREE.InstancedMesh(geo, mat, count);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    
+    const count = 3200;
+    // Slender flower blossom geometry (visible from low and medium flight altitudes)
+    const flowerGeo = new THREE.CylinderGeometry(0.28, 0.08, 0.42, 6);
+    flowerGeo.translate(0, 0.21, 0);
+
+    const flowerMat = new THREE.MeshStandardMaterial({
+      roughness: 0.65,
+      metalness: 0.05,
+    });
+    const flowerMesh = new THREE.InstancedMesh(flowerGeo, flowerMat, count);
+    flowerMesh.castShadow = true;
+    flowerMesh.receiveShadow = true;
+
+    // Scenic natural wildflower palette
     const colors = [
-      new THREE.Color(0xff0000), // red
-      new THREE.Color(0xffff00), // yellow
-      new THREE.Color(0x800080), // purple
-      new THREE.Color(0xffc0cb), // pink
-      new THREE.Color(0xffffff)  // white
+      new THREE.Color(0xe11d48), // Scarlet Red Poppy
+      new THREE.Color(0x9333ea), // French Lavender Purple
+      new THREE.Color(0xfacc15), // Golden Buttercup Yellow
+      new THREE.Color(0xf8fafc), // Alpine White Daisy
+      new THREE.Color(0x38bdf8), // Sky-Blue Forget-Me-Not
+      new THREE.Color(0xf97316), // Warm Orange Marigold
     ];
 
     const dummy = new THREE.Object3D();
     const colorObj = new THREE.Color();
+
+    // 14 picturesque wildflower field centers across empty meadows and valley hillsides
+    const fieldCenters = [
+      { x: 260, z: 90, r: 42, primaryColor: 1 },  // Homestead Lavender field
+      { x: 340, z: 140, r: 48, primaryColor: 0 }, // Red Poppy meadow
+      { x: 380, z: -80, r: 50, primaryColor: 2 }, // Golden Buttercups
+      { x: 440, z: -160, r: 45, primaryColor: 3 },// White Daisy field
+      { x: 180, z: -90, r: 38, primaryColor: 4 }, // Blue Forget-Me-Nots
+      { x: -50, z: 190, r: 40, primaryColor: 0 }, // River canyon poppies
+      { x: 20, z: 240, r: 35, primaryColor: 1 },  // Canyon lavender
+      { x: -110, z: 80, r: 36, primaryColor: 2 }, // Valley buttercups
+      { x: 290, z: -20, r: 44, primaryColor: 5 }, // Marigold pasture
+      { x: -480, z: 380, r: 50, primaryColor: 3 },// South Coast bluffs daisies
+      { x: -580, z: 460, r: 45, primaryColor: 1 },// Coastal lavender slopes
+      { x: 110, z: 130, r: 35, primaryColor: 0 }, // Near proving grounds poppies
+      { x: 320, z: -240, r: 42, primaryColor: 2 },// Foothill buttercup basin
+      { x: -30, z: 320, r: 45, primaryColor: 4 }, // Lower river delta bluebells
+    ];
+
     let placed = 0;
-    let attempts = 0;
-    
-    while (placed < count && attempts < count * 10) {
-      attempts++;
-      const x = prng.nextRange(-1000, 1000);
-      const z = prng.nextRange(-1000, 1000);
-      
-      const biome = getBiomeAt(x, z);
-      if (!biome.canSupportFoliage) continue;
-      if (biome.primaryBiome !== "LOWLAND_MEADOW" && biome.primaryBiome !== "RURAL_PASTURE") continue;
-      if (isProtectedZone(x, z, 5)) continue;
-      
-      const scale = prng.nextRange(0.5, 1.2);
-      dummy.position.set(x, biome.elevation, z);
-      dummy.scale.set(scale, scale, scale);
-      dummy.updateMatrix();
-      
-      mesh.setMatrixAt(placed, dummy.matrix);
-      colorObj.copy(colors[placed % colors.length]);
-      mesh.setColorAt(placed, colorObj);
-      placed++;
-    }
-    
-    mesh.count = placed;
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    this.group.add(mesh);
+    const perField = Math.floor(count / fieldCenters.length);
+
+    fieldCenters.forEach((fc) => {
+      for (let i = 0; i < perField && placed < count; i++) {
+        const ang = prng.next() * Math.PI * 2;
+        const dist = Math.pow(prng.next(), 0.75) * fc.r;
+        const x = fc.x + Math.cos(ang) * dist;
+        const z = fc.z + Math.sin(ang) * dist;
+
+        if (isProtectedZone(x, z, 5)) continue;
+        if (getDistanceToRoad(x, z) < 3.5) continue;
+
+        const elev = evaluateIslandElevation(x, z).elevation;
+        if (elev < 0.6 || elev > 35) continue;
+
+        const scale = prng.nextRange(0.7, 1.4);
+        dummy.position.set(x, elev, z);
+        dummy.rotation.set(
+          (prng.next() - 0.5) * 0.18,
+          prng.next() * Math.PI * 2,
+          (prng.next() - 0.5) * 0.18
+        );
+        dummy.scale.set(scale, scale * prng.nextRange(0.9, 1.3), scale);
+        dummy.updateMatrix();
+
+        flowerMesh.setMatrixAt(placed, dummy.matrix);
+
+        // 70% field theme color + 30% mixed variety accents
+        const cIdx = prng.next() < 0.70 ? fc.primaryColor : Math.floor(prng.next() * colors.length);
+        colorObj.copy(colors[cIdx]);
+        flowerMesh.setColorAt(placed, colorObj);
+        placed++;
+      }
+    });
+
+    flowerMesh.count = placed;
+    flowerMesh.instanceMatrix.needsUpdate = true;
+    if (flowerMesh.instanceColor) flowerMesh.instanceColor.needsUpdate = true;
+    this.group.add(flowerMesh);
+  }
+
+  /**
+   * Rustic stone retaining terraces layered on sloping hillsides
+   */
+  private buildStoneTerraces(prng: SeededPRNG) {
+    const terraceGroup = new THREE.Group();
+
+    const stoneMat = new THREE.MeshStandardMaterial({
+      color: 0x64748b, // Weathered limestone/granite
+      roughness: 0.88,
+      metalness: 0.10,
+    });
+    const capMat = new THREE.MeshStandardMaterial({
+      color: 0x475569, // Dark slate coping cap
+      roughness: 0.82,
+    });
+
+    // Hillside terrace locations
+    const terraceSites = [
+      { x: 230, z: 120, rad: 36, tiers: 3, arc: Math.PI * 0.7 }, // Foothill Farmstead hillside
+      { x: 330, z: -110, rad: 42, tiers: 4, arc: Math.PI * 0.8 },// East valley slope
+      { x: -80, z: 150, rad: 30, tiers: 3, arc: Math.PI * 0.6 }, // Canyon approach ridge
+      { x: -380, z: 140, rad: 40, tiers: 3, arc: Math.PI * 0.7 },// West forest foothill
+    ];
+
+    terraceSites.forEach((site) => {
+      for (let t = 0; t < site.tiers; t++) {
+        const tierRadius = site.rad + t * 9.0;
+        const wallSegments = 16;
+        const angleStep = site.arc / wallSegments;
+        const baseAngle = -site.arc / 2;
+
+        for (let i = 0; i < wallSegments; i++) {
+          const a = baseAngle + i * angleStep;
+          const wx = site.x + Math.cos(a) * tierRadius;
+          const wz = site.z + Math.sin(a) * tierRadius;
+          const elev = evaluateIslandElevation(wx, wz).elevation;
+
+          if (elev < 1.0) continue;
+
+          const blockWidth = (tierRadius * angleStep) * 1.05;
+          const blockHeight = 1.1 + t * 0.2;
+          const blockDepth = 0.9;
+
+          const wallBlock = new THREE.Mesh(
+            new THREE.BoxGeometry(blockWidth, blockHeight, blockDepth),
+            stoneMat
+          );
+          wallBlock.position.set(wx, elev + blockHeight / 2 - 0.2, wz);
+          wallBlock.rotation.y = -a + Math.PI / 2;
+          wallBlock.castShadow = true;
+          wallBlock.receiveShadow = true;
+          terraceGroup.add(wallBlock);
+
+          // Slate coping cap stone
+          const capStone = new THREE.Mesh(
+            new THREE.BoxGeometry(blockWidth * 1.02, 0.12, blockDepth + 0.15),
+            capMat
+          );
+          capStone.position.set(wx, elev + blockHeight - 0.15, wz);
+          capStone.rotation.y = -a + Math.PI / 2;
+          terraceGroup.add(capStone);
+        }
+      }
+    });
+
+    this.group.add(terraceGroup);
   }
 
   /**

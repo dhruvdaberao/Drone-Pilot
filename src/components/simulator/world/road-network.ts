@@ -364,10 +364,10 @@ export class RoadNetwork {
       bridgeGroup.add(cap);
     });
 
-    // 4. Specific Bridge Engineering Typologies
-    if (bridge.id === "bridge-valley") {
+    // 4. Specific Bridge Engineering Typologies (Cable-stayed / Suspension)
+    if (bridge.id === "bridge-valley" || bridge.id === "bridge-estuary" || bridge.hasBridge) {
       // ----------------------------------------------------
-      // GRAND VALLEY CANYON SUSPENSION / CABLE-STAYED BRIDGE
+      // GRAND RIVER CANYON SUSPENSION / CABLE-STAYED BRIDGE
       // ----------------------------------------------------
       const towerDist = length * 0.28;
       const towerHeight = 22.0; // Rises 22m above road deck

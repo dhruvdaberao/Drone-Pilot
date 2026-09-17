@@ -39,6 +39,8 @@ import {
   SlidersHorizontal,
   Sparkles,
   AlertTriangle,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { MultiplayerRosterWidget } from "./multiplayer/multiplayer-roster-widget";
 import { RemotePlayerState } from "@/lib/multiplayer/multiplayer-types";
@@ -241,7 +243,7 @@ function DirectionalJoystick({ onMove, className = "" }: DirectionalJoystickProp
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white/95 border-2 border-neutral-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.12)] relative flex items-center justify-center cursor-grab active:cursor-grabbing touch-none backdrop-blur-md"
+        className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-white/95 border-2 border-neutral-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.12)] relative flex items-center justify-center cursor-grab active:cursor-grabbing touch-none backdrop-blur-md"
         style={{ touchAction: "none" }}
         title="Flight Direction Pad (WASD)"
       >
@@ -308,6 +310,8 @@ interface TelemetryHUDProps {
   onTeleportBase?: (base: FastTravelBase) => void;
   autoMoveLocked?: string;
   onCancelAutoMove?: () => void;
+  isMuted?: boolean;
+  onToggleMute?: () => void;
 }
 
 export function TelemetryHUD({
@@ -336,6 +340,8 @@ export function TelemetryHUD({
   onTeleportBase,
   autoMoveLocked,
   onCancelAutoMove,
+  isMuted,
+  onToggleMute,
 }: TelemetryHUDProps) {
   const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
@@ -410,22 +416,6 @@ export function TelemetryHUD({
               <ArrowLeft className="h-4 w-4 text-[#FF5500]" />
               <span>Dashboard</span>
             </button>
-
-            {/* Flight Mode Badge (Stealth Dark Aero HUD, No Bright Yellow Tag) */}
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold tracking-wide border border-neutral-700 bg-neutral-900/90 text-neutral-200 shadow-sm shrink-0">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  telemetry.flightMode === "HOVER"
-                    ? "bg-[#FF5500] animate-pulse"
-                    : telemetry.flightMode === "LANDED"
-                    ? "bg-emerald-400"
-                    : telemetry.flightMode === "AUTO LAND"
-                    ? "bg-purple-400 animate-ping"
-                    : "bg-cyan-400"
-                }`}
-              />
-              <span>{telemetry.flightMode}</span>
-            </span>
 
             {/* Multiplayer Airspace Roster Widget */}
             <MultiplayerRosterWidget
@@ -701,6 +691,22 @@ export function TelemetryHUD({
               ) : null}
             </div>
 
+            {/* Audio Mute/Unmute Toggle Button */}
+            {onToggleMute && (
+              <button
+                onClick={onToggleMute}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border-2 border-black text-xs font-bold text-neutral-800 shadow-sm hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer"
+                title={isMuted ? "Unmute Audio" : "Mute Audio"}
+              >
+                {isMuted ? (
+                  <VolumeX className="h-3.5 w-3.5 text-neutral-400" />
+                ) : (
+                  <Volume2 className="h-3.5 w-3.5 text-[#FF5500]" />
+                )}
+                <span className="hidden sm:inline">{isMuted ? "Muted" : "Sound"}</span>
+              </button>
+            )}
+
             {/* Flight Coach Toggle Button */}
             {onToggleTutorial && (
               <button
@@ -775,17 +781,17 @@ export function TelemetryHUD({
       {/* Left: Direction Pad + Altitude Controls              */}
       {/* Right: Compact Utility Dock + Tactical Map Circle    */}
       {/* ---------------------------------------------------- */}
-      <footer className="w-full flex items-end justify-between pointer-events-none z-20 sm:gap-2 gap-1">
+      <footer className="w-full flex items-end justify-between pointer-events-none z-20 gap-2 pb-1 sm:pb-2 px-1 sm:px-2">
         {/* ==================================================== */}
         {/* BOTTOM-LEFT: DIRECTION PAD (WASD) + ALTITUDE BUTTONS */}
         {/* ==================================================== */}
-        <div className="flex items-end gap-1 sm:gap-3 pointer-events-auto origin-bottom-left scale-[0.75] sm:scale-100">
+        <div className="flex items-end gap-1.5 sm:gap-3 pointer-events-auto shrink-0">
           {/* 1. Virtual Flight Direction Pad (WASD) */}
           <DirectionalJoystick onMove={onMoveDirection} />
 
           {/* 2. Altitude Control Buttons (SPACE / SHIFT) */}
           <div className="flex flex-col items-center gap-1 select-none">
-            <div className="flex flex-col items-center gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-neutral-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
+            <div className="flex flex-col items-center gap-1.5 bg-white/95 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-neutral-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
               <span className="text-[8px] font-extrabold text-neutral-500 uppercase tracking-widest px-1">
                 ALTITUDE
               </span>
@@ -796,7 +802,7 @@ export function TelemetryHUD({
                 onPointerDown={(e) => { e.preventDefault(); onThrottle(1); }}
                 onPointerUp={(e) => { e.preventDefault(); onThrottle(0); }}
                 onPointerLeave={(e) => { e.preventDefault(); onThrottle(0); }}
-                className="flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100 active:bg-[#FF5500] active:text-white border border-neutral-200/90 text-neutral-800 text-xs font-bold transition-all cursor-pointer select-none shadow-xs active:scale-95 w-full"
+                className="flex items-center justify-center gap-1 px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100 active:bg-[#FF5500] active:text-white border border-neutral-200/90 text-neutral-800 text-xs font-bold transition-all cursor-pointer select-none shadow-xs active:scale-95 w-full"
                 title="Climb / Throttle Up (SPACE)"
               >
                 <ArrowUp className="h-3.5 w-3.5 text-[#FF5500]" />
@@ -809,7 +815,7 @@ export function TelemetryHUD({
                 onPointerDown={(e) => { e.preventDefault(); onThrottle(-1); }}
                 onPointerUp={(e) => { e.preventDefault(); onThrottle(0); }}
                 onPointerLeave={(e) => { e.preventDefault(); onThrottle(0); }}
-                className="flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100 active:bg-[#FF5500] active:text-white border border-neutral-200/90 text-neutral-800 text-xs font-bold transition-all cursor-pointer select-none shadow-xs active:scale-95 w-full"
+                className="flex items-center justify-center gap-1 px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100 active:bg-[#FF5500] active:text-white border border-neutral-200/90 text-neutral-800 text-xs font-bold transition-all cursor-pointer select-none shadow-xs active:scale-95 w-full"
                 title="Descend / Throttle Down (SHIFT / C)"
               >
                 <ArrowDown className="h-3.5 w-3.5 text-neutral-500" />
@@ -840,7 +846,7 @@ export function TelemetryHUD({
         {/* ==================================================== */}
         {/* BOTTOM-RIGHT: COMPACT UTILITY DOCK + MINIMAP CIRCLE  */}
         {/* ==================================================== */}
-        <div className="flex items-end gap-1 sm:gap-3 pointer-events-auto origin-bottom-right scale-[0.75] sm:scale-100">
+        <div className="flex items-end gap-1.5 sm:gap-3 pointer-events-auto shrink-0">
           {/* Mobile Collapsible Toggle on small screens (<640px) */}
           <button
             type="button"

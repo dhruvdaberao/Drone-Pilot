@@ -50,20 +50,54 @@ export class TrafficManager {
 
     for (let i = 0; i < vehicleCount; i++) {
       const template = templates[i % templates.length].clone();
-      // Kenney vehicles scale appropriately (1.9x) for human/road proportion
-      template.scale.set(1.9, 1.9, 1.9);
+      // True proportion scale (2.35x) for full vehicle clarity and visibility
+      template.scale.set(2.35, 2.35, 2.35);
 
-      // Find wheel meshes for rotation animation & enhance lights
+      // Find wheel meshes for rotation animation & enhance materials/shadows
       const wheels: THREE.Object3D[] = [];
       template.traverse((child) => {
-        if (child.name.toLowerCase().includes("wheel") || (child as THREE.Mesh).isMesh) {
-          if (child.position.y < 0.6) {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+
+          if (mesh.material) {
+            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            mats.forEach((mat) => {
+              if (mat instanceof THREE.MeshStandardMaterial) {
+                mat.roughness = 0.35;
+                mat.metalness = 0.25;
+                if (mat.map) {
+                  mat.map.minFilter = THREE.LinearMipmapLinearFilter;
+                  mat.map.magFilter = THREE.LinearFilter;
+                  mat.map.needsUpdate = true;
+                }
+              }
+            });
+          }
+
+          if (child.name.toLowerCase().includes("wheel") || child.position.y < 0.6) {
             wheels.push(child);
           }
         }
       });
 
-      // Add miniature headlight glow meshes so vehicles are easily spotted from flight altitude
+      // Ground ambient shadow plane
+      const shadowGeo = new THREE.PlaneGeometry(1.5, 3.0);
+      shadowGeo.rotateX(-Math.PI / 2);
+      const shadowMesh = new THREE.Mesh(
+        shadowGeo,
+        new THREE.MeshBasicMaterial({
+          color: 0x0a0a0a,
+          transparent: true,
+          opacity: 0.45,
+          depthWrite: false,
+        })
+      );
+      shadowMesh.position.set(0, 0.03, 0);
+      template.add(shadowMesh);
+
+      // Front Headlight Glow
       const headLightMat = new THREE.MeshBasicMaterial({ color: 0xfffde0 });
       const hlLeft = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.05), headLightMat);
       hlLeft.position.set(-0.45, 0.45, 1.1);
@@ -71,6 +105,15 @@ export class TrafficManager {
       hlRight.position.set(0.45, 0.45, 1.1);
       template.add(hlLeft);
       template.add(hlRight);
+
+      // Rear Taillight Glow (Red)
+      const tailLightMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+      const tlLeft = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.05), tailLightMat);
+      tlLeft.position.set(-0.45, 0.45, -1.1);
+      const tlRight = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.05), tailLightMat);
+      tlRight.position.set(0.45, 0.45, -1.1);
+      template.add(tlLeft);
+      template.add(tlRight);
 
       // Position evenly along the waypoint circuit
       const startWaypoint = i % (this.waypoints.length - 1);

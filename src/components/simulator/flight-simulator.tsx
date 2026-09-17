@@ -625,13 +625,23 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       // Update Audio
       if (droneAudioRef.current) {
         const throttleValue = (curTelemetry.rotorRpmPercent || 0) / 100;
-        droneAudioRef.current.update(throttleValue, throttleValue * 5000, curTelemetry.groundSpeed);
+        droneAudioRef.current.update(
+          throttleValue,
+          throttleValue * 5000,
+          curTelemetry.groundSpeed,
+          curTelemetry.isArmed,
+          curTelemetry.flightMode
+        );
       }
       if (windAudioRef.current) {
         windAudioRef.current.update(curTelemetry.altitudeMsl || curTelemetry.altitude, curTelemetry.groundSpeed, getWindExposure(curTelemetry.position.x, curTelemetry.position.z));
       }
       if (envZoneAudioRef.current) {
-        envZoneAudioRef.current.update(curTelemetry.position.x, curTelemetry.position.z);
+        envZoneAudioRef.current.update(
+          curTelemetry.position.x,
+          curTelemetry.position.z,
+          curTelemetry.position.y
+        );
       }
       if (audioManagerRef.current) {
         audioManagerRef.current.update(dt, elapsed, chaseCam.camera.position);
@@ -698,19 +708,6 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       {/* Three.js Canvas Container */}
       <div ref={containerRef} className="w-full h-full cursor-crosshair" />
 
-      {/* Audio Mute/Unmute Toggle */}
-      <button 
-        onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-        className="absolute bottom-6 right-6 z-40 bg-white/95 hover:bg-white text-neutral-800 p-3 rounded-full backdrop-blur-md transition-all border border-neutral-200/90 shadow-[0_8px_25px_rgba(0,0,0,0.12)] active:scale-95 cursor-pointer"
-        title={isMuted ? "Unmute Audio" : "Mute Audio"}
-      >
-        {isMuted ? (
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
-        ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#FF5500]"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
-        )}
-      </button>
-
       {/* Loading Screen Overlay */}
       {isLoading && <SimulationLoadingScreen onReady={handleLoadingReady} />}
 
@@ -762,6 +759,8 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
           inputManagerRef.current?.cancelMovementLock();
           setAutoMoveLocked("");
         }}
+        isMuted={isMuted}
+        onToggleMute={toggleMute}
       />
 
       {/* Live Tutorial Overlay */}

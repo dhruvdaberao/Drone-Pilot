@@ -1,185 +1,207 @@
 // ==========================================================
-// DRONE PILOT — REGION 6: HARBOR INDUSTRIAL PARK (PHASE 1)
-// Cargo Terminal Pad, Hangars, Bulk Fuel Silos & Deepwater Piers
+// DRONE PILOT — REGION 6: SCENIC COASTAL COVE & LIGHTHOUSE LOOKOUT
+// Replaces previous industrial slab with natural coastal boardwalk,
+// maritime stone terraces, lighthouse, and scenic helipad
 // ==========================================================
 
 import * as THREE from "three";
 import { HELIPADS } from "@/lib/world/helipad-definitions";
 import { createHelipadMesh } from "../helipad-mesh";
+import { evaluateIslandElevation } from "@/lib/world/terrain-math";
 
 export class IndustrialRegion {
   public group = new THREE.Group();
 
   constructor() {
-    // 1. Heavy Paved Logistics Concrete Apron
-    this.buildLogisticsApron();
-
-    // 2. Logistics Cargo Helipad
+    // 1. Scenic Landing Platform (elevated wooden deck pad matching terrain)
     const pad = createHelipadMesh(HELIPADS["industrial-alpha"]);
     this.group.add(pad);
 
-    // 3. Foundation Volumes: Hangars, Warehouses, Fuel Silos, and Shipping Piers
-    this.buildIndustrialVolumes();
-    this.buildHarborPiers();
-    this.buildYardLighting();
-  }
-
-  private buildLogisticsApron() {
-    const apronGeo = new THREE.PlaneGeometry(320, 280);
-    apronGeo.rotateX(-Math.PI / 2);
-
-    const apronMat = new THREE.MeshStandardMaterial({
-      color: 0x334155, // Heavy reinforced industrial concrete
-      roughness: 0.9,
-      metalness: 0.1,
-      polygonOffset: true,
-      polygonOffsetFactor: -1,
-      polygonOffsetUnits: -1,
-    });
-
-    const apron = new THREE.Mesh(apronGeo, apronMat);
-    apron.position.set(380, 1.82, 780);
-    apron.receiveShadow = true;
-    this.group.add(apron);
-  }
-
-  private buildIndustrialVolumes() {
-    const hangarMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.7 });
-    const hangar = new THREE.Mesh(new THREE.BoxGeometry(36, 12, 48), hangarMat);
-    hangar.position.set(400, 6 + 1.8, 740);
-    hangar.castShadow = true;
-    hangar.receiveShadow = true;
-    this.group.add(hangar);
-
-    // Curved barrel roof
-    const roof = new THREE.Mesh(
-      new THREE.CylinderGeometry(18.2, 18.2, 48, 14, 1, false, 0, Math.PI),
-      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 })
-    );
-    roof.rotation.z = Math.PI / 2;
-    roof.rotation.x = Math.PI / 2;
-    roof.position.set(400, 12 + 1.8, 740);
-    this.group.add(roof);
-
-    // Secondary Distribution Warehouse
-    const whMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.75 });
-    const warehouse = new THREE.Mesh(new THREE.BoxGeometry(42, 9, 32), whMat);
-    warehouse.position.set(450, 4.5 + 1.8, 800);
-    warehouse.castShadow = true;
-    warehouse.receiveShadow = true;
-    this.group.add(warehouse);
-
-    // Bulk Fuel Silos
-    const siloMat = new THREE.MeshStandardMaterial({
-      color: 0xe2e8f0,
-      roughness: 0.35,
-      metalness: 0.8,
-    });
-    [
-      { x: 310, z: 800 },
-      { x: 335, z: 800 },
-      { x: 310, z: 830 },
-      { x: 335, z: 830 },
-    ].forEach((s) => {
-      const cyl = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 5.5, 16, 16), siloMat);
-      cyl.position.set(s.x, 8 + 1.8, s.z);
-      cyl.castShadow = true;
-      this.group.add(cyl);
-
-      const dome = new THREE.Mesh(
-        new THREE.SphereGeometry(5.5, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-        siloMat
-      );
-      dome.position.set(s.x, 16 + 1.8, s.z);
-      this.group.add(dome);
-    });
-
-    // Intermodal shipping container stacks (multi-tiered)
-    const containerColors = [0xdc2626, 0x0284c7, 0xeab308, 0x16a34a];
-    const boxGeo = new THREE.BoxGeometry(6.2, 2.6, 14);
-
-    for (let c = 0; c < 20; c++) {
-      const cx = 350 + (c % 5) * 7.5;
-      const cz = 690 + Math.floor((c % 15) / 5) * 16;
-      const tier = Math.floor(c / 10);
-      const cMat = new THREE.MeshStandardMaterial({
-        color: containerColors[c % containerColors.length],
-        roughness: 0.6,
-      });
-      const box = new THREE.Mesh(boxGeo, cMat);
-      box.position.set(cx, 1.3 + tier * 2.7 + 1.8, cz);
-      box.castShadow = true;
-      this.group.add(box);
-    }
+    // 2. Coastal Lookout Architecture (Lighthouse, Wooden Boardwalk, Stone Terraces)
+    this.buildCoastalLighthouse();
+    this.buildScenicBoardwalk();
+    this.buildStoneLookoutTerrace();
   }
 
   /**
-   * Deepwater shipping pier extending into the harbor channel
+   * Classic coastal lighthouse overlooking the harbor bay
    */
-  private buildHarborPiers() {
-    const pierMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
-    const pier = new THREE.Mesh(new THREE.BoxGeometry(18, 1.4, 85), pierMat);
-    pier.position.set(420, 1.2, 875);
+  private buildCoastalLighthouse() {
+    const lx = 370;
+    const lz = 820;
+    const elev = evaluateIslandElevation(lx, lz).elevation;
+
+    const lhGroup = new THREE.Group();
+    lhGroup.position.set(lx, elev, lz);
+
+    // Octagonal Stone Foundation
+    const baseGeo = new THREE.CylinderGeometry(8, 9, 3.5, 8);
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9, flatShading: true });
+    const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+    baseMesh.position.y = 1.75;
+    baseMesh.castShadow = true;
+    baseMesh.receiveShadow = true;
+    lhGroup.add(baseMesh);
+
+    // Tapered White & Red Lighthouse Tower
+    const towerMatWhite = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 });
+    const towerMatRed = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.6 });
+
+    const bandHeights = [4, 4, 4, 4, 4];
+    let curY = 3.5;
+    let bottomR = 6.2;
+
+    for (let i = 0; i < 5; i++) {
+      const topR = bottomR - 0.5;
+      const geo = new THREE.CylinderGeometry(topR, bottomR, bandHeights[i], 16);
+      const mat = i % 2 === 0 ? towerMatWhite : towerMatRed;
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.y = curY + bandHeights[i] / 2;
+      mesh.castShadow = true;
+      lhGroup.add(mesh);
+
+      curY += bandHeights[i];
+      bottomR = topR;
+    }
+
+    // Gallery Deck & Railing
+    const deckGeo = new THREE.CylinderGeometry(5.2, 5.2, 0.6, 16);
+    const deckMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5 });
+    const deck = new THREE.Mesh(deckGeo, deckMat);
+    deck.position.y = curY + 0.3;
+    lhGroup.add(deck);
+
+    // Lantern Room (Glass Chamber + Light Core)
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.45,
+      roughness: 0.1,
+      metalness: 0.9,
+    });
+    const lanternGlass = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.6, 3.2, 12), glassMat);
+    lanternGlass.position.y = curY + 2.2;
+    lhGroup.add(lanternGlass);
+
+    // Bright Lantern Core
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+    const core = new THREE.Mesh(new THREE.SphereGeometry(1.4, 8, 8), coreMat);
+    core.position.y = curY + 2.2;
+    lhGroup.add(core);
+
+    // Conical Copper Roof
+    const roofGeo = new THREE.ConeGeometry(4.2, 3.0, 16);
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0x164e2a, roughness: 0.5, metalness: 0.4 });
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.position.y = curY + 3.8 + 1.5;
+    lhGroup.add(roof);
+
+    this.group.add(lhGroup);
+  }
+
+  /**
+   * Scenic wooden boardwalk overlooking the waters of the cove
+   */
+  private buildScenicBoardwalk() {
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.85 });
+    const postMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.9 });
+
+    // Boardwalk pier walkway
+    const pierLength = 65;
+    const pierWidth = 5.5;
+    const pierGeo = new THREE.BoxGeometry(pierWidth, 0.4, pierLength);
+    const pier = new THREE.Mesh(pierGeo, woodMat);
+    pier.position.set(400, 1.6, 855);
     pier.castShadow = true;
     pier.receiveShadow = true;
     this.group.add(pier);
 
-    // Mooring bollards
-    const bollardMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9 });
-    for (let b = -35; b <= 35; b += 14) {
-      const bollard = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 0.9, 8), bollardMat);
-      bollard.position.set(420 + 8.2, 1.9 + 0.45, 875 + b);
-      this.group.add(bollard);
+    // Support pilings along pier
+    for (let z = -pierLength / 2 + 3; z <= pierLength / 2 - 3; z += 6) {
+      [-pierWidth / 2 + 0.3, pierWidth / 2 - 0.3].forEach((xOff) => {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 4.5, 6), postMat);
+        post.position.set(400 + xOff, 0.5, 855 + z);
+        this.group.add(post);
+      });
     }
 
-    // Pierhead navigation beacon (green flashing harbor channel marker)
-    const beaconPost = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.2, 0.25, 4.5, 8),
-      new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8 })
-    );
-    beaconPost.position.set(420, 3.5, 915);
-    this.group.add(beaconPost);
+    // Safety wood railings
+    [-pierWidth / 2 + 0.15, pierWidth / 2 - 0.15].forEach((xOff) => {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, pierLength), woodMat);
+      rail.position.set(400 + xOff, 2.6, 855);
+      this.group.add(rail);
 
-    const beaconLight = new THREE.Mesh(
+      for (let z = -pierLength / 2 + 2; z <= pierLength / 2 - 2; z += 4) {
+        const baluster = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.9, 4), woodMat);
+        baluster.position.set(400 + xOff, 2.15, 855 + z);
+        this.group.add(baluster);
+      }
+    });
+
+    // Harbor channel navigation light at pier tip
+    const lightHead = new THREE.Mesh(
       new THREE.SphereGeometry(0.4, 8, 8),
       new THREE.MeshBasicMaterial({ color: 0x22c55e })
     );
-    beaconLight.position.set(420, 5.8, 915);
-    this.group.add(beaconLight);
+    lightHead.position.set(400, 3.2, 855 + pierLength / 2 - 1);
+    this.group.add(lightHead);
   }
 
   /**
-   * High-mast yard floodlight towers
+   * Natural stone terrace with park benches overlooking the bay
    */
-  private buildYardLighting() {
-    const mastMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85 });
-    const lampMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      emissive: 0xffffff,
-      emissiveIntensity: 2.5,
-    });
+  private buildStoneLookoutTerrace() {
+    const stoneMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9, flatShading: true });
+    const woodBenchMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
 
+    // Semi-circular stone retaining terrace wall
+    const wallSegments = 10;
+    const radius = 18;
+    for (let i = 0; i <= wallSegments; i++) {
+      const angle = Math.PI * 0.8 + (i / wallSegments) * Math.PI * 0.9;
+      const wx = 380 + Math.cos(angle) * radius;
+      const wz = 770 + Math.sin(angle) * radius;
+      const welev = evaluateIslandElevation(wx, wz).elevation;
+
+      const block = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.8, 1.2), stoneMat);
+      block.position.set(wx, welev + 0.4, wz);
+      block.rotation.y = -angle + Math.PI / 2;
+      block.castShadow = true;
+      this.group.add(block);
+    }
+
+    // Scenic resting benches
     [
-      { x: 300, z: 720 },
-      { x: 460, z: 720 },
-      { x: 300, z: 850 },
-      { x: 460, z: 850 },
-    ].forEach((pos) => {
-      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 18, 8), mastMat);
-      mast.position.set(pos.x, 9 + 1.8, pos.z);
-      this.group.add(mast);
+      { x: 375, z: 780, rot: 0.4 },
+      { x: 388, z: 782, rot: -0.3 },
+    ].forEach((b) => {
+      const belev = evaluateIslandElevation(b.x, b.z).elevation;
+      const benchGroup = new THREE.Group();
+      benchGroup.position.set(b.x, belev, b.z);
+      benchGroup.rotation.y = b.rot;
 
-      const crossbar = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.4, 0.8), mastMat);
-      crossbar.position.set(pos.x, 18 + 1.8, pos.z);
-      this.group.add(crossbar);
+      // Bench seat
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 0.7), woodBenchMat);
+      seat.position.y = 0.55;
+      benchGroup.add(seat);
 
-      const lamp = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.3, 0.6), lampMat);
-      lamp.position.set(pos.x, 17.8 + 1.8, pos.z);
-      this.group.add(lamp);
+      // Bench back
+      const back = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.4, 0.1), woodBenchMat);
+      back.position.set(0, 0.85, -0.3);
+      benchGroup.add(back);
+
+      // Stone legs
+      [-0.9, 0.9].forEach((legX) => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.55, 0.6), stoneMat);
+        leg.position.set(legX, 0.275, 0);
+        benchGroup.add(leg);
+      });
+
+      this.group.add(benchGroup);
     });
   }
 
   public update(_dt: number, _elapsed: number) {
-    // Ready for future maritime animations
+    // Dynamic lighthouse beam rotation or maritime visuals
   }
 }
