@@ -9,8 +9,12 @@ import * as THREE from "three";
 import { DroneDefinition, TelemetryState } from "@/lib/simulation/types";
 
 interface PropellerAssembly {
-  group: THREE.Group;
+  bladeGroup: THREE.Group;
+  blurMesh: THREE.Mesh;
+  blurMaterial: THREE.MeshBasicMaterial;
+  bladeMaterial: THREE.MeshStandardMaterial;
   direction: 1 | -1;
+  motorIndex: number;
 }
 
 export class ModularDrone {
@@ -21,6 +25,31 @@ export class ModularDrone {
   private armGroups: THREE.Group[] = [];
   private armOriginalAngles: number[] = [];
   private propGroups: THREE.Group[] = [];
+
+  // Active 3-axis stabilized camera gimbal
+  private gimbalGroup: THREE.Group | null = null;
+  private gimbalRollArm: THREE.Group | null = null;
+  private cameraPod: THREE.Group | null = null;
+
+  // Battery gauge LEDs
+  private batteryLeds: THREE.Mesh[] = [];
+  private ledBatteryGreenMat!: THREE.MeshBasicMaterial;
+  private ledBatteryAmberMat!: THREE.MeshBasicMaterial;
+  private ledBatteryRedMat!: THREE.MeshBasicMaterial;
+  private ledBatteryOffMat!: THREE.MeshStandardMaterial;
+
+  // Anti-collision strobe
+  private tailStrobeMesh: THREE.Mesh | null = null;
+  private strobeMaterial!: THREE.MeshBasicMaterial;
+  private strobeTimer = 0;
+
+  // Smoothing & visual attitude state
+  private visualPos = new THREE.Vector3();
+  private visualPitch = 0;
+  private visualRoll = 0;
+  private visualYaw = 0;
+  private isInitialized = false;
+
   public isDamaged = false;
   private smokeParticles: THREE.Points | null = null;
   private smokePositions!: Float32Array;
@@ -113,171 +142,391 @@ export class ModularDrone {
 
   public setDefinition(definition: DroneDefinition) {
     this.def = definition;
-    // Clear and rebuild
     while (this.group.children.length > 0) {
       this.group.remove(this.group.children[0]);
     }
     this.propellers = [];
+    this.armGroups = [];
+    this.armOriginalAngles = [];
+    this.propGroups = [];
+    this.batteryLeds = [];
     this.nameTagSprite = null;
     this.buildDrone();
     this.updateNameTag();
   }
 
+  /**
+   * Generates a realistic procedural radial motion-blur texture for high-RPM propellers
+   */
+  private createPropBlurTexture(): THREE.CanvasTexture {
+    const size = 256;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return new THREE.CanvasTexture(canvas);
+
+    const center = size / 2;
+    const outerRadius = size / 2 - 4;
+
+    // Transparent background
+    ctx.clearRect(0, 0, size, size);
+
+    // Concentric aerodynamic path rings
+    for (let r = 18; r < outerRadius; r += 1.5) {
+      const normR = (r - 18) / (outerRadius - 18);
+      const density = Math.sin(normR * Math.PI) * 0.42 + 0.12;
+      ctx.beginPath();
+      ctx.arc(center, center, r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(32, 36, 42, ${density.toFixed(3)})`;
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+    }
+
+    // Outer safety orange safety tip ring streak (outer 18% radius)
+    const tipInner = outerRadius - 24;
+    for (let r = tipInner; r < outerRadius; r += 2) {
+      const tipAlpha = ((r - tipInner) / 24) * 0.65;
+      ctx.beginPath();
+      ctx.arc(center, center, r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255, 85, 0, ${tipAlpha.toFixed(3)})`;
+      ctx.lineWidth = 2.0;
+      ctx.stroke();
+    }
+
+    // Subtle specular radial streak sheen
+    const grad = ctx.createLinearGradient(0, 0, size, size);
+    grad.addColorStop(0, "rgba(255, 255, 255, 0.0)");
+    grad.addColorStop(0.45, "rgba(255, 255, 255, 0.08)");
+    grad.addColorStop(0.55, "rgba(255, 255, 255, 0.18)");
+    grad.addColorStop(0.65, "rgba(255, 255, 255, 0.08)");
+    grad.addColorStop(1, "rgba(255, 255, 255, 0.0)");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    return tex;
+  }
+
   private buildDrone() {
     // ------------------------------------------------------
-    // 1. AEROSPACE MATERIALS (DJI MATRICE SPECIFICATION)
+    // 1. PROFESSIONAL AEROSPACE MATERIALS PALETTE
     // ------------------------------------------------------
-    const tacticalHullMat = new THREE.MeshStandardMaterial({
-      color: 0x5a5f67, // Matte tactical stealth gray
-      roughness: 0.38,
-      metalness: 0.25,
+    const hullMat = new THREE.MeshStandardMaterial({
+      color: 0x333842, // Matte engineered slate polymer
+      roughness: 0.35,
+      metalness: 0.22,
     });
 
-    const underHullMat = new THREE.MeshStandardMaterial({
-      color: 0x383c43,
-      roughness: 0.42,
-      metalness: 0.30,
-    });
-
-    const titaniumTrimMat = new THREE.MeshStandardMaterial({
-      color: 0x22252a,
-      roughness: 0.25,
-      metalness: 0.75,
-    });
-
-    const carbonArmMat = new THREE.MeshStandardMaterial({
-      color: 0x181a1d,
-      roughness: 0.40,
+    const chassisCarbonMat = new THREE.MeshStandardMaterial({
+      color: 0x181a1f, // Structural carbon-composite bottom tub
+      roughness: 0.45,
       metalness: 0.35,
     });
 
-    const motorBellMat = new THREE.MeshStandardMaterial({
-      color: 0x2e3238,
-      roughness: 0.18,
+    const titaniumTrimMat = new THREE.MeshStandardMaterial({
+      color: 0x5a606d, // CNC anodized aerospace aluminum
+      roughness: 0.22,
       metalness: 0.88,
     });
 
+    const carbonArmMat = new THREE.MeshStandardMaterial({
+      color: 0x141619, // Carbon fiber arm tube
+      roughness: 0.38,
+      metalness: 0.40,
+    });
+
+    const motorBellMat = new THREE.MeshStandardMaterial({
+      color: 0x1e2127, // Brushed motor bell housing
+      roughness: 0.20,
+      metalness: 0.90,
+    });
+
     const copperStatorMat = new THREE.MeshStandardMaterial({
-      color: 0xcc6f2a,
+      color: 0xcc6f2a, // Stator copper wire windings
       roughness: 0.25,
       metalness: 0.95,
     });
 
     const bladeMat = new THREE.MeshStandardMaterial({
-      color: 0x1f2125,
-      roughness: 0.35,
-      metalness: 0.20,
+      color: 0x1d1f24,
+      roughness: 0.30,
+      metalness: 0.25,
+      transparent: true,
+      opacity: 1.0,
     });
 
-    // High-visibility aviation safety orange tips (Image 3 reference)
     const orangeTipMat = new THREE.MeshStandardMaterial({
-      color: 0xff5500,
+      color: 0xff5500, // Aviation safety orange
       roughness: 0.30,
       metalness: 0.10,
+      transparent: true,
+      opacity: 1.0,
     });
 
-    const lensMat = new THREE.MeshStandardMaterial({
-      color: 0x050d18,
-      emissive: 0x0088cc,
-      emissiveIntensity: 0.5,
-      roughness: 0.05,
-      metalness: 0.95,
+    const lensGlassMat = new THREE.MeshStandardMaterial({
+      color: 0x050c18,
+      emissive: 0x0077b6,
+      emissiveIntensity: 0.6,
+      roughness: 0.04,
+      metalness: 0.96,
     });
 
     const rubberPadMat = new THREE.MeshStandardMaterial({
-      color: 0x151618,
-      roughness: 0.88,
+      color: 0x101113,
+      roughness: 0.92,
       metalness: 0.05,
     });
 
-    const ledGreen = new THREE.MeshBasicMaterial({ color: 0x10b981 });
-    const ledRed = new THREE.MeshBasicMaterial({ color: 0xef4444 });
-    const ledWhite = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const heatSinkMat = new THREE.MeshStandardMaterial({
+      color: 0x1a1c21,
+      roughness: 0.28,
+      metalness: 0.85,
+    });
+
+    // LEDs & Navigation Lighting
+    const ledGreen = new THREE.MeshBasicMaterial({ color: 0x00e676 }); // Starboard (Right)
+    const ledRed = new THREE.MeshBasicMaterial({ color: 0xff1744 });   // Port (Left)
+    const ledHeadlight = new THREE.MeshBasicMaterial({ color: 0xfffaed }); // Forward white spotlight
+    this.strobeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff }); // Rear anti-collision strobe
+    this.ledBatteryGreenMat = new THREE.MeshBasicMaterial({ color: 0x00e676 });
+    this.ledBatteryAmberMat = new THREE.MeshBasicMaterial({ color: 0xffb300 });
+    this.ledBatteryRedMat = new THREE.MeshBasicMaterial({ color: 0xff1744 });
+    this.ledBatteryOffMat = new THREE.MeshStandardMaterial({ color: 0x1a202c, roughness: 0.8 });
 
     // ------------------------------------------------------
-    // 2. CHISELED MONOCOQUE FUSELAGE
+    // 2. SCULPTED AERODYNAMIC MONOCOQUE FUSELAGE
+    // Distinct Front vs Rear Orientation
     // ------------------------------------------------------
-    const bodyScale = this.def.type === "octacopter" ? 1.08 : this.def.type === "hexacopter" ? 1.02 : 0.96;
-    const bodyLength = 0.52 * bodyScale;
-    const bodyWidth = 0.22 * bodyScale;
-    const bodyHeight = 0.11 * bodyScale;
+    const bodyScale = this.def.type === "octacopter" ? 1.10 : this.def.type === "hexacopter" ? 1.04 : 0.98;
+    const bodyLength = 0.54 * bodyScale;
+    const bodyWidth = 0.23 * bodyScale;
+    const bodyHeight = 0.12 * bodyScale;
 
     const fuselage = new THREE.Group();
 
-    // Belly chassis
-    const belly = new THREE.Mesh(
-      new THREE.BoxGeometry(bodyWidth * 0.92, bodyHeight * 0.45, bodyLength * 0.90),
-      underHullMat
-    );
-    belly.position.set(0, -bodyHeight * 0.24, -bodyLength * 0.02);
-    fuselage.add(belly);
+    // A. Bottom Structural Carbon Tub (sloped aerodynamic keel)
+    const tubGeo = new THREE.CylinderGeometry(bodyWidth * 0.44, bodyWidth * 0.48, bodyLength * 0.88, 8);
+    tubGeo.rotateX(Math.PI / 2);
+    tubGeo.scale(1.0, 0.45, 1.0);
+    const bottomTub = new THREE.Mesh(tubGeo, chassisCarbonMat);
+    bottomTub.position.set(0, -bodyHeight * 0.22, 0);
+    fuselage.add(bottomTub);
 
-    // Mid-hull deck
-    const midHull = new THREE.Mesh(
-      new THREE.BoxGeometry(bodyWidth, bodyHeight * 0.55, bodyLength * 0.88),
-      tacticalHullMat
+    // B. Main Mid-Hull Deck
+    const midDeck = new THREE.Mesh(
+      new THREE.BoxGeometry(bodyWidth, bodyHeight * 0.52, bodyLength * 0.86),
+      hullMat
     );
-    midHull.position.set(0, bodyHeight * 0.08, -bodyLength * 0.03);
-    fuselage.add(midHull);
+    midDeck.position.set(0, bodyHeight * 0.04, -bodyLength * 0.02);
+    fuselage.add(midDeck);
 
-    // Forward nose cowl
-    const noseCowl = new THREE.Mesh(
-      new THREE.BoxGeometry(bodyWidth * 0.86, bodyHeight * 0.50, bodyLength * 0.32),
-      tacticalHullMat
-    );
-    noseCowl.position.set(0, bodyHeight * 0.04, bodyLength * 0.44);
-    noseCowl.rotation.x = 0.12;
-    fuselage.add(noseCowl);
+    // C. Sculpted Aerodynamic Nose Canopy (FRONT INDICATOR)
+    const noseGeo = new THREE.ConeGeometry(bodyWidth * 0.48, bodyLength * 0.42, 6);
+    noseGeo.rotateX(-Math.PI / 2);
+    noseGeo.scale(1.0, 0.48, 1.0);
+    const noseCanopy = new THREE.Mesh(noseGeo, hullMat);
+    noseCanopy.position.set(0, bodyHeight * 0.06, bodyLength * 0.44);
+    fuselage.add(noseCanopy);
 
-    // Forward stereo obstacle avoidance cameras (binocular eyes)
-    [-0.05 * bodyScale, 0.05 * bodyScale].forEach((xOff) => {
+    // D. Dual Forward Inspection Headlights (Warm White Spotlights)
+    [-0.06 * bodyScale, 0.06 * bodyScale].forEach((xOff) => {
+      const lightHousing = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.018, 0.020, 0.015, 12),
+        titaniumTrimMat
+      );
+      lightHousing.rotation.x = Math.PI / 2;
+      lightHousing.position.set(xOff, -bodyHeight * 0.10, bodyLength * 0.50);
+      fuselage.add(lightHousing);
+
+      const lightLens = new THREE.Mesh(new THREE.CircleGeometry(0.015, 12), ledHeadlight);
+      lightLens.position.set(xOff, -bodyHeight * 0.10, bodyLength * 0.508);
+      fuselage.add(lightLens);
+    });
+
+    // E. Forward Binocular Obstacle-Avoidance Stereo Vision Sensors
+    [-0.045 * bodyScale, 0.045 * bodyScale].forEach((xOff) => {
       const eyeHousing = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.018, 0.018, 0.02, 12),
+        new THREE.CylinderGeometry(0.014, 0.016, 0.018, 12),
         titaniumTrimMat
       );
       eyeHousing.rotation.x = Math.PI / 2;
-      eyeHousing.position.set(xOff, bodyHeight * 0.14, bodyLength * 0.56);
+      eyeHousing.position.set(xOff, bodyHeight * 0.18, bodyLength * 0.42);
       fuselage.add(eyeHousing);
 
-      const eyeLens = new THREE.Mesh(new THREE.CircleGeometry(0.012, 12), lensMat);
-      eyeLens.position.set(xOff, bodyHeight * 0.14, bodyLength * 0.572);
+      const eyeLens = new THREE.Mesh(new THREE.CircleGeometry(0.012, 12), lensGlassMat);
+      eyeLens.position.set(xOff, bodyHeight * 0.18, bodyLength * 0.43);
       fuselage.add(eyeLens);
     });
 
-    // Top RTK GNSS Antenna module puck
-    const rtkPuck = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.055 * bodyScale, 0.058 * bodyScale, 0.07, 16),
-      tacticalHullMat
+    // F. Top RTK GNSS Disc (with metallic bezel and carbon core)
+    const rtkBezel = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.062 * bodyScale, 0.065 * bodyScale, 0.04, 16),
+      titaniumTrimMat
     );
-    rtkPuck.position.set(0, bodyHeight * 0.36 + 0.04, -bodyLength * 0.05);
-    fuselage.add(rtkPuck);
+    rtkBezel.position.set(0, bodyHeight * 0.38 + 0.02, -bodyLength * 0.04);
+    fuselage.add(rtkBezel);
 
-    // Battery compartment & tail strobe
-    const battery = new THREE.Mesh(
-      new THREE.BoxGeometry(bodyWidth * 0.78, bodyHeight * 0.48, bodyLength * 0.40),
-      underHullMat
+    const rtkCap = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.056 * bodyScale, 0.056 * bodyScale, 0.015, 16),
+      chassisCarbonMat
     );
-    battery.position.set(0, bodyHeight * 0.12, -bodyLength * 0.46);
-    fuselage.add(battery);
+    rtkCap.position.set(0, bodyHeight * 0.38 + 0.045, -bodyLength * 0.04);
+    fuselage.add(rtkCap);
 
-    const tailStrobe = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 8), ledWhite);
-    tailStrobe.position.set(0, bodyHeight * 0.14, -bodyLength * 0.67);
-    fuselage.add(tailStrobe);
+    // G. Top Aluminum Heat-Sink Cooling Fins
+    for (let i = -2; i <= 2; i++) {
+      const fin = new THREE.Mesh(
+        new THREE.BoxGeometry(0.005, 0.016, 0.14),
+        heatSinkMat
+      );
+      fin.position.set(i * 0.018, bodyHeight * 0.34, -bodyLength * 0.22);
+      fuselage.add(fin);
+    }
 
-    // Front multi-sensor gimbal camera pod
-    const gimbal = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.08, 0.08), tacticalHullMat);
-    gimbal.position.set(0, -bodyHeight * 0.38 - 0.05, bodyLength * 0.36);
-    fuselage.add(gimbal);
+    // H. Rear Quick-Release Battery Cartridge (REAR INDICATOR)
+    const batteryPack = new THREE.Mesh(
+      new THREE.BoxGeometry(bodyWidth * 0.82, bodyHeight * 0.58, bodyLength * 0.36),
+      chassisCarbonMat
+    );
+    batteryPack.position.set(0, bodyHeight * 0.06, -bodyLength * 0.46);
+    fuselage.add(batteryPack);
 
-    const gimbalLens = new THREE.Mesh(new THREE.CircleGeometry(0.022, 16), lensMat);
-    gimbalLens.position.set(0, -bodyHeight * 0.38 - 0.05, bodyLength * 0.36 + 0.042);
-    fuselage.add(gimbalLens);
+    // Battery Release Latch / Pull Handle
+    const latch = new THREE.Mesh(
+      new THREE.BoxGeometry(bodyWidth * 0.42, 0.016, 0.02),
+      titaniumTrimMat
+    );
+    latch.position.set(0, bodyHeight * 0.28, -bodyLength * 0.58);
+    fuselage.add(latch);
+
+    // 4-LED Battery Fuel Gauge on top of battery pack
+    this.batteryLeds = [];
+    for (let i = 0; i < 4; i++) {
+      const ledDot = new THREE.Mesh(
+        new THREE.BoxGeometry(0.014, 0.006, 0.008),
+        this.ledBatteryGreenMat
+      );
+      ledDot.position.set(-0.03 + i * 0.02, bodyHeight * 0.36, -bodyLength * 0.46);
+      fuselage.add(ledDot);
+      this.batteryLeds.push(ledDot);
+    }
+
+    // I. Rear High-Intensity Anti-Collision Strobe Beacon
+    const strobeMount = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.016, 0.018, 0.02, 12),
+      titaniumTrimMat
+    );
+    strobeMount.position.set(0, bodyHeight * 0.16, -bodyLength * 0.65);
+    fuselage.add(strobeMount);
+
+    this.tailStrobeMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.018, 12, 12),
+      this.strobeMaterial
+    );
+    this.tailStrobeMesh.position.set(0, bodyHeight * 0.16 + 0.015, -bodyLength * 0.65);
+    fuselage.add(this.tailStrobeMesh);
+
+    // J. Downward Optical Flow & LiDAR Sensor Pod (belly)
+    const downwardSensor = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 0.02, 0.06),
+      titaniumTrimMat
+    );
+    downwardSensor.position.set(0, -bodyHeight * 0.34, 0.04);
+    fuselage.add(downwardSensor);
+
+    const downwardLens1 = new THREE.Mesh(new THREE.CircleGeometry(0.014, 12), lensGlassMat);
+    downwardLens1.rotation.x = Math.PI / 2;
+    downwardLens1.position.set(-0.022, -bodyHeight * 0.352, 0.04);
+    fuselage.add(downwardLens1);
+
+    const downwardLens2 = new THREE.Mesh(new THREE.CircleGeometry(0.014, 12), lensGlassMat);
+    downwardLens2.rotation.x = Math.PI / 2;
+    downwardLens2.position.set(0.022, -bodyHeight * 0.352, 0.04);
+    fuselage.add(downwardLens2);
 
     this.group.add(fuselage);
 
     // ------------------------------------------------------
-    // 3. STRUCTURAL ARMS, MOTORS & LANDING FEET
+    // 3. ACTIVE 3-AXIS STABILIZED CAMERA GIMBAL
+    // Under-slung inspection camera that counter-stabilizes with drone tilt
     // ------------------------------------------------------
+    this.gimbalGroup = new THREE.Group();
+    this.gimbalGroup.position.set(0, -bodyHeight * 0.28, bodyLength * 0.35);
+
+    // Gimbal Base Vibration Damping Plate
+    const damperPlate = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.038, 0.042, 0.014, 16),
+      titaniumTrimMat
+    );
+    this.gimbalGroup.add(damperPlate);
+
+    // Yaw Motor
+    const yawMotor = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.022, 0.022, 0.024, 16),
+      titaniumTrimMat
+    );
+    yawMotor.position.y = -0.016;
+    this.gimbalGroup.add(yawMotor);
+
+    // Roll Arm & Motor
+    this.gimbalRollArm = new THREE.Group();
+    this.gimbalRollArm.position.y = -0.032;
+
+    const rollBracket = new THREE.Mesh(
+      new THREE.BoxGeometry(0.065, 0.016, 0.016),
+      titaniumTrimMat
+    );
+    this.gimbalRollArm.add(rollBracket);
+
+    const rollMotor = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.018, 0.018, 0.02, 12),
+      titaniumTrimMat
+    );
+    rollMotor.rotation.z = Math.PI / 2;
+    rollMotor.position.set(0.034, -0.018, 0);
+    this.gimbalRollArm.add(rollMotor);
+
+    // Pitch Bracket & Cylindrical Camera Pod
+    this.cameraPod = new THREE.Group();
+    this.cameraPod.position.set(0, -0.035, 0);
+
+    // Main Camera Barrel Housing
+    const cameraHousing = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.036, 0.036, 0.075, 16),
+      hullMat
+    );
+    cameraHousing.rotation.x = Math.PI / 2;
+    this.cameraPod.add(cameraHousing);
+
+    // Outer Anodized Lens Bezel
+    const lensBezel = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.032, 0.034, 0.016, 16),
+      titaniumTrimMat
+    );
+    lensBezel.rotation.x = Math.PI / 2;
+    lensBezel.position.z = 0.042;
+    this.cameraPod.add(lensBezel);
+
+    // Front Optical Element (Coated Glass with cyan/sapphire glow)
+    const mainLens = new THREE.Mesh(new THREE.CircleGeometry(0.028, 16), lensGlassMat);
+    mainLens.position.z = 0.051;
+    this.cameraPod.add(mainLens);
+
+    this.gimbalRollArm.add(this.cameraPod);
+    this.gimbalGroup.add(this.gimbalRollArm);
+    this.group.add(this.gimbalGroup);
+
+    // ------------------------------------------------------
+    // 4. STRUCTURAL COMPOSITE ARMS, MOTORS & PROPELLERS
+    // Supports Quadcopter, Hexacopter, & Octacopter configurations
+    // ------------------------------------------------------
+    const propBlurTex = this.createPropBlurTexture();
+
     this.def.motors.forEach((motor, idx) => {
       const armGroup = new THREE.Group();
 
@@ -287,150 +536,235 @@ export class ModularDrone {
 
       armGroup.rotation.y = angle;
 
-      // Carbon fiber arm tube
+      // A. CNC Fuselage Root Collar Clamp
+      const rootClamp = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.032, 0.034, 0.045, 8),
+        titaniumTrimMat
+      );
+      rootClamp.rotation.x = Math.PI / 2;
+      rootClamp.position.z = 0.08;
+      armGroup.add(rootClamp);
+
+      // B. Structural Streamlined Carbon Arm Spar
       const armTube = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.022, 0.024, armLength, 8),
+        new THREE.CylinderGeometry(0.022, 0.024, armLength - 0.04, 12),
         carbonArmMat
       );
       armTube.rotation.x = Math.PI / 2;
-      armTube.position.z = armLength / 2;
+      armTube.scale.set(0.85, 1.0, 1.15); // Aerodynamic streamline
+      armTube.position.z = (armLength + 0.04) / 2;
       armGroup.add(armTube);
 
-      // Motor hub housing
-      const motorHub = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.06, 0.07), tacticalHullMat);
-      motorHub.position.set(0, 0.01, armLength);
-      armGroup.add(motorHub);
+      // C. High-Visibility Orange Leading-Edge Stripe on Front Arms
+      const isFrontArm = motor.position.z > 0;
+      if (isFrontArm) {
+        const stripe = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.024, 0.025, armLength * 0.35, 12),
+          orangeTipMat
+        );
+        stripe.rotation.x = Math.PI / 2;
+        stripe.scale.set(0.86, 1.0, 1.16);
+        stripe.position.z = armLength * 0.65;
+        armGroup.add(stripe);
+      }
 
-      // Brushless motor bell
-      const motorBell = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.062, 0.065, 0.045, 16),
-        motorBellMat
+      // D. Aerodynamic Motor Nacelle & Mounting Bracket
+      const motorNacelle = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.048, 0.052, 0.05, 16),
+        chassisCarbonMat
       );
-      motorBell.position.set(0, 0.05, armLength);
-      armGroup.add(motorBell);
+      motorNacelle.position.set(0, 0.015, armLength);
+      armGroup.add(motorNacelle);
 
-      const copperRing = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.066, 0.066, 0.014, 16),
+      // CNC Aluminum Motor Top Mount
+      const motorMount = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.058, 0.060, 0.016, 16),
+        titaniumTrimMat
+      );
+      motorMount.position.set(0, 0.038, armLength);
+      armGroup.add(motorMount);
+
+      // E. Brushless Outrunner Motor
+      // Exposed Stator Core with visible Copper Windings
+      const statorCore = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.056, 0.056, 0.020, 16),
         copperStatorMat
       );
-      copperRing.position.set(0, 0.032, armLength);
-      armGroup.add(copperRing);
+      statorCore.position.set(0, 0.052, armLength);
+      armGroup.add(statorCore);
 
-      // Aviation Navigation LED
-      const isRightSide = motor.position.x > 0;
-      const navLed = new THREE.Mesh(
-        new THREE.SphereGeometry(0.018, 8, 8),
-        isRightSide ? ledGreen : ledRed
+      // Motor Bell Housing
+      const motorBell = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.062, 0.064, 0.038, 16),
+        motorBellMat
       );
-      navLed.position.set(0, 0.02, armLength + 0.065);
+      motorBell.position.set(0, 0.070, armLength);
+      armGroup.add(motorBell);
+
+      // Stainless Steel Center Rotor Shaft & Knurled Prop Nut
+      const shaftNut = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.016, 0.020, 0.035, 12),
+        titaniumTrimMat
+      );
+      shaftNut.position.set(0, 0.096, armLength);
+      armGroup.add(shaftNut);
+
+      // F. Aviation Navigation LED on Motor Underside
+      // Starboard (Right) = Green, Port (Left) = Red
+      const isStarboard = motor.position.x > 0;
+      const navLightHousing = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.018, 0.020, 0.014, 12),
+        titaniumTrimMat
+      );
+      navLightHousing.position.set(0, -0.015, armLength);
+      armGroup.add(navLightHousing);
+
+      const navLed = new THREE.Mesh(
+        new THREE.SphereGeometry(0.016, 8, 8),
+        isStarboard ? ledGreen : ledRed
+      );
+      navLed.position.set(0, -0.024, armLength);
       armGroup.add(navLed);
 
-      // Motor-Integrated Landing Leg (extending downwards, Image 3 spec)
-      const legHeight = 0.22;
-      const landingLeg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.014, 0.009, legHeight, 8),
-        tacticalHullMat
+      // G. Motor-Integrated Angled Landing Gear Strut
+      const legHeight = 0.23;
+      const landingStrut = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.016, 0.011, legHeight, 8),
+        hullMat
       );
-      landingLeg.position.set(0, -legHeight / 2 - 0.01, armLength);
-      armGroup.add(landingLeg);
+      landingStrut.rotation.x = -0.15;
+      landingStrut.position.set(0, -legHeight / 2 - 0.02, armLength - 0.02);
+      armGroup.add(landingStrut);
 
+      // Vibration Damper Silicone Rubber Foot
       const rubberFoot = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.013, 0.016, 0.02, 8),
+        new THREE.CylinderGeometry(0.016, 0.022, 0.028, 8),
         rubberPadMat
       );
-      rubberFoot.position.set(0, -legHeight - 0.015, armLength);
+      rubberFoot.position.set(0, -legHeight - 0.025, armLength - 0.035);
       armGroup.add(rubberFoot);
 
       // ----------------------------------------------------
-      // 4. PROPELLERS WITH SAFETY ORANGE TIPS
+      // H. DUAL-STATE PROPELLER SYSTEM
+      // 1. Visible 3D Twisted Aerodynamic Blades (Low RPM)
+      // 2. Procedural Radial Motion Blur Disc (High RPM)
       // ----------------------------------------------------
-      const propGroup = new THREE.Group();
-      propGroup.position.set(0, 0.09, armLength);
+      const propAssemblyGroup = new THREE.Group();
+      propAssemblyGroup.position.set(0, 0.105, armLength);
 
-      const spinnerNut = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.04, 12), titaniumTrimMat);
-      spinnerNut.position.y = 0.02;
-      propGroup.add(spinnerNut);
+      const bladeRadius = 0.28;
+      const orangeRatio = 0.24;
 
-      const bladeRadius = 0.27;
-      const orangeRatio = 0.25;
+      // 1. Aerodynamic Blade Group
+      const bladeGroup = new THREE.Group();
+      const bladeMatInstance = bladeMat.clone();
+      const orangeTipMatInstance = orangeTipMat.clone();
+
+      // Blade Hub Spinner Cap
+      const spinnerCap = new THREE.Mesh(
+        new THREE.ConeGeometry(0.026, 0.036, 12),
+        titaniumTrimMat
+      );
+      spinnerCap.position.y = 0.015;
+      bladeGroup.add(spinnerCap);
 
       [-1, 1].forEach((dir) => {
         const carbonLen = bladeRadius * (1 - orangeRatio);
-        const bladeHalf = new THREE.Mesh(
-          new THREE.BoxGeometry(carbonLen, 0.006, 0.034),
-          bladeMat
+        const rootBlade = new THREE.Mesh(
+          new THREE.BoxGeometry(carbonLen, 0.006, 0.036),
+          bladeMatInstance
         );
-        bladeHalf.position.x = (dir * carbonLen) / 2;
-        bladeHalf.rotation.x = dir * 0.12;
-        propGroup.add(bladeHalf);
+        rootBlade.position.x = (dir * carbonLen) / 2;
+        rootBlade.rotation.x = dir * motor.direction * 0.16;
+        bladeGroup.add(rootBlade);
 
+        // Safety Orange Outer Tip
         const tipLen = bladeRadius * orangeRatio;
-        const orangeTip = new THREE.Mesh(
+        const tipBlade = new THREE.Mesh(
           new THREE.BoxGeometry(tipLen, 0.007, 0.035),
-          orangeTipMat
+          orangeTipMatInstance
         );
-        orangeTip.position.x = dir * (carbonLen + tipLen / 2);
-        orangeTip.rotation.x = dir * 0.12;
-        propGroup.add(orangeTip);
+        tipBlade.position.x = dir * (carbonLen + tipLen / 2);
+        tipBlade.rotation.x = dir * motor.direction * 0.16;
+        bladeGroup.add(tipBlade);
       });
 
-      armGroup.add(propGroup);
+      propAssemblyGroup.add(bladeGroup);
+
+      // 2. High-RPM Procedural Motion Blur Disc
+      const blurDiscGeo = new THREE.PlaneGeometry(bladeRadius * 2.12, bladeRadius * 2.12);
+      const blurDiscMat = new THREE.MeshBasicMaterial({
+        map: propBlurTex,
+        transparent: true,
+        opacity: 0.0,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const blurMesh = new THREE.Mesh(blurDiscGeo, blurDiscMat);
+      blurMesh.rotation.x = -Math.PI / 2;
+      blurMesh.position.y = 0.005;
+      propAssemblyGroup.add(blurMesh);
+
+      armGroup.add(propAssemblyGroup);
 
       this.propellers.push({
-        group: propGroup,
+        bladeGroup,
+        blurMesh,
+        blurMaterial: blurDiscMat,
+        bladeMaterial: bladeMatInstance,
         direction: motor.direction,
+        motorIndex: idx,
       });
 
       this.armGroups.push(armGroup);
       this.armOriginalAngles.push(angle);
-      this.propGroups.push(propGroup);
+      this.propGroups.push(propAssemblyGroup);
 
       this.group.add(armGroup);
     });
 
-    // ----------------------------------------------------
-    // 5. CRASH SMOKE & SPARK PARTICLE EMITTERS
-    // ----------------------------------------------------
+    // ------------------------------------------------------
+    // 5. CRASH SMOKE & HIGH-VOLTAGE ELECTRICAL SPARK EMITTERS
+    // ------------------------------------------------------
     this.buildCrashFX();
 
-    // ----------------------------------------------------
-    // 6. ENABLE REAL 3D SHADOW CASTING ON ALL DRONE MESHES
-    // ----------------------------------------------------
+    // ------------------------------------------------------
+    // 6. SHADOW CASTING ON ALL DRONE MESHES
+    // ------------------------------------------------------
     this.group.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
+      if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh) !== this.groundShadowMesh) {
         child.castShadow = true;
       }
     });
 
-    // ----------------------------------------------------
-    // 7. DEDICATED GROUND CONTACT SHADOW DECAL
-    // Stays strictly on ground level (Y = 0.33m), NEVER in the sky!
-    // ----------------------------------------------------
+    // ------------------------------------------------------
+    // 7. REALISTIC GROUND CONTACT SHADOW DECAL
+    // ------------------------------------------------------
     const shadowCanvas = document.createElement("canvas");
     shadowCanvas.width = 128;
     shadowCanvas.height = 128;
     const ctx = shadowCanvas.getContext("2d");
     if (ctx) {
       const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-      grad.addColorStop(0, "rgba(0,0,0,0.45)");
-      grad.addColorStop(0.35, "rgba(0,0,0,0.20)");
-      grad.addColorStop(0.7, "rgba(0,0,0,0.06)");
-      grad.addColorStop(1, "rgba(0,0,0,0)");
+      grad.addColorStop(0, "rgba(0,0,0,0.55)");
+      grad.addColorStop(0.35, "rgba(0,0,0,0.28)");
+      grad.addColorStop(0.70, "rgba(0,0,0,0.08)");
+      grad.addColorStop(1, "rgba(0,0,0,0.0)");
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, 128, 128);
     }
     const shadowTex = new THREE.CanvasTexture(shadowCanvas);
     this.groundShadowMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.8, 1.8),
+      new THREE.PlaneGeometry(1.9, 1.9),
       new THREE.MeshBasicMaterial({
         map: shadowTex,
         transparent: true,
-        opacity: 0.45,
+        opacity: 0.50,
         depthWrite: false,
       })
     );
     this.groundShadowMesh.rotation.x = -Math.PI / 2;
-    this.groundShadowMesh.position.set(0, 0.445, 0); // Strictly locked to ground & helipad surface!
+    this.groundShadowMesh.position.set(0, 0.445, 0);
   }
 
   /**
@@ -480,14 +814,10 @@ export class ModularDrone {
     this.group.add(this.sparkParticles);
   }
 
-  /**
-   * Sets the visual damage state (bent arms, shattered props, smoke/sparks)
-   */
   public setDamaged(damaged: boolean) {
     this.isDamaged = damaged;
 
     if (damaged) {
-      // Dislodge / bend motor arms at jarring impact angles
       if (this.armGroups[0]) {
         this.armGroups[0].rotation.z = -0.65;
         this.armGroups[0].rotation.x = 0.45;
@@ -496,7 +826,6 @@ export class ModularDrone {
         this.armGroups[1].rotation.z = 0.52;
         this.armGroups[1].rotation.x = -0.38;
       }
-      // Shatter/hide damaged propellers
       if (this.propGroups[0]) {
         this.propGroups[0].visible = false;
       }
@@ -506,11 +835,9 @@ export class ModularDrone {
       if (this.smokeParticles) this.smokeParticles.visible = true;
       if (this.sparkParticles) this.sparkParticles.visible = true;
     } else {
-      // Restore all motor arms to original factory angles
       this.armGroups.forEach((arm, i) => {
         arm.rotation.set(0, this.armOriginalAngles[i] || 0, 0);
       });
-      // Restore all propellers
       this.propGroups.forEach((prop) => {
         prop.visible = true;
         prop.scale.set(1, 1, 1);
@@ -521,23 +848,26 @@ export class ModularDrone {
   }
 
   /**
-   * Updates drone transforms and spinning propeller animations
+   * Master frame-by-frame visual simulation update.
+   * Integrates physics attitude smoothing, dual-state propeller blur,
+   * active 3-axis camera gimbal stabilization, hover micro-corrections,
+   * battery status gauge, anti-collision beacon, and ground shadow.
    */
   public update(telemetry: TelemetryState, dt: number) {
-    // Check damage / crash state transition
+    // 1. Crash State Transition
     const isCrashed = !!telemetry.isCrashed;
     if (isCrashed !== this.isDamaged) {
       this.setDamaged(isCrashed);
     }
 
-    // Animate crash VFX (billowing smoke and flickering sparks)
+    // 2. Animate Crash Particles
     if (this.isDamaged) {
       if (this.smokePositions && this.smokeParticles) {
         for (let i = 0; i < this.smokePositions.length / 3; i++) {
-          this.smokePositions[i * 3 + 1] += dt * 0.75;
-          this.smokePositions[i * 3] += (Math.random() - 0.5) * dt * 0.15;
-          this.smokePositions[i * 3 + 2] += (Math.random() - 0.5) * dt * 0.15;
-          if (this.smokePositions[i * 3 + 1] > 1.6) {
+          this.smokePositions[i * 3 + 1] += dt * 0.85;
+          this.smokePositions[i * 3] += (Math.random() - 0.5) * dt * 0.18;
+          this.smokePositions[i * 3 + 2] += (Math.random() - 0.5) * dt * 0.18;
+          if (this.smokePositions[i * 3 + 1] > 1.8) {
             this.smokePositions[i * 3 + 1] = 0.05;
             this.smokePositions[i * 3] = (Math.random() - 0.5) * 0.2;
             this.smokePositions[i * 3 + 2] = (Math.random() - 0.5) * 0.2;
@@ -548,10 +878,10 @@ export class ModularDrone {
 
       if (this.sparkPositions && this.sparkParticles) {
         for (let i = 0; i < this.sparkPositions.length / 3; i++) {
-          this.sparkPositions[i * 3 + 1] += (Math.random() - 0.45) * dt * 1.8;
-          this.sparkPositions[i * 3] += (Math.random() - 0.5) * dt * 1.4;
-          this.sparkPositions[i * 3 + 2] += (Math.random() - 0.5) * dt * 1.4;
-          if (this.sparkPositions[i * 3 + 1] > 0.7 || this.sparkPositions[i * 3 + 1] < 0) {
+          this.sparkPositions[i * 3 + 1] += (Math.random() - 0.45) * dt * 2.0;
+          this.sparkPositions[i * 3] += (Math.random() - 0.5) * dt * 1.6;
+          this.sparkPositions[i * 3 + 2] += (Math.random() - 0.5) * dt * 1.6;
+          if (this.sparkPositions[i * 3 + 1] > 0.8 || this.sparkPositions[i * 3 + 1] < 0) {
             this.sparkPositions[i * 3 + 1] = Math.random() * 0.2;
             this.sparkPositions[i * 3] = (Math.random() - 0.5) * 0.25;
             this.sparkPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.25;
@@ -561,36 +891,127 @@ export class ModularDrone {
       }
     }
 
-    // 1. Synchronize drone position & 3D rotation
-    this.group.position.set(telemetry.position.x, telemetry.position.y, telemetry.position.z);
-    this.group.rotation.order = "YXZ";
-    this.group.rotation.y = telemetry.rotation.yaw;
-    this.group.rotation.x = telemetry.rotation.pitch;
-    this.group.rotation.z = telemetry.rotation.roll;
+    // 3. Smooth Physical-to-Visual Attitude Interpolation & Hover Micro-Dynamics
+    const targetPos = new THREE.Vector3(telemetry.position.x, telemetry.position.y, telemetry.position.z);
+    
+    // Calculate subtle organic hover micro-corrections when airborne (altitude > 0.08m)
+    let microPitch = 0;
+    let microRoll = 0;
+    const isAirborne = telemetry.altitude > 0.08 && !isCrashed;
+    if (isAirborne) {
+      const time = performance.now() * 0.003;
+      // High-frequency, microscopic PID twitches (0.15° - 0.25° amplitude)
+      microPitch = Math.sin(time * 3.8) * 0.004 + Math.cos(time * 7.1) * 0.002;
+      microRoll = Math.cos(time * 4.2) * 0.004 + Math.sin(time * 6.5) * 0.002;
+    }
 
-    // 2. Spin Propellers based on real-time RPM
-    const rpmFactor = (telemetry.rotorRpmPercent / 100) * 55;
+    const targetPitch = telemetry.rotation.pitch + microPitch;
+    const targetRoll = telemetry.rotation.roll + microRoll;
+    const targetYaw = telemetry.rotation.yaw;
+
+    if (!this.isInitialized) {
+      this.visualPos.copy(targetPos);
+      this.visualPitch = targetPitch;
+      this.visualRoll = targetRoll;
+      this.visualYaw = targetYaw;
+      this.isInitialized = true;
+    } else {
+      // Direct positioning for instant responsive handling without visual lag
+      this.visualPos.copy(targetPos);
+      // Fast exponential smoothing on attitude to eliminate micro-stutter
+      const smoothFactor = Math.min(1.0, dt * 28.0);
+      this.visualPitch += (targetPitch - this.visualPitch) * smoothFactor;
+      this.visualRoll += (targetRoll - this.visualRoll) * smoothFactor;
+      this.visualYaw = targetYaw; // Yaw tracks 1:1 for crisp flight direction
+    }
+
+    this.group.position.copy(this.visualPos);
+    this.group.rotation.order = "YXZ";
+    this.group.rotation.y = this.visualYaw;
+    this.group.rotation.x = this.visualPitch;
+    this.group.rotation.z = this.visualRoll;
+
+    // 4. Active 3-Axis Horizon-Locked Camera Gimbal Stabilization
+    if (this.cameraPod && this.gimbalRollArm) {
+      // Counter-pitch and counter-roll to keep the inspection camera locked to the horizon!
+      const counterPitch = -this.visualPitch * 0.92;
+      const counterRoll = -this.visualRoll * 0.88;
+      this.cameraPod.rotation.x = counterPitch;
+      this.gimbalRollArm.rotation.z = counterRoll;
+    }
+
+    // 5. Dual-State Propeller Spin & Motion-Blur Disc Cross-Fade
+    const baseRpmPercent = telemetry.rotorRpmPercent || 0;
+    const outputs = telemetry.motorOutputs && telemetry.motorOutputs.length > 0 
+      ? telemetry.motorOutputs 
+      : [baseRpmPercent / 100, baseRpmPercent / 100, baseRpmPercent / 100, baseRpmPercent / 100];
+
     this.propellers.forEach((p) => {
-      p.group.rotation.y += p.direction * rpmFactor * dt;
+      // Individual motor throttle level [0.0 - 1.0]
+      const motorThrottle = outputs[p.motorIndex] !== undefined ? outputs[p.motorIndex] : baseRpmPercent / 100;
+      // Rotation angular velocity (rad/s)
+      const spinSpeed = (12.0 + motorThrottle * 68.0) * p.direction;
+      p.bladeGroup.rotation.y += spinSpeed * dt;
+
+      // Blur disc blending logic:
+      // - Below 18% RPM: Individual blades are sharp; blur disc is invisible.
+      // - 18% to 55% RPM: Blades spin fast and begin blurring; blur disc fades in.
+      // - Above 55% RPM: Translucent high-speed disc dominates with realistic motion swirl!
+      if (motorThrottle < 0.18) {
+        p.blurMaterial.opacity = 0.0;
+        p.blurMesh.visible = false;
+        p.bladeMaterial.opacity = 1.0;
+      } else if (motorThrottle < 0.55) {
+        const t = (motorThrottle - 0.18) / (0.55 - 0.18);
+        p.blurMesh.visible = true;
+        p.blurMaterial.opacity = t * 0.70;
+        p.bladeMaterial.opacity = 1.0 - t * 0.65; // Fade blade as motion blur increases
+      } else {
+        p.blurMesh.visible = true;
+        p.blurMaterial.opacity = 0.82;
+        p.bladeMaterial.opacity = 0.22; // Faint blade ghosting under the motion disc
+      }
     });
 
-    // 3. Update ground shadow:
-    // Follows drone (X, Z), strictly anchored 5mm above the surface beneath the drone
+    // 6. Anti-Collision White Beacon Strobe Flash (1.0 Hz strobe pulse)
+    this.strobeTimer += dt;
+    if (this.strobeTimer >= 1.0) {
+      this.strobeTimer = 0;
+    }
+    if (this.tailStrobeMesh) {
+      const isFlash = this.strobeTimer < 0.08;
+      this.tailStrobeMesh.visible = isFlash;
+    }
+
+    // 7. Battery Pack Fuel Gauge LEDs
+    const batteryPct = telemetry.batteryLevel || 100;
+    const activeLedCount = Math.ceil((batteryPct / 100) * 4);
+    this.batteryLeds.forEach((led, i) => {
+      if (i < activeLedCount) {
+        if (batteryPct > 40) {
+          led.material = this.ledBatteryGreenMat;
+        } else if (batteryPct > 20) {
+          led.material = this.ledBatteryAmberMat;
+        } else {
+          led.material = this.ledBatteryRedMat;
+        }
+      } else {
+        led.material = this.ledBatteryOffMat;
+      }
+    });
+
+    // 8. Dedicated Ground Contact Shadow Decal
     if (this.groundShadowMesh) {
       const surfaceY = Math.max(0.01, telemetry.position.y - telemetry.altitude - 0.245 + 0.005);
       this.groundShadowMesh.position.set(telemetry.position.x, surfaceY, telemetry.position.z);
       this.groundShadowMesh.rotation.z = -telemetry.rotation.yaw;
 
-      // As drone climbs into the sky, shadow fades out and softens naturally
       const alt = Math.max(0, telemetry.altitude);
-      const opacity = Math.max(0, 0.45 * Math.exp(-alt / 5.0));
+      const opacity = Math.max(0, 0.50 * Math.exp(-alt / 5.2));
       (this.groundShadowMesh.material as THREE.MeshBasicMaterial).opacity = opacity;
 
-      // Soft ground shadow spreads slightly with altitude
-      const scale = 1.0 + alt * 0.10;
+      const scale = 1.0 + alt * 0.09;
       this.groundShadowMesh.scale.set(scale, scale, 1);
-
-      // In the sky above 12m, ground shadow completely disappears
       this.groundShadowMesh.visible = opacity > 0.01;
     }
   }

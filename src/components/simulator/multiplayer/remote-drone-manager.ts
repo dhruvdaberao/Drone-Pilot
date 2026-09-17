@@ -55,37 +55,137 @@ export class RemoteDroneManager {
   private createRemoteDroneMesh(callsign: string): RemoteDroneInstance {
     const group = new THREE.Group();
 
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, metalness: 0.6, roughness: 0.4 });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.08, 0.32), bodyMat);
+    // Materials
+    const hullMat = new THREE.MeshStandardMaterial({
+      color: 0x1e3a8a, // Professional aeronautical cobalt blue for remote pilots
+      roughness: 0.35,
+      metalness: 0.25,
+    });
+
+    const carbonMat = new THREE.MeshStandardMaterial({
+      color: 0x181a1f,
+      roughness: 0.45,
+      metalness: 0.35,
+    });
+
+    const titaniumMat = new THREE.MeshStandardMaterial({
+      color: 0x5a606d,
+      roughness: 0.22,
+      metalness: 0.88,
+    });
+
+    const bladeMat = new THREE.MeshStandardMaterial({
+      color: 0x1d1f24,
+      roughness: 0.30,
+      metalness: 0.25,
+    });
+
+    const orangeTipMat = new THREE.MeshStandardMaterial({
+      color: 0xff5500,
+      roughness: 0.30,
+      metalness: 0.10,
+    });
+
+    const ledGreen = new THREE.MeshBasicMaterial({ color: 0x00e676 });
+    const ledRed = new THREE.MeshBasicMaterial({ color: 0xff1744 });
+    const ledHeadlight = new THREE.MeshBasicMaterial({ color: 0xfffaed });
+
+    // Fuselage
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, 0.46), hullMat);
+    body.position.y = 0.02;
     group.add(body);
 
-    const armMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
-    const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.65, 8), armMat);
-    arm1.rotation.z = Math.PI / 4;
-    group.add(arm1);
+    const bottomTub = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.04, 0.44), carbonMat);
+    bottomTub.position.y = -0.04;
+    group.add(bottomTub);
 
-    const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.65, 8), armMat);
-    arm2.rotation.z = -Math.PI / 4;
-    group.add(arm2);
+    // Nose Cowl
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.14, 6), hullMat);
+    nose.rotateX(-Math.PI / 2);
+    nose.position.set(0, 0.02, 0.28);
+    group.add(nose);
 
+    // Forward Headlight
+    const headlight = new THREE.Mesh(new THREE.CircleGeometry(0.016, 12), ledHeadlight);
+    headlight.position.set(0, -0.01, 0.34);
+    group.add(headlight);
+
+    // RTK Antenna Puck
+    const rtkPuck = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.048, 0.03, 16), titaniumMat);
+    rtkPuck.position.set(0, 0.075, -0.04);
+    group.add(rtkPuck);
+
+    // Arms & Rotors (X-Configuration)
     const rotors: THREE.Group[] = [];
-    const rotorOffsets = [
-      { x: 0.24, z: 0.24 },
-      { x: -0.24, z: 0.24 },
-      { x: 0.24, z: -0.24 },
-      { x: -0.24, z: -0.24 },
+    const armDefs = [
+      { x: 0.22, z: 0.22, isRight: true, dir: 1 },
+      { x: -0.22, z: 0.22, isRight: false, dir: -1 },
+      { x: 0.22, z: -0.22, isRight: true, dir: -1 },
+      { x: -0.22, z: -0.22, isRight: false, dir: 1 },
     ];
 
-    const propMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 });
-    rotorOffsets.forEach((off) => {
+    armDefs.forEach((armDef) => {
+      const armLength = Math.hypot(armDef.x, armDef.z);
+      const angle = Math.atan2(armDef.x, armDef.z);
+
+      const armGroup = new THREE.Group();
+      armGroup.rotation.y = angle;
+
+      const spar = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.016, 0.018, armLength, 8),
+        carbonMat
+      );
+      spar.rotation.x = Math.PI / 2;
+      spar.position.z = armLength / 2;
+      armGroup.add(spar);
+
+      // Motor Bell
+      const motorBell = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.042, 0.045, 0.032, 12),
+        titaniumMat
+      );
+      motorBell.position.set(0, 0.04, armLength);
+      armGroup.add(motorBell);
+
+      // Nav LED
+      const navLed = new THREE.Mesh(
+        new THREE.SphereGeometry(0.014, 8, 8),
+        armDef.isRight ? ledGreen : ledRed
+      );
+      navLed.position.set(0, -0.015, armLength);
+      armGroup.add(navLed);
+
+      // Landing leg
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.008, 0.18, 6), carbonMat);
+      leg.position.set(0, -0.09, armLength);
+      armGroup.add(leg);
+
+      // Propeller Group
       const rotorGroup = new THREE.Group();
-      rotorGroup.position.set(off.x, 0.05, off.z);
-      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.005, 0.025), propMat);
-      rotorGroup.add(blade);
-      group.add(rotorGroup);
+      rotorGroup.position.set(0, 0.065, armLength);
+
+      const spinner = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.025, 8), titaniumMat);
+      spinner.position.y = 0.01;
+      rotorGroup.add(spinner);
+
+      [-1, 1].forEach((d) => {
+        const bladeHalf = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.005, 0.028), bladeMat);
+        bladeHalf.position.x = (d * 0.16) / 2;
+        bladeHalf.rotation.x = d * armDef.dir * 0.14;
+        rotorGroup.add(bladeHalf);
+
+        const tip = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.006, 0.027), orangeTipMat);
+        tip.position.x = d * (0.16 + 0.025);
+        tip.rotation.x = d * armDef.dir * 0.14;
+        rotorGroup.add(tip);
+      });
+
+      armGroup.add(rotorGroup);
+      group.add(armGroup);
       rotors.push(rotorGroup);
     });
 
+    // Remote Pilot Name Tag Billboard
     const canvas = document.createElement("canvas");
     canvas.width = 512;
     canvas.height = 128;
