@@ -1,40 +1,30 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DroneModel } from "@/types/drone";
 import { DRONES, getDroneById, DEFAULT_DRONE_STORAGE_KEY } from "@/lib/drones";
-import { RegionId, RegionDefinition, Helipad } from "@/lib/world/world-types";
+import { RegionId, RegionDefinition } from "@/lib/world/world-types";
 import { REGIONS, REGION_LIST } from "@/lib/world/region-definitions";
-import { HELIPADS, HELIPAD_LIST } from "@/lib/world/helipad-definitions";
-import { WeatherPreset } from "@/lib/simulation/types";
-import { WorldMapSelector } from "./world-map-selector";
-import { RegionCardGrid } from "./region-card-grid";
-import { RegionPreviewPanel } from "./region-preview-panel";
-import { HelipadSelector } from "./helipad-selector";
-import { FlightConfigSummary } from "./flight-config-summary";
-import { LaunchCountdownModal } from "./launch-countdown-modal";
-import { Plane, Compass, ArrowLeft } from "lucide-react";
+import { HELIPADS } from "@/lib/world/helipad-definitions";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { Plane, Map as MapIcon, ArrowRight, ArrowLeft, Cloud, Wind, Thermometer, Box, Battery, Scale } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { getActiveDigitalTwin } from "@/lib/digital-twin/digital-twin-storage";
+import { DroneDigitalTwinConfiguration } from "@/types/drone-digital-twin";
+
+type Step = "SELECT_ENVIRONMENT" | "PREFLIGHT";
 
 export function FlightPrepContainer() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // 1. Resolve initial Aircraft
+  const [step, setStep] = useState<Step>("SELECT_ENVIRONMENT");
   const [selectedDrone, setSelectedDrone] = useState<DroneModel>(DRONES[0]);
+  const [digitalTwin, setDigitalTwin] = useState<DroneDigitalTwinConfiguration | null>(null);
+  
+  const [selectedRegionId, setSelectedRegionId] = useState<RegionId | null>(null);
 
-  // 2. Resolve initial Region & Helipad from URL or defaults
-  const [selectedRegionId, setSelectedRegionId] = useState<RegionId>("training");
-  const [selectedHelipadId, setSelectedHelipadId] = useState<string>("training-alpha");
-
-  // 3. Payload & Weather Configuration
-  const [payloadKg, setPayloadKg] = useState<number>(0.0);
-  const [weatherPreset, setWeatherPreset] = useState<WeatherPreset>("normal");
-
-  // 4. Launch state
-  const [isLaunching, setIsLaunching] = useState(false);
-
-  // Initialize state from URL and localStorage
   useEffect(() => {
     try {
       const urlDrone = searchParams.get("drone");
@@ -50,221 +40,199 @@ export function FlightPrepContainer() {
         }
       }
       setSelectedDrone(activeDrone);
-
-      // Check requested region
-      const urlRegion = searchParams.get("region");
-      if (urlRegion && REGIONS[urlRegion]) {
-        setSelectedRegionId(urlRegion as RegionId);
-      }
-
-      // Check requested helipad
-      const urlHelipad = searchParams.get("helipad") || searchParams.get("spawn");
-      if (urlHelipad && HELIPADS[urlHelipad]) {
-        setSelectedHelipadId(urlHelipad);
-        setSelectedRegionId(HELIPADS[urlHelipad].regionId);
-      } else if (urlRegion && REGIONS[urlRegion]) {
-        setSelectedHelipadId(REGIONS[urlRegion].primaryHelipadId);
-      }
-
-      // Check requested payload
-      const urlPayload = parseFloat(searchParams.get("payload") || "0");
-      if (!isNaN(urlPayload) && urlPayload >= 0) {
-        setPayloadKg(urlPayload);
-      }
-
-      // Check requested weather
-      const urlWeather = searchParams.get("weather") as WeatherPreset;
-      if (urlWeather) {
-        setWeatherPreset(urlWeather);
-      }
+      setDigitalTwin(getActiveDigitalTwin());
     } catch {
       // Fallback
     }
   }, [searchParams]);
 
-  // Sync URL search params when selection changes
-  const updateUrlParams = useCallback(
-    (newRegionId: RegionId, newHelipadId: string) => {
-      if (typeof window === "undefined") return;
-      const params = new URLSearchParams(window.location.search);
-      params.set("region", newRegionId);
-      params.set("helipad", newHelipadId);
-      if (selectedDrone) params.set("drone", selectedDrone.id);
-      if (searchParams.get("mock") === "true") params.set("mock", "true");
-      const newUrl = `${window.location.pathname}?${params.toString()}`;
-      window.history.replaceState(null, "", newUrl);
-    },
-    [selectedDrone, searchParams]
-  );
+  const handleSelectRegion = (regionId: RegionId) => {
+    setSelectedRegionId(regionId);
+    setStep("PREFLIGHT");
+  };
 
-  // Handlers
-  const handleSelectRegion = useCallback(
-    (regionId: RegionId) => {
-      setSelectedRegionId(regionId);
-      const region = REGIONS[regionId];
-      if (region && region.primaryHelipadId) {
-        setSelectedHelipadId(region.primaryHelipadId);
-        updateUrlParams(regionId, region.primaryHelipadId);
-      } else {
-        updateUrlParams(regionId, selectedHelipadId);
-      }
-    },
-    [selectedHelipadId, updateUrlParams]
-  );
+  const handleBack = () => {
+    if (step === "PREFLIGHT") {
+      setStep("SELECT_ENVIRONMENT");
+      setSelectedRegionId(null);
+    } else {
+      router.push("/dashboard");
+    }
+  };
 
-  const handleSelectHelipad = useCallback(
-    (helipadId: string) => {
-      setSelectedHelipadId(helipadId);
-      const helipad = HELIPADS[helipadId];
-      if (helipad) {
-        setSelectedRegionId(helipad.regionId);
-        updateUrlParams(helipad.regionId, helipadId);
-      }
-    },
-    [updateUrlParams]
-  );
-
-  const handleResetToAcademy = useCallback(() => {
-    setSelectedRegionId("training");
-    setSelectedHelipadId("training-alpha");
-    setPayloadKg(0.0);
-    setWeatherPreset("normal");
-    updateUrlParams("training", "training-alpha");
-  }, [updateUrlParams]);
-
-  const handleStartFlight = useCallback(() => {
-    setIsLaunching(true);
-  }, []);
-
-  const handleLaunchComplete = useCallback(() => {
+  const handleEnterSimulation = () => {
+    if (!selectedRegionId) return;
+    const region = REGIONS[selectedRegionId];
+    const helipadId = region.primaryHelipadId || "training-alpha";
     const isMock = searchParams.get("mock") === "true";
+    
     router.push(
-      `/fly?region=${selectedRegionId}&helipad=${selectedHelipadId}&drone=${selectedDrone.id}&payload=${payloadKg}&weather=${weatherPreset}&launch=true${
+      `/fly?region=${selectedRegionId}&helipad=${helipadId}&drone=${selectedDrone.id}&launch=true${
         isMock ? "&mock=true" : ""
       }`
     );
-  }, [router, selectedRegionId, selectedHelipadId, selectedDrone, payloadKg, weatherPreset, searchParams]);
-
-  const activeRegion = REGIONS[selectedRegionId] || REGIONS["training"];
-  const activeHelipad = HELIPADS[selectedHelipadId] || HELIPADS["training-alpha"];
-  const availableHelipadsForRegion = useMemo(() => {
-    return HELIPAD_LIST.filter((h) => h.regionId === selectedRegionId);
-  }, [selectedRegionId]);
+  };
 
   return (
-    <div className="relative min-h-screen w-full max-w-full flex flex-col justify-between bg-[#FAF7F2] text-neutral-900 overflow-x-hidden font-sans">
-      {/* Subtle Tech Grid Accent */}
-      <div
-        className="fixed inset-0 z-0 pointer-events-none opacity-30"
-        style={{
-          backgroundImage: `radial-gradient(circle, rgba(0, 0, 0, 0.08) 1px, transparent 1px)`,
-          backgroundSize: "28px 28px",
-        }}
-      />
+    <div className="relative min-h-screen w-full max-w-full flex flex-col bg-[#FAF7F2] text-neutral-900 font-sans">
+      <DashboardHeader />
 
-      {/* Main Content Area */}
-      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-12">
-        {/* Breadcrumb Navigation & Platform Info */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => router.push("/dashboard")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs font-semibold text-neutral-700 hover:bg-neutral-100 hover:border-black transition-all"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Back to Hangar</span>
-            </button>
-
-            <span className="text-neutral-400 font-mono text-xs">/</span>
-
-            <span className="font-mono text-xs font-bold text-neutral-800 uppercase tracking-wider">
-              FLIGHT DEPLOYMENT PREPARATION
-            </span>
-          </div>
-
-          {/* Active Drone Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-black shadow-xs">
-            <Plane className="h-3.5 w-3.5 text-[#FF5500]" />
-            <span className="text-xs font-heading font-bold text-neutral-950 uppercase">
-              {selectedDrone.name}
-            </span>
-            <span className="font-mono text-[10px] bg-orange-50 text-[#FF5500] px-1.5 py-0.5 rounded border border-orange-200">
-              {selectedDrone.specs.rotors}R
-            </span>
-          </div>
+      <main className="relative z-10 flex-1 w-full max-w-5xl mx-auto px-6 pt-24 pb-12 flex flex-col">
+        
+        {/* Navigation Breadcrumb */}
+        <div className="flex items-center gap-2 mb-8">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs font-semibold text-neutral-700 hover:bg-neutral-100 hover:border-black transition-all"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>{step === "PREFLIGHT" ? "Back to Environments" : "Back to Dashboard"}</span>
+          </button>
         </div>
 
-        {/* Section Header */}
-        <div className="mb-6">
-          <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-neutral-950 uppercase">
-            CHOOSE FLIGHT REGION & LAUNCH SITE
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-neutral-600 max-w-2xl leading-relaxed">
-            Select a designated sector on the tactical map to deploy your aircraft. Review terrain elevation, meteorological conditions, and precision helipads before takeoff.
-          </p>
-        </div>
+        {step === "SELECT_ENVIRONMENT" && (
+          <div className="animate-in fade-in duration-300">
+            <div className="text-center max-w-2xl mx-auto mb-10">
+              <h1 className="font-heading text-3xl font-extrabold tracking-widest text-neutral-950 uppercase mb-2">
+                Select Environment
+              </h1>
+              <p className="text-sm font-medium text-neutral-500">
+                Choose a simulation biome for your flight operations.
+              </p>
+            </div>
 
-        {/* Responsive Grid: Map + Briefing Panels */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Interactive Map (Desktop 7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            <WorldMapSelector
-              selectedRegionId={selectedRegionId}
-              selectedHelipadId={selectedHelipadId}
-              onSelectRegion={handleSelectRegion}
-              onSelectHelipad={handleSelectHelipad}
-            />
-
-            {/* Region Card Grid Below Map */}
-            <RegionCardGrid
-              selectedRegionId={selectedRegionId}
-              onSelectRegion={handleSelectRegion}
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {REGION_LIST.map((region) => (
+                <div
+                  key={region.id}
+                  onClick={() => handleSelectRegion(region.id as RegionId)}
+                  className="group relative bg-white border border-neutral-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 flex flex-col h-64"
+                >
+                  {/* Visual Placeholder for Environment */}
+                  <div 
+                    className="h-32 w-full relative transition-transform duration-500 group-hover:scale-105"
+                    style={{ backgroundColor: region.mapColor || "#ccc" }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute bottom-3 left-4 text-white">
+                      <h3 className="font-heading text-lg font-bold tracking-wider uppercase drop-shadow-sm">
+                        {region.name}
+                      </h3>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 flex flex-col flex-1 justify-between bg-white z-10">
+                    <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
+                      {region.description}
+                    </p>
+                    
+                    <div className="flex items-center justify-between mt-4 border-t border-neutral-100 pt-3">
+                      <div className="flex items-center gap-3 text-[10px] font-mono font-semibold uppercase text-neutral-400">
+                        <span className="flex items-center gap-1">
+                          <Wind className="w-3 h-3 text-[#FF5500]" /> {region.environment.baseWindSpeedMs} m/s
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Thermometer className="w-3 h-3 text-[#FF5500]" /> {region.environment.airTemperatureC}°C
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold tracking-widest text-[#FF5500] group-hover:text-[#e04b00] uppercase">
+                        SELECT
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+        )}
 
-          {/* Right Column: Manifest, Helipads & Region Preview (Desktop 5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* 1. Flight Configuration Manifest & START FLIGHT CTA */}
-            <FlightConfigSummary
-              selectedDrone={selectedDrone}
-              selectedRegion={activeRegion}
-              selectedHelipad={activeHelipad}
-              payloadKg={payloadKg}
-              onChangePayload={setPayloadKg}
-              weatherPreset={weatherPreset}
-              onChangeWeather={setWeatherPreset}
-              onStartFlight={handleStartFlight}
-              onChangeAircraft={() => router.push("/dashboard")}
-              onResetToAcademy={handleResetToAcademy}
-            />
+        {step === "PREFLIGHT" && selectedRegionId && digitalTwin && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 max-w-xl mx-auto w-full">
+            <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+              
+              <div className="bg-neutral-950 p-6 text-center">
+                <h1 className="font-heading text-2xl font-extrabold tracking-widest text-white uppercase mb-1">
+                  PREFLIGHT
+                </h1>
+                <p className="text-xs text-neutral-400 font-mono tracking-widest uppercase">
+                  Final Authorization
+                </p>
+              </div>
 
-            {/* 2. Region Preview Panel (Weather & Elevation) */}
-            <RegionPreviewPanel
-              region={activeRegion}
-              availableHelipads={availableHelipadsForRegion}
-              onSelectHelipad={handleSelectHelipad}
-              selectedHelipadId={selectedHelipadId}
-            />
+              <div className="p-6 space-y-6">
+                
+                <div className="space-y-3">
+                  <h3 className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">AIRCRAFT</h3>
+                  <div className="flex items-center justify-between bg-neutral-50 rounded-xl p-3 border border-neutral-100">
+                    <div className="flex items-center gap-3">
+                      <Plane className="w-5 h-5 text-[#FF5500]" />
+                      <span className="text-sm font-bold tracking-wider uppercase text-neutral-900">{digitalTwin.identity.name}</span>
+                    </div>
+                  </div>
+                </div>
 
-            {/* 3. Helipad Launch Site Selector */}
-            <HelipadSelector
-              selectedRegionId={selectedRegionId}
-              selectedHelipadId={selectedHelipadId}
-              onSelectHelipad={handleSelectHelipad}
-            />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <h3 className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase flex items-center gap-1">
+                      <Scale className="w-3 h-3" /> MASS
+                    </h3>
+                    <p className="text-sm font-mono font-medium text-neutral-900">{digitalTwin.massProperties.totalMassKg.toFixed(2)} kg</p>
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase flex items-center gap-1">
+                      <Battery className="w-3 h-3" /> BATTERY
+                    </h3>
+                    <p className="text-sm font-mono font-medium text-neutral-900">{digitalTwin.battery.capacityMah} mAh</p>
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase flex items-center gap-1">
+                      <Box className="w-3 h-3" /> PAYLOAD
+                    </h3>
+                    <p className="text-sm font-mono font-medium text-neutral-900">{digitalTwin.payload.massKg.toFixed(1)} kg</p>
+                  </div>
+                </div>
+
+                <div className="border-t border-neutral-100 pt-6 space-y-4">
+                  <div className="space-y-1">
+                    <h3 className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">ENVIRONMENT</h3>
+                    <p className="text-sm font-bold tracking-wider uppercase text-neutral-900">
+                      {REGIONS[selectedRegionId].name}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <h3 className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">WEATHER</h3>
+                    <p className="text-sm font-mono font-medium text-neutral-900">
+                      {REGIONS[selectedRegionId].environment.baseWindSpeedMs} m/s Wind • {REGIONS[selectedRegionId].environment.airTemperatureC}°C
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <h3 className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">STARTING LOCATION</h3>
+                    <p className="text-sm font-mono font-medium text-neutral-900">
+                      {HELIPADS[REGIONS[selectedRegionId].primaryHelipadId || "training-alpha"]?.name || "Main Pad"}
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+
+              <div className="p-6 bg-neutral-50 border-t border-neutral-100">
+                <Button
+                  variant="black"
+                  onClick={handleEnterSimulation}
+                  className="w-full h-14 text-sm font-bold tracking-widest uppercase shadow-[0_8px_24px_rgba(255,85,0,0.15)] bg-[#FF5500] hover:bg-[#e04b00] text-white hover:-translate-y-0.5 transition-all"
+                >
+                  FLY
+                </Button>
+              </div>
+
+            </div>
           </div>
-        </div>
+        )}
+
       </main>
-
-      {/* Launch Countdown Pre-Flight Checklist Modal */}
-      <LaunchCountdownModal
-        isOpen={isLaunching}
-        drone={selectedDrone}
-        region={activeRegion}
-        helipad={activeHelipad}
-        onComplete={handleLaunchComplete}
-      />
     </div>
   );
 }

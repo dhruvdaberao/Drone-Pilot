@@ -40,64 +40,66 @@ export function DroneCard({
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        // Pure Cardless Hangar Stage Item (No boxy cards, no borders, no pill clutter)
-        "group relative flex flex-col items-center justify-between cursor-pointer select-none text-center transition-all duration-500 ease-out focus-visible:outline-none w-full h-full opacity-100",
+        "group relative flex flex-col items-center justify-between cursor-pointer select-none text-center transition-all duration-300 ease-out focus-visible:outline-none w-full h-full opacity-100",
+        "bg-white rounded-[20px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.08)] border",
+        isSelected ? "border-[#FF5500] shadow-[0_8px_32px_rgba(255,85,0,0.12)]" : "border-neutral-100",
         isSelected ? "z-20" : "z-10",
         className
       )}
     >
-      {/* Interactive 3D Drone Viewport Directly on the Hangar Stage (Generous room, zero clipping) */}
-      <div className="relative w-full h-56 sm:h-64 lg:h-72 flex items-center justify-center">
-        {/* Subtle Luxury Floor Spotlight under Selected Drone */}
+      {/* Selected checkmark indicator */}
+      {isSelected && (
+        <div className="absolute top-4 right-4 h-6 w-6 rounded-full bg-[#FF5500] flex items-center justify-center text-white shadow-sm z-30">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+      )}
+
+      {/* Interactive 3D Drone Viewport */}
+      <div className="relative w-full h-56 sm:h-64 flex items-center justify-center pt-4">
+        {/* Subtle orange glow inside card if selected */}
         {isSelected && (
           <div
-            className="absolute inset-x-4 bottom-0 h-16 pointer-events-none -z-10 animate-in fade-in duration-500"
+            className="absolute inset-x-4 bottom-4 h-16 pointer-events-none -z-10"
             style={{
               background:
-                "radial-gradient(ellipse at center, rgba(255, 85, 0, 0.18) 0%, rgba(255, 85, 0, 0.05) 50%, transparent 80%)",
+                "radial-gradient(ellipse at center, rgba(255, 85, 0, 0.1), transparent 70%)",
             }}
           />
         )}
-
         <Drone3DViewer
           type={drone.id}
           isSelected={isSelected}
           autoRotate={!isSelected}
-          interactive={true}
+          interactive={false}
         />
       </div>
 
-      {/* Clean Technical Metadata Directly on the Canvas (Zero Pill Clutter, Zero //) */}
-      <div className="mt-2 sm:mt-3 space-y-1.5 w-full max-w-xs sm:max-w-sm px-2 flex flex-col items-center justify-between min-h-[110px] sm:min-h-[118px]">
+      {/* Minimal Technical Metadata */}
+      <div className="w-full px-6 pb-6 pt-2 flex flex-col items-center">
         <h3
           className={cn(
-            "font-heading text-lg sm:text-xl lg:text-2xl font-bold tracking-wider uppercase transition-colors duration-300",
-            isSelected ? "text-neutral-950" : "text-neutral-900 group-hover:text-black"
+            "font-heading text-lg font-extrabold tracking-wide uppercase transition-colors duration-300 mb-1",
+            isSelected ? "text-neutral-950" : "text-neutral-900"
           )}
         >
           {drone.name}
         </h3>
-
-        {/* Clean Typographic Hierarchy: Class • Rotors • Weight Class */}
-        <p className="text-[11px] sm:text-xs lg:text-sm font-mono font-semibold text-[#FF5500] tracking-wide text-center whitespace-nowrap">
-          {drone.badge} • {drone.specs.rotors} Rotors • {drone.specs.weightClass}
-        </p>
-
-        {/* Clean Description & Handling */}
-        <p className="text-[11px] sm:text-xs text-neutral-500 leading-relaxed text-center line-clamp-2 pt-0.5">
-          {drone.tagline} • {drone.specs.handling}
-        </p>
-
-        {/* Selected Visual Indicator Line */}
-        <div className="mt-auto pt-2 flex justify-center w-full">
-          <div
-            className={cn(
-              "h-1 rounded-full transition-all duration-300",
-              isSelected
-                ? "w-16 sm:w-24 bg-[#FF5500] shadow-[0_0_12px_rgba(255,85,0,0.6)]"
-                : "w-0 bg-transparent group-hover:w-8 group-hover:bg-neutral-300"
-            )}
-          />
+        <div className="flex flex-col items-center gap-1 text-[11px] font-mono font-medium text-neutral-500 uppercase tracking-widest">
+          <span>{drone.specs.rotors} MOTORS</span>
+          <span>{drone.specs.weightClass}</span>
+          <span>{drone.badge}</span>
+        </div>
+        
+        {/* Subtle button-like affordance */}
+        <div className="mt-4 pt-4 border-t border-neutral-100 w-full flex justify-center">
+          <span className={cn(
+            "text-xs font-bold tracking-widest uppercase transition-colors",
+            isSelected ? "text-[#FF5500]" : "text-neutral-400 group-hover:text-neutral-900"
+          )}>
+            {isSelected ? "SELECTED" : "SELECT"}
+          </span>
         </div>
       </div>
     </div>

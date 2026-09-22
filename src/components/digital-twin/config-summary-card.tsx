@@ -186,23 +186,18 @@ export function ConfigSummaryCard({
         <button
           type="button"
           disabled={!validation.valid}
-          onClick={onEnterSimulation}
+          onClick={async () => {
+            await onSaveConfig();
+            setTimeout(() => onEnterSimulation(), 1000);
+          }}
           className={`h-12 w-full rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md ${
             validation.valid
               ? "bg-[#FF5500] hover:bg-[#e04b00] text-white hover:-translate-y-0.5"
               : "bg-neutral-300 text-neutral-500 cursor-not-allowed"
           }`}
         >
-          <span>ENTER SIMULATION</span>
+          <span>SAVE CONFIGURATION</span>
           <ArrowRight className="h-4 w-4" />
-        </button>
-
-        <button
-          type="button"
-          onClick={onSaveConfig}
-          className="h-9 w-full rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-800 font-semibold text-xs tracking-wide transition-colors"
-        >
-          Save Configuration
         </button>
       </div>
     </div>

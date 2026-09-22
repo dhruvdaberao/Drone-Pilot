@@ -27,6 +27,7 @@ import { NavigationWaypoint } from "./minimap-widget";
 import { SimulationLoadingScreen } from "./loading/simulation-loading-screen";
 import { EnvironmentControlPanel } from "./environment-control-panel";
 import { TutorialOverlay } from "./tutorial-overlay";
+import { LeftGlassPanel, RightGlassPanel } from "./glass-panels";
 import { FlightAnalysisModal } from "./analysis/flight-analysis-modal";
 import { FlightReplayModal } from "./replay/flight-replay-modal";
 import { PhysicsDebugHUD } from "./debug/physics-debug-hud";
@@ -997,6 +998,25 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         </div>
       )}
 
+      {/* Left Glass Panel (Aircraft, Faults, Status) */}
+      <LeftGlassPanel
+        telemetry={telemetry}
+        drone={selectedDrone}
+        motorCount={physicsEngineRef.current?.def.motorCount || 4}
+        motorHealths={motorHealths}
+        onSetMotorHealth={handleSetMotorHealth}
+        onExit={onExit}
+      />
+
+      {/* Right Glass Panel (Environment, Map) */}
+      <RightGlassPanel
+        environment={envState}
+        onUpdateWind={(speed) => handleUpdateEnvironment({ windSpeed: speed })}
+        telemetry={telemetry}
+        activeWaypoint={activeWaypoint}
+        onToggleMap={() => setIsMapModalOpen(true)}
+      />
+
       {/* Avionics Telemetry HUD */}
       <TelemetryHUD
         telemetry={telemetry}
@@ -1096,80 +1116,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         frames={replayFrames}
       />
 
-      {/* Floating Toolbar for Educational Scenarios, Faults, Digital Twin, Demo Mode & Diagnostics */}
-      <div className="fixed top-3 left-28 sm:left-32 z-30 flex items-center gap-2 flex-wrap">
-        <button
-          type="button"
-          onClick={() => setIsScenarioModalOpen(true)}
-          className="px-2.5 py-1.5 rounded-xl bg-neutral-900/90 hover:bg-neutral-900 border border-neutral-700 hover:border-emerald-500 text-white text-[11px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-lg backdrop-blur-sm transition-all"
-        >
-          <span className="w-2 h-2 rounded-full bg-emerald-400" />
-          <span className="hidden sm:inline">TRAINING</span> SCENARIOS
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setIsFaultPanelOpen((prev) => !prev)}
-          className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-lg backdrop-blur-sm transition-all ${
-            motorHealths.some((h) => h < 0.9) || !sensorHealth.gps || !sensorHealth.imu || !sensorHealth.baro || !sensorHealth.compass || payloadMassKg > 0
-              ? "bg-rose-950/90 border-rose-500 text-rose-200 animate-pulse"
-              : "bg-neutral-900/90 hover:bg-neutral-900 border-neutral-700 hover:border-rose-500 text-white"
-          }`}
-        >
-          <span className={`w-2 h-2 rounded-full ${
-            motorHealths.some((h) => h < 0.9) || !sensorHealth.gps ? "bg-rose-500" : "bg-neutral-400"
-          }`} />
-          <span>FAULTS</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setIsDigitalTwinHUDOpen((prev) => !prev)}
-          className="px-2.5 py-1.5 rounded-xl bg-neutral-900/90 hover:bg-neutral-900 border border-neutral-700 hover:border-[#FF5500] text-white text-[11px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-lg backdrop-blur-sm transition-all"
-        >
-          <span className="w-2 h-2 rounded-full bg-[#FF5500] animate-pulse" />
-          <span>DIGITAL TWIN</span>
-        </button>
-
-        {/* CDAC Controlled Demonstration Mode (Requirement 39) */}
-        <button
-          type="button"
-          onClick={handleTriggerDemoMode}
-          title="Trigger CDAC demonstration: High Wind + Heavy Payload with live telemetry stress"
-          className="px-2.5 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-900 border border-amber-500/60 hover:border-amber-400 text-amber-200 text-[11px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-lg backdrop-blur-sm transition-all"
-        >
-          <span className="w-2 h-2 rounded-full bg-amber-400" />
-          <span>DEMO MODE</span>
-        </button>
-
-        {/* Diagnostics & Observability HUD Toggle (Requirement 33) */}
-        <button
-          type="button"
-          onClick={() => setIsDiagnosticsOpen((prev) => !prev)}
-          className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-lg backdrop-blur-sm transition-all ${
-            isDiagnosticsOpen
-              ? "bg-cyan-950 border-cyan-400 text-cyan-200"
-              : "bg-neutral-900/90 hover:bg-neutral-900 border-neutral-700 text-neutral-300"
-          }`}
-        >
-          <span className="w-2 h-2 rounded-full bg-cyan-400" />
-          <span>DIAGNOSTICS</span>
-        </button>
-
-        {/* Network Status Indicator (Requirement 29) */}
-        <div className={`px-2.5 py-1.5 rounded-xl border text-[10px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-sm backdrop-blur-sm ${
-          connectionStatus === "CONNECTED"
-            ? "bg-emerald-950/70 border-emerald-500/50 text-emerald-300"
-            : connectionStatus === "LOCAL"
-            ? "bg-cyan-950/70 border-cyan-500/50 text-cyan-300"
-            : "bg-rose-950/70 border-rose-500/50 text-rose-300"
-        }`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${
-            connectionStatus === "CONNECTED" ? "bg-emerald-400" : connectionStatus === "LOCAL" ? "bg-cyan-400" : "bg-rose-400"
-          }`} />
-          <span>{connectionStatus}</span>
-        </div>
-      </div>
+      {/* Floating toolbar removed to migrate to new clean glassmorphism panels */}
 
       {/* Simulation Diagnostics Overlay */}
       <SimulationDiagnosticsOverlay

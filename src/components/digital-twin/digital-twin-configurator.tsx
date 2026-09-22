@@ -144,7 +144,7 @@ export function DigitalTwinConfigurator() {
   const handleSave = useCallback(async () => {
     if (!config) return;
     await saveUserConfiguration(config);
-    setSaveFeedback("Configuration saved successfully");
+    setSaveFeedback("✓ Configuration saved");
     setTimeout(() => setSaveFeedback(null), 3000);
   }, [config]);
 
