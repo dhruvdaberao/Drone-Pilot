@@ -231,10 +231,10 @@ export class NPCManager {
    * Ground crew marshaling drones and patrolling the flight apron
    */
   private spawnFlightlineGroundCrew() {
-    // 1. Marshalling officer at Helipad Alpha edge
+    // 1. Marshalling officer at Operations Observation Apron (safe distance from active pads)
     const marshal = this.createHumanoid({ vestColor: 0xf97316, isMarshal: true });
-    marshal.root.position.set(8.5, 1.22, 5.0);
-    marshal.root.rotation.y = -Math.PI / 3;
+    marshal.root.position.set(-22.0, 1.22, 18.0);
+    marshal.root.rotation.y = Math.PI / 4;
     this.group.add(marshal.root);
 
     this.npcs.push({
@@ -242,37 +242,37 @@ export class NPCManager {
       isWalking: false,
       isMarshal: true,
       walkSpeed: 0,
-      p1: new THREE.Vector3(8.5, 1.22, 5.0),
-      p2: new THREE.Vector3(8.5, 1.22, 5.0),
+      p1: new THREE.Vector3(-22.0, 1.22, 18.0),
+      p2: new THREE.Vector3(-22.0, 1.22, 18.0),
       t: 0,
       dir: 1,
     });
 
-    // 2. Flightline technician walking along runway service line
+    // 2. Flightline technician walking along West Hangar maintenance service lane
     const tech = this.createHumanoid({ vestColor: 0x84cc16, pantsColor: 0x0f172a });
     this.group.add(tech.root);
 
     this.npcs.push({
       ...tech,
       isWalking: true,
-      walkSpeed: 1.4,
-      p1: new THREE.Vector3(3.0, 1.22, -15.0),
-      p2: new THREE.Vector3(3.0, 1.22, -65.0),
+      walkSpeed: 1.2,
+      p1: new THREE.Vector3(-28.0, 1.22, -20.0),
+      p2: new THREE.Vector3(-28.0, 1.22, -75.0),
       t: 0.1,
       dir: 1,
     });
 
-    // 3. Drone Inspector near Helipad Bravo
+    // 3. Drone Inspector near East Workshop facility
     const inspector = this.createHumanoid({ vestColor: 0x06b6d4, pantsColor: 0x1e293b });
     this.group.add(inspector.root);
 
     this.npcs.push({
       ...inspector,
       isWalking: true,
-      walkSpeed: 1.2,
-      p1: new THREE.Vector3(30, 1.22, 18),
-      p2: new THREE.Vector3(42, 1.22, 18),
-      t: 0.6,
+      walkSpeed: 1.1,
+      p1: new THREE.Vector3(62.0, 1.22, 35.0),
+      p2: new THREE.Vector3(75.0, 1.22, 35.0),
+      t: 0.5,
       dir: 1,
     });
   }
@@ -488,9 +488,24 @@ export class NPCManager {
       if (dronePos) {
         dist3d = curPos.distanceTo(dronePos);
         distHoriz = Math.hypot(dronePos.x - curPos.x, dronePos.z - curPos.z);
+
+        // Strict aeronautical safety perimeter: NPCs dynamically step back and cannot overlap drone
+        const minSafetyRadius = 14.0;
+        if (distHoriz < minSafetyRadius) {
+          const dx = curPos.x - dronePos.x;
+          const dz = curPos.z - dronePos.z;
+          const currentDist = Math.max(0.01, distHoriz);
+          const pushAmount = minSafetyRadius - currentDist;
+          curPos.x += (dx / currentDist) * pushAmount;
+          curPos.z += (dz / currentDist) * pushAmount;
+          const sample = evaluateIslandElevation(curPos.x, curPos.z);
+          curPos.y = sample.elevation;
+          distHoriz = minSafetyRadius;
+          dist3d = curPos.distanceTo(dronePos);
+        }
       }
 
-      const isDroneNear = dist3d < 16;
+      const isDroneNear = dist3d < 18;
 
       if (npc.isMarshal) {
         if (isDroneNear && dronePos) {

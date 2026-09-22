@@ -46,9 +46,21 @@ export class OceanMesh {
     this.initialZ = new Float32Array(count);
 
     for (let i = 0; i < count; i++) {
-      this.initialX[i] = this.posAttr.getX(i);
-      this.initialY[i] = this.posAttr.getY(i);
-      this.initialZ[i] = this.posAttr.getZ(i);
+      const x = this.posAttr.getX(i);
+      const z = this.posAttr.getZ(i);
+      this.initialX[i] = x;
+      this.initialZ[i] = z;
+
+      const distCoast = getDistanceToCoast(x, z);
+      // Depress ocean mesh inside island landmass so it never clips or overlaps terrestrial ground
+      if (distCoast > 12) {
+        this.initialY[i] = -40.0;
+      } else if (distCoast > 0) {
+        this.initialY[i] = -(distCoast / 12.0) * 40.0;
+      } else {
+        this.initialY[i] = 0.0;
+      }
+      this.posAttr.setY(i, this.initialY[i]);
     }
 
     // High-frequency ripple normal canvas for realistic sun glints & specular waves

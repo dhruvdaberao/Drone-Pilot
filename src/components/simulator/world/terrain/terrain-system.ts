@@ -66,6 +66,8 @@ export class TerrainSystem {
       flatShading: false,
     });
 
+    mat.customProgramCacheKey = () => "island-terrain-pbr-splatting-v3";
+
     // Multi-material PBR splatting: blends meadow, forest floor, cliff rock, sand, and scree
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uGrassMap = { value: grassTex };
@@ -114,7 +116,11 @@ export class TerrainSystem {
         float screeWeight = smoothstep(68.0, 115.0, vTerrainWorldPos.y);
 
         // 4. Forest floor loam vs lush meadow turf from vertex color ratio
+        #if defined( USE_COLOR ) || defined( USE_COLOR_ALPHA )
         float forestWeight = clamp((vColor.r - vColor.g + 0.12) * 3.2, 0.0, 1.0);
+        #else
+        float forestWeight = 0.0;
+        #endif
 
         // Multi-frequency world coordinate UV mapping
         vec2 uvGrass = vTerrainWorldPos.xz * 0.045;
@@ -141,8 +147,16 @@ export class TerrainSystem {
         // Cliff rock dominates on steep slopes and escarpments
         vec4 finalAlbedo = mix(baseGround, colRock, rockWeight);
 
-        // Modulate with vertex colors for regional macro color harmony
-        diffuseColor.rgb = finalAlbedo.rgb * (vColor * 1.32);
+        diffuseColor.rgb = finalAlbedo.rgb;
+        `
+      );
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <color_fragment>",
+        `
+        #if defined( USE_COLOR ) || defined( USE_COLOR_ALPHA )
+        diffuseColor.rgb *= (vColor.rgb * 1.25);
+        #endif
         `
       );
     };
