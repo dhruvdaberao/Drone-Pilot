@@ -238,13 +238,26 @@ export function FlightConfigSummary({
             onClick={onChangeAircraft}
             leftIcon={<ArrowLeft className="h-3.5 w-3.5" />}
           >
-            Change Aircraft
+            Hangar
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 text-xs border border-neutral-900 bg-neutral-900 text-white hover:bg-neutral-800"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.location.href = `/configure?drone=${selectedDrone.id}`;
+              }
+            }}
+          >
+            ⚙ Configure
           </Button>
 
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs text-neutral-600 hover:text-black"
+            className="text-xs text-neutral-600 hover:text-black px-2"
             onClick={onResetToAcademy}
             leftIcon={<RotateCcw className="h-3.5 w-3.5" />}
           >

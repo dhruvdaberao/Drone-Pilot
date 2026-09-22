@@ -42,6 +42,20 @@ import { WindAudio } from "@/lib/audio/wind-audio";
 import { EnvironmentZoneAudio } from "@/lib/audio/environment-zones";
 import { SFXEvents } from "@/lib/audio/sfx-events";
 import { REGION_LIST } from "@/lib/world/region-definitions";
+import {
+  DroneDigitalTwinConfiguration,
+  DroneDigitalTwinRuntimeState,
+} from "@/types/drone-digital-twin";
+import {
+  getActiveDigitalTwin,
+  setActiveDigitalTwin,
+} from "@/lib/digital-twin/digital-twin-storage";
+import { getDigitalTwinPresetById } from "@/lib/digital-twin/digital-twin-presets";
+import {
+  digitalTwinToDroneDefinition,
+  buildRuntimeStateFromTelemetry,
+} from "@/lib/digital-twin/adapter";
+import { DigitalTwinHUD } from "./debug/digital-twin-hud";
 
 function getWindExposure(x: number, z: number): number {
   for (const r of REGION_LIST) {
@@ -233,6 +247,12 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
   const [showDropBriefing, setShowDropBriefing] = useState(false);
   const [autoMoveLocked, setAutoMoveLocked] = useState("");
   const autoMoveLockedRef = useRef("");
+
+  // Digital Twin state for HUD & live telemetry
+  const [activeDigitalTwin, setActiveDigitalTwinState] = useState<DroneDigitalTwinConfiguration | null>(null);
+  const [digitalTwinRuntime, setDigitalTwinRuntime] = useState<DroneDigitalTwinRuntimeState | null>(null);
+  const [isDigitalTwinHUDOpen, setIsDigitalTwinHUDOpen] = useState(false);
+  const activeDtRef = useRef<DroneDigitalTwinConfiguration | null>(null);
 
   // Stable loading ready callback
   const handleLoadingReady = useCallback(() => {
@@ -454,8 +474,19 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     const spawnConfig = SpawnSystem.resolveSpawn(reqRegion, reqHelipad);
     spawnConfigRef.current = spawnConfig;
 
-    // 5. MODULAR DRONE
-    const droneDef = getDroneDefinition(selectedDrone.id);
+    // 5. MODULAR DRONE & CANONICAL DIGITAL TWIN RESOLUTION
+    let dtConfig = getActiveDigitalTwin();
+    const dtParam = urlParams?.get("dt");
+    if (dtParam) {
+      dtConfig = getDigitalTwinPresetById(dtParam);
+    } else if (dtConfig.identity.category !== selectedDrone.id) {
+      dtConfig = getDigitalTwinPresetById(selectedDrone.id);
+    }
+    setActiveDigitalTwin(dtConfig);
+    setActiveDigitalTwinState(dtConfig);
+    activeDtRef.current = dtConfig;
+
+    const droneDef = digitalTwinToDroneDefinition(dtConfig);
     const droneMesh = new ModularDrone(droneDef, pilotName);
     scene.add(droneMesh.group);
     scene.add(droneMesh.groundShadowMesh);
@@ -674,6 +705,11 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         if (isDebugOpen) {
           setPhysicsDebug(physics.getDebugTelemetry());
         }
+        if (activeDtRef.current) {
+          setDigitalTwinRuntime(
+            buildRuntimeStateFromTelemetry(activeDtRef.current, curTelemetry, physics.motorOutputs)
+          );
+        }
       }
     };
 
@@ -827,6 +863,26 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         onClose={() => setIsReplayOpen(false)}
         frames={replayFrames}
       />
+
+      {/* Floating Toggle for Digital Twin Telemetry HUD */}
+      <button
+        type="button"
+        onClick={() => setIsDigitalTwinHUDOpen((prev) => !prev)}
+        className="fixed top-3 left-28 sm:left-32 z-30 px-3 py-1.5 rounded-xl bg-neutral-900/85 hover:bg-neutral-900 border border-neutral-700 text-white text-[11px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-lg backdrop-blur-sm transition-all hover:border-[#FF5500]"
+      >
+        <span className="w-2 h-2 rounded-full bg-[#FF5500] animate-pulse" />
+        <span>DIGITAL TWIN HUD</span>
+      </button>
+
+      {/* Digital Twin Live Telemetry Drawer */}
+      {activeDigitalTwin && digitalTwinRuntime && (
+        <DigitalTwinHUD
+          isOpen={isDigitalTwinHUDOpen}
+          onClose={() => setIsDigitalTwinHUDOpen(false)}
+          config={activeDigitalTwin}
+          runtimeState={digitalTwinRuntime}
+        />
+      )}
     </div>
   );
 }

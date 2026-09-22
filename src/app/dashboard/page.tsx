@@ -58,14 +58,20 @@ export default function DashboardPage() {
       // Storage error ignored
     }
     const isMock = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mock") === "true";
-    
-    // Tactical Dropzone: Randomly pick a scenic spawn helipad from across the entire island
-    const spawnablePads = HELIPAD_LIST.filter((h) => h.spawnAllowed);
-    const randomPad = spawnablePads[Math.floor(Math.random() * spawnablePads.length)] || HELIPAD_LIST[0];
 
     router.push(
-      `/fly?drone=${selectedDrone.id}&launch=true&helipad=${randomPad.id}&region=${randomPad.regionId}${isMock ? "&mock=true" : ""}`
+      `/fly/select?drone=${selectedDrone.id}${isMock ? "&mock=true" : ""}`
     );
+  };
+
+  const handleConfigureTwin = () => {
+    if (!selectedDrone) return;
+    try {
+      localStorage.setItem(DEFAULT_DRONE_STORAGE_KEY, selectedDrone.id);
+    } catch {
+      // Storage error ignored
+    }
+    router.push(`/configure?drone=${selectedDrone.id}`);
   };
 
   const handleBackgroundClick = () => {
@@ -133,26 +139,30 @@ export default function DashboardPage() {
             })}
           </div>
 
-          {/* Primary CTA Area: Black LET'S FLY Button */}
+          {/* Primary Action Area */}
           <div
             onClick={(e) => e.stopPropagation()}
             className="mt-6 sm:mt-8 flex flex-col items-center text-center select-none"
           >
             {selectedDrone ? (
-              <div className="flex flex-col items-center gap-2 animate-in fade-in duration-200">
+              <div className="flex flex-col sm:flex-row items-center gap-3 animate-in fade-in duration-200">
                 <Button
                   variant="black"
                   size="md"
-                  className="min-w-[220px] sm:min-w-[260px] h-12 text-sm font-bold tracking-widest uppercase shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:bg-black hover:-translate-y-0.5 transition-all"
+                  className="min-w-[200px] sm:min-w-[240px] h-12 text-sm font-bold tracking-widest uppercase shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:bg-black hover:-translate-y-0.5 transition-all"
                   onClick={handleStartFlight}
                   rightIcon={<ArrowRight className="h-4 w-4" />}
                 >
-                  LET&apos;S FLY
+                  PRE-FLIGHT BRIEFING
                 </Button>
 
-                <p className="text-xs text-neutral-600 font-medium tracking-wide">
-                  Pilot confirmed • Ready for takeoff
-                </p>
+                <button
+                  type="button"
+                  onClick={handleConfigureTwin}
+                  className="min-w-[200px] sm:min-w-[240px] h-12 px-4 rounded-xl border-2 border-neutral-900 bg-white hover:bg-neutral-100 text-neutral-950 font-bold text-xs uppercase tracking-widest transition-all shadow-xs"
+                >
+                  ⚙ CONFIGURE DIGITAL TWIN
+                </button>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
@@ -162,7 +172,7 @@ export default function DashboardPage() {
                   disabled
                   className="min-w-[220px] sm:min-w-[260px] h-12 text-sm font-bold tracking-widest uppercase opacity-40 cursor-not-allowed border border-neutral-300"
                 >
-                  LET&apos;S FLY
+                  SELECT AIRCRAFT
                 </Button>
 
                 <p className="text-xs text-neutral-400">
