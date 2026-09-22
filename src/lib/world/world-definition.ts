@@ -450,15 +450,47 @@ export const ROAD_NETWORK_DEFINITION: RoadNetworkDefinition = {
       ],
     },
     {
+      id: "road-academy-perimeter",
+      name: "Academy Airfield Perimeter Road",
+      type: "arterial",
+      widthMeters: 10,
+      points: [
+        { x: -50, y: 1.2, z: 60 },
+        { x: -50, y: 1.2, z: 0 },
+        { x: -35, y: 1.2, z: -35 },
+        { x: 0, y: 1.2, z: -42 },
+        { x: 35, y: 1.2, z: -30 },
+        { x: 50, y: 1.2, z: 0 },
+      ],
+    },
+    {
+      id: "road-northern-parkway",
+      name: "Northern Foothills Scenic Parkway",
+      type: "arterial",
+      widthMeters: 9,
+      points: [
+        { x: 50, y: 1.2, z: 0 },
+        { x: 120, y: 1.5, z: -80 },
+        { x: 260, y: 2.8, z: -160 },
+        { x: 440, y: 3.2, z: -140 },
+        { x: 580, y: 2.6, z: -20 },
+        { x: 640, y: 2.5, z: 120 },
+      ],
+    },
+    {
       id: "road-academy-forest",
-      name: "Whispering Pines Forest Road",
+      name: "Whispering Pines Forest Scenic Loop",
       type: "rural",
       widthMeters: 8,
       points: [
         { x: -180, y: 9.8, z: 140 }, // West bridge abutment junction
         { x: -300, y: 5.5, z: 70 },
         { x: -440, y: 4.8, z: 10 },
-        { x: -620, y: 5.5, z: -40 },
+        { x: -580, y: 5.5, z: -40 },
+        { x: -660, y: 6.0, z: 10 },
+        { x: -620, y: 5.2, z: 110 },
+        { x: -480, y: 4.5, z: 180 },
+        { x: -320, y: 4.5, z: 340 }, // Merges smoothly with Pelican coastal highway
       ],
     },
     {
@@ -492,14 +524,14 @@ export const ROAD_NETWORK_DEFINITION: RoadNetworkDefinition = {
       type: "switchback",
       widthMeters: 7.5,
       points: [
-        { x: -80, y: 1.2, z: -80 },
-        { x: -160, y: 3.5, z: -140 },
-        { x: -180, y: 8.5, z: -210 },
+        { x: -300, y: 5.5, z: 70 }, // Connects to Forest Scenic Road
+        { x: -240, y: 7.2, z: -30 },
+        { x: -180, y: 9.5, z: -140 },
         { x: -200, y: 14.0, z: -310 },
         { x: -260, y: 22.0, z: -390 },
         { x: -400, y: 32.0, z: -460 },
         { x: -500, y: 40.0, z: -510 },
-        { x: -580, y: 48.0, z: -560 },
+        { x: -580, y: 48.0, z: -560 }, // Mount Apex Summit Overlook Turnaround
       ],
     },
   ],

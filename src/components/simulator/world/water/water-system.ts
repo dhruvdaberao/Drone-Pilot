@@ -36,24 +36,8 @@ export class WaterSystem {
   private buildMountainWaterfall() {
     this.mistCount = 350;
 
-    // 1. Upper Feeding Stream: Channeling water from Crystal Lake over the ledge
-    const intakeGeo = new THREE.PlaneGeometry(16, 28, 8, 8);
-    intakeGeo.rotateX(-Math.PI / 2);
-    intakeGeo.rotateY(Math.PI / 4);
-
-    const intakeMat = new THREE.MeshStandardMaterial({
-      color: 0x0284c7,
-      roughness: 0.1,
-      metalness: 0.4,
-      transparent: true,
-      opacity: 0.82,
-    });
-    const intakeMesh = new THREE.Mesh(intakeGeo, intakeMat);
-    intakeMesh.position.set(-285, 8.45, -232);
-    this.group.add(intakeMesh);
-
-    // 2. Primary Cascading Water Curtain: 26m wide x 13m drop
-    const fallGeo = new THREE.PlaneGeometry(26, 13.0, 16, 16);
+    // 1. Cascading Water Curtain: 24m wide x 11m drop over natural rock escarpment
+    const fallGeo = new THREE.PlaneGeometry(24, 11.0, 16, 16);
     fallGeo.rotateY(Math.PI / 4);
 
     // Procedural churning white-water texture
@@ -89,28 +73,28 @@ export class WaterSystem {
     });
 
     this.waterfallMesh = new THREE.Mesh(fallGeo, this.waterfallMat);
-    this.waterfallMesh.position.set(-270, 6.2, -212);
+    this.waterfallMesh.position.set(-268, 5.5, -210);
     this.waterfallMesh.rotation.x = 0.32; // Natural chute cascade angle
     this.group.add(this.waterfallMesh);
 
     // Secondary lower white-water churn plane
-    const lowerFallGeo = new THREE.PlaneGeometry(22, 6.0, 8, 8);
+    const lowerFallGeo = new THREE.PlaneGeometry(20, 5.5, 8, 8);
     lowerFallGeo.rotateY(Math.PI / 4);
     const lowerFallMesh = new THREE.Mesh(lowerFallGeo, this.waterfallMat);
     lowerFallMesh.position.set(-262, 3.2, -204);
     lowerFallMesh.rotation.x = 0.45;
     this.group.add(lowerFallMesh);
 
-    // Rocky cliff face behind waterfall
-    const cliffGeo = new THREE.BoxGeometry(28, 15, 4);
+    // Rocky escarpment behind waterfall (sunken into canyon wall, fully outside lake boundary)
+    const cliffGeo = new THREE.BoxGeometry(20, 10, 2.5);
     const cliffMat = new THREE.MeshStandardMaterial({
-      color: 0x687480, // Weathered natural mountain rock face
-      roughness: 0.94,
-      metalness: 0.03,
+      color: 0x64748b, // Weathered natural mountain rock face
+      roughness: 0.92,
+      metalness: 0.04,
       flatShading: true,
     });
     const cliffMesh = new THREE.Mesh(cliffGeo, cliffMat);
-    cliffMesh.position.set(-278, 6.0, -220);
+    cliffMesh.position.set(-272, 4.8, -214);
     cliffMesh.rotation.y = Math.PI / 4;
     this.group.add(cliffMesh);
 

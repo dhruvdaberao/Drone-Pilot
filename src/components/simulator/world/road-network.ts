@@ -171,38 +171,33 @@ export class RoadNetwork {
     const rawPoints = road.points;
     if (rawPoints.length < 2) return;
 
-    // Subdivide polyline into evenly spaced 10m intervals for smooth curvature
-    const sampleStep = 10;
-    const sampledPoints: THREE.Vector3[] = [];
+    // Catmull-Rom centripetal spline for organic, natural flowing curves (no zig-zags)
+    const curvePts = rawPoints.map((p) => new THREE.Vector3(p.x, 0, p.z));
+    const curve = new THREE.CatmullRomCurve3(curvePts, false, "centripetal", 0.5);
 
+    let totalLen = 0;
+    for (let i = 0; i < rawPoints.length - 1; i++) {
+      totalLen += Math.hypot(rawPoints[i + 1].x - rawPoints[i].x, rawPoints[i + 1].z - rawPoints[i].z);
+    }
+    const sampleStep = 6.0; // 6-meter fine resolution for buttery-smooth curvature
+    const steps = Math.max(6, Math.round(totalLen / sampleStep));
+
+    const sampledPoints: THREE.Vector3[] = [];
     const getRoadElevation = (x: number, z: number): number => {
       const terrainY = evaluateIslandElevation(x, z).elevation;
       const hydro = queryHydrology(x, z, terrainY);
       if (hydro.isWater) {
-        // Enforce road elevation stays safely above water level
         return Math.max(terrainY + 0.22, hydro.waterElevation + 1.2);
       }
       return Math.max(terrainY + 0.22, 1.35);
     };
 
-    for (let i = 0; i < rawPoints.length - 1; i++) {
-      const p1 = new THREE.Vector3(rawPoints[i].x, rawPoints[i].y, rawPoints[i].z);
-      const p2 = new THREE.Vector3(rawPoints[i + 1].x, rawPoints[i + 1].y, rawPoints[i + 1].z);
-      const segLen = p1.distanceTo(p2);
-      const steps = Math.max(1, Math.round(segLen / sampleStep));
-
-      for (let s = 0; s < steps; s++) {
-        const t = s / steps;
-        const x = p1.x + (p2.x - p1.x) * t;
-        const z = p1.z + (p2.z - p1.z) * t;
-        const roadY = getRoadElevation(x, z);
-        sampledPoints.push(new THREE.Vector3(x, roadY, z));
-      }
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps;
+      const pt = curve.getPoint(t);
+      const roadY = getRoadElevation(pt.x, pt.z);
+      sampledPoints.push(new THREE.Vector3(pt.x, roadY, pt.z));
     }
-    const last = rawPoints[rawPoints.length - 1];
-    sampledPoints.push(
-      new THREE.Vector3(last.x, getRoadElevation(last.x, last.z), last.z)
-    );
 
     if (sampledPoints.length < 2) return;
 
@@ -568,36 +563,58 @@ export class RoadNetwork {
    */
   private buildDowntownGrid() {
     const yElevation = 2.53;
-    const roadWidth = 14;
+    const avenueWidth = 14;
+    const streetWidth = 10;
 
-    // North-South Avenues
+    // North-South Multi-Lane Avenues spanning across CBD, commercial, and suburban districts
     const avenues = [
-      { x: 640, z: 320, length: 260 },
-      { x: 780, z: 320, length: 260 },
+      { x: 540, z: 320, length: 440, w: avenueWidth }, // West Suburban Parkway
+      { x: 640, z: 320, length: 440, w: avenueWidth }, // 1st Avenue Commercial
+      { x: 740, z: 320, length: 440, w: avenueWidth }, // Central Apex Boulevard
+      { x: 840, z: 320, length: 440, w: avenueWidth }, // 2nd Avenue Residential High
+      { x: 940, z: 300, length: 380, w: streetWidth }, // East Coastal Suburban Avenue
     ];
 
-    // East-West Cross Streets
+    // East-West Cross Streets connecting avenues and neighborhoods
     const crossStreets = [
-      { x: 710, z: 240, length: 220 },
-      { x: 710, z: 400, length: 220 },
+      { x: 740, z: 120, length: 420, w: streetWidth }, // North Residential Parkway
+      { x: 740, z: 200, length: 440, w: streetWidth }, // Parkside Drive
+      { x: 740, z: 280, length: 460, w: avenueWidth }, // Commercial Cross Street
+      { x: 740, z: 360, length: 460, w: avenueWidth }, // Apex Plaza Boulevard
+      { x: 740, z: 440, length: 440, w: streetWidth }, // Civic Center Avenue
+      { x: 740, z: 520, length: 420, w: streetWidth }, // South Industrial Transition Street
     ];
 
     avenues.forEach((ave) => {
-      const geo = new THREE.PlaneGeometry(roadWidth, ave.length);
+      const geo = new THREE.PlaneGeometry(ave.w, ave.length);
       geo.rotateX(-Math.PI / 2);
       const mesh = new THREE.Mesh(geo, this.roadMat);
       mesh.position.set(ave.x, yElevation, ave.z);
       mesh.receiveShadow = true;
       this.group.add(mesh);
+
+      // Dashed centerline markings
+      const dashGeo = new THREE.PlaneGeometry(0.3, ave.length * 0.95);
+      dashGeo.rotateX(-Math.PI / 2);
+      const dashMesh = new THREE.Mesh(dashGeo, this.whiteLineMat);
+      dashMesh.position.set(ave.x, yElevation + 0.02, ave.z);
+      this.group.add(dashMesh);
     });
 
     crossStreets.forEach((street) => {
-      const geo = new THREE.PlaneGeometry(street.length, roadWidth);
+      const geo = new THREE.PlaneGeometry(street.length, street.w);
       geo.rotateX(-Math.PI / 2);
       const mesh = new THREE.Mesh(geo, this.roadMat);
       mesh.position.set(street.x, yElevation, street.z);
       mesh.receiveShadow = true;
       this.group.add(mesh);
+
+      // Dashed centerline markings
+      const dashGeo = new THREE.PlaneGeometry(street.length * 0.95, 0.3);
+      dashGeo.rotateX(-Math.PI / 2);
+      const dashMesh = new THREE.Mesh(dashGeo, this.whiteLineMat);
+      dashMesh.position.set(street.x, yElevation + 0.02, street.z);
+      this.group.add(dashMesh);
     });
 
     // Autonomous traffic circuit waypoints connecting the entire island road network:
@@ -625,20 +642,26 @@ export class RoadNetwork {
       new THREE.Vector3(-540, 2.8, 480),
       new THREE.Vector3(-320, 4.5, 340),
       new THREE.Vector3(-180, 9.8, 140), // West Bridge Abutment
-      // 5. Forest Ranger Station Loop
+      // 5. Forest Scenic Loop (Forward continuous circuit)
       new THREE.Vector3(-300, 5.5, 70),
       new THREE.Vector3(-440, 4.8, 10),
-      new THREE.Vector3(-620, 5.5, -40), // Forest Ranger Station Turnaround
-      new THREE.Vector3(-440, 4.8, 10),
-      new THREE.Vector3(-300, 5.5, 70),
+      new THREE.Vector3(-580, 5.5, -40),
+      new THREE.Vector3(-660, 6.0, 10),
+      new THREE.Vector3(-620, 5.2, 110),
+      new THREE.Vector3(-480, 4.5, 180),
+      new THREE.Vector3(-320, 4.5, 340),
       new THREE.Vector3(-180, 9.8, 140), // West Bridge Abutment
       // 6. Grand Valley Suspension Bridge Crossing (High above river canyon)
       new THREE.Vector3(-140, 9.8, 160), // Mid-span above river
       new THREE.Vector3(-100, 9.8, 180), // East Bridge Abutment
-      // 7. Bridge-to-Academy Approach
+      // 7. Bridge-to-Academy Approach & Perimeter Ring Road
       new THREE.Vector3(-75, 4.2, 120),
       new THREE.Vector3(-50, 1.2, 60),
-      new THREE.Vector3(-50, 1.2, 0),    // Academy Airfield Loop
+      new THREE.Vector3(-50, 1.2, 0),
+      new THREE.Vector3(-35, 1.2, -35),
+      new THREE.Vector3(0, 1.2, -42),
+      new THREE.Vector3(35, 1.2, -30),
+      new THREE.Vector3(50, 1.2, 0),
       // 8. Academy-to-City Expressway
       new THREE.Vector3(180, 1.4, 60),
       new THREE.Vector3(360, 1.8, 160),
@@ -826,6 +849,32 @@ export class RoadNetwork {
           { x: -180, z: 140 },
           { x: -300, z: 70 },
           { x: -440, z: 10 },
+        ],
+      },
+      // 8. Academy Perimeter Road Outer Curve
+      {
+        name: "Academy Perimeter Outer Rail",
+        roadWidth: 10.0,
+        side: "left",
+        points: [
+          { x: -50, z: 60 },
+          { x: -50, z: 0 },
+          { x: -35, z: -35 },
+          { x: 0, z: -42 },
+          { x: 35, z: -30 },
+          { x: 50, z: 0 },
+        ],
+      },
+      // 9. Northern Foothills Parkway Curves
+      {
+        name: "Northern Parkway Scenic Rail",
+        roadWidth: 9.0,
+        side: "left",
+        points: [
+          { x: 120, z: -80 },
+          { x: 260, z: -160 },
+          { x: 440, z: -140 },
+          { x: 580, z: -20 },
         ],
       },
     ];

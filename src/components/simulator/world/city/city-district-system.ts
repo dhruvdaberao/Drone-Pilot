@@ -41,64 +41,82 @@ const DISTRICTS: DistrictDef[] = [
     id: "cbd",
     name: "Central Business District",
     center: { x: 760, z: 340 },
-    halfW: 60, halfD: 60,
-    buildingDensity: 0.9,
-    minHeight: 35, maxHeight: 110,
-    sidewalkWidth: 3.0,
+    halfW: 90, halfD: 90,
+    buildingDensity: 0.92,
+    minHeight: 45, maxHeight: 135,
+    sidewalkWidth: 3.2,
   },
   {
     id: "commercial",
-    name: "Commercial Core",
-    center: { x: 680, z: 320 },
-    halfW: 70, halfD: 80,
-    buildingDensity: 0.75,
-    minHeight: 12, maxHeight: 40,
-    sidewalkWidth: 2.8,
+    name: "Commercial Downtown Core",
+    center: { x: 660, z: 320 },
+    halfW: 90, halfD: 100,
+    buildingDensity: 0.80,
+    minHeight: 16, maxHeight: 48,
+    sidewalkWidth: 3.0,
   },
   {
     id: "residential_high",
-    name: "High-Density Residential",
+    name: "High-Density Residential Towers",
     center: { x: 860, z: 340 },
-    halfW: 55, halfD: 70,
-    buildingDensity: 0.65,
-    minHeight: 10, maxHeight: 28,
-    sidewalkWidth: 2.5,
+    halfW: 75, halfD: 95,
+    buildingDensity: 0.72,
+    minHeight: 14, maxHeight: 36,
+    sidewalkWidth: 2.8,
   },
   {
     id: "residential_low",
-    name: "Low-Density Residential",
-    center: { x: 600, z: 220 },
-    halfW: 50, halfD: 50,
-    buildingDensity: 0.45,
-    minHeight: 5, maxHeight: 12,
-    sidewalkWidth: 2.0,
+    name: "West Suburban Neighborhood",
+    center: { x: 520, z: 200 },
+    halfW: 80, halfD: 90,
+    buildingDensity: 0.75,
+    minHeight: 6, maxHeight: 12,
+    sidewalkWidth: 2.2,
+  },
+  {
+    id: "residential_low",
+    name: "North Suburban Estates",
+    center: { x: 720, z: 120 },
+    halfW: 110, halfD: 70,
+    buildingDensity: 0.75,
+    minHeight: 6, maxHeight: 12,
+    sidewalkWidth: 2.2,
+  },
+  {
+    id: "residential_low",
+    name: "East Coastal Bay Suburbs",
+    center: { x: 940, z: 200 },
+    halfW: 70, halfD: 80,
+    buildingDensity: 0.70,
+    minHeight: 6, maxHeight: 12,
+    sidewalkWidth: 2.2,
   },
   {
     id: "civic",
-    name: "Civic & Public District",
-    center: { x: 700, z: 450 },
-    halfW: 45, halfD: 40,
-    buildingDensity: 0.5,
-    minHeight: 8, maxHeight: 20,
+    name: "Civic & Municipal District",
+    center: { x: 680, z: 460 },
+    halfW: 80, halfD: 60,
+    buildingDensity: 0.65,
+    minHeight: 10, maxHeight: 24,
     sidewalkWidth: 3.0,
   },
   {
     id: "park",
-    name: "Central City Park",
-    center: { x: 730, z: 200 },
-    halfW: 40, halfD: 35,
+    name: "Central Metropolis Park",
+    center: { x: 740, z: 210 },
+    halfW: 55, halfD: 45,
     buildingDensity: 0.0,
     minHeight: 0, maxHeight: 0,
-    sidewalkWidth: 2.0,
+    sidewalkWidth: 2.5,
   },
   {
     id: "industrial_transition",
-    name: "Industrial Transition Zone",
-    center: { x: 540, z: 360 },
-    halfW: 40, halfD: 45,
-    buildingDensity: 0.55,
-    minHeight: 6, maxHeight: 14,
-    sidewalkWidth: 2.0,
+    name: "Industrial Logistics Corridor",
+    center: { x: 500, z: 440 },
+    halfW: 65, halfD: 65,
+    buildingDensity: 0.65,
+    minHeight: 8, maxHeight: 18,
+    sidewalkWidth: 2.2,
   },
 ];
 
@@ -168,8 +186,8 @@ export class CityDistrictSystem {
    * Fill a district with buildings on a grid, avoiding the Apex Tower zone
    */
   private populateDistrict(dist: DistrictDef) {
-    // Grid spacing depends on density and building size expectations
-    const baseSpacing = dist.id === "cbd" ? 38 : dist.id === "residential_low" ? 28 : 32;
+    // Grid spacing tuned for architectural density and abundant residential homes
+    const baseSpacing = dist.id === "cbd" ? 32 : dist.id === "residential_low" ? 21 : 26;
     const jitter = baseSpacing * 0.15;
 
     const minX = dist.center.x - dist.halfW;
@@ -236,37 +254,35 @@ export class CityDistrictSystem {
     const sidewalkH = 0.15;
     const sidewalkW = 2.8;
 
-    // Along the 2 N-S Avenues (x=640 and x=780, z=190 to z=450)
-    [640, 780].forEach(aveX => {
-      // Left sidewalk
-      const leftGeo = new THREE.BoxGeometry(sidewalkW, sidewalkH, 260);
+    // Along the 4 Major N-S Avenues (x=540, 640, 740, 840, length 440m)
+    [540, 640, 740, 840].forEach((aveX) => {
+      const leftGeo = new THREE.BoxGeometry(sidewalkW, sidewalkH, 440);
       const leftMesh = new THREE.Mesh(leftGeo, sidewalkMat);
       leftMesh.position.set(aveX - 7 - sidewalkW / 2, yElev + sidewalkH / 2, 320);
       leftMesh.receiveShadow = true;
       this.group.add(leftMesh);
 
-      // Right sidewalk
       const rightMesh = new THREE.Mesh(leftGeo.clone(), sidewalkMat);
       rightMesh.position.set(aveX + 7 + sidewalkW / 2, yElev + sidewalkH / 2, 320);
       rightMesh.receiveShadow = true;
       this.group.add(rightMesh);
     });
 
-    // Along 2 E-W Cross Streets (z=240 and z=400, x=600 to x=820)
-    [240, 400].forEach(streetZ => {
-      const topGeo = new THREE.BoxGeometry(220, sidewalkH, sidewalkW);
+    // Along 4 E-W Cross Streets (z=200, 280, 360, 440, length 440m)
+    [200, 280, 360, 440].forEach((streetZ) => {
+      const topGeo = new THREE.BoxGeometry(440, sidewalkH, sidewalkW);
       const topMesh = new THREE.Mesh(topGeo, sidewalkMat);
-      topMesh.position.set(710, yElev + sidewalkH / 2, streetZ - 7 - sidewalkW / 2);
+      topMesh.position.set(690, yElev + sidewalkH / 2, streetZ - 7 - sidewalkW / 2);
       topMesh.receiveShadow = true;
       this.group.add(topMesh);
 
       const botMesh = new THREE.Mesh(topGeo.clone(), sidewalkMat);
-      botMesh.position.set(710, yElev + sidewalkH / 2, streetZ + 7 + sidewalkW / 2);
+      botMesh.position.set(690, yElev + sidewalkH / 2, streetZ + 7 + sidewalkW / 2);
       botMesh.receiveShadow = true;
       this.group.add(botMesh);
     });
 
-    // Crosswalks at 4 intersections
+    // Crosswalks at major intersections
     const crosswalkMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       roughness: 0.5,
@@ -276,10 +292,18 @@ export class CityDistrictSystem {
     });
 
     const intersections = [
-      { x: 640, z: 240 },
-      { x: 640, z: 400 },
-      { x: 780, z: 240 },
-      { x: 780, z: 400 },
+      { x: 540, z: 280 },
+      { x: 540, z: 360 },
+      { x: 640, z: 200 },
+      { x: 640, z: 280 },
+      { x: 640, z: 360 },
+      { x: 640, z: 440 },
+      { x: 740, z: 200 },
+      { x: 740, z: 280 },
+      { x: 740, z: 360 },
+      { x: 740, z: 440 },
+      { x: 840, z: 280 },
+      { x: 840, z: 360 },
     ];
 
     intersections.forEach(pos => {

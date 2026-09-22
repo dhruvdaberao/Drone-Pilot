@@ -48,10 +48,37 @@ export class TrafficManager {
 
     const vehicleCount = 22;
 
+    // Shared soft contact shadow texture for vehicles
+    let shadowTexture: THREE.CanvasTexture | null = null;
+    if (typeof document !== "undefined") {
+      const canvas = document.createElement("canvas");
+      canvas.width = 64;
+      canvas.height = 128;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        const gradient = ctx.createRadialGradient(32, 64, 4, 32, 64, 46);
+        gradient.addColorStop(0, "rgba(12, 16, 24, 0.65)");
+        gradient.addColorStop(0.5, "rgba(12, 16, 24, 0.3)");
+        gradient.addColorStop(1, "rgba(12, 16, 24, 0)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 64, 128);
+        shadowTexture = new THREE.CanvasTexture(canvas);
+      }
+    }
+
+    const shadowGeo = new THREE.PlaneGeometry(2.0, 4.2);
+    shadowGeo.rotateX(-Math.PI / 2);
+    const shadowMat = new THREE.MeshBasicMaterial({
+      map: shadowTexture,
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+    });
+
     for (let i = 0; i < vehicleCount; i++) {
       const template = templates[i % templates.length].clone();
-      // True proportion scale (2.35x) for full vehicle clarity and visibility
-      template.scale.set(2.35, 2.35, 2.35);
+      // Realistic scale (1.18x) fitting road lanes and real car dimensions (~4.4m x 1.8m)
+      template.scale.set(1.18, 1.18, 1.18);
 
       // Find wheel meshes for rotation animation & enhance materials/shadows
       const wheels: THREE.Object3D[] = [];
@@ -82,35 +109,25 @@ export class TrafficManager {
         }
       });
 
-      // Ground ambient shadow plane
-      const shadowGeo = new THREE.PlaneGeometry(1.5, 3.0);
-      shadowGeo.rotateX(-Math.PI / 2);
-      const shadowMesh = new THREE.Mesh(
-        shadowGeo,
-        new THREE.MeshBasicMaterial({
-          color: 0x0a0a0a,
-          transparent: true,
-          opacity: 0.45,
-          depthWrite: false,
-        })
-      );
+      // Ground soft ambient shadow plane
+      const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
       shadowMesh.position.set(0, 0.03, 0);
       template.add(shadowMesh);
 
       // Front Headlight Glow
       const headLightMat = new THREE.MeshBasicMaterial({ color: 0xfffde0 });
-      const hlLeft = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.05), headLightMat);
+      const hlLeft = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.05), headLightMat);
       hlLeft.position.set(-0.45, 0.45, 1.1);
-      const hlRight = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.05), headLightMat);
+      const hlRight = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.05), headLightMat);
       hlRight.position.set(0.45, 0.45, 1.1);
       template.add(hlLeft);
       template.add(hlRight);
 
       // Rear Taillight Glow (Red)
       const tailLightMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
-      const tlLeft = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.05), tailLightMat);
+      const tlLeft = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.05), tailLightMat);
       tlLeft.position.set(-0.45, 0.45, -1.1);
-      const tlRight = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.05), tailLightMat);
+      const tlRight = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.05), tailLightMat);
       tlRight.position.set(0.45, 0.45, -1.1);
       template.add(tlLeft);
       template.add(tlRight);

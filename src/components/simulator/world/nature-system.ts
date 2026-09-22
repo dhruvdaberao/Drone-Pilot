@@ -53,7 +53,6 @@ export class NatureSystem {
     this.buildTrailFences(prng);
     this.buildWaterfallEnvironment();
     this.buildMeadowFlowers(prng);
-    this.buildStoneTerraces(prng);
   }
 
   // ----------------------------------------------------------------
