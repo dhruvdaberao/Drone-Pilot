@@ -9,11 +9,20 @@ export interface DroneSpecs {
 }
 
 export interface DroneModel {
-  id: DroneType;
+  id: string; // Unique ID for the preset (e.g. "aero-trainer-x4")
+  platformId: DroneType; // Maps to the 3D renderer (quadcopter, hexacopter, etc)
+  platformCategory: string; // "Multirotor", "Fixed-Wing", etc.
+  missionCategory: string; // "Training", "Agriculture", "Inspection", etc.
   name: string;
   tagline: string;
   description: string;
-  image: string; // e.g., "/drone1.png"
-  specs: DroneSpecs;
+  whyThisAircraft: string; // Educational explanation
+  image: string;
   badge: string;
+  
+  // High-level config overview for the info modal
+  baseMassKg: number;
+  batteryCells: number;
+  defaultPayloadKg: number;
+  sensors: string[];
 }

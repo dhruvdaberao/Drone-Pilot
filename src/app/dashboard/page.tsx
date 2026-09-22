@@ -4,20 +4,16 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ProtectedRoute } from "@/components/auth/route-guard";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { Drone3DViewer } from "@/components/dashboard/drone-3d-viewer";
 import { Button } from "@/components/ui/button";
-import { DRONES, DEFAULT_DRONE_STORAGE_KEY } from "@/lib/drones";
-import { DroneModel } from "@/types/drone";
-import { ArrowRight, Settings, Loader2, Target, Activity, ShieldCheck, Crosshair } from "lucide-react";
-import { listUserConfigurations } from "@/lib/digital-twin/digital-twin-storage";
+import { listUserConfigurations, setActiveDigitalTwin } from "@/lib/digital-twin/digital-twin-storage";
 import { DroneDigitalTwinConfiguration } from "@/types/drone-digital-twin";
 import { Space_Grotesk } from "next/font/google";
+import { Plane, Plus, Settings, Play, Calendar, Activity } from "lucide-react";
 
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["700"] });
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["500", "700"] });
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [selectedDrone, setSelectedDrone] = useState<DroneModel>(DRONES[0]);
   const [savedConfigs, setSavedConfigs] = useState<DroneDigitalTwinConfiguration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -33,181 +29,120 @@ export default function DashboardPage() {
       }
     }
     loadConfigs();
-
-    // Restore previous selection
-    try {
-      const urlDrone = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("drone") : null;
-      if (urlDrone) {
-        const found = DRONES.find((d) => d.id === urlDrone);
-        if (found) setSelectedDrone(found);
-      } else {
-        const stored = localStorage.getItem(DEFAULT_DRONE_STORAGE_KEY);
-        if (stored) {
-          const found = DRONES.find((d) => d.id === stored);
-          if (found) setSelectedDrone(found);
-        }
-      }
-    } catch {
-      // ignore
-    }
   }, []);
 
-  const handleSelectDrone = (drone: DroneModel) => {
-    setSelectedDrone(drone);
-    try {
-      localStorage.setItem(DEFAULT_DRONE_STORAGE_KEY, drone.id);
-    } catch {
-      // ignore
-    }
+  const handleCreateNew = () => {
+    router.push("/aircraft/select");
   };
 
-  const activeConfig = savedConfigs.find(c => c.identity.category === selectedDrone.id);
-
-  const handleConfigureTwin = () => {
-    router.push(`/configure?drone=${selectedDrone.id}`);
+  const handleEdit = (config: DroneDigitalTwinConfiguration) => {
+    setActiveDigitalTwin(config);
+    router.push(`/configure?drone=${config.identity.category}`);
   };
 
-  const handleContinue = () => {
-    router.push(`/fly/select?drone=${selectedDrone.id}`);
+  const handleFly = (config: DroneDigitalTwinConfiguration) => {
+    setActiveDigitalTwin(config);
+    router.push(`/fly/select?drone=${config.identity.category}&dt=${config.identity.id}`);
   };
 
   return (
     <ProtectedRoute>
-      <div className="relative min-h-screen w-full flex flex-col bg-gradient-to-b from-neutral-900 to-black text-white overflow-hidden font-sans">
-        <div className="absolute top-0 w-full z-50">
-          <DashboardHeader />
-        </div>
+      <div className="min-h-screen w-full flex flex-col bg-[#FAF7F2] text-neutral-900 overflow-x-hidden font-sans">
+        <DashboardHeader />
 
-        {/* Immersive Full-Screen 3D Viewer */}
-        <div className="absolute inset-0 z-0">
-          {/* Subtle gradient overlay to ensure text remains readable */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none z-10" />
-          <Drone3DViewer 
-            key={selectedDrone.id} // Re-mounts viewer to reset camera state on change
-            type={selectedDrone.id} 
-            isSelected={true} 
-            autoRotate={true}
-            interactive={true} 
-            className="w-full h-full"
-          />
-        </div>
-
-        {/* Overlay UI */}
-        <main className="relative z-20 flex-1 w-full h-full pt-28 pb-10 px-6 flex flex-col justify-between pointer-events-none">
-          
-          {/* Top Title Overlay */}
-          <div className="w-full flex justify-center mt-2 lg:mt-6">
-            <div className="relative inline-block animate-in slide-in-from-top-10 fade-in duration-700">
-              <h1 className={`${spaceGrotesk.className} text-5xl sm:text-7xl md:text-8xl font-extrabold tracking-[0.2em] text-white uppercase text-center`}>
-                {selectedDrone.name}
+        <main className="flex-1 w-full max-w-5xl mx-auto px-6 py-12 lg:py-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+            <div>
+              <h1 className={`${spaceGrotesk.className} text-4xl lg:text-5xl font-extrabold tracking-tight text-neutral-900 mb-2`}>
+                MY AIRCRAFT
               </h1>
+              <p className="text-neutral-500 text-sm md:text-base max-w-xl">
+                Manage your saved digital twin configurations. Select an aircraft to enter the simulation environment or modify its engineering parameters.
+              </p>
             </div>
+            <Button 
+              onClick={handleCreateNew}
+              className="bg-[#FF5500] hover:bg-neutral-900 text-white rounded-none px-6 py-6 font-bold tracking-widest text-xs uppercase transition-all flex items-center gap-2 shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              Create Aircraft
+            </Button>
           </div>
 
-          <div className="flex flex-col lg:flex-row items-end lg:items-center justify-between gap-8 max-w-[1400px] mx-auto w-full mb-4">
-            
-            {/* Left Column: Drone Technical Stats */}
-            <div className="flex flex-col gap-6 pointer-events-auto w-64">
-              {/* Platform Specs - HUD Style */}
-              <div key={`specs-${selectedDrone.id}`} className="animate-in slide-in-from-left-8 fade-in duration-500 delay-100 flex flex-col">
-                <h3 className="text-xs font-bold text-white tracking-widest uppercase mb-4 flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-[#FF5500]" /> 
-                  Platform Specs
-                </h3>
-                <div className="space-y-4 font-mono border-l-2 border-[#FF5500] pl-4">
-                  <div>
-                    <span className="block text-[10px] text-neutral-400 tracking-wider">PROPULSION</span>
-                    <span className="text-sm font-semibold text-white">{selectedDrone.specs.rotors} MOTORS</span>
-                  </div>
-                  <div>
-                    <span className="block text-[10px] text-neutral-400 tracking-wider">WEIGHT CLASS</span>
-                    <span className="text-sm font-semibold text-white">{selectedDrone.specs.weightClass}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[10px] text-neutral-400 tracking-wider">CERTIFICATION</span>
-                    <span className="text-sm font-semibold text-emerald-400 flex items-center gap-1.5">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      {selectedDrone.badge}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Drone Selection List - HUD Style */}
-              <div className="flex flex-col gap-2 mt-4">
-                {DRONES.map(drone => (
-                  <button
-                    key={drone.id}
-                    onClick={() => handleSelectDrone(drone)}
-                    className={`flex items-center gap-3 px-3 py-2 transition-all cursor-pointer text-left border-l-2 ${
-                      selectedDrone.id === drone.id 
-                      ? "border-[#FF5500] text-white" 
-                      : "border-transparent text-neutral-500 hover:text-white hover:border-white/30"
-                    }`}
-                  >
-                    <Crosshair className={`w-4 h-4 ${selectedDrone.id === drone.id ? "text-[#FF5500]" : "text-neutral-500"}`} />
-                    <span className="text-xs font-bold tracking-[0.15em] uppercase font-mono">{drone.name}</span>
-                  </button>
-                ))}
-              </div>
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <Activity className="w-8 h-8 animate-pulse text-neutral-300" />
+              <p className="text-xs font-mono uppercase tracking-widest text-neutral-400">Loading Fleet Data...</p>
             </div>
-
-            {/* Right Column / Bottom Action Area */}
-            <div className="w-full max-w-sm pointer-events-auto flex flex-col items-end text-right">
-              
-              {isLoading ? (
-                <div className="flex items-center justify-end gap-3">
-                  <span className="text-xs font-mono uppercase tracking-widest text-neutral-500">Syncing telemetry...</span>
-                  <Loader2 className="h-5 w-5 animate-spin text-[#FF5500]" />
-                </div>
-              ) : activeConfig ? (
-                <div key={`config-${selectedDrone.id}`} className="w-full flex flex-col items-end animate-in slide-in-from-right-8 fade-in duration-500 delay-200">
-                  <div className="flex flex-col items-end mb-6">
-                    <h2 className="text-lg font-bold tracking-widest uppercase mb-1 text-emerald-400">
-                      Ready for Flight
-                    </h2>
-                    <p className="text-xs text-neutral-300 font-mono">
-                      {activeConfig.massProperties.totalMassKg.toFixed(1)} KG MTOW • {activeConfig.battery.cellCount}S LIPO
-                    </p>
-                  </div>
-                  
-                  <div className="flex flex-col gap-3 w-full">
-                    <Button
-                      className="w-full h-14 bg-[#FF5500] hover:bg-white hover:text-black text-white text-sm font-bold tracking-widest uppercase shadow-[0_0_20px_rgba(255,85,0,0.5)] hover:shadow-[0_0_25px_rgba(255,255,255,0.8)] transition-all duration-300 rounded-none border border-[#FF5500] hover:border-white skew-x-[-10deg]"
-                      onClick={handleContinue}
-                    >
-                      <div className="skew-x-[10deg] flex items-center">
-                        INITIALIZE FLIGHT
-                        <ArrowRight className="w-5 h-5 ml-2" />
-                      </div>
-                    </Button>
-                    
-                    <button
-                      className="w-full flex items-center justify-end gap-2 text-neutral-400 hover:text-white transition-colors text-xs font-bold tracking-widest uppercase font-mono py-2"
-                      onClick={handleConfigureTwin}
-                    >
-                      CONFIGURE DIGITAL TWIN <Settings className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div key={`noconfig-${selectedDrone.id}`} className="w-full flex flex-col items-end animate-in slide-in-from-right-8 fade-in duration-500 delay-200">
-                  <p className="text-xs text-[#FF5500] mb-4 font-mono font-bold tracking-widest uppercase">Action Required</p>
-                  
-                  <Button
-                    className="w-full h-14 bg-white/5 hover:bg-[#FF5500] text-white border border-white/20 hover:border-[#FF5500] text-sm font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_25px_rgba(255,85,0,0.6)] backdrop-blur-sm transition-all duration-300 rounded-none skew-x-[-10deg]"
-                    onClick={handleConfigureTwin}
-                  >
-                    <div className="skew-x-[10deg] flex items-center gap-2">
-                      <Settings className="w-4 h-4" />
-                      CONFIGURE YOUR DRONE
+          ) : savedConfigs.length === 0 ? (
+            <div className="bg-white border border-neutral-200 rounded-xl p-12 text-center flex flex-col items-center justify-center">
+              <div className="w-16 h-16 bg-neutral-50 rounded-full flex items-center justify-center mb-4">
+                <Plane className="w-8 h-8 text-neutral-300" />
+              </div>
+              <h3 className="text-lg font-bold text-neutral-900 mb-2">No Aircraft Found</h3>
+              <p className="text-neutral-500 text-sm max-w-sm mb-6">
+                You haven't saved any digital twin configurations yet. Create your first aircraft to begin simulation.
+              </p>
+              <Button 
+                onClick={handleCreateNew}
+                variant="outline"
+                className="border-neutral-300 hover:border-[#FF5500] hover:text-[#FF5500] rounded-none font-mono text-xs uppercase tracking-widest"
+              >
+                Create Aircraft
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {savedConfigs.map(config => (
+                <div 
+                  key={config.identity.id}
+                  className="bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-6 group"
+                >
+                  <div className="flex items-center gap-5">
+                    <div className="w-12 h-12 bg-neutral-50 rounded-lg flex items-center justify-center border border-neutral-100 shrink-0 group-hover:border-[#FF5500]/20 transition-colors">
+                      <Plane className="w-6 h-6 text-neutral-400 group-hover:text-[#FF5500] transition-colors" />
                     </div>
-                  </Button>
+                    <div>
+                      <h3 className="font-bold text-neutral-900 text-lg flex items-center gap-3">
+                        {config.identity.name}
+                        {config.identity.version && (
+                          <span className="text-[10px] font-mono font-medium px-2 py-0.5 bg-neutral-100 text-neutral-500 rounded uppercase tracking-wider">
+                            v{config.identity.version}
+                          </span>
+                        )}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs text-neutral-500">
+                        <span className="font-mono">{config.identity.category.toUpperCase()}</span>
+                        <span className="text-neutral-300">•</span>
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="w-3 h-3" />
+                          Updated {new Date(config.metadata.lastModified).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <Button 
+                      variant="outline"
+                      onClick={() => handleEdit(config)}
+                      className="flex-1 sm:flex-none border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:border-neutral-900 rounded-lg bg-transparent text-xs font-semibold"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button 
+                      onClick={() => handleFly(config)}
+                      className="flex-1 sm:flex-none bg-[#FF5500] hover:bg-[#e04a00] text-white rounded-lg text-xs font-semibold shadow-sm"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Fly
+                    </Button>
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
-
-          </div>
+          )}
         </main>
       </div>
     </ProtectedRoute>

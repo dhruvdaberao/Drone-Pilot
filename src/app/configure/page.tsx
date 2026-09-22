@@ -21,8 +21,23 @@ export default function ConfigurePage() {
         {/* Dashboard Header */}
         <DashboardHeader />
 
+        {/* Step Indicator */}
+        <div className="w-full border-b border-neutral-100 bg-[#FAF7F2] relative z-10">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4 sm:gap-8 overflow-x-auto scrollbar-none text-[11px] font-bold tracking-widest text-neutral-400">
+            <span className="shrink-0">01 AIRCRAFT</span>
+            <span className="shrink-0 text-neutral-300">/</span>
+            <span className="text-[#FF5500] shrink-0">02 CONFIGURE</span>
+            <span className="shrink-0 text-neutral-300">/</span>
+            <span className="shrink-0">03 ENVIRONMENT</span>
+            <span className="shrink-0 text-neutral-300">/</span>
+            <span className="shrink-0">04 PREFLIGHT</span>
+            <span className="shrink-0 text-neutral-300">/</span>
+            <span className="shrink-0">05 FLIGHT</span>
+          </div>
+        </div>
+
         {/* Main Workstation Container */}
-        <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-12">
+        <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
           <DigitalTwinConfigurator />
         </main>
       </div>
