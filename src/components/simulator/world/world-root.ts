@@ -158,7 +158,7 @@ export class WorldRoot {
    * Master frame-by-frame simulation coordinator
    */
   public update(dt: number, elapsed: number, dronePos?: THREE.Vector3, thrust = 1.0) {
-    this.environment.update(dt, elapsed);
+    this.environment.update(dt, elapsed, dronePos);
     this.water.update(dt, elapsed);
     this.grass.update(dt, elapsed, dronePos);
     this.nature.update(dt, elapsed);

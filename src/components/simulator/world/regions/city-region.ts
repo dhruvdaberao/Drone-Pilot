@@ -83,22 +83,22 @@ export class CityRegion {
    */
   private async buildSkyscraperSkyline() {
     const skyscraperModels = [
-      "/models/commercial/Models/GLB%20format/building-skyscraper-a.glb",
-      "/models/commercial/Models/GLB%20format/building-skyscraper-b.glb",
-      "/models/commercial/Models/GLB%20format/building-skyscraper-c.glb",
-      "/models/commercial/Models/GLB%20format/building-skyscraper-d.glb",
-      "/models/commercial/Models/GLB%20format/building-skyscraper-e.glb",
+      "/models/commercial/building-skyscraper-a.glb",
+      "/models/commercial/building-skyscraper-b.glb",
+      "/models/commercial/building-skyscraper-c.glb",
+      "/models/commercial/building-skyscraper-d.glb",
+      "/models/commercial/building-skyscraper-e.glb",
     ];
 
     const commercialModels = [
-      "/models/commercial/Models/GLB%20format/building-a.glb",
-      "/models/commercial/Models/GLB%20format/building-c.glb",
-      "/models/commercial/Models/GLB%20format/building-e.glb",
-      "/models/commercial/Models/GLB%20format/building-g.glb",
-      "/models/commercial/Models/GLB%20format/building-i.glb",
-      "/models/commercial/Models/GLB%20format/building-k.glb",
-      "/models/commercial/Models/GLB%20format/building-m.glb",
-      "/models/commercial/Models/GLB%20format/building-n.glb",
+      "/models/commercial/building-a.glb",
+      "/models/commercial/building-c.glb",
+      "/models/commercial/building-e.glb",
+      "/models/commercial/building-g.glb",
+      "/models/commercial/building-i.glb",
+      "/models/commercial/building-k.glb",
+      "/models/commercial/building-m.glb",
+      "/models/commercial/building-n.glb",
     ];
 
     let skyTemplates: THREE.Group[] = [];

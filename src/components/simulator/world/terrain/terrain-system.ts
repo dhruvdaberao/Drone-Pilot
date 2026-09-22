@@ -50,17 +50,102 @@ export class TerrainSystem {
     geo.computeVertexNormals();
 
     const grassTex = TerrainTextures.getGrassTexture();
+    const rockTex = TerrainTextures.getRockTexture();
+    const forestTex = TerrainTextures.getForestFloorTexture();
+    const sandTex = TerrainTextures.getSandTexture();
+    const screeTex = TerrainTextures.getScreeTexture();
     const normalTex = TerrainTextures.getTerrainNormalMap();
 
     const mat = new THREE.MeshStandardMaterial({
       map: grassTex,
       normalMap: normalTex,
-      normalScale: new THREE.Vector2(0.8, 0.8),
+      normalScale: new THREE.Vector2(0.85, 0.85),
       vertexColors: true,
-      roughness: 0.82,
-      metalness: 0.05,
+      roughness: 0.85,
+      metalness: 0.04,
       flatShading: false,
     });
+
+    // Multi-material PBR splatting: blends meadow, forest floor, cliff rock, sand, and scree
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.uGrassMap = { value: grassTex };
+      shader.uniforms.uRockMap = { value: rockTex };
+      shader.uniforms.uForestMap = { value: forestTex };
+      shader.uniforms.uSandMap = { value: sandTex };
+      shader.uniforms.uScreeMap = { value: screeTex };
+
+      shader.vertexShader = `
+        varying vec3 vTerrainWorldPos;
+        varying vec3 vTerrainWorldNorm;
+        ${shader.vertexShader}
+      `;
+
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <worldpos_vertex>",
+        `
+        #include <worldpos_vertex>
+        vTerrainWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
+        vTerrainWorldNorm = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+        `
+      );
+
+      shader.fragmentShader = `
+        uniform sampler2D uGrassMap;
+        uniform sampler2D uRockMap;
+        uniform sampler2D uForestMap;
+        uniform sampler2D uSandMap;
+        uniform sampler2D uScreeMap;
+        varying vec3 vTerrainWorldPos;
+        varying vec3 vTerrainWorldNorm;
+        ${shader.fragmentShader}
+      `;
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <map_fragment>",
+        `
+        // 1. Slope factor (0 = flat horizontal, 1 = vertical cliff)
+        float slope = 1.0 - clamp(abs(vTerrainWorldNorm.y), 0.0, 1.0);
+        float rockWeight = smoothstep(0.24, 0.48, slope);
+
+        // 2. Shoreline sand: blends near water table (elevation < 2.5m)
+        float sandWeight = smoothstep(3.0, 0.5, vTerrainWorldPos.y);
+
+        // 3. Alpine mountain scree: transitions above 72m
+        float screeWeight = smoothstep(68.0, 115.0, vTerrainWorldPos.y);
+
+        // 4. Forest floor loam vs lush meadow turf from vertex color ratio
+        float forestWeight = clamp((vColor.r - vColor.g + 0.12) * 3.2, 0.0, 1.0);
+
+        // Multi-frequency world coordinate UV mapping
+        vec2 uvGrass = vTerrainWorldPos.xz * 0.045;
+        vec2 uvRock = vTerrainWorldPos.xz * 0.022;
+        vec2 uvForest = vTerrainWorldPos.xz * 0.035;
+        vec2 uvSand = vTerrainWorldPos.xz * 0.030;
+        vec2 uvScree = vTerrainWorldPos.xz * 0.028;
+
+        vec4 colGrass = texture2D(uGrassMap, uvGrass);
+        vec4 colRock = texture2D(uRockMap, uvRock);
+        vec4 colForest = texture2D(uForestMap, uvForest);
+        vec4 colSand = texture2D(uSandMap, uvSand);
+        vec4 colScree = texture2D(uScreeMap, uvScree);
+
+        // Blend lowland meadow grass with rich dark forest loam
+        vec4 baseGround = mix(colGrass, colForest, forestWeight);
+
+        // Blend in warm coastal and riverbed sand near sea level
+        baseGround = mix(baseGround, colSand, sandWeight);
+
+        // Blend in high-elevation alpine scree & talus
+        baseGround = mix(baseGround, colScree, screeWeight * (1.0 - rockWeight));
+
+        // Cliff rock dominates on steep slopes and escarpments
+        vec4 finalAlbedo = mix(baseGround, colRock, rockWeight);
+
+        // Modulate with vertex colors for regional macro color harmony
+        diffuseColor.rgb = finalAlbedo.rgb * (vColor * 1.32);
+        `
+      );
+    };
 
     this.terrainMesh = new THREE.Mesh(geo, mat);
     this.terrainMesh.receiveShadow = true;

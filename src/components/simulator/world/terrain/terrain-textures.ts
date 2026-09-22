@@ -7,8 +7,12 @@ import * as THREE from "three";
 
 export class TerrainTextures {
   private static grassTexture: THREE.CanvasTexture | null = null;
+  private static forestTexture: THREE.CanvasTexture | null = null;
   private static rockTexture: THREE.CanvasTexture | null = null;
+  private static screeTexture: THREE.CanvasTexture | null = null;
   private static sandTexture: THREE.CanvasTexture | null = null;
+  private static wetSandTexture: THREE.CanvasTexture | null = null;
+  private static dirtTexture: THREE.CanvasTexture | null = null;
   private static tarmacTexture: THREE.CanvasTexture | null = null;
   private static helipadTexture: THREE.CanvasTexture | null = null;
   private static normalTexture: THREE.CanvasTexture | null = null;
@@ -69,6 +73,188 @@ export class TerrainTextures {
     tex.repeat.set(120, 120);
     tex.colorSpace = THREE.SRGBColorSpace;
     this.grassTexture = tex;
+    return tex;
+  }
+
+  /**
+   * Rich forest loam soil with fallen pine needles, leaf mulch, and moss
+   */
+  public static getForestFloorTexture(): THREE.CanvasTexture {
+    if (this.forestTexture) return this.forestTexture;
+
+    const size = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+
+    if (ctx) {
+      // Dark earthy brown-green humus loam base
+      ctx.fillStyle = "#261d15";
+      ctx.fillRect(0, 0, size, size);
+
+      // Organic soil tones
+      const soilTones = ["#1e1610", "#2d2319", "#382c1f", "#222a18", "#1c2214", "#34281d"];
+      for (let i = 0; i < 35000; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        ctx.fillStyle = soilTones[Math.floor(Math.random() * soilTones.length)];
+        ctx.fillRect(x, y, 1.5 + Math.random() * 2, 1.5 + Math.random() * 2);
+      }
+
+      // Fallen pine needles (amber-brown thin angled strokes)
+      ctx.lineWidth = 1.2;
+      for (let i = 0; i < 18000; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        const len = 3 + Math.random() * 6;
+        const ang = Math.random() * Math.PI * 2;
+        ctx.strokeStyle = Math.random() > 0.4 ? "#6b4423" : "#8c5828";
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.cos(ang) * len, y + Math.sin(ang) * len);
+        ctx.stroke();
+      }
+
+      // Soft emerald velvet moss patches
+      ctx.fillStyle = "rgba(42, 74, 28, 0.45)";
+      for (let i = 0; i < 600; i++) {
+        const cx = Math.random() * size;
+        const cy = Math.random() * size;
+        const r = 2.0 + Math.random() * 5.0;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(80, 80);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    this.forestTexture = tex;
+    return tex;
+  }
+
+  /**
+   * Alpine scree, loose gravel, talus, and fractured mountain slate
+   */
+  public static getScreeTexture(): THREE.CanvasTexture {
+    if (this.screeTexture) return this.screeTexture;
+
+    const size = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+
+    if (ctx) {
+      // Weathered slate gray base
+      ctx.fillStyle = "#636a73";
+      ctx.fillRect(0, 0, size, size);
+
+      // Varied gravel and broken stone fragments
+      const stoneTones = ["#4b5159", "#757e8a", "#8c96a3", "#59606b", "#9eaab8", "#3f444a"];
+      for (let i = 0; i < 45000; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        const w = 1.5 + Math.random() * 3.5;
+        const h = 1.5 + Math.random() * 3.0;
+        ctx.fillStyle = stoneTones[Math.floor(Math.random() * stoneTones.length)];
+        ctx.fillRect(x, y, w, h);
+      }
+
+      // Dark shadow crevices between scree pebbles
+      ctx.fillStyle = "rgba(20, 24, 28, 0.35)";
+      for (let i = 0; i < 25000; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        ctx.fillRect(x, y, 1.2, 1.2);
+      }
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(60, 60);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    this.screeTexture = tex;
+    return tex;
+  }
+
+  /**
+   * Dark reflective wet sand along tidal shorelines and riverbanks
+   */
+  public static getWetSandTexture(): THREE.CanvasTexture {
+    if (this.wetSandTexture) return this.wetSandTexture;
+
+    const size = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+
+    if (ctx) {
+      // Dark saturated sand base
+      ctx.fillStyle = "#8a7550";
+      ctx.fillRect(0, 0, size, size);
+
+      const tones = ["#796642", "#947f59", "#6b5837", "#9f8a62", "#5e4c2f"];
+      for (let i = 0; i < 40000; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        ctx.fillStyle = tones[Math.floor(Math.random() * tones.length)];
+        ctx.fillRect(x, y, 1.5, 1.5);
+      }
+
+      // Fine wave ripple lines
+      for (let y = 0; y < size; y += 12) {
+        ctx.fillStyle = "rgba(60, 48, 30, 0.18)";
+        ctx.fillRect(0, y + Math.sin(y * 0.05) * 4, size, 2);
+      }
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(60, 60);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    this.wetSandTexture = tex;
+    return tex;
+  }
+
+  /**
+   * Warm trail dirt, earthen soil, and road shoulder gravel
+   */
+  public static getDirtTexture(): THREE.CanvasTexture {
+    if (this.dirtTexture) return this.dirtTexture;
+
+    const size = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+
+    if (ctx) {
+      ctx.fillStyle = "#5c4835";
+      ctx.fillRect(0, 0, size, size);
+
+      const dirtTones = ["#4d3c2b", "#6b543e", "#785f47", "#443425", "#856a50"];
+      for (let i = 0; i < 35000; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        ctx.fillStyle = dirtTones[Math.floor(Math.random() * dirtTones.length)];
+        ctx.fillRect(x, y, 2, 2);
+      }
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(60, 60);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    this.dirtTexture = tex;
     return tex;
   }
 

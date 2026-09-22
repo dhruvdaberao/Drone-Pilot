@@ -10,15 +10,15 @@ import type { DistrictType } from "./city-district-system";
 
 // GLB paths for road/street furniture
 const GLB_PATHS = {
-  streetlight: "/models/roads/Models/GLB%20format/light-curved.glb",
-  streetlightDouble: "/models/roads/Models/GLB%20format/light-curved-double.glb",
-  trafficLight: "/models/roads/Models/GLB%20format/traffic-light.glb",
-  stopSign: "/models/roads/Models/GLB%20format/road-sign-stop.glb",
-  warningSign: "/models/roads/Models/GLB%20format/road-sign-warning.glb",
-  streetSign: "/models/roads/Models/GLB%20format/road-sign-street.glb",
-  constructionCone: "/models/roads/Models/GLB%20format/construction-cone.glb",
-  dumpster: "/models/roads/Models/GLB%20format/dumpster.glb",
-  electricityPole: "/models/roads/Models/GLB%20format/electricity-pole-single.glb",
+  streetlight: "/models/roads/light-curved.glb",
+  streetlightDouble: "/models/roads/light-curved-double.glb",
+  trafficLight: "/models/roads/traffic-light.glb",
+  stopSign: "/models/roads/road-sign-stop.glb",
+  warningSign: "/models/roads/road-sign-warning.glb",
+  streetSign: "/models/roads/road-sign-street.glb",
+  constructionCone: "/models/roads/construction-cone.glb",
+  dumpster: "/models/roads/dumpster.glb",
+  electricityPole: "/models/roads/electricity-pole-single.glb",
 } as const;
 
 export class StreetFurniture {

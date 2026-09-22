@@ -49,8 +49,25 @@ This document records the licensing, provenance, and legal clearance for all 3D 
 * **Location in Project**: `public/models/commercial/`
 * **Author / Source**: [Kenney](https://kenney.nl/)
 * **License**: Creative Commons Zero (CC0 1.0 Universal) — Public Domain Dedication.
-* **Verification**: Confirmed in `public/models/commercial/License.txt`.
-* **Usage**: Architectural skyscraper and commercial low-rise models forming the Downtown Metropolis district skyline in `city-region.ts`.
+* **Usage**: Architectural skyscraper and commercial low-rise models forming the Downtown Metropolis district skyline in `city-district-system.ts`, `city-region.ts`, and `building-generator.ts`.
+
+### Kenney Industrial Kit
+* **Location in Project**: `public/models/industrial/`
+* **Author / Source**: [Kenney](https://kenney.nl/)
+* **License**: Creative Commons Zero (CC0 1.0 Universal) — Public Domain Dedication.
+* **Usage**: Industrial warehouses, tanks, chimneys, and transition structures in `building-generator.ts`.
+
+### Kenney Roads & Street Furniture Kit
+* **Location in Project**: `public/models/roads/`
+* **Author / Source**: [Kenney](https://kenney.nl/)
+* **License**: Creative Commons Zero (CC0 1.0 Universal) — Public Domain Dedication.
+* **Usage**: Streetlights, curved double streetlights, traffic signals, stop signs, warning signs, cones, dumpsters, and utility poles in `street-furniture.ts`.
+
+### Kenney Vehicles Kit
+* **Location in Project**: `public/models/vehicles/`
+* **Author / Source**: [Kenney](https://kenney.nl/)
+* **License**: Creative Commons Zero (CC0 1.0 Universal) — Public Domain Dedication.
+* **Usage**: Sedans, SUVs, police interceptors, ambulances, taxis, vans, and commercial trucks in `traffic-manager.ts` and `parking-system.ts`.
 
 ---
 

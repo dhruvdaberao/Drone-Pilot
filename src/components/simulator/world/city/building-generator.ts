@@ -16,53 +16,56 @@ export interface BuildingPlacement {
   districtType: DistrictType;
 }
 
-// Kenney GLB paths (URL-encoded for spaces in directory name)
+// Correct Kenney asset paths — all GLBs are directly in /models/<category>/
 const SKYSCRAPER_GLBS = [
-  "/models/commercial/Models/GLB%20format/building-skyscraper-a.glb",
-  "/models/commercial/Models/GLB%20format/building-skyscraper-b.glb",
-  "/models/commercial/Models/GLB%20format/building-skyscraper-c.glb",
-  "/models/commercial/Models/GLB%20format/building-skyscraper-d.glb",
-  "/models/commercial/Models/GLB%20format/building-skyscraper-e.glb",
+  "/models/commercial/building-skyscraper-a.glb",
+  "/models/commercial/building-skyscraper-b.glb",
+  "/models/commercial/building-skyscraper-c.glb",
+  "/models/commercial/building-skyscraper-d.glb",
+  "/models/commercial/building-skyscraper-e.glb",
 ];
 
 const COMMERCIAL_GLBS = [
-  "/models/commercial/Models/GLB%20format/building-a.glb",
-  "/models/commercial/Models/GLB%20format/building-b.glb",
-  "/models/commercial/Models/GLB%20format/building-c.glb",
-  "/models/commercial/Models/GLB%20format/building-d.glb",
-  "/models/commercial/Models/GLB%20format/building-e.glb",
-  "/models/commercial/Models/GLB%20format/building-f.glb",
-  "/models/commercial/Models/GLB%20format/building-g.glb",
-  "/models/commercial/Models/GLB%20format/building-h.glb",
-  "/models/commercial/Models/GLB%20format/building-i.glb",
-  "/models/commercial/Models/GLB%20format/building-j.glb",
-  "/models/commercial/Models/GLB%20format/building-k.glb",
-  "/models/commercial/Models/GLB%20format/building-l.glb",
-  "/models/commercial/Models/GLB%20format/building-m.glb",
-  "/models/commercial/Models/GLB%20format/building-n.glb",
+  "/models/commercial/building-a.glb",
+  "/models/commercial/building-b.glb",
+  "/models/commercial/building-c.glb",
+  "/models/commercial/building-d.glb",
+  "/models/commercial/building-e.glb",
+  "/models/commercial/building-f.glb",
+  "/models/commercial/building-g.glb",
+  "/models/commercial/building-h.glb",
+  "/models/commercial/building-i.glb",
+  "/models/commercial/building-j.glb",
+  "/models/commercial/building-k.glb",
+  "/models/commercial/building-l.glb",
+  "/models/commercial/building-m.glb",
+  "/models/commercial/building-n.glb",
 ];
 
 const LOW_DETAIL_GLBS = [
-  "/models/commercial/Models/GLB%20format/low-detail-building-a.glb",
-  "/models/commercial/Models/GLB%20format/low-detail-building-b.glb",
-  "/models/commercial/Models/GLB%20format/low-detail-building-c.glb",
-  "/models/commercial/Models/GLB%20format/low-detail-building-d.glb",
-  "/models/commercial/Models/GLB%20format/low-detail-building-e.glb",
-  "/models/commercial/Models/GLB%20format/low-detail-building-f.glb",
-  "/models/commercial/Models/GLB%20format/low-detail-building-g.glb",
-  "/models/commercial/Models/GLB%20format/low-detail-building-h.glb",
-  "/models/commercial/Models/GLB%20format/low-detail-building-wide-a.glb",
-  "/models/commercial/Models/GLB%20format/low-detail-building-wide-b.glb",
+  "/models/commercial/low-detail-building-a.glb",
+  "/models/commercial/low-detail-building-b.glb",
+  "/models/commercial/low-detail-building-c.glb",
+  "/models/commercial/low-detail-building-d.glb",
+  "/models/commercial/low-detail-building-e.glb",
+  "/models/commercial/low-detail-building-f.glb",
+  "/models/commercial/low-detail-building-g.glb",
+  "/models/commercial/low-detail-building-h.glb",
+  "/models/commercial/low-detail-building-wide-a.glb",
+  "/models/commercial/low-detail-building-wide-b.glb",
 ];
 
 const INDUSTRIAL_GLBS = [
-  "/models/industrial/Models/GLB%20format/building-a.glb",
-  "/models/industrial/Models/GLB%20format/building-b.glb",
-  "/models/industrial/Models/GLB%20format/building-c.glb",
-  "/models/industrial/Models/GLB%20format/building-d.glb",
-  "/models/industrial/Models/GLB%20format/building-e.glb",
-  "/models/industrial/Models/GLB%20format/building-f.glb",
-  "/models/industrial/Models/GLB%20format/building-g.glb",
+  "/models/industrial/building-a.glb",
+  "/models/industrial/building-b.glb",
+  "/models/industrial/building-c.glb",
+  "/models/industrial/building-d.glb",
+  "/models/industrial/building-e.glb",
+  "/models/industrial/building-f.glb",
+  "/models/industrial/building-g.glb",
+  "/models/industrial/building-h.glb",
+  "/models/industrial/building-i.glb",
+  "/models/industrial/building-j.glb",
 ];
 
 // Material palette for procedural fallback buildings

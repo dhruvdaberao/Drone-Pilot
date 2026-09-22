@@ -7,14 +7,14 @@ import * as THREE from "three";
 import { AssetManager } from "../asset-manager";
 
 const PARKED_VEHICLE_GLBS = [
-  "/models/vehicles/Models/GLB%20format/sedan.glb",
-  "/models/vehicles/Models/GLB%20format/suv.glb",
-  "/models/vehicles/Models/GLB%20format/hatchback-sports.glb",
-  "/models/vehicles/Models/GLB%20format/van.glb",
-  "/models/vehicles/Models/GLB%20format/sedan-sports.glb",
-  "/models/vehicles/Models/GLB%20format/suv-luxury.glb",
-  "/models/vehicles/Models/GLB%20format/taxi.glb",
-  "/models/vehicles/Models/GLB%20format/truck.glb",
+  "/models/vehicles/sedan.glb",
+  "/models/vehicles/suv.glb",
+  "/models/vehicles/hatchback-sports.glb",
+  "/models/vehicles/van.glb",
+  "/models/vehicles/sedan-sports.glb",
+  "/models/vehicles/suv-luxury.glb",
+  "/models/vehicles/taxi.glb",
+  "/models/vehicles/truck.glb",
 ] as const;
 
 // Deterministic hash for consistent parking
