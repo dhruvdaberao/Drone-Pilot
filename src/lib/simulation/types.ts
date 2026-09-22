@@ -98,6 +98,7 @@ export interface EnvironmentState {
   rainIntensity: "off" | "light" | "moderate" | "heavy";
   visibility: "clear" | "hazy" | "foggy";
   timeOfDay: TimeOfDay;
+  turbulence?: number; // 0.0 to 1.0 (calm to severe atmospheric turbulence)
 }
 
 export interface TelemetryState {
@@ -112,17 +113,33 @@ export interface TelemetryState {
   batteryLevel: number; // 0 - 100 %
   batteryVoltage?: number; // V
   batteryCurrentAmps?: number; // A
+  batteryPowerWatts?: number; // W
   flightTimeSeconds: number;
   flightMode: FlightMode;
   isArmed: boolean;
   rotorRpmPercent: number; // 0 - 100 %
   motorOutputs?: number[]; // [0.0 - 1.0] per motor
+  motorHealths?: number[]; // [0.0 - 1.0] health per motor
+  motorRpms?: number[]; // actual RPM per motor
   distanceFromHome: number; // meters
   flightPath: Array<{ x: number; z: number }>;
   payloadMassKg?: number;
+  totalMassKg?: number;
   isCrashed?: boolean;
   isCeilingLimitReached?: boolean;
   isGroundLimitReached?: boolean;
+  sensorHealth?: {
+    gps: boolean;
+    imu: boolean;
+    baro: boolean;
+    compass: boolean;
+  };
+  windVector?: {
+    speedMs: number;
+    directionDeg: number;
+    gustMs: number;
+  };
+  ambientTemperatureC?: number;
 }
 
 export interface PhysicsDebugTelemetry {
@@ -146,9 +163,12 @@ export interface EducationalEvent {
   id: string;
   title: string;
   message: string;
+  whatHappened?: string;
+  whyItHappened?: string;
+  whatEffectItCaused?: string;
+  recommendedAction?: string;
   cause?: string;
   effect?: string;
-  recommendedAction?: string;
   severity: "info" | "success" | "warning" | "error";
   timestamp: number;
 }

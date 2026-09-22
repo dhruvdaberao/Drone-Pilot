@@ -7,6 +7,7 @@
 import { evaluateIslandElevation } from "./terrain-math";
 import { HELIPADS } from "./helipad-definitions";
 import { EnvironmentBiome } from "./environment-asset-registry";
+import { getDistanceToCoast } from "./coastline-math";
 
 export const WORLD_SEED = 421337;
 
@@ -213,9 +214,13 @@ function distToSegment(px: number, pz: number, x1: number, z1: number, x2: numbe
  * (Ocean, Crystal Lake, Mountain Waterfall plunge pool, or Winding River corridor)
  */
 export function isWaterLocation(x: number, z: number, margin = 2.0): boolean {
-  // 1. Ocean Water (elevation threshold accounting for animated wave crests)
+  // 1. Ocean Water (distance to coast or low elevation near coast)
+  const distCoast = getDistanceToCoast(x, z);
+  if (distCoast <= margin) {
+    return true;
+  }
   const elev = evaluateIslandElevation(x, z).elevation;
-  if (elev < 0.65 + margin * 0.1) {
+  if (elev <= 0.25) {
     return true;
   }
 
@@ -291,7 +296,7 @@ export function getBiomeAt(x: number, z: number): BiomeSample {
   const slopeDegrees = computeTerrainSlope(x, z);
 
   // Distances to major hydrologic and landmark features
-  const distCoast = Math.max(0, 1120 - Math.hypot(x, z)); // approximation of distance to coast
+  const distCoast = Math.max(0, getDistanceToCoast(x, z));
   const distLake = Math.hypot(x - (-320), z - (-260));
   
   // River corridor: runs roughly from (-300, -220) down through (-150, 150) to (-80, 840)

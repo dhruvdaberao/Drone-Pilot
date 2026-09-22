@@ -56,6 +56,12 @@ import {
   buildRuntimeStateFromTelemetry,
 } from "@/lib/digital-twin/adapter";
 import { DigitalTwinHUD } from "./debug/digital-twin-hud";
+import { FaultInjectionPanel } from "./fault-injection-panel";
+import { EducationalBanner } from "./educational-banner";
+import { ScenarioSelectorModal } from "./scenario-selector-modal";
+import { EducationalEventEngine } from "@/lib/simulation/educational-event-engine";
+import { TrainingScenario } from "@/lib/simulation/scenario-presets";
+import { EducationalEvent } from "@/lib/simulation/types";
 
 function getWindExposure(x: number, z: number): number {
   for (const r of REGION_LIST) {
@@ -254,6 +260,29 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
   const [isDigitalTwinHUDOpen, setIsDigitalTwinHUDOpen] = useState(false);
   const activeDtRef = useRef<DroneDigitalTwinConfiguration | null>(null);
 
+  // Phase 5: Fault Injection, Scenarios & Educational Event System
+  const [isFaultPanelOpen, setIsFaultPanelOpen] = useState(false);
+  const [isScenarioModalOpen, setIsScenarioModalOpen] = useState(false);
+  const [motorHealths, setMotorHealths] = useState<number[]>([1, 1, 1, 1, 1, 1, 1, 1]);
+  const [sensorHealth, setSensorHealth] = useState({
+    gps: true,
+    imu: true,
+    baro: true,
+    compass: true,
+  });
+  const [payloadMassKg, setPayloadMassKg] = useState(0.0);
+  const [activeScenarioId, setActiveScenarioId] = useState<string>("normal-cruise");
+
+  // Educational Event Engine
+  const [currentEduEvent, setCurrentEduEvent] = useState<EducationalEvent | null>(null);
+  const [eduEventHistory, setEduEventHistory] = useState<EducationalEvent[]>([]);
+  const eduEngineRef = useRef<EducationalEventEngine>(
+    new EducationalEventEngine((event) => {
+      setCurrentEduEvent(event);
+      setEduEventHistory((prev) => [event, ...prev.slice(0, 29)]);
+    })
+  );
+
   // Stable loading ready callback
   const handleLoadingReady = useCallback(() => {
     setIsLoading(false);
@@ -398,6 +427,86 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       setEnvState({ ...physicsEngineRef.current.environment.getState() });
     }
   }, []);
+
+  // Phase 5: Fault Injection & Manipulation Handlers
+  const handleSetMotorHealth = useCallback((index: number, health: number) => {
+    setMotorHealths((prev) => {
+      const next = [...prev];
+      next[index] = health;
+      return next;
+    });
+    physicsEngineRef.current?.setMotorHealth(index, health);
+  }, []);
+
+  const handleToggleSensor = useCallback((sensor: "gps" | "imu" | "baro" | "compass") => {
+    setSensorHealth((prev) => {
+      const next = { ...prev, [sensor]: !prev[sensor] };
+      physicsEngineRef.current?.setSensorHealth({ [sensor]: next[sensor] });
+      return next;
+    });
+  }, []);
+
+  const handleSetPayloadMass = useCallback((massKg: number) => {
+    setPayloadMassKg(massKg);
+    physicsEngineRef.current?.setPayloadMass(massKg);
+  }, []);
+
+  const handleResetAllFaults = useCallback(() => {
+    const nominal = [1, 1, 1, 1, 1, 1, 1, 1];
+    setMotorHealths(nominal);
+    const nominalSensors = { gps: true, imu: true, baro: true, compass: true };
+    setSensorHealth(nominalSensors);
+    setPayloadMassKg(0.0);
+    if (physicsEngineRef.current) {
+      physicsEngineRef.current.motorHealth.fill(1.0);
+      physicsEngineRef.current.motorOverrides.fill(null);
+      physicsEngineRef.current.setSensorHealth(nominalSensors);
+      physicsEngineRef.current.setPayloadMass(0.0);
+      physicsEngineRef.current.setTurbulence(0.0);
+    }
+  }, []);
+
+  const handleSelectScenario = useCallback(
+    (scenario: TrainingScenario) => {
+      setActiveScenarioId(scenario.id);
+      handleResetAllFaults();
+
+      if (scenario.environment) {
+        handleUpdateEnvironment(scenario.environment);
+        if (scenario.environment.preset) {
+          handleApplyWeatherPreset(scenario.environment.preset);
+        }
+      }
+
+      if (scenario.faults.motorHealth) {
+        Object.entries(scenario.faults.motorHealth).forEach(([idxStr, h]) => {
+          handleSetMotorHealth(Number(idxStr), h);
+        });
+      }
+
+      if (scenario.faults.sensorHealth) {
+        Object.entries(scenario.faults.sensorHealth).forEach(([sensor, healthy]) => {
+          setSensorHealth((prev) => ({ ...prev, [sensor]: healthy }));
+          physicsEngineRef.current?.setSensorHealth({ [sensor]: healthy });
+        });
+      }
+
+      if (scenario.faults.payloadMassKg !== undefined) {
+        handleSetPayloadMass(scenario.faults.payloadMassKg);
+      }
+
+      if (scenario.faults.batteryInitialSocPercent !== undefined && physicsEngineRef.current) {
+        physicsEngineRef.current.battery.reset(scenario.faults.batteryInitialSocPercent);
+      }
+    },
+    [
+      handleResetAllFaults,
+      handleUpdateEnvironment,
+      handleApplyWeatherPreset,
+      handleSetMotorHealth,
+      handleSetPayloadMass,
+    ]
+  );
 
   // Post-Flight Analysis Handlers
   const handleManualDebrief = useCallback(() => {
@@ -710,6 +819,15 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
             buildRuntimeStateFromTelemetry(activeDtRef.current, curTelemetry, physics.motorOutputs)
           );
         }
+
+        // Phase 5: Educational Event Detection
+        eduEngineRef.current.evaluate(
+          curTelemetry,
+          physics.environment.getState(),
+          physics.motorHealth,
+          physics.sensorHealth,
+          physics.payloadMass
+        );
       }
     };
 
@@ -864,15 +982,72 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         frames={replayFrames}
       />
 
-      {/* Floating Toggle for Digital Twin Telemetry HUD */}
-      <button
-        type="button"
-        onClick={() => setIsDigitalTwinHUDOpen((prev) => !prev)}
-        className="fixed top-3 left-28 sm:left-32 z-30 px-3 py-1.5 rounded-xl bg-neutral-900/85 hover:bg-neutral-900 border border-neutral-700 text-white text-[11px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-lg backdrop-blur-sm transition-all hover:border-[#FF5500]"
-      >
-        <span className="w-2 h-2 rounded-full bg-[#FF5500] animate-pulse" />
-        <span>DIGITAL TWIN HUD</span>
-      </button>
+      {/* Floating Toolbar for Educational Scenarios, Faults & Digital Twin */}
+      <div className="fixed top-3 left-28 sm:left-32 z-30 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setIsScenarioModalOpen(true)}
+          className="px-2.5 py-1.5 rounded-xl bg-neutral-900/90 hover:bg-neutral-900 border border-neutral-700 hover:border-emerald-500 text-white text-[11px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-lg backdrop-blur-sm transition-all"
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="hidden sm:inline">TRAINING</span> SCENARIOS
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsFaultPanelOpen((prev) => !prev)}
+          className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-lg backdrop-blur-sm transition-all ${
+            motorHealths.some((h) => h < 0.9) || !sensorHealth.gps || !sensorHealth.imu || !sensorHealth.baro || !sensorHealth.compass || payloadMassKg > 0
+              ? "bg-rose-950/90 border-rose-500 text-rose-200 animate-pulse"
+              : "bg-neutral-900/90 hover:bg-neutral-900 border-neutral-700 hover:border-rose-500 text-white"
+          }`}
+        >
+          <span className={`w-2 h-2 rounded-full ${
+            motorHealths.some((h) => h < 0.9) || !sensorHealth.gps ? "bg-rose-500" : "bg-neutral-400"
+          }`} />
+          <span>FAULTS</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsDigitalTwinHUDOpen((prev) => !prev)}
+          className="px-2.5 py-1.5 rounded-xl bg-neutral-900/90 hover:bg-neutral-900 border border-neutral-700 hover:border-[#FF5500] text-white text-[11px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-lg backdrop-blur-sm transition-all"
+        >
+          <span className="w-2 h-2 rounded-full bg-[#FF5500] animate-pulse" />
+          <span>DIGITAL TWIN</span>
+        </button>
+      </div>
+
+      {/* Real-Time Aeronautical Cause & Effect Banner */}
+      <EducationalBanner
+        currentEvent={currentEduEvent}
+        history={eduEventHistory}
+        onDismiss={() => setCurrentEduEvent(null)}
+        onClearHistory={() => setEduEventHistory([])}
+      />
+
+      {/* Fault Injection Benchmark Panel */}
+      <FaultInjectionPanel
+        isOpen={isFaultPanelOpen}
+        onClose={() => setIsFaultPanelOpen(false)}
+        motorCount={physicsEngineRef.current?.def.motorCount || 4}
+        motorHealths={motorHealths}
+        onSetMotorHealth={handleSetMotorHealth}
+        sensorHealth={sensorHealth}
+        onToggleSensor={handleToggleSensor}
+        payloadMassKg={payloadMassKg}
+        maxPayloadKg={physicsEngineRef.current?.def.payloadCapacity || 4.0}
+        onSetPayloadMass={handleSetPayloadMass}
+        onResetAllFaults={handleResetAllFaults}
+      />
+
+      {/* Preset Training Scenarios Modal */}
+      <ScenarioSelectorModal
+        isOpen={isScenarioModalOpen}
+        onClose={() => setIsScenarioModalOpen(false)}
+        onSelectScenario={handleSelectScenario}
+        activeScenarioId={activeScenarioId}
+      />
 
       {/* Digital Twin Live Telemetry Drawer */}
       {activeDigitalTwin && digitalTwinRuntime && (

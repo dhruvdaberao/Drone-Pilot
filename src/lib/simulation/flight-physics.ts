@@ -20,8 +20,8 @@ import { EnvironmentModel } from "./environment-model";
 import { checkObstacleCollision } from "./obstacles";
 
 export class FlightPhysicsEngine {
-  private def: DroneDefinition;
-  private battery: BatteryModel;
+  public def: DroneDefinition;
+  public battery: BatteryModel;
   public environment: EnvironmentModel;
 
   // Rigid Body State
@@ -64,6 +64,19 @@ export class FlightPhysicsEngine {
   public isAutoLanding = false;
   public payloadMass = 0.0; // kg
 
+  // Phase 5: Individual Motor Health & Overrides (0.0 to 1.0)
+  public motorHealth: number[] = [1, 1, 1, 1, 1, 1, 1, 1];
+  public motorOverrides: Array<number | null> = [null, null, null, null, null, null, null, null];
+
+  // Phase 5: Avionics Sensor Health & Fault States
+  public sensorHealth = {
+    gps: true,
+    imu: true,
+    baro: true,
+    compass: true,
+  };
+  public turbulenceFactor = 0.0;
+
   // Motor outputs [0.0 - 1.0]
   public motorOutputs: number[] = [0, 0, 0, 0];
   public rotorRpm = 0;
@@ -92,6 +105,26 @@ export class FlightPhysicsEngine {
 
   public setPayloadMass(kg: number) {
     this.payloadMass = Math.max(0, Math.min(this.def.payloadCapacity * 1.5, kg));
+  }
+
+  public setMotorHealth(motorIndex: number, health: number) {
+    if (motorIndex >= 0 && motorIndex < this.motorHealth.length) {
+      this.motorHealth[motorIndex] = Math.max(0, Math.min(1.0, health));
+    }
+  }
+
+  public setMotorOverride(motorIndex: number, override: number | null) {
+    if (motorIndex >= 0 && motorIndex < this.motorOverrides.length) {
+      this.motorOverrides[motorIndex] = override !== null ? Math.max(0, Math.min(1.0, override)) : null;
+    }
+  }
+
+  public setSensorHealth(sensors: Partial<{ gps: boolean; imu: boolean; baro: boolean; compass: boolean }>) {
+    this.sensorHealth = { ...this.sensorHealth, ...sensors };
+  }
+
+  public setTurbulence(turbulence: number) {
+    this.turbulenceFactor = Math.max(0, Math.min(1.0, turbulence));
   }
 
   public setEnvironment(env: EnvironmentState) {
@@ -278,6 +311,32 @@ export class FlightPhysicsEngine {
       this.def.motors
     );
 
+    // Phase 5: Apply individual motor health degradation & manual RPM/throttle overrides
+    for (let i = 0; i < this.motorOutputs.length; i++) {
+      const h = this.motorHealth[i] !== undefined ? this.motorHealth[i] : 1.0;
+      const override = this.motorOverrides[i] !== undefined ? this.motorOverrides[i] : null;
+      const nominalOutput = override !== null ? override : this.motorOutputs[i];
+      this.motorOutputs[i] = nominalOutput * Math.max(0, h);
+    }
+
+    // Phase 5: Calculate physical asymmetric torque from unequal motor thrusts
+    let asymTorqueRoll = 0;
+    let asymTorquePitch = 0;
+    const maxThrustPerMotor = this.def.maximumThrust / Math.max(1, this.def.motorCount);
+
+    for (let i = 0; i < this.motorOutputs.length; i++) {
+      const mDef = this.def.motors[i];
+      if (mDef) {
+        const mThrust = Math.pow(this.motorOutputs[i], 2) * maxThrustPerMotor;
+        // Motor on +X produces left roll (-roll), on -X produces right roll (+roll)
+        asymTorqueRoll += -mDef.position.x * mThrust;
+        // Motor on +Z produces pitch down (-pitch), on -Z produces pitch up (+pitch)
+        asymTorquePitch += mDef.position.z * mThrust;
+      }
+    }
+    const asymRollPerturbation = (asymTorqueRoll / Math.max(0.1, this.def.inertia.roll)) * 0.14;
+    const asymPitchPerturbation = (asymTorquePitch / Math.max(0.1, this.def.inertia.pitch)) * 0.14;
+
     // Sum collective thrust
     let sumThrustFactor = 0;
     for (let i = 0; i < this.motorOutputs.length; i++) {
@@ -305,7 +364,7 @@ export class FlightPhysicsEngine {
     this.rotorRpm += (targetRpm - this.rotorRpm) * (clampedDt * 8.0);
 
     // ----------------------------------------------------
-    // 4. ATTITUDE (PITCH, ROLL, YAW)
+    // 4. ATTITUDE (PITCH, ROLL, YAW) WITH ASYMMETRIC TORQUE & SENSOR FAULTS
     // ----------------------------------------------------
     const targetYawRate = -input.yaw * 2.4;
     this.yawRate += (targetYawRate - this.yawRate) * (clampedDt * 10.0);
@@ -316,14 +375,36 @@ export class FlightPhysicsEngine {
 
     const effPitch = this.isAutoLanding ? 0 : input.pitch;
     const effRoll = this.isAutoLanding ? 0 : input.roll;
-    // Dynamic tilt authority: 1.25x for responsive, fast forward flight (up to 75 km/h)
+    // Dynamic tilt authority: 1.25x for responsive flight
     const tiltMultiplier = this.isHoverMode ? 1.20 : 1.45;
-    const targetPitch = effPitch * this.def.maxTiltAngle * tiltMultiplier;
-    const targetRoll = effRoll * this.def.maxTiltAngle * tiltMultiplier;
+    const targetPitch = effPitch * this.def.maxTiltAngle * tiltMultiplier + asymPitchPerturbation;
+    const targetRoll = effRoll * this.def.maxTiltAngle * tiltMultiplier + asymRollPerturbation;
 
     const tiltSpeed = 14.0;
     this.pitch += (targetPitch - this.pitch) * (clampedDt * tiltSpeed);
     this.roll += (targetRoll - this.roll) * (clampedDt * tiltSpeed);
+
+    // Phase 5: IMU Degradation / Gyro Noise Perturbation
+    if (!this.sensorHealth.imu && !onGround) {
+      const imuNoisePitch = Math.sin(this.flightTime * 7.5) * 0.06 + Math.cos(this.flightTime * 13.2) * 0.03;
+      const imuNoiseRoll = Math.cos(this.flightTime * 6.8) * 0.06 + Math.sin(this.flightTime * 11.9) * 0.03;
+      this.pitch += imuNoisePitch * clampedDt * 8.0;
+      this.roll += imuNoiseRoll * clampedDt * 8.0;
+    }
+
+    // Phase 5: Atmospheric Turbulence Attitude Disturbance
+    const turb = (this.environment.getState().turbulence || 0) + this.turbulenceFactor;
+    if (turb > 0.05 && !onGround) {
+      const turbPitch = (Math.sin(this.flightTime * 9.3) + Math.cos(this.flightTime * 17.1) * 0.5) * (turb * 0.14);
+      const turbRoll = (Math.cos(this.flightTime * 8.7) + Math.sin(this.flightTime * 15.4) * 0.5) * (turb * 0.14);
+      this.pitch += turbPitch * clampedDt * 6.0;
+      this.roll += turbRoll * clampedDt * 6.0;
+    }
+
+    // Phase 5: Barometer Failure Altitude Hunting
+    if (!this.sensorHealth.baro && this.isHoverMode && !onGround) {
+      this.targetAltitude += Math.sin(this.flightTime * 0.9) * (clampedDt * 1.8);
+    }
 
     // ----------------------------------------------------
     // 5. ENVIRONMENTAL AERODYNAMIC FORCES (WIND & DRAG)
@@ -363,8 +444,8 @@ export class FlightPhysicsEngine {
     this.accelY = (thrustWorldY - hoverWeight + this.dragForceY) / totalMass;
     this.accelZ = (thrustWorldZ + this.dragForceZ) / totalMass;
 
-    // GPS Position Hold: When sticks are centered in hover mode, active braking locks position with zero wind drift
-    if (this.isHoverMode && !onGround) {
+    // GPS Position Hold: When sticks are centered in hover mode and GPS is healthy, active braking locks position
+    if (this.isHoverMode && !onGround && this.sensorHealth.gps) {
       const isStickNeutral = Math.abs(input.pitch) < 0.04 && Math.abs(input.roll) < 0.04;
       if (isStickNeutral) {
         const brakeFactor = Math.min(1.0, clampedDt * 4.5);
@@ -548,17 +629,28 @@ export class FlightPhysicsEngine {
       batteryLevel: Math.round(battState.percentage),
       batteryVoltage: battState.terminalVoltage,
       batteryCurrentAmps: battState.currentAmps,
+      batteryPowerWatts: Math.round(battState.powerWatts),
       flightTimeSeconds: Math.floor(this.flightTime),
       flightMode,
       isArmed: this.isArmed && !this.crashState?.isCrashed,
       rotorRpmPercent: Math.round(this.rotorRpm),
       motorOutputs: [...this.motorOutputs],
+      motorHealths: [...this.motorHealth.slice(0, this.def.motorCount)],
+      motorRpms: this.motorOutputs.map((o) => Math.round(o * 12000)),
       distanceFromHome: distFromHome,
       flightPath: this.breadcrumbs,
       payloadMassKg: this.payloadMass,
+      totalMassKg: Math.round((this.def.mass + this.payloadMass) * 100) / 100,
       isCrashed: !!this.crashState?.isCrashed,
       isCeilingLimitReached: this.isCeilingLimitReached,
       isGroundLimitReached: this.isGroundLimitReached,
+      sensorHealth: { ...this.sensorHealth },
+      windVector: {
+        speedMs: this.environment.getState().windSpeed,
+        directionDeg: this.environment.getState().windDirection,
+        gustMs: this.environment.getState().windGust,
+      },
+      ambientTemperatureC: this.environment.getState().temperature,
     };
   }
 

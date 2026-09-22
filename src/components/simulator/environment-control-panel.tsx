@@ -138,6 +138,24 @@ export function EnvironmentControlPanel({
             />
           </div>
 
+          <div>
+            <div className="flex justify-between text-xs font-bold text-neutral-800 mb-1">
+              <span className="flex items-center gap-1.5">
+                <Wind className="h-3.5 w-3.5 text-purple-600" /> Atmospheric Turbulence
+              </span>
+              <span className="text-purple-600">{Math.round((environment.turbulence || 0) * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={environment.turbulence || 0}
+              onChange={(e) => onUpdateEnvironment({ turbulence: parseFloat(e.target.value) })}
+              className="w-full accent-purple-600 cursor-pointer"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div>
               <span className="text-[10px] font-bold text-neutral-600 block mb-1">RAIN</span>

@@ -63,12 +63,13 @@ export function evaluateIslandElevation(x: number, z: number): TerrainSample {
   // -------------------------------------------------------------
   // 2. COASTLINE PROFILE (Rocky Sea Cliffs vs Sandy Beach vs Headlands)
   // -------------------------------------------------------------
-  // Southwest Bluffs (Sentinel Cliffs, angle ~ 2.1 to 2.8 rad)
-  const isSouthwestCliff = angle > 2.0 && angle < 2.85;
+  // Southwest Bluffs (Sentinel Cliffs, angle ~ 2.1 to 2.8 rad, excluding Pelican Cove sandy bay at -720, 580)
+  const distPelicanCove = Math.hypot(x - (-720), z - 580);
+  const isSouthwestCliff = angle > 2.0 && angle < 2.85 && distPelicanCove > 220;
   // Northwest Promontory (angle ~ -2.5 to -1.7 rad)
   const isNorthwestCape = angle < -1.7 && angle > -2.55;
 
-  let baseCoastElevation = 0.0;
+  let baseCoastElevation = 0.25;
   let coastalRockWeight = 0.0;
 
   if (distToCoast < 80) {
@@ -77,15 +78,16 @@ export function evaluateIslandElevation(x: number, z: number): TerrainSample {
     if (isSouthwestCliff) {
       // Sheer oceanic granite cliffs rising 18m to 24m above waves
       const cliffHeight = 20.0 + Math.sin(z * 0.03) * 4.0;
-      baseCoastElevation = Math.pow(tCoast, 0.3) * cliffHeight;
+      baseCoastElevation = 1.5 + Math.pow(tCoast, 0.3) * (cliffHeight - 1.5);
       coastalRockWeight = 0.95;
     } else if (isNorthwestCape) {
       // Craggy rocky cape headland (14m to 18m)
-      baseCoastElevation = Math.pow(tCoast, 0.38) * 16.0;
+      baseCoastElevation = 1.2 + Math.pow(tCoast, 0.38) * (16.0 - 1.2);
       coastalRockWeight = 0.8;
     } else {
       // Gentle sandy beaches (Pelican Cove crescent, East Metropolis shore, Harbor bay)
-      baseCoastElevation = Math.sin((tCoast * Math.PI) / 2) * 1.8;
+      // Waterline at +0.25m, rising smoothly to +2.0m inland
+      baseCoastElevation = 0.25 + Math.sin((tCoast * Math.PI) / 2) * 1.75;
       coastalRockWeight = 0.05;
     }
   }
@@ -119,31 +121,33 @@ export function evaluateIslandElevation(x: number, z: number): TerrainSample {
     Math.pow(plainsWeight, 1.4) * 8.5 +
     Math.sin(x * 0.012 - z * 0.014) * 3.0 * plainsWeight;
 
-  // Background Natural Undulation (Macro + Meso + Micro)
+  // Background Natural Undulation (Macro + Meso + Micro) - non-negative normalized harmonics
   const macroHills =
-    (Math.sin(x * 0.009 + 0.3) * Math.cos(z * 0.008 - 0.5) +
-      Math.sin((x * 0.6 + z * 0.8) * 0.007) * 0.7) *
-    9.5;
+    ((Math.sin(x * 0.009 + 0.3) * Math.cos(z * 0.008 - 0.5) +
+      Math.sin((x * 0.6 + z * 0.8) * 0.007) * 0.7) * 0.5 + 0.85) *
+    4.5;
 
   const swells =
-    (Math.cos(x * 0.024) * Math.sin(z * 0.022) +
-      Math.sin(x * 0.018 - z * 0.015)) *
-    4.0;
+    ((Math.cos(x * 0.024) * Math.sin(z * 0.022) +
+      Math.sin(x * 0.018 - z * 0.015)) * 0.5 + 1.0) *
+    1.8;
 
   const microNoise =
-    (Math.sin(x * 0.065) * Math.cos(z * 0.060) +
-      Math.cos(x * 0.045 + z * 0.042)) *
-    1.1;
+    ((Math.sin(x * 0.065) * Math.cos(z * 0.060) +
+      Math.cos(x * 0.045 + z * 0.042)) * 0.5 + 1.0) *
+    0.6;
 
-  // Base undulating inland terrain (5m - 20m)
+  // Base undulating inland terrain (guaranteed floor >= 2.2m MSL across all plains)
   let inlandElevation =
-    5.5 +
+    2.2 +
     macroHills +
     swells +
     microNoise +
     emeraldHillsElev +
     forestHillsElev +
     plainsElev;
+
+  inlandElevation = Math.max(2.2, inlandElevation);
 
   let activeRegion: RegionId = "training";
   let surface: SurfaceMaterialType = "grass";
@@ -158,9 +162,9 @@ export function evaluateIslandElevation(x: number, z: number): TerrainSample {
 
   const distMtnCenter = Math.hypot(x - (-620), z - (-700));
 
-  if (distMtnCenter < 750) {
+  if (distMtnCenter < 580) {
     activeRegion = "mountain";
-    const mtnEnvelope = Math.max(0, 1 - distMtnCenter / 750);
+    const mtnEnvelope = Math.max(0, 1 - distMtnCenter / 580);
     const mtnWeight = Math.pow(mtnEnvelope, 1.35);
 
     // Peak 1: Apex Summit (145m)
@@ -262,8 +266,8 @@ export function evaluateIslandElevation(x: number, z: number): TerrainSample {
     // Generous river canyon corridor ensuring water is never covered by terrain
     if (distToRiver < halfWidth + 55) {
       activeRegion = "river";
-      const waterSurfaceY = Math.max(0.12, 8.5 * (1 - pZ));
-      const bedElevation = waterSurfaceY - 1.8;
+      const waterSurfaceY = Math.max(0.18, 8.5 * (1 - pZ) + 0.08);
+      const bedElevation = waterSurfaceY - 1.5;
 
       if (distToRiver < halfWidth + 6) {
         // Deep water channel completely beneath river surface
@@ -299,20 +303,21 @@ export function evaluateIslandElevation(x: number, z: number): TerrainSample {
 
   // G. WEST: WHISPERING PINES FOREST (Center ~ -640, 20)
   const distForest = Math.hypot(x - (-640), z - 20);
-  if (distForest < 480 && activeRegion !== "river" && activeRegion !== "mountain") {
+  const distToForestPad = Math.hypot(x - (-620), z - (-40));
+
+  if (distToForestPad < 48) {
     activeRegion = "forest";
     // Ranger Station helipad clearing at (-620, -40) at 5.5m MSL
-    const distToForestPad = Math.hypot(x - (-620), z - (-40));
-    if (distToForestPad < 48) {
-      if (distToForestPad <= 22) {
-        // Completely flat platform for helipad & vehicle turnaround
-        inlandElevation = 5.42;
-      } else {
-        const tPad = (distToForestPad - 22) / 26;
-        const smoothPad = tPad * tPad * (3 - 2 * tPad);
-        inlandElevation = 5.42 * (1 - smoothPad) + inlandElevation * smoothPad;
-      }
+    if (distToForestPad <= 22) {
+      inlandElevation = 5.5;
+    } else {
+      const tPad = (distToForestPad - 22) / 26;
+      const smoothPad = tPad * tPad * (3 - 2 * tPad);
+      inlandElevation = 5.5 * (1 - smoothPad) + inlandElevation * smoothPad;
     }
+    surface = "grass";
+  } else if (distForest < 480 && activeRegion !== "river" && activeRegion !== "mountain") {
+    activeRegion = "forest";
     surface = "grass";
   }
 
@@ -336,8 +341,19 @@ export function evaluateIslandElevation(x: number, z: number): TerrainSample {
   const distInd = Math.hypot(x - 380, z - 780);
   if (distInd < 350 && activeRegion !== "river") {
     activeRegion = "industrial";
-    const tInd = Math.min(1, distInd / 320);
-    inlandElevation = 1.8 * (1 - tInd) + inlandElevation * tInd;
+    const distToIndPad = Math.hypot(x - 380, z - 780);
+    if (distToIndPad < 48) {
+      if (distToIndPad <= 22) {
+        inlandElevation = 1.8;
+      } else {
+        const tPad = (distToIndPad - 22) / 26;
+        const smoothPad = tPad * tPad * (3 - 2 * tPad);
+        inlandElevation = 1.8 * (1 - smoothPad) + inlandElevation * smoothPad;
+      }
+    } else {
+      const tInd = Math.min(1, distInd / 320);
+      inlandElevation = 1.8 * (1 - tInd) + inlandElevation * tInd;
+    }
     surface = "grass";
   }
 
@@ -345,6 +361,16 @@ export function evaluateIslandElevation(x: number, z: number): TerrainSample {
   const distCoast = Math.hypot(x - (-720), z - 580);
   if (distCoast < 380 && activeRegion !== "river") {
     activeRegion = "coast";
+    const distToCoastPad = Math.hypot(x - (-720), z - 580);
+    if (distToCoastPad < 48) {
+      if (distToCoastPad <= 22) {
+        inlandElevation = 2.0;
+      } else {
+        const tPad = (distToCoastPad - 22) / 26;
+        const smoothPad = tPad * tPad * (3 - 2 * tPad);
+        inlandElevation = 2.0 * (1 - smoothPad) + inlandElevation * smoothPad;
+      }
+    }
   }
 
   // -------------------------------------------------------------
@@ -360,6 +386,18 @@ export function evaluateIslandElevation(x: number, z: number): TerrainSample {
     } else if (distToCoast < 42 && !isSouthwestCliff && !isNorthwestCape) {
       surface = "sand";
     }
+  }
+
+  // Ensure pad foundations are leveled in final elevation
+  const distToInd = Math.hypot(x - 380, z - 780);
+  if (distToInd < 45) {
+    const tPad = Math.max(0, (distToInd - 20) / 25);
+    finalElevation = 1.8 * (1 - tPad * tPad * (3 - 2 * tPad)) + finalElevation * (tPad * tPad * (3 - 2 * tPad));
+  }
+  const distToCoastPadFinal = Math.hypot(x - (-720), z - 580);
+  if (distToCoastPadFinal < 45) {
+    const tPad = Math.max(0, (distToCoastPadFinal - 20) / 25);
+    finalElevation = 2.0 * (1 - tPad * tPad * (3 - 2 * tPad)) + finalElevation * (tPad * tPad * (3 - 2 * tPad));
   }
 
   // Calculate terrain slope from local elevation gradients

@@ -53,6 +53,9 @@ export function getRiverCrossSectionAtZ(z: number): {
   return { inRiverRange: true, centerX, halfWidth, waterY };
 }
 
+import { getDistanceToCoast, isInsideIsland } from "./coastline-math";
+import { evaluateIslandElevation } from "./terrain-math";
+
 /**
  * Checks if a given (x, z) coordinate falls within or near any water body.
  * @param x World X
@@ -85,16 +88,15 @@ export function isWaterAt(x: number, z: number, clearance = 0): boolean {
     }
   }
 
-  // 4. Ocean check (outside coastal contour)
-  const distFromCenter = Math.hypot(x, z);
-  const angle = Math.atan2(z, x);
-  const coastRadius =
-    920 +
-    Math.sin(angle * 3) * 60 +
-    Math.cos(angle * 5) * 40 +
-    Math.sin(angle * 7) * 20;
+  // 4. Ocean check (outside canonical irregular coastline or right at waterline)
+  const distToCoast = getDistanceToCoast(x, z);
+  if (distToCoast <= clearance) {
+    return true;
+  }
 
-  if (distFromCenter > coastRadius - clearance) {
+  // 5. Elevation sanity check against sea level
+  const elev = evaluateIslandElevation(x, z).elevation;
+  if (elev <= HYDROLOGY_CONSTANTS.seaLevel + clearance * 0.05) {
     return true;
   }
 
@@ -127,15 +129,8 @@ export function getWaterElevation(x: number, z: number): number {
   }
 
   // 4. Ocean
-  const distFromCenter = Math.hypot(x, z);
-  const angle = Math.atan2(z, x);
-  const coastRadius =
-    920 +
-    Math.sin(angle * 3) * 60 +
-    Math.cos(angle * 5) * 40 +
-    Math.sin(angle * 7) * 20;
-
-  if (distFromCenter >= coastRadius) {
+  const distToCoast = getDistanceToCoast(x, z);
+  if (distToCoast <= 0) {
     return HYDROLOGY_CONSTANTS.seaLevel;
   }
 
@@ -192,15 +187,9 @@ export function queryHydrology(x: number, z: number, terrainElevation = 0): Hydr
   }
 
   // 4. Ocean
-  const distFromCenter = Math.hypot(x, z);
-  const angle = Math.atan2(z, x);
-  const coastRadius =
-    920 +
-    Math.sin(angle * 3) * 60 +
-    Math.cos(angle * 5) * 40 +
-    Math.sin(angle * 7) * 20;
+  const distToCoast = getDistanceToCoast(x, z);
 
-  if (distFromCenter >= coastRadius || terrainElevation <= 0.05) {
+  if (distToCoast <= 0 || terrainElevation <= 0.05) {
     return {
       isWater: true,
       type: "OCEAN",
@@ -212,7 +201,7 @@ export function queryHydrology(x: number, z: number, terrainElevation = 0): Hydr
 
   // Land: calculate min distance to nearest water
   const distToLakeEdge = Math.max(0, distLake - HYDROLOGY_CONSTANTS.lakeRadius);
-  const distToOceanEdge = Math.max(0, coastRadius - distFromCenter);
+  const distToOceanEdge = Math.max(0, distToCoast);
   let minDistance = Math.min(distToLakeEdge, distToOceanEdge);
 
   if (river.inRiverRange) {

@@ -5,6 +5,7 @@ import { TelemetryState } from "@/lib/simulation/types";
 import { evaluateIslandElevation } from "@/lib/world/terrain-math";
 import { REGIONS } from "@/lib/world/region-definitions";
 import { HELIPAD_LIST } from "@/lib/world/helipad-definitions";
+import { queryHydrology } from "@/lib/world/hydrology-mask";
 import { Terminal, X } from "lucide-react";
 
 interface TerrainDebugHUDProps {
@@ -18,6 +19,7 @@ export function TerrainDebugHUD({ isOpen, onClose, telemetry }: TerrainDebugHUDP
 
   const sample = evaluateIslandElevation(telemetry.position.x, telemetry.position.z);
   const region = REGIONS[sample.regionId];
+  const hydro = queryHydrology(telemetry.position.x, telemetry.position.z, sample.elevation);
 
   // Nearest helipad calculation
   let nearestHelipad = HELIPAD_LIST[0];
@@ -43,7 +45,7 @@ export function TerrainDebugHUD({ isOpen, onClose, telemetry }: TerrainDebugHUDP
         <div className="flex items-center gap-2 text-emerald-400">
           <Terminal className="h-4 w-4" />
           <span className="font-bold tracking-wider text-[11px] uppercase">
-            TERRAIN AVIONICS DEBUG
+            HYDROLOGY & TERRAIN DEBUG
           </span>
         </div>
         <button
@@ -66,6 +68,25 @@ export function TerrainDebugHUD({ isOpen, onClose, telemetry }: TerrainDebugHUDP
         </div>
 
         <div className="flex justify-between">
+          <span className="text-neutral-400">GROUND ELEVATION:</span>
+          <span className="font-bold text-amber-400">
+            {sample.elevation >= 0 ? `+${sample.elevation.toFixed(2)}m` : `${sample.elevation.toFixed(2)}m`} MSL
+          </span>
+        </div>
+
+        <div className="flex justify-between">
+          <span className="text-neutral-400">SEA LEVEL (CANONICAL):</span>
+          <span className="font-bold text-sky-400">0.0m MSL</span>
+        </div>
+
+        <div className="flex justify-between">
+          <span className="text-neutral-400">WATER DEPTH:</span>
+          <span className={`font-bold ${hydro.depth > 0 ? "text-cyan-400" : "text-neutral-400"}`}>
+            {hydro.depth.toFixed(2)}m ({hydro.type})
+          </span>
+        </div>
+
+        <div className="flex justify-between">
           <span className="text-neutral-400">DRONE ALT (MSL):</span>
           <span className="font-bold text-cyan-400">
             {telemetry.position.y.toFixed(2)}m
@@ -73,14 +94,7 @@ export function TerrainDebugHUD({ isOpen, onClose, telemetry }: TerrainDebugHUDP
         </div>
 
         <div className="flex justify-between">
-          <span className="text-neutral-400">TERRAIN GROUND Y:</span>
-          <span className="font-bold text-amber-400">
-            {sample.elevation.toFixed(2)}m MSL
-          </span>
-        </div>
-
-        <div className="flex justify-between">
-          <span className="text-neutral-400">RADAR AGL (CLEARANCE):</span>
+          <span className="text-neutral-400">RADAR AGL:</span>
           <span className="font-bold text-emerald-400">
             {agl.toFixed(2)}m AGL
           </span>
