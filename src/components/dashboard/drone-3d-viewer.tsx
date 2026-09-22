@@ -235,34 +235,30 @@ export function Drone3DViewer({
     fuselageGroup.add(lowerBelly);
 
     // B) Main Mid-Hull Deck (Tactical Gray Chamfered Monocoque)
-    // Upgraded to a sleeker hexagonal cross-section for a sci-fi stealth look
     const midHull = new THREE.Mesh(
-      new THREE.CylinderGeometry(bodyWidth * 0.55, bodyWidth * 0.6, bodyLength * 0.9, 6),
+      new THREE.BoxGeometry(bodyWidth, bodyHeight * 0.55, bodyLength * 0.88),
       tacticalHullMat
     );
-    midHull.rotation.x = Math.PI / 2;
-    midHull.rotation.y = Math.PI / 2;
     midHull.position.set(0, bodyHeight * 0.08, -bodyLength * 0.03);
     fuselageGroup.add(midHull);
 
     // Sci-Fi Orange Emissive Vents on the Side
     [-1, 1].forEach((side) => {
       const sideVent = new THREE.Mesh(
-        new THREE.BoxGeometry(0.01, 0.04, 0.3),
+        new THREE.BoxGeometry(0.02, 0.04, 0.3),
         neonOrange
       );
-      sideVent.position.set(side * (bodyWidth * 0.45), bodyHeight * 0.08, -bodyLength * 0.05);
+      sideVent.position.set(side * (bodyWidth * 0.5), bodyHeight * 0.08, -bodyLength * 0.05);
       fuselageGroup.add(sideVent);
     });
 
     // C) Forward-Sloping Cockpit Nose Cowl
     const noseCowl = new THREE.Mesh(
-      new THREE.CylinderGeometry(bodyWidth * 0.45, bodyWidth * 0.52, bodyLength * 0.35, 6),
+      new THREE.BoxGeometry(bodyWidth * 0.86, bodyHeight * 0.50, bodyLength * 0.32),
       tacticalHullMat
     );
-    noseCowl.rotation.x = Math.PI / 2 + 0.15; // Forward aerodynamic downward rake
-    noseCowl.rotation.z = Math.PI / 2;
-    noseCowl.position.set(0, bodyHeight * 0.04, bodyLength * 0.46);
+    noseCowl.position.set(0, bodyHeight * 0.04, bodyLength * 0.44);
+    noseCowl.rotation.x = 0.12; // Forward aerodynamic downward rake
     fuselageGroup.add(noseCowl);
 
     // Front Heat-Sink Grille / Ventilation Louvers
