@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   DroneDigitalTwinConfiguration,
@@ -11,6 +11,8 @@ import {
   setActiveDigitalTwin,
   saveUserConfiguration,
   duplicateConfiguration,
+  exportDigitalTwinToJson,
+  importDigitalTwinFromJson,
 } from "@/lib/digital-twin/digital-twin-storage";
 import { validateDroneDigitalTwin } from "@/lib/digital-twin/digital-twin-validator";
 import { PresetSelector } from "./preset-selector";
@@ -32,6 +34,8 @@ import {
   Gauge,
   CheckCircle2,
   ArrowLeft,
+  Download,
+  Upload,
 } from "lucide-react";
 
 type TabId =
@@ -64,6 +68,7 @@ export function DigitalTwinConfigurator() {
   const [config, setConfig] = useState<DroneDigitalTwinConfiguration | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("identity");
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize active digital twin from storage or defaults
   useEffect(() => {
@@ -100,6 +105,42 @@ export function DigitalTwinConfigurator() {
     setTimeout(() => setSaveFeedback(null), 3000);
   }, [config]);
 
+  const handleExport = useCallback(() => {
+    if (!config) return;
+    const jsonStr = exportDigitalTwinToJson(config);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const safeName = config.identity.name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+    a.href = url;
+    a.download = `${safeName || "drone"}.drone.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setSaveFeedback("Exported .drone.json successfully");
+    setTimeout(() => setSaveFeedback(null), 3000);
+  }, [config]);
+
+  const handleFileImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      const res = importDigitalTwinFromJson(content);
+      if (res.success && res.config) {
+        setConfig(res.config);
+        setActiveDigitalTwin(res.config);
+        saveUserConfiguration(res.config);
+        setSaveFeedback(`Imported ${res.config.identity.name} successfully`);
+        setTimeout(() => setSaveFeedback(null), 3500);
+      } else {
+        alert(res.error || "Failed to validate imported drone configuration.");
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, []);
+
   const handleSave = useCallback(async () => {
     if (!config) return;
     await saveUserConfiguration(config);
@@ -126,6 +167,15 @@ export function DigitalTwinConfigurator() {
 
   return (
     <div className="space-y-6">
+      {/* Hidden File Input for .drone.json Import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,.drone.json"
+        className="hidden"
+        onChange={handleFileImport}
+      />
+
       {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -143,13 +193,36 @@ export function DigitalTwinConfigurator() {
           </span>
         </div>
 
-        {saveFeedback && (
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-semibold animate-in fade-in">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-            <span>{saveFeedback}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExport}
+            title="Export full specification as validated .drone.json package"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs font-semibold text-neutral-700 hover:bg-neutral-100 transition-all shadow-2xs"
+          >
+            <Download className="h-3.5 w-3.5 text-neutral-600" />
+            <span className="hidden sm:inline">Export</span> .drone.json
+          </button>
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            title="Import and validate external .drone.json package"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs font-semibold text-neutral-700 hover:bg-neutral-100 transition-all shadow-2xs"
+          >
+            <Upload className="h-3.5 w-3.5 text-neutral-600" />
+            <span className="hidden sm:inline">Import</span> .drone.json
+          </button>
+
+          {saveFeedback && (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-semibold animate-in fade-in">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+              <span>{saveFeedback}</span>
+            </div>
+          )}
+        </div>
       </div>
+
 
       {/* Preset Selector Banner */}
       <PresetSelector

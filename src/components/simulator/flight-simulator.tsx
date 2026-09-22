@@ -62,6 +62,15 @@ import { ScenarioSelectorModal } from "./scenario-selector-modal";
 import { EducationalEventEngine } from "@/lib/simulation/educational-event-engine";
 import { TrainingScenario } from "@/lib/simulation/scenario-presets";
 import { EducationalEvent } from "@/lib/simulation/types";
+import { SimulationClock, ClockSnapshot } from "@/lib/simulation/simulation-clock";
+import { SimulationAdapter, SimulationAdapterStatus } from "@/lib/simulation/adapters/simulation-adapter";
+import { LocalSimulationAdapter } from "@/lib/simulation/adapters/local-simulation-adapter";
+import { HardwareControllerAdapter } from "@/lib/simulation/adapters/hardware-controller-adapter";
+import { flightInputToNormalized } from "@/lib/simulation/normalized-control";
+import { TelemetryBus } from "@/lib/simulation/telemetry-bus";
+import { SimulationEventBus, SimulationEvent } from "@/lib/simulation/event-bus";
+import { ConnectionStatus } from "@/lib/multiplayer/multiplayer-types";
+import { SimulationDiagnosticsOverlay } from "./debug/simulation-diagnostics-overlay";
 
 function getWindExposure(x: number, z: number): number {
   for (const r of REGION_LIST) {
@@ -84,6 +93,9 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
   const inputManagerRef = useRef<InputManager | null>(null);
   const cameraControllerRef = useRef<ChaseCameraController | null>(null);
   const physicsEngineRef = useRef<FlightPhysicsEngine | null>(null);
+  const simulationAdapterRef = useRef<SimulationAdapter | null>(null);
+  const hardwareAdapterRef = useRef<HardwareControllerAdapter>(new HardwareControllerAdapter());
+  const simClockRef = useRef<SimulationClock>(new SimulationClock(1 / 60));
   const droneMeshRef = useRef<ModularDrone | null>(null);
   const flightRecorderRef = useRef<FlightRecorder>(new FlightRecorder());
   const multiplayerClientRef = useRef<MultiplayerClient | null>(null);
@@ -93,6 +105,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
 
   // Authenticated pilot username
   const { user } = useAuth();
+
   const pilotName = React.useMemo(() => {
     return (
       user?.displayName ||
@@ -280,8 +293,45 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     new EducationalEventEngine((event) => {
       setCurrentEduEvent(event);
       setEduEventHistory((prev) => [event, ...prev.slice(0, 29)]);
+      SimulationEventBus.getInstance().emit({
+        timestamp: event.timestamp,
+        simTime: simClockRef.current.getSimTime(),
+        type: "BATTERY_LOW",
+        severity: event.severity === "error" ? "CRITICAL" : event.severity === "warning" ? "WARNING" : "INFO",
+        source: "PHYSICS",
+        title: event.title,
+        message: event.whatHappened || event.message || "",
+      });
     })
   );
+
+  // Phase 7: Diagnostics, Simulation Clock & Network Status
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("LOCAL");
+  const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false);
+  const [clockSnapshot, setClockSnapshot] = useState<ClockSnapshot>(simClockRef.current.getSnapshot());
+  const [fps, setFps] = useState(60);
+  const [eventCount, setEventCount] = useState(0);
+  const [lastEventTitle, setLastEventTitle] = useState<string | undefined>();
+  const [adapterStatus, setAdapterStatus] = useState<SimulationAdapterStatus>({
+    name: "Built-in Browser 6-DoF Physics",
+    type: "local",
+    isConnected: true,
+    isLiveHardware: false,
+    latencyMs: 0.1,
+    packetsSent: 0,
+    packetsReceived: 0,
+    statusMessage: "Operational",
+  });
+
+  // Simulation Event Bus Subscription for real-time observability
+  useEffect(() => {
+    const unsub = SimulationEventBus.getInstance().subscribe((evt) => {
+      setEventCount((prev) => prev + 1);
+      setLastEventTitle(evt.title);
+    });
+    return unsub;
+  }, []);
+
 
   // Stable loading ready callback
   const handleLoadingReady = useCallback(() => {
@@ -294,6 +344,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
   }, []);
 
   // Toggle Camera
+
   const handleToggleCamera = useCallback(() => {
     if (cameraControllerRef.current) {
       const nextMode = cameraControllerRef.current.cycleMode();
@@ -518,10 +569,33 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     setIsAnalysisOpen(true);
   }, [selectedDrone.name]);
 
+  // Demonstration Mode Trigger (Requirement 39: CDAC / Live Demo)
+  const handleTriggerDemoMode = useCallback(() => {
+    setIsDigitalTwinHUDOpen(true);
+    handleUpdateEnvironment({
+      windSpeed: 12, // 12 m/s (~43 km/h)
+      windDirection: 120,
+      windGust: 18,
+      temperature: 32,
+      turbulence: 0.65,
+    });
+    handleSetPayloadMass(3.5);
+    SimulationEventBus.getInstance().emit({
+      timestamp: Date.now(),
+      simTime: simClockRef.current.getSimTime(),
+      type: "SCENARIO_STARTED",
+      severity: "INFO",
+      source: "SCENARIO",
+      title: "CDAC Demonstration Mode Activated",
+      message: "High Wind (12 m/s, 18 m/s gusts) + 3.5kg Payload injected. Observe motor RPM, asymmetric torques, and battery voltage sag.",
+    });
+  }, [handleUpdateEnvironment, handleSetPayloadMass]);
+
   const handleOpenReplay = useCallback(() => {
     setReplayFrames(flightRecorderRef.current.getFrames());
     setIsReplayOpen(true);
   }, []);
+
 
   const handleFlyAgain = useCallback(() => {
     setIsAnalysisOpen(false);
@@ -606,17 +680,26 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     scene.add(remoteDroneMgr.group);
     remoteDroneManagerRef.current = remoteDroneMgr;
 
-    // Connect to room network
-    const mpClient = new MultiplayerClient(callsign, spawnConfig.regionId, (players) => {
-      remotePlayersRef.current = players;
-      setRemotePlayers(players);
-    });
+    // Connect to room network with connection status tracking
+    const mpClient = new MultiplayerClient(
+      callsign,
+      spawnConfig.regionId,
+      (players) => {
+        remotePlayersRef.current = players;
+        setRemotePlayers(players);
+      },
+      (status) => {
+        setConnectionStatus(status);
+      }
+    );
     mpClient.connect();
     multiplayerClientRef.current = mpClient;
 
-    // 7. PHYSICS ENGINE WITH ELEVATION QUERY, PAYLOAD & ENVIRONMENT
-    const physics = new FlightPhysicsEngine(droneDef);
-    physics.elevationQueryFn = (x, z) => worldScene.getGroundElevation(x, z);
+    // 7. SIMULATION ADAPTER & 6-DoF SOLVER (PHASE 7 ARCHITECTURE)
+    const localAdapter = new LocalSimulationAdapter(droneDef);
+    localAdapter.setElevationQueryFn((x, z) => worldScene.getGroundElevation(x, z));
+    simulationAdapterRef.current = localAdapter;
+    const physics = localAdapter.getPhysicsEngine();
 
     // Configure payload mass if requested
     const payloadParam = parseFloat(urlParams?.get("payload") || "0");
@@ -636,6 +719,9 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       spawnConfig.rotation.yaw
     );
     physicsEngineRef.current = physics;
+    simClockRef.current.reset();
+    simClockRef.current.start();
+
 
     // 8. CHASE CAMERA
     const chaseCam = new ChaseCameraController(55, width / height);
@@ -713,6 +799,8 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     let animationId: number;
     const clock = new THREE.Clock();
     let telemetryThrottleTimer = 0;
+    let framesCount = 0;
+    let fpsTimer = 0;
 
     const animate = () => {
       animationId = requestAnimationFrame(animate);
@@ -720,8 +808,25 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       const dt = clock.getDelta();
       const elapsed = clock.getElapsedTime();
 
-      // Read Input
+      // FPS Calculation
+      fpsTimer += dt;
+      framesCount++;
+      if (fpsTimer >= 0.5) {
+        setFps(Math.round(framesCount / fpsTimer));
+        framesCount = 0;
+        fpsTimer = 0;
+      }
+
+      // Read Input & Poll Hardware Controller (Gamepad / RC Mode 2)
       const input = inputManager.getInput(dt);
+      const hwInput = hardwareAdapterRef.current.pollInput();
+      if (hwInput) {
+        if (hwInput.throttle !== undefined && Math.abs(hwInput.throttle) > 0.05) input.throttle = hwInput.throttle;
+        if (hwInput.pitch !== undefined && Math.abs(hwInput.pitch) > 0.05) input.pitch = hwInput.pitch;
+        if (hwInput.roll !== undefined && Math.abs(hwInput.roll) > 0.05) input.roll = hwInput.roll;
+        if (hwInput.yaw !== undefined && Math.abs(hwInput.yaw) > 0.05) input.yaw = hwInput.yaw;
+        if (hwInput.isArmed) physics.isArmed = true;
+      }
 
       const lockedDir = inputManager.getLockedDirection();
       if (lockedDir !== autoMoveLockedRef.current) {
@@ -733,8 +838,12 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         setCameraMode(chaseCam.cycleMode());
       }
 
-      // Step Physics
-      const curTelemetry = physics.update(input, dt);
+      // Step Physics via Canonical Simulation Clock (Fixed-Timestep Accumulator)
+      let curTelemetry = physics.generateTelemetry();
+      simClockRef.current.tick((fixedDt) => {
+        curTelemetry = physics.update(input, fixedDt);
+        TelemetryBus.getInstance().publish(curTelemetry, fixedDt);
+      });
 
       // Record telemetry frame for recorder & replay
       flightRecorderRef.current.record(curTelemetry);
@@ -756,7 +865,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       droneMesh.update(curTelemetry, dt);
       droneMesh.setNameTagVisible(chaseCam.mode !== "fpv");
 
-      // Update Remote Drones in Airspace
+      // Update Remote Drones in Airspace (with Dead Reckoning)
       remoteDroneMgr.update(remotePlayersRef.current, dt);
 
       // Update Follow Camera
@@ -811,6 +920,10 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       if (telemetryThrottleTimer >= 0.05) {
         telemetryThrottleTimer = 0;
         setTelemetry({ ...curTelemetry });
+        setClockSnapshot(simClockRef.current.getSnapshot());
+        if (simulationAdapterRef.current) {
+          setAdapterStatus(simulationAdapterRef.current.getStatus());
+        }
         if (isDebugOpen) {
           setPhysicsDebug(physics.getDebugTelemetry());
         }
@@ -832,6 +945,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     };
 
     animate();
+
 
     // CLEANUP
     return () => {
@@ -982,8 +1096,8 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
         frames={replayFrames}
       />
 
-      {/* Floating Toolbar for Educational Scenarios, Faults & Digital Twin */}
-      <div className="fixed top-3 left-28 sm:left-32 z-30 flex items-center gap-2">
+      {/* Floating Toolbar for Educational Scenarios, Faults, Digital Twin, Demo Mode & Diagnostics */}
+      <div className="fixed top-3 left-28 sm:left-32 z-30 flex items-center gap-2 flex-wrap">
         <button
           type="button"
           onClick={() => setIsScenarioModalOpen(true)}
@@ -1016,7 +1130,59 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
           <span className="w-2 h-2 rounded-full bg-[#FF5500] animate-pulse" />
           <span>DIGITAL TWIN</span>
         </button>
+
+        {/* CDAC Controlled Demonstration Mode (Requirement 39) */}
+        <button
+          type="button"
+          onClick={handleTriggerDemoMode}
+          title="Trigger CDAC demonstration: High Wind + Heavy Payload with live telemetry stress"
+          className="px-2.5 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-900 border border-amber-500/60 hover:border-amber-400 text-amber-200 text-[11px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-lg backdrop-blur-sm transition-all"
+        >
+          <span className="w-2 h-2 rounded-full bg-amber-400" />
+          <span>DEMO MODE</span>
+        </button>
+
+        {/* Diagnostics & Observability HUD Toggle (Requirement 33) */}
+        <button
+          type="button"
+          onClick={() => setIsDiagnosticsOpen((prev) => !prev)}
+          className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-lg backdrop-blur-sm transition-all ${
+            isDiagnosticsOpen
+              ? "bg-cyan-950 border-cyan-400 text-cyan-200"
+              : "bg-neutral-900/90 hover:bg-neutral-900 border-neutral-700 text-neutral-300"
+          }`}
+        >
+          <span className="w-2 h-2 rounded-full bg-cyan-400" />
+          <span>DIAGNOSTICS</span>
+        </button>
+
+        {/* Network Status Indicator (Requirement 29) */}
+        <div className={`px-2.5 py-1.5 rounded-xl border text-[10px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-sm backdrop-blur-sm ${
+          connectionStatus === "CONNECTED"
+            ? "bg-emerald-950/70 border-emerald-500/50 text-emerald-300"
+            : connectionStatus === "LOCAL"
+            ? "bg-cyan-950/70 border-cyan-500/50 text-cyan-300"
+            : "bg-rose-950/70 border-rose-500/50 text-rose-300"
+        }`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${
+            connectionStatus === "CONNECTED" ? "bg-emerald-400" : connectionStatus === "LOCAL" ? "bg-cyan-400" : "bg-rose-400"
+          }`} />
+          <span>{connectionStatus}</span>
+        </div>
       </div>
+
+      {/* Simulation Diagnostics Overlay */}
+      <SimulationDiagnosticsOverlay
+        isOpen={isDiagnosticsOpen}
+        onClose={() => setIsDiagnosticsOpen(false)}
+        clockSnapshot={clockSnapshot}
+        adapterStatus={adapterStatus}
+        connectionStatus={connectionStatus}
+        remotePlayerCount={remotePlayers.length}
+        eventCount={eventCount}
+        lastEventTitle={lastEventTitle}
+        fps={fps}
+      />
 
       {/* Real-Time Aeronautical Cause & Effect Banner */}
       <EducationalBanner

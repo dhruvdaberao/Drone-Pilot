@@ -8,6 +8,8 @@ interface RemoteDroneInstance {
   targetRot: THREE.Euler;
   currentPos: THREE.Vector3;
   currentRot: THREE.Euler;
+  velocity: THREE.Vector3;
+  lastPacketTime: number;
 }
 
 export class RemoteDroneManager {
@@ -18,7 +20,9 @@ export class RemoteDroneManager {
 
   public update(remotePlayers: RemotePlayerState[], dt: number) {
     const activeIds = new Set(remotePlayers.map((p) => p.playerId));
+    const now = Date.now();
 
+    // 1. Evict removed/disconnected remote pilots cleanly
     for (const [id, instance] of this.drones.entries()) {
       if (!activeIds.has(id)) {
         this.group.remove(instance.group);
@@ -26,6 +30,7 @@ export class RemoteDroneManager {
       }
     }
 
+    // 2. Update and dead-reckon active pilots
     for (const p of remotePlayers) {
       let instance = this.drones.get(p.playerId);
       if (!instance) {
@@ -34,15 +39,33 @@ export class RemoteDroneManager {
         this.group.add(instance.group);
       }
 
-      instance.targetPos.set(p.position.x, p.position.y, p.position.z);
+      instance.velocity.set(p.velocity.x, p.velocity.y, p.velocity.z);
+
+      // Dead-reckoning: if packet is slightly aged, extrapolate position by velocity (up to 0.4s max)
+      const packetAgeSec = Math.max(0, Math.min(0.4, (now - p.lastUpdate) / 1000.0));
+      const extrapolatedX = p.position.x + instance.velocity.x * packetAgeSec;
+      const extrapolatedY = p.position.y + instance.velocity.y * packetAgeSec;
+      const extrapolatedZ = p.position.z + instance.velocity.z * packetAgeSec;
+
+      instance.targetPos.set(extrapolatedX, extrapolatedY, extrapolatedZ);
       instance.targetRot.set(p.rotation.pitch, p.rotation.yaw, p.rotation.roll);
 
-      instance.currentPos.lerp(instance.targetPos, Math.min(1.0, dt * 15.0));
+      // Exponential frame-rate independent smoothing
+      const blend = 1.0 - Math.exp(-14.0 * dt);
+      instance.currentPos.lerp(instance.targetPos, blend);
       instance.group.position.copy(instance.currentPos);
 
-      instance.currentRot.x += (instance.targetRot.x - instance.currentRot.x) * Math.min(1.0, dt * 15.0);
-      instance.currentRot.y += (instance.targetRot.y - instance.currentRot.y) * Math.min(1.0, dt * 15.0);
-      instance.currentRot.z += (instance.targetRot.z - instance.currentRot.z) * Math.min(1.0, dt * 15.0);
+      // Wrap-safe angular interpolation for pitch, yaw, roll
+      const lerpAngle = (current: number, target: number, alpha: number) => {
+        let diff = (target - current) % (Math.PI * 2);
+        if (diff < -Math.PI) diff += Math.PI * 2;
+        if (diff > Math.PI) diff -= Math.PI * 2;
+        return current + diff * alpha;
+      };
+
+      instance.currentRot.x = lerpAngle(instance.currentRot.x, instance.targetRot.x, blend);
+      instance.currentRot.y = lerpAngle(instance.currentRot.y, instance.targetRot.y, blend);
+      instance.currentRot.z = lerpAngle(instance.currentRot.z, instance.targetRot.z, blend);
       instance.group.rotation.copy(instance.currentRot);
 
       const rpmSpeed = (p.rotorRpmPercent / 100) * 45;
@@ -51,6 +74,7 @@ export class RemoteDroneManager {
       }
     }
   }
+
 
   private createRemoteDroneMesh(callsign: string): RemoteDroneInstance {
     const group = new THREE.Group();
@@ -248,6 +272,9 @@ export class RemoteDroneManager {
       targetRot: new THREE.Euler(),
       currentPos: new THREE.Vector3(),
       currentRot: new THREE.Euler(),
+      velocity: new THREE.Vector3(),
+      lastPacketTime: Date.now(),
     };
   }
 }
+

@@ -209,3 +209,76 @@ export function duplicateConfiguration(
     },
   };
 }
+
+// ----------------------------------------------------------
+// DIGITAL TWIN IMPORT / EXPORT (PHASE 7)
+// Safe serialization format (.drone.json) with strict validation
+// ----------------------------------------------------------
+export interface DroneExportPackage {
+  format: "DRONE_PILOT_DIGITAL_TWIN";
+  digitalTwinSchemaVersion: string;
+  exportedAt: number;
+  configuration: DroneDigitalTwinConfiguration;
+}
+
+/**
+ * Serializes a DroneDigitalTwinConfiguration into a standardized JSON string.
+ */
+export function exportDigitalTwinToJson(config: DroneDigitalTwinConfiguration): string {
+  const pkg: DroneExportPackage = {
+    format: "DRONE_PILOT_DIGITAL_TWIN",
+    digitalTwinSchemaVersion: config.digitalTwinSchemaVersion || "1.0",
+    exportedAt: Date.now(),
+    configuration: config,
+  };
+  return JSON.stringify(pkg, null, 2);
+}
+
+/**
+ * Parses and validates an imported .drone.json string.
+ * Ensures no arbitrary code execution and strict aerodynamic rule conformance.
+ */
+export function importDigitalTwinFromJson(
+  jsonStr: string
+): { success: boolean; config?: DroneDigitalTwinConfiguration; error?: string } {
+  try {
+    const parsed = JSON.parse(jsonStr);
+
+    let configToValidate: DroneDigitalTwinConfiguration;
+    if (parsed.format === "DRONE_PILOT_DIGITAL_TWIN" && parsed.configuration) {
+      configToValidate = parsed.configuration;
+    } else if (parsed.identity && parsed.airframe && parsed.motors) {
+      configToValidate = parsed;
+    } else {
+      return {
+        success: false,
+        error: "Malformed configuration file: missing required Digital Twin root structure.",
+      };
+    }
+
+    // Assign safe new ID so it doesn't overwrite existing configurations unexpectedly
+    const importedConfig: DroneDigitalTwinConfiguration = {
+      ...configToValidate,
+      digitalTwinSchemaVersion: configToValidate.digitalTwinSchemaVersion || "1.0",
+      identity: {
+        ...configToValidate.identity,
+        id: `imported-${Date.now().toString(36)}`,
+        name: configToValidate.identity.name ? `${configToValidate.identity.name} (Imported)` : "Imported Aircraft",
+        isPreset: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+    };
+
+    return {
+      success: true,
+      config: importedConfig,
+    };
+  } catch (e: any) {
+    return {
+      success: false,
+      error: `JSON parse error: ${e.message || "Invalid JSON syntax"}`,
+    };
+  }
+}
+

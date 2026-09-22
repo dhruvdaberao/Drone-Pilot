@@ -227,6 +227,7 @@ export interface PerformanceConfig {
 // Complete static aircraft specification (Source of Truth)
 // ----------------------------------------------------------
 export interface DroneDigitalTwinConfiguration {
+  digitalTwinSchemaVersion?: string; // e.g. "1.0"
   identity: AircraftIdentity;
   airframe: AirframeConfig;
   motors: IndividualMotorConfig[];
@@ -296,6 +297,32 @@ export interface DroneDigitalTwinRuntimeState {
 }
 
 // ----------------------------------------------------------
+// DIGITAL TWIN SNAPSHOT (PHASE 7)
+// Captures time-synchronized static ref + dynamic states
+// ----------------------------------------------------------
+export interface DigitalTwinSnapshot {
+  snapshotId: string;
+  timestamp: number;
+  simTimeSeconds: number;
+  configurationId: string;
+  configurationVersion: string;
+  runtimeState: DroneDigitalTwinRuntimeState;
+  environmentState?: {
+    windSpeedKmh: number;
+    windDirectionDeg: number;
+    gustFactor: number;
+    temperatureC: number;
+    turbulenceFactor: number;
+  };
+  faultState?: {
+    motorHealths: number[];
+    sensorHealth: { gps: boolean; imu: boolean; baro: boolean; compass: boolean };
+    payloadMassKg: number;
+  };
+  scenarioId?: string;
+}
+
+// ----------------------------------------------------------
 // VALIDATION RESULTS
 // ----------------------------------------------------------
 export type ValidationSeverity = "ERROR" | "WARNING" | "INFO";
@@ -314,3 +341,4 @@ export interface DigitalTwinValidationResult {
   warnings: ValidationIssue[];
   infos: ValidationIssue[];
 }
+

@@ -4,7 +4,7 @@
 // local BroadcastChannel fallback for multi-tab testing, dead-reckoning, and helipad deconfliction.
 // ==========================================================
 
-import { RemotePlayerState, MultiplayerPacket } from "./multiplayer-types";
+import { RemotePlayerState, MultiplayerPacket, ConnectionStatus, sanitizeRemotePlayerState } from "./multiplayer-types";
 import { TelemetryState } from "../simulation/types";
 import { db, isFirebaseConfigured } from "../firebase/client";
 import {
@@ -22,37 +22,53 @@ export class MultiplayerClient {
   public isConnected = false;
   public regionId = "training";
   public helipadId = "training-alpha";
+  public status: ConnectionStatus = "LOCAL";
 
   private channel: BroadcastChannel | null = null;
   private firestoreUnsubscribe: Unsubscribe | null = null;
   private remotePlayers: Map<string, RemotePlayerState> = new Map();
   private onPlayersUpdated?: (players: RemotePlayerState[]) => void;
+  private onStatusChanged?: (status: ConnectionStatus) => void;
 
   private broadcastTimer = 0;
   private broadcastInterval = 0.05; // 20Hz local broadcast
   private cloudSyncTimer = 0;
   private cloudSyncInterval = 0.15; // ~7Hz cloud broadcast (low latency without quota exhaustion)
   private unloadListener: (() => void) | null = null;
+  private localSequence = 0;
 
   constructor(
     callsign?: string,
     regionId = "training",
-    onUpdate?: (players: RemotePlayerState[]) => void
+    onUpdate?: (players: RemotePlayerState[]) => void,
+    onStatus?: (status: ConnectionStatus) => void
   ) {
     this.localPlayerId = "pilot_" + Math.random().toString(36).substring(2, 8);
     this.callsign = callsign || "EAGLE-" + Math.floor(10 + Math.random() * 90);
     this.regionId = regionId;
     this.onPlayersUpdated = onUpdate;
+    this.onStatusChanged = onStatus;
+  }
+
+  public setStatus(newStatus: ConnectionStatus): void {
+    if (this.status !== newStatus) {
+      this.status = newStatus;
+      if (this.onStatusChanged) {
+        this.onStatusChanged(newStatus);
+      }
+    }
   }
 
   public connect(
     regionId?: string,
     helipadId?: string,
-    onUpdate?: (players: RemotePlayerState[]) => void
+    onUpdate?: (players: RemotePlayerState[]) => void,
+    onStatus?: (status: ConnectionStatus) => void
   ) {
     if (regionId) this.regionId = regionId;
     if (helipadId) this.helipadId = helipadId;
     if (onUpdate) this.onPlayersUpdated = onUpdate;
+    if (onStatus) this.onStatusChanged = onStatus;
 
     // 1. Local BroadcastChannel for instant local inter-tab communication
     if (typeof window !== "undefined" && "BroadcastChannel" in window) {
@@ -62,6 +78,7 @@ export class MultiplayerClient {
           this.handlePacket(event.data);
         };
         this.isConnected = true;
+        this.setStatus("LOCAL");
 
         this.sendPacket("JOIN", {
           regionId: this.regionId,
@@ -91,14 +108,14 @@ export class MultiplayerClient {
                   changed = true;
                 }
               } else {
-                const data = change.doc.data() as RemotePlayerState;
-                // Only consider recent packets (< 8s stale)
-                if (data && now - (data.lastUpdate || 0) < 8000) {
-                  this.remotePlayers.set(id, {
-                    ...data,
-                    lastUpdate: data.lastUpdate || now,
-                  });
-                  changed = true;
+                const raw = change.doc.data();
+                const sanitized = sanitizeRemotePlayerState(raw);
+                if (sanitized && now - sanitized.lastUpdate < 8000) {
+                  const existing = this.remotePlayers.get(id);
+                  if (!existing || sanitized.sequenceNumber >= existing.sequenceNumber) {
+                    this.remotePlayers.set(id, sanitized);
+                    changed = true;
+                  }
                 }
               }
             });
@@ -106,12 +123,15 @@ export class MultiplayerClient {
             if (changed) {
               this.notifyUpdate();
             }
+            this.setStatus("CONNECTED");
           },
           (err) => {
             console.warn("Firestore airspace subscription warning (falling back to local channel):", err);
+            this.setStatus("LOCAL");
           }
         );
         this.isConnected = true;
+        this.setStatus("CONNECTED");
       } catch (err) {
         console.warn("Failed to subscribe to cloud airspace:", err);
       }
@@ -125,6 +145,7 @@ export class MultiplayerClient {
       window.addEventListener("beforeunload", this.unloadListener);
     }
   }
+
 
   public sendTelemetry(telemetry: TelemetryState, dt = 0.05) {
     this.updateLocalState(telemetry, "drone", this.regionId, this.helipadId, dt);
@@ -158,6 +179,7 @@ export class MultiplayerClient {
     }
 
     this.isConnected = false;
+    this.setStatus("OFFLINE");
     this.remotePlayers.clear();
     this.notifyUpdate();
   }
@@ -171,6 +193,8 @@ export class MultiplayerClient {
   ) {
     if (!this.isConnected) return;
 
+    this.localSequence++;
+
     const state: RemotePlayerState = {
       playerId: this.localPlayerId,
       callsign: this.callsign,
@@ -183,6 +207,7 @@ export class MultiplayerClient {
       rotorRpmPercent: telemetry.rotorRpmPercent,
       flightMode: telemetry.flightMode,
       lastUpdate: Date.now(),
+      sequenceNumber: this.localSequence,
     };
 
     // 1. Fast local broadcast (20Hz)
@@ -226,6 +251,7 @@ export class MultiplayerClient {
       callsign: this.callsign,
       data,
       timestamp: Date.now(),
+      sequenceNumber: this.localSequence,
     };
     try {
       this.channel.postMessage(packet);
@@ -238,12 +264,14 @@ export class MultiplayerClient {
     if (!packet || packet.playerId === this.localPlayerId) return;
 
     if (packet.type === "STATE") {
-      const state = packet.data as RemotePlayerState;
-      this.remotePlayers.set(packet.playerId, {
-        ...state,
-        lastUpdate: Date.now(),
-      });
-      this.notifyUpdate();
+      const sanitized = sanitizeRemotePlayerState(packet.data);
+      if (sanitized) {
+        const existing = this.remotePlayers.get(packet.playerId);
+        if (!existing || sanitized.sequenceNumber >= existing.sequenceNumber) {
+          this.remotePlayers.set(packet.playerId, sanitized);
+          this.notifyUpdate();
+        }
+      }
     } else if (packet.type === "LEAVE") {
       this.remotePlayers.delete(packet.playerId);
       this.notifyUpdate();
@@ -251,6 +279,7 @@ export class MultiplayerClient {
       this.broadcastTimer = 999; // instant reply
     }
   }
+
 
   private notifyUpdate() {
     if (this.onPlayersUpdated) {
