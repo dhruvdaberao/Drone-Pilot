@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 interface Drone3DViewerProps {
   type: string; // "quadcopter" | "hexacopter" | "octacopter"
@@ -58,17 +59,18 @@ export function Drone3DViewer({
     // STUDIO AEROSPACE LIGHTING
     // Highlights chiseled chamfers and metallic hardware
     // ==============================================
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.90);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
     scene.add(ambientLight);
 
     // Primary Key Sunlight (crisp specular highlights on tactical gray hull)
-    const keyLight = new THREE.DirectionalLight(0xffffff, 2.8);
-    keyLight.position.set(6, 9, 6);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 3.5);
+    keyLight.position.set(6, 12, 6);
+    keyLight.castShadow = true;
     scene.add(keyLight);
 
     // Secondary Fill Light (subtle cool shadow fill)
-    const fillLight = new THREE.DirectionalLight(0xdce7f5, 1.4);
-    fillLight.position.set(-6, 5, 3);
+    const fillLight = new THREE.DirectionalLight(0xbbe3ff, 2.0);
+    fillLight.position.set(-6, 5, -3);
     scene.add(fillLight);
 
     // Aerospace Rim Light (illuminates rear carbon bevels & motor edges)
@@ -599,60 +601,22 @@ export function Drone3DViewer({
     droneGroup.rotation.y = -0.65;
 
     // ==============================================
-    // 4. TOUCH & MOUSE 360° ROTATION INTERACTION
+    // 4. FULL 6-DOF ORBIT CONTROLS (PAN, ZOOM, ROTATE)
     // ==============================================
-    let isDragging = false;
-    let prevPointerX = 0;
-    let prevPointerY = 0;
-    let rotVelocityX = 0;
-    let rotVelocityY = 0;
-    const friction = 0.94;
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.enablePan = true;
+    controls.maxPolarAngle = Math.PI / 2 + 0.2; // Allow looking slightly below the drone
+    controls.minDistance = 2.0;
+    controls.maxDistance = 15.0;
+    controls.enabled = interactive;
+    controls.autoRotate = autoRotate && !interactive;
+    controls.autoRotateSpeed = 1.5;
 
-    const onPointerDown = (e: MouseEvent | TouchEvent) => {
-      if (!interactive) return;
-      isDragging = true;
-      setIsInteracting(true);
-      const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
-      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-      prevPointerX = clientX;
-      prevPointerY = clientY;
-      rotVelocityX = 0;
-      rotVelocityY = 0;
-    };
-
-    const onPointerMove = (e: MouseEvent | TouchEvent) => {
-      if (!isDragging) return;
-      const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
-      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-
-      const deltaX = clientX - prevPointerX;
-      const deltaY = clientY - prevPointerY;
-
-      droneGroup.rotation.y += deltaX * 0.012;
-      droneGroup.rotation.x += deltaY * 0.008;
-      // Expanded pitch limits to allow full top and bottom angles
-      droneGroup.rotation.x = Math.max(-1.45, Math.min(1.45, droneGroup.rotation.x));
-
-      rotVelocityY = deltaX * 0.008;
-      rotVelocityX = deltaY * 0.005;
-
-      prevPointerX = clientX;
-      prevPointerY = clientY;
-    };
-
-    const onPointerUp = () => {
-      isDragging = false;
-      setIsInteracting(false);
-    };
-
-    const domEl = renderer.domElement;
-    domEl.addEventListener("mousedown", onPointerDown);
-    window.addEventListener("mousemove", onPointerMove);
-    window.addEventListener("mouseup", onPointerUp);
-
-    domEl.addEventListener("touchstart", onPointerDown, { passive: true });
-    window.addEventListener("touchmove", onPointerMove, { passive: true });
-    window.addEventListener("touchend", onPointerUp);
+    controls.addEventListener("start", () => setIsInteracting(true));
+    controls.addEventListener("end", () => setIsInteracting(false));
 
     // RESIZE OBSERVER
     const handleResize = () => {
@@ -703,25 +667,13 @@ export function Drone3DViewer({
         prop.group.rotation.y += prop.direction * propSpeed * delta;
       });
 
+      // Update OrbitControls
+      controls.update();
+
       // Ground shadow expansion
       if (shadowMesh) {
         const shadowTargetScale = isCurrentSelected ? 1.25 : 1.0;
         shadowMesh.scale.lerp(new THREE.Vector3(shadowTargetScale, shadowTargetScale, 1), 0.08);
-      }
-
-      // Turntable rotation or momentum damping
-      if (!isDragging) {
-        if (Math.abs(rotVelocityY) > 0.0001) {
-          droneGroup.rotation.y += rotVelocityY;
-          rotVelocityY *= friction;
-        } else if (autoRotate) {
-          droneGroup.rotation.y += 0.005;
-        }
-
-        if (Math.abs(rotVelocityX) > 0.0001) {
-          droneGroup.rotation.x = Math.max(-1.45, Math.min(1.45, droneGroup.rotation.x + rotVelocityX));
-          rotVelocityX *= friction;
-        }
       }
 
       renderer.render(scene, camera);
@@ -734,13 +686,7 @@ export function Drone3DViewer({
       cancelAnimationFrame(animationId);
       resizeObserver.disconnect();
 
-      domEl.removeEventListener("mousedown", onPointerDown);
-      window.removeEventListener("mousemove", onPointerMove);
-      window.removeEventListener("mouseup", onPointerUp);
-
-      domEl.removeEventListener("touchstart", onPointerDown);
-      window.removeEventListener("touchmove", onPointerMove);
-      window.removeEventListener("touchend", onPointerUp);
+      controls.dispose();
 
       if (container.contains(domEl)) {
         container.removeChild(domEl);
