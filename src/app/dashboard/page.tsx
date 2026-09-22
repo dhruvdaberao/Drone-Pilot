@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { DRONES, DEFAULT_DRONE_STORAGE_KEY } from "@/lib/drones";
 import { HELIPAD_LIST } from "@/lib/world/helipad-definitions";
 import { DroneModel } from "@/types/drone";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sliders, Target, Compass, BarChart3 } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -99,17 +99,80 @@ export default function DashboardPage() {
         <DashboardHeader />
 
         {/* Main Hangar Stage */}
-        <main className="relative z-10 flex-1 w-full max-w-full sm:max-w-6xl mx-auto px-4 sm:px-8 pt-20 sm:pt-24 pb-8 flex flex-col justify-center overflow-x-hidden">
-          {/* Hangar Heading */}
-          <div className="text-center max-w-2xl mx-auto mb-4 sm:mb-6 px-2 select-none pointer-events-none">
-            <h1 className="font-heading text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-neutral-950 uppercase">
-              SELECT YOUR DRONE
+        <main className="relative z-10 flex-1 w-full max-w-full sm:max-w-6xl mx-auto px-4 sm:px-8 pt-18 sm:pt-20 pb-8 flex flex-col justify-center overflow-x-hidden">
+          {/* Platform Heading (Requirement 36) */}
+          <div className="text-center max-w-3xl mx-auto mb-3 sm:mb-4 px-2 select-none">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-900 text-white font-mono text-[10px] font-bold tracking-widest uppercase mb-2 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FF5500] animate-ping" />
+              <span>AERONAUTICAL DIGITAL-TWIN LABORATORY</span>
+            </div>
+            <h1 className="font-heading text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-neutral-950 uppercase">
+              DRONE PILOT
             </h1>
-
-            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-neutral-600 max-w-md mx-auto leading-relaxed">
-              Choose your flight platform to initialize digital telemetry. Touch or drag any aircraft to inspect in 3D.
+            <p className="mt-1 text-xs sm:text-sm font-medium text-neutral-600 max-w-lg mx-auto leading-relaxed">
+              Interactive Drone Simulation & Digital Twin Platform. Configure real airframe parameters, inject faults, manipulate aerodynamics, and evaluate telemetry.
             </p>
+
+            {/* Quick-Access Platform Feature Modules */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-left font-mono">
+              <button
+                type="button"
+                onClick={() => router.push("/configure")}
+                className="p-2.5 rounded-xl bg-white border border-neutral-200/90 hover:border-black transition-all shadow-2xs group"
+              >
+                <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-900 group-hover:text-[#FF5500]">
+                  <Sliders className="h-3.5 w-3.5 text-[#FF5500]" />
+                  <span>DIGITAL TWIN</span>
+                </div>
+                <p className="text-[10px] text-neutral-500 mt-1 leading-tight line-clamp-2">
+                  Configure mass, motors, battery & payload.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push("/fly/select")}
+                className="p-2.5 rounded-xl bg-white border border-neutral-200/90 hover:border-black transition-all shadow-2xs group"
+              >
+                <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-900 group-hover:text-emerald-600">
+                  <Target className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>SCENARIOS</span>
+                </div>
+                <p className="text-[10px] text-neutral-500 mt-1 leading-tight line-clamp-2">
+                  Emergency RTL, wind gusts & motor degradation.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push("/fly/select")}
+                className="p-2.5 rounded-xl bg-white border border-neutral-200/90 hover:border-black transition-all shadow-2xs group"
+              >
+                <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-900 group-hover:text-cyan-600">
+                  <Compass className="h-3.5 w-3.5 text-cyan-600" />
+                  <span>SIMULATION</span>
+                </div>
+                <p className="text-[10px] text-neutral-500 mt-1 leading-tight line-clamp-2">
+                  20 island vertiports across 2.4km proving ground.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push("/fly/select")}
+                className="p-2.5 rounded-xl bg-white border border-neutral-200/90 hover:border-black transition-all shadow-2xs group"
+              >
+                <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-900 group-hover:text-purple-600">
+                  <BarChart3 className="h-3.5 w-3.5 text-purple-600" />
+                  <span>ANALYSIS</span>
+                </div>
+                <p className="text-[10px] text-neutral-500 mt-1 leading-tight line-clamp-2">
+                  Flight forensics, blackbox debrief & 3D replay.
+                </p>
+              </button>
+            </div>
           </div>
+
 
           {/* Cardless Hangar 3D Stage Grid:
               - Desktop (1024px+): 3 drones in 1 horizontal line

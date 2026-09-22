@@ -32,6 +32,33 @@ export interface TrainingScenario {
 
 export const TRAINING_SCENARIOS: TrainingScenario[] = [
   {
+    id: "demo-agri-wind-payload",
+    name: "Flagship Demo: Agricultural Wind + Payload",
+    category: "Industrial",
+    badgeColor: "#059669", // emerald
+    description: "Flagship CDAC / Reviewer demonstration highlighting multi-variable flight physics: 8.5 m/s crosswind gusts coupled with a 4.5 kg agricultural crop-sprayer payload tank.",
+    learningObjective: "Observe real-time digital-twin dynamics: elevated hover throttle (65%), aerodynamic pitch/roll compensation into crosswinds, and Ohm's law battery voltage sag under heavy motor current draw.",
+    environment: {
+      preset: "windy",
+      weather: "windy",
+      windSpeed: 8.5,
+      windDirection: 120,
+      windGust: 2.5,
+      temperature: 26.0,
+      rainIntensity: "off",
+      visibility: "clear",
+      turbulence: 0.35,
+    },
+    faults: {
+      motorHealth: { 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0 },
+      sensorHealth: { gps: true, imu: true, baro: true, compass: true },
+      batteryInitialSocPercent: 92,
+      payloadMassKg: 4.5,
+    },
+    expectedBehavior: "Hover equilibrium requires ~65% throttle instead of ~40%. Aircraft tilts ~12° into the 120° wind vector to hold position. Battery terminal voltage drops ~0.6V under current surge (>36A).",
+    recommendedOperatorAction: "Perform a 10m climb over the runway, execute a 360° yaw turn to observe windward vs leeward motor loading, and land smoothly.",
+  },
+  {
     id: "normal-cruise",
     name: "Standard Navigational Cruise",
     category: "Standard",
