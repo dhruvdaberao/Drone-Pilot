@@ -98,11 +98,9 @@ export default function DashboardPage() {
           {/* Top Title Overlay */}
           <div className="w-full flex justify-center mt-2 lg:mt-6">
             <div className="relative inline-block animate-in slide-in-from-top-10 fade-in duration-700">
-              <h1 className={`${spaceGrotesk.className} text-5xl sm:text-7xl md:text-8xl font-extrabold tracking-[0.2em] text-white uppercase text-center drop-shadow-[0_0_20px_rgba(255,85,0,0.4)]`}>
+              <h1 className={`${spaceGrotesk.className} text-5xl sm:text-7xl md:text-8xl font-extrabold tracking-[0.2em] text-white uppercase text-center`}>
                 {selectedDrone.name}
               </h1>
-              {/* Glowing Underline Accent */}
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3/4 h-[3px] bg-gradient-to-r from-transparent via-[#FF5500] to-transparent shadow-[0_0_15px_#FF5500]" />
             </div>
           </div>
 
@@ -112,22 +110,22 @@ export default function DashboardPage() {
             <div className="flex flex-col gap-6 pointer-events-auto w-64">
               {/* Platform Specs - HUD Style */}
               <div key={`specs-${selectedDrone.id}`} className="animate-in slide-in-from-left-8 fade-in duration-500 delay-100 flex flex-col">
-                <h3 className="text-xs font-bold text-[#FF5500] tracking-widest uppercase mb-4 flex items-center gap-2 drop-shadow-[0_0_8px_rgba(255,85,0,0.8)]">
-                  <Activity className="w-4 h-4" /> 
+                <h3 className="text-xs font-bold text-white tracking-widest uppercase mb-4 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-[#FF5500]" /> 
                   Platform Specs
                 </h3>
-                <div className="space-y-4 font-mono border-l-2 border-[#FF5500]/40 pl-4">
+                <div className="space-y-4 font-mono border-l-2 border-[#FF5500] pl-4">
                   <div>
                     <span className="block text-[10px] text-neutral-400 tracking-wider">PROPULSION</span>
-                    <span className="text-sm font-semibold text-white drop-shadow-md">{selectedDrone.specs.rotors} MOTORS</span>
+                    <span className="text-sm font-semibold text-white">{selectedDrone.specs.rotors} MOTORS</span>
                   </div>
                   <div>
                     <span className="block text-[10px] text-neutral-400 tracking-wider">WEIGHT CLASS</span>
-                    <span className="text-sm font-semibold text-white drop-shadow-md">{selectedDrone.specs.weightClass}</span>
+                    <span className="text-sm font-semibold text-white">{selectedDrone.specs.weightClass}</span>
                   </div>
                   <div>
                     <span className="block text-[10px] text-neutral-400 tracking-wider">CERTIFICATION</span>
-                    <span className="text-sm font-semibold text-emerald-400 flex items-center gap-1.5 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">
+                    <span className="text-sm font-semibold text-emerald-400 flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       {selectedDrone.badge}
                     </span>
@@ -147,7 +145,7 @@ export default function DashboardPage() {
                       : "border-transparent text-neutral-500 hover:text-white hover:border-white/30"
                     }`}
                   >
-                    <Crosshair className={`w-4 h-4 ${selectedDrone.id === drone.id ? "text-[#FF5500] drop-shadow-[0_0_5px_#FF5500]" : "text-neutral-500"}`} />
+                    <Crosshair className={`w-4 h-4 ${selectedDrone.id === drone.id ? "text-[#FF5500]" : "text-neutral-500"}`} />
                     <span className="text-xs font-bold tracking-[0.15em] uppercase font-mono">{drone.name}</span>
                   </button>
                 ))}
@@ -165,7 +163,7 @@ export default function DashboardPage() {
               ) : activeConfig ? (
                 <div key={`config-${selectedDrone.id}`} className="w-full flex flex-col items-end animate-in slide-in-from-right-8 fade-in duration-500 delay-200">
                   <div className="flex flex-col items-end mb-6">
-                    <h2 className="text-lg font-bold tracking-widest uppercase mb-1 text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.6)]">
+                    <h2 className="text-lg font-bold tracking-widest uppercase mb-1 text-emerald-400">
                       Ready for Flight
                     </h2>
                     <p className="text-xs text-neutral-300 font-mono">
@@ -194,7 +192,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div key={`noconfig-${selectedDrone.id}`} className="w-full flex flex-col items-end animate-in slide-in-from-right-8 fade-in duration-500 delay-200">
-                  <p className="text-xs text-[#FF5500] mb-4 font-mono font-bold tracking-widest uppercase drop-shadow-[0_0_5px_#FF5500]">Action Required</p>
+                  <p className="text-xs text-[#FF5500] mb-4 font-mono font-bold tracking-widest uppercase">Action Required</p>
                   
                   <Button
                     className="w-full h-14 bg-white/5 hover:bg-[#FF5500] text-white border border-white/20 hover:border-[#FF5500] text-sm font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_25px_rgba(255,85,0,0.6)] backdrop-blur-sm transition-all duration-300 rounded-none skew-x-[-10deg]"
