@@ -688,8 +688,8 @@ export function Drone3DViewer({
 
       controls.dispose();
 
-      if (container.contains(domEl)) {
-        container.removeChild(domEl);
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
       }
 
       renderer.dispose();
