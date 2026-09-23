@@ -227,16 +227,20 @@ export function DigitalTwinConfigurator() {
     if (!config) return { valid: false, errors: [], warnings: [], infos: [] };
     return validateDroneDigitalTwin(config);
   }, [config]);
+  const [activeTab, setActiveTab] = useState<"AIRFRAME" | "PROPULSION" | "BATTERY" | "AVIONICS" | "PAYLOAD">("AIRFRAME");
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleConfigChange = useCallback((updated: DroneDigitalTwinConfiguration) => {
     setConfig(updated);
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!config || !user?.uid) {
-      setSaveFeedback("Must be logged in to save.");
+    if (!config || !user?.uid || isSaving) {
+      if (!user?.uid) setSaveFeedback("Must be logged in to save.");
       return;
     }
+    
+    setIsSaving(true);
     try {
       const toSave = {
         ...config,
@@ -250,12 +254,9 @@ export function DigitalTwinConfigurator() {
       console.error("Save error:", err);
       setSaveFeedback("Error saving: " + String(err.message || err));
       setTimeout(() => setSaveFeedback(null), 4000);
+      setIsSaving(false);
     }
-  }, [config, user, router]);
-
-
-
-  const [activeTab, setActiveTab] = useState<"AIRFRAME" | "PROPULSION" | "BATTERY" | "AVIONICS" | "PAYLOAD">("AIRFRAME");
+  }, [config, user, router, isSaving]);
   const tabs = ["AIRFRAME", "PROPULSION", "BATTERY", "AVIONICS", "PAYLOAD"] as const;
 
   if (!config) {
@@ -351,10 +352,20 @@ export function DigitalTwinConfigurator() {
               </Button>
               <Button 
                 onClick={handleSave} 
-                className="bg-[#FF5500] hover:bg-[#E64800] text-white rounded-lg text-sm font-bold tracking-widest uppercase h-12 px-8 transition-colors shadow-none hover:shadow-none focus:shadow-none flex items-center justify-center"
+                disabled={isSaving}
+                className="bg-[#FF5500] hover:bg-[#E64800] text-white rounded-lg text-sm font-bold tracking-widest uppercase h-12 px-8 transition-colors shadow-none hover:shadow-none focus:shadow-none flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Save className="w-4 h-4 mr-2 shrink-0" />
-                Save Configurations
+                {isSaving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2 shrink-0" />
+                    SAVING CONFIGURATION...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2 shrink-0" />
+                    SAVE CONFIGURATION
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -396,10 +407,20 @@ export function DigitalTwinConfigurator() {
           </Button>
           <Button 
             onClick={handleSave} 
-            className="bg-[#FF5500] hover:bg-[#E64800] text-white rounded-lg text-sm font-bold tracking-widest uppercase h-12 px-8 transition-colors shadow-none hover:shadow-none focus:shadow-none flex items-center justify-center"
+            disabled={isSaving}
+            className="bg-[#FF5500] hover:bg-[#E64800] text-white rounded-lg text-sm font-bold tracking-widest uppercase h-12 px-8 transition-colors shadow-none hover:shadow-none focus:shadow-none flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Save className="w-4 h-4 mr-2 shrink-0" />
-            Save Configurations
+            {isSaving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2 shrink-0" />
+                SAVING CONFIGURATION...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2 shrink-0" />
+                SAVE CONFIGURATION
+              </>
+            )}
           </Button>
         </div>
       </div>

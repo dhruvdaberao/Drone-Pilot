@@ -207,8 +207,7 @@ export async function listUserConfigurations(uid: string | null): Promise<DroneD
     
     try {
       const colRef = collection(db, "users", uid, "droneConfigurations");
-      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 3000));
-      const snap = await Promise.race([getDocs(colRef), timeoutPromise]);
+      const snap = await getDocs(colRef);
       
       snap.forEach((docSnap) => {
         const data = docSnap.data() as DroneDigitalTwinConfiguration;
@@ -217,7 +216,7 @@ export async function listUserConfigurations(uid: string | null): Promise<DroneD
         }
       });
       return Array.from(customMap.values());
-    } catch (e) {
+    } catch (e: any) {
       console.warn("Firestore list configurations error:", e);
     }
   }
@@ -247,12 +246,11 @@ export async function getUserConfiguration(uid: string | null, category: DroneCa
   if (uid && isFirebaseConfigured() && db) {
     try {
       const docRef = doc(db, "users", uid, "droneConfigurations", category);
-      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 3000));
-      const snap = await Promise.race([getDoc(docRef), timeoutPromise]);
+      const snap = await getDoc(docRef);
       if (snap.exists()) {
         return snap.data() as DroneDigitalTwinConfiguration;
       }
-    } catch (e) {
+    } catch (e: any) {
       console.warn("Firestore getUserConfiguration error:", e);
     }
   }
@@ -280,10 +278,13 @@ export async function saveUserConfiguration(
   category: DroneCategory,
   config: DroneDigitalTwinConfiguration
 ): Promise<void> {
+  // Deep clone to ensure no React state, DOM nodes, or functions leak into Firestore
+  const safeData = JSON.parse(JSON.stringify(config));
+  
   const toSave: DroneDigitalTwinConfiguration = {
-    ...config,
+    ...safeData,
     identity: {
-      ...config.identity,
+      ...safeData.identity,
       id: category, // Enforce canonical ID
       category: category,
       updatedAt: Date.now(),
@@ -297,20 +298,30 @@ export async function saveUserConfiguration(
       const batch = writeBatch(db);
       
       const configRef = doc(db, "users", uid, "droneConfigurations", category);
-      batch.set(configRef, toSave);
+      batch.set(configRef, toSave, { merge: true });
       
       const userRef = doc(db, "users", uid);
       batch.set(userRef, { lastSelectedDrone: category, updatedAt: Date.now() }, { merge: true });
       
-      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 3000));
+      // Allow up to 20 seconds for cold start connection, but usually resolves immediately
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error("Firestore timeout: Could not connect to Firebase after 20 seconds.")), 20000)
+      );
+      
       await Promise.race([batch.commit(), timeoutPromise]);
-    } catch (e) {
-      console.warn("Firestore save error, preserving locally:", e);
-      throw e; // Rethrow to inform UI of sync failure
+    } catch (e: any) {
+      console.error("Firestore save failed", {
+        code: e?.code,
+        message: e?.message,
+        uid,
+        category
+      });
+      // Rethrow to inform UI of sync failure so we don't falsely claim success
+      throw e; 
     }
   }
 
-  // 2. Persist locally
+  // 2. Persist locally ONLY as a successful cache update
   if (typeof window !== "undefined") {
     try {
       const key = getLocalSavedKey(uid);
