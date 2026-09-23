@@ -6,233 +6,160 @@ import { DroneModel } from "@/types/drone";
 import { DRONES, getDroneById, DEFAULT_DRONE_STORAGE_KEY } from "@/lib/drones";
 import { RegionId, RegionDefinition } from "@/lib/world/world-types";
 import { REGIONS, REGION_LIST } from "@/lib/world/region-definitions";
-import { HELIPADS } from "@/lib/world/helipad-definitions";
-import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { Plane, Map as MapIcon, ArrowRight, ArrowLeft, Cloud, Wind, Thermometer, Box, Battery, Scale } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Wind, Thermometer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getActiveDigitalTwin } from "@/lib/digital-twin/digital-twin-storage";
-import { DroneDigitalTwinConfiguration } from "@/types/drone-digital-twin";
-
-type Step = "SELECT_ENVIRONMENT" | "PREFLIGHT";
+import { DroneDigitalTwinConfiguration, DroneCategory } from "@/types/drone-digital-twin";
 
 export function FlightPrepContainer() {
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  const [step, setStep] = useState<Step>("SELECT_ENVIRONMENT");
-  const [selectedDrone, setSelectedDrone] = useState<DroneModel>(DRONES[0]);
-  const [digitalTwin, setDigitalTwin] = useState<DroneDigitalTwinConfiguration | null>(null);
   
-  const [selectedRegionId, setSelectedRegionId] = useState<RegionId | null>(null);
+  const activeCategory = searchParams?.get("drone") as DroneCategory | null;
+
+  const [digitalTwin, setDigitalTwin] = useState<DroneDigitalTwinConfiguration | null>(null);
+  const [selectedRegionId, setSelectedRegionId] = useState<RegionId | null>("city");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     try {
-      const urlDrone = searchParams.get("drone");
-      let activeDrone = DRONES[0];
-      if (urlDrone) {
-        const found = getDroneById(urlDrone);
-        if (found) activeDrone = found;
-      } else {
-        const stored = localStorage.getItem(DEFAULT_DRONE_STORAGE_KEY);
-        if (stored) {
-          const found = getDroneById(stored);
-          if (found) activeDrone = found;
-        }
-      }
-      setSelectedDrone(activeDrone);
-      setDigitalTwin(getActiveDigitalTwin(null));
+      const twin = getActiveDigitalTwin(null); // Assuming this retrieves it correctly
+      setDigitalTwin(twin);
     } catch {
-      // Fallback
+      // Ignore
+    } finally {
+      setLoading(false);
     }
   }, [searchParams]);
 
-  const handleSelectRegion = (regionId: RegionId) => {
-    setSelectedRegionId(regionId);
-    setStep("PREFLIGHT");
+  const handleEnterSimulation = () => {
+    if (!selectedRegionId) return;
+    router.push(`/fly?drone=${activeCategory || "quadcopter"}&region=${selectedRegionId}`);
   };
 
   const handleBack = () => {
-    if (step === "PREFLIGHT") {
-      setStep("SELECT_ENVIRONMENT");
-      setSelectedRegionId(null);
+    if (activeCategory) {
+      router.push(`/configure?drone=${activeCategory}`);
     } else {
       router.push("/dashboard");
     }
   };
 
-  const handleEnterSimulation = () => {
-    if (!selectedRegionId) return;
-    const region = REGIONS[selectedRegionId];
-    const helipadId = region.primaryHelipadId || "training-alpha";
-    const isMock = searchParams.get("mock") === "true";
-    
-    router.push(
-      `/fly?region=${selectedRegionId}&helipad=${helipadId}&drone=${selectedDrone.id}&launch=true${
-        isMock ? "&mock=true" : ""
-      }`
+  if (loading) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center gap-4 min-h-[60vh]">
+        <div className="w-8 h-8 border-4 border-[#FF5500] border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs font-bold uppercase tracking-widest text-neutral-500">Loading Environment...</p>
+      </div>
     );
-  };
+  }
 
   return (
-    <div className="relative min-h-screen w-full max-w-full flex flex-col bg-[#FAF7F2] text-neutral-900 font-sans">
-      <DashboardHeader />
+    <div className="flex-1 flex flex-col bg-[#08090a] text-white overflow-hidden pb-24">
+      {/* Step Indicator */}
+      <div className="w-full border-b border-white/5 bg-[#08090a]/80 backdrop-blur-md relative z-10">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4 sm:gap-8 overflow-x-auto scrollbar-none text-[11px] font-bold tracking-widest text-neutral-500">
+          <span className="shrink-0 text-white">01 AIRCRAFT</span>
+          <span className="shrink-0 text-neutral-700">/</span>
+          <span className="shrink-0 text-white">02 CONFIGURE</span>
+          <span className="shrink-0 text-neutral-700">/</span>
+          <span className="text-[#FF5500] shrink-0">03 ENVIRONMENT</span>
+          <span className="shrink-0 text-neutral-700">/</span>
+          <span className="shrink-0 text-neutral-500">04 FLIGHT</span>
+        </div>
+      </div>
 
-      <main className="relative z-10 flex-1 w-full max-w-5xl mx-auto px-6 pt-24 pb-12 flex flex-col">
-        
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center gap-2 mb-8">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs font-semibold text-neutral-700 hover:bg-neutral-100 hover:border-black transition-all"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>{step === "PREFLIGHT" ? "Back to Environments" : "Back to Dashboard"}</span>
-          </button>
+      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-10 flex-1 flex flex-col">
+        {/* Header */}
+        <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight uppercase mb-3">
+            SELECT ENVIRONMENT
+          </h1>
+          <p className="text-sm text-neutral-400 font-medium">
+            Choose the environment in which your configured aircraft will operate.
+          </p>
         </div>
 
-        {step === "SELECT_ENVIRONMENT" && (
-          <div className="animate-in fade-in duration-300">
-            <div className="text-center max-w-2xl mx-auto mb-10">
-              <h1 className="font-heading text-3xl font-extrabold tracking-widest text-neutral-950 uppercase mb-2">
-                Select Environment
-              </h1>
-              <p className="text-sm font-medium text-neutral-500">
-                Choose a simulation biome for your flight operations.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {REGION_LIST.map((region) => (
-                <div
-                  key={region.id}
-                  onClick={() => handleSelectRegion(region.id as RegionId)}
-                  className="group relative bg-white border border-neutral-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 flex flex-col h-64"
+        {/* Environment Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
+          {REGION_LIST.map((region) => {
+            const isSelected = selectedRegionId === region.id;
+            
+            return (
+              <div
+                key={region.id}
+                onClick={() => setSelectedRegionId(region.id as RegionId)}
+                className={`group relative flex flex-col h-72 rounded-lg cursor-pointer overflow-hidden transition-all duration-300 ${
+                  isSelected 
+                    ? "border border-[#FF5500] shadow-[0_4px_24px_rgba(255,85,0,0.15)] -translate-y-1" 
+                    : "border border-white/10 hover:border-white/20 hover:bg-white/5"
+                }`}
+              >
+                {/* Image Area */}
+                <div 
+                  className="h-36 w-full relative overflow-hidden bg-neutral-900"
                 >
-                  {/* Visual Placeholder for Environment */}
                   <div 
-                    className="h-32 w-full relative transition-transform duration-500 group-hover:scale-105"
-                    style={{ backgroundColor: region.mapColor || "#ccc" }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute bottom-3 left-4 text-white">
-                      <h3 className="font-heading text-lg font-bold tracking-wider uppercase drop-shadow-sm">
-                        {region.name}
-                      </h3>
-                    </div>
-                  </div>
+                    className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.02]"
+                    style={{ backgroundColor: region.mapColor || "#1f1f1f" }}
+                  />
+                  <div className={`absolute inset-0 transition-opacity duration-300 ${isSelected ? 'bg-black/20' : 'bg-black/40 group-hover:bg-black/30'}`} />
                   
-                  <div className="p-4 flex flex-col flex-1 justify-between bg-white z-10">
-                    <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
-                      {region.description}
-                    </p>
-                    
-                    <div className="flex items-center justify-between mt-4 border-t border-neutral-100 pt-3">
-                      <div className="flex items-center gap-3 text-[10px] font-mono font-semibold uppercase text-neutral-400">
-                        <span className="flex items-center gap-1">
-                          <Wind className="w-3 h-3 text-[#FF5500]" /> {region.environment.baseWindSpeedMs} m/s
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Thermometer className="w-3 h-3 text-[#FF5500]" /> {region.environment.airTemperatureC}°C
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-bold tracking-widest text-[#FF5500] group-hover:text-[#e04b00] uppercase">
-                        SELECT
-                      </span>
+                  {isSelected && (
+                    <div className="absolute top-4 right-4 bg-[#FF5500] text-white rounded-full p-1 shadow-lg">
+                      <CheckCircle2 className="w-4 h-4" />
                     </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {step === "PREFLIGHT" && selectedRegionId && digitalTwin && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 max-w-xl mx-auto w-full">
-            <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
-              
-              <div className="bg-neutral-950 p-6 text-center">
-                <h1 className="font-heading text-2xl font-extrabold tracking-widest text-white uppercase mb-1">
-                  PREFLIGHT
-                </h1>
-                <p className="text-xs text-neutral-400 font-mono tracking-widest uppercase">
-                  Final Authorization
-                </p>
-              </div>
-
-              <div className="p-6 space-y-6">
-                
-                <div className="space-y-3">
-                  <h3 className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">AIRCRAFT</h3>
-                  <div className="flex items-center justify-between bg-neutral-50 rounded-xl p-3 border border-neutral-100">
-                    <div className="flex items-center gap-3">
-                      <Plane className="w-5 h-5 text-[#FF5500]" />
-                      <span className="text-sm font-bold tracking-wider uppercase text-neutral-900">{digitalTwin.identity.name}</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <h3 className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase flex items-center gap-1">
-                      <Scale className="w-3 h-3" /> MASS
-                    </h3>
-                    <p className="text-sm font-mono font-medium text-neutral-900">{digitalTwin.massProperties.totalMassKg.toFixed(2)} kg</p>
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase flex items-center gap-1">
-                      <Battery className="w-3 h-3" /> BATTERY
-                    </h3>
-                    <p className="text-sm font-mono font-medium text-neutral-900">{digitalTwin.battery.capacityMah} mAh</p>
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase flex items-center gap-1">
-                      <Box className="w-3 h-3" /> PAYLOAD
-                    </h3>
-                    <p className="text-sm font-mono font-medium text-neutral-900">{digitalTwin.payload.massKg.toFixed(1)} kg</p>
-                  </div>
-                </div>
-
-                <div className="border-t border-neutral-100 pt-6 space-y-4">
-                  <div className="space-y-1">
-                    <h3 className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">ENVIRONMENT</h3>
-                    <p className="text-sm font-bold tracking-wider uppercase text-neutral-900">
-                      {REGIONS[selectedRegionId].name}
-                    </p>
-                  </div>
+                {/* Content Area */}
+                <div className="flex-1 flex flex-col p-5 bg-[#0c0d0e] z-10">
+                  <h3 className="text-lg font-bold tracking-widest text-white uppercase mb-1 flex items-center justify-between">
+                    {region.name}
+                  </h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed line-clamp-2 mb-4">
+                    {region.description}
+                  </p>
                   
-                  <div className="space-y-1">
-                    <h3 className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">WEATHER</h3>
-                    <p className="text-sm font-mono font-medium text-neutral-900">
-                      {REGIONS[selectedRegionId].environment.baseWindSpeedMs} m/s Wind • {REGIONS[selectedRegionId].environment.airTemperatureC}°C
-                    </p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <h3 className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">STARTING LOCATION</h3>
-                    <p className="text-sm font-mono font-medium text-neutral-900">
-                      {HELIPADS[REGIONS[selectedRegionId].primaryHelipadId || "training-alpha"]?.name || "Main Pad"}
-                    </p>
+                  <div className="mt-auto pt-3 border-t border-white/5 flex items-center gap-4 text-[10px] font-bold tracking-widest uppercase text-neutral-500">
+                    <span className="flex items-center gap-1.5">
+                      <Wind className="w-3.5 h-3.5 text-neutral-400" />
+                      {region.environment.baseWindSpeedMs} m/s
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Thermometer className="w-3.5 h-3.5 text-neutral-400" />
+                      {region.environment.airTemperatureC}°C
+                    </span>
                   </div>
                 </div>
-
               </div>
-
-              <div className="p-6 bg-neutral-50 border-t border-neutral-100">
-                <Button
-                  variant="black"
-                  onClick={handleEnterSimulation}
-                  className="w-full h-14 text-sm font-bold tracking-widest uppercase shadow-[0_8px_24px_rgba(255,85,0,0.15)] bg-[#FF5500] hover:bg-[#e04b00] text-white hover:-translate-y-0.5 transition-all"
-                >
-                  FLY
-                </Button>
-              </div>
-
-            </div>
-          </div>
-        )}
-
+            );
+          })}
+        </div>
       </main>
+
+      {/* Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-[#08090a] via-[#08090a]/95 to-transparent z-50 pointer-events-none">
+        <div className="max-w-7xl mx-auto flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pointer-events-auto">
+          
+          <Button
+            onClick={handleBack}
+            className="inline-flex items-center justify-center gap-3 bg-transparent hover:bg-white/5 border border-neutral-700 text-white rounded-[4px] px-8 h-[52px] text-xs font-bold tracking-widest uppercase transition-all duration-300 w-full sm:w-auto"
+          >
+            <ArrowLeft className="w-[18px] h-[18px]" />
+            BACK TO CONFIGURATION
+          </Button>
+          
+          <Button
+            onClick={handleEnterSimulation}
+            disabled={!selectedRegionId}
+            className="inline-flex items-center justify-center gap-3 bg-[#FF5500] hover:bg-[#ff6a1a] hover:brightness-105 active:scale-[0.98] hover:-translate-y-[1px] shadow-[0_4px_14px_0_rgba(255,85,0,0.2)] hover:shadow-[0_6px_20px_rgba(255,85,0,0.3)] text-white rounded-[4px] px-10 h-[52px] text-xs font-extrabold tracking-widest uppercase transition-all duration-300 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+          >
+            ENTER SIMULATOR
+            <ArrowRight className="w-[18px] h-[18px]" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

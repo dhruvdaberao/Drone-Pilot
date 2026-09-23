@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { DroneCategory, DroneDigitalTwinConfiguration } from "@/types/drone-digital-twin";
-import { listUserConfigurations } from "@/lib/digital-twin/digital-twin-storage";
+import { getUserConfiguration } from "@/lib/digital-twin/digital-twin-storage";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Settings2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Settings2, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 // Helper component for formatting values
 const Value = ({ value, unit = "" }: { value: any, unit?: string }) => {
@@ -41,29 +41,40 @@ const Section = ({ title, children }: { title: string, children: React.ReactNode
 );
 
 export function ConfigurationOverview() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeCategory = searchParams?.get("drone") as DroneCategory | null;
+  const showSavedSuccess = searchParams?.get("saved") === "true";
 
-  const [configs, setConfigs] = useState<DroneDigitalTwinConfiguration[]>([]);
+  const [config, setConfig] = useState<DroneDigitalTwinConfiguration | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    const fetchConfigs = async () => {
+    if (authLoading) return; // Wait for auth
+    
+    if (!activeCategory) {
+      router.replace("/dashboard");
+      return;
+    }
+
+    const fetchConfig = async () => {
       try {
-        const savedList = await listUserConfigurations(user?.uid || null);
-        setConfigs(savedList);
+        setLoadError(false);
+        const savedConfig = await getUserConfiguration(user?.uid || null, activeCategory);
+        setConfig(savedConfig);
       } catch (err) {
-        console.error("Failed to load configs", err);
+        console.error("Failed to load config", err);
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
     };
-    fetchConfigs();
-  }, [user]);
+    fetchConfig();
+  }, [user, authLoading, activeCategory, router]);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="flex flex-col items-center justify-center w-full min-h-[60vh] gap-4">
         <div className="w-8 h-8 border-4 border-[#FF5500] border-t-transparent rounded-full animate-spin"></div>
@@ -72,29 +83,103 @@ export function ConfigurationOverview() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full min-h-[60vh] gap-4">
+        <AlertTriangle className="w-10 h-10 text-rose-500" />
+        <p className="text-xs font-bold uppercase tracking-widest text-neutral-500">Unable to load your aircraft configuration.</p>
+        <Button 
+          onClick={() => window.location.reload()}
+          className="mt-4 bg-[#FF5500] hover:bg-[#E64800] text-white px-8 h-10 text-xs font-bold tracking-widest uppercase rounded-[4px]"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   // If a specific drone is selected, show its detailed engineering spec sheet
   if (activeCategory) {
-    const config = configs.find((c) => c.identity.category === activeCategory);
     
     if (!config) {
       // Configuration not found (meaning they haven't configured it yet)
-      // Redirect to edit mode so they can configure it initially
-      router.push(`/configure/edit?drone=${activeCategory}`);
-      return null;
+      return (
+        <div className="w-full max-w-5xl mx-auto flex flex-col mt-8 pb-32">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight uppercase">
+              {activeCategory}
+            </h1>
+            <Button 
+              onClick={() => router.push('/dashboard')}
+              className="inline-flex items-center justify-center gap-2 bg-transparent hover:bg-white/5 border border-neutral-700 text-white rounded-[4px] px-6 h-[44px] text-xs font-bold tracking-widest uppercase transition-all duration-300 w-full md:w-auto shrink-0"
+            >
+              <ArrowLeft className="w-[16px] h-[16px]" />
+              RETURN TO HANGAR
+            </Button>
+          </div>
+          
+          <div className="w-full flex flex-col items-center justify-center py-20 px-6 border border-white/10 rounded-lg bg-[#0c0d0e] mt-4">
+             <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/5 mb-6">
+                <Settings2 className="w-8 h-8 text-neutral-500" />
+             </div>
+             <h2 className="text-xl md:text-2xl font-bold text-white mb-2 uppercase tracking-widest">NOT CONFIGURED</h2>
+             <p className="text-sm text-neutral-400 text-center max-w-md mb-8">
+               Configure your aircraft's airframe, propulsion, battery, avionics, payload and performance parameters before entering simulation.
+             </p>
+             <Button 
+                onClick={() => router.push(`/configure/edit?drone=${activeCategory}`)}
+                className="inline-flex items-center justify-center gap-3 bg-[#FF5500] hover:bg-[#ff6a1a] text-white rounded-[4px] px-10 h-[52px] text-xs font-extrabold tracking-[0.2em] uppercase transition-all duration-300"
+              >
+                <Settings2 className="w-[18px] h-[18px]" />
+                CONFIGURE AIRCRAFT
+             </Button>
+          </div>
+
+          {/* Bottom Action Area (Disabled Environment) */}
+          <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-[#08090a] via-[#08090a]/90 to-transparent z-50 pointer-events-none">
+            <div className="max-w-5xl mx-auto flex flex-col-reverse sm:flex-row items-center justify-center sm:justify-end gap-4 pointer-events-auto">
+              <span className="text-xs font-medium text-neutral-500 mr-4">
+                Complete aircraft configuration to continue.
+              </span>
+              <Button
+                disabled
+                className="inline-flex items-center justify-center gap-3 bg-neutral-800 text-neutral-500 rounded-[4px] px-10 h-[52px] text-xs font-extrabold tracking-[0.2em] uppercase w-full sm:w-auto cursor-not-allowed opacity-50"
+              >
+                SELECT ENVIRONMENT
+                <ArrowRight className="w-[18px] h-[18px]" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
     }
 
     return (
-      <div className="w-full max-w-5xl mx-auto flex flex-col mt-4 pb-32">
+      <div className="w-full max-w-5xl mx-auto flex flex-col mt-4 pb-32 relative">
         
+        {/* Success Toast Overlay */}
+        {showSavedSuccess && (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-50 bg-[#08090a] border border-[#FF5500]/50 shadow-[0_4px_20px_rgba(255,85,0,0.15)] text-white px-6 py-3 rounded-[4px] font-bold text-xs uppercase tracking-widest animate-in slide-in-from-top-4 fade-in duration-500 flex items-center gap-3">
+            <CheckCircle2 className="w-4 h-4 text-[#FF5500]" />
+            Changes saved successfully
+          </div>
+        )}
+
         {/* Page Header (Title + Back Button) */}
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-12">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-12 pt-8">
           <div className="flex flex-col">
             <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-2">
               {config.identity.name}
             </h1>
-            <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#FF5500]">
-              {config.identity.category}
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#FF5500]">
+                {config.identity.category}
+              </p>
+              <span className="px-2 py-0.5 rounded-[4px] bg-emerald-500/10 text-emerald-400 text-[9px] font-bold tracking-widest uppercase">
+                CONFIGURED
+              </span>
+            </div>
           </div>
           
           <Button 
@@ -325,7 +410,7 @@ export function ConfigurationOverview() {
               EDIT CONFIGURATION
             </Button>
             <Button
-              onClick={() => router.push(`/flight-prep?drone=${activeCategory}`)}
+              onClick={() => router.push(`/environment?drone=${activeCategory}`)}
               className="inline-flex items-center justify-center gap-3 bg-[#FF5500] hover:bg-[#ff6a1a] hover:brightness-105 active:scale-[0.98] hover:-translate-y-[1px] shadow-[0_4px_14px_0_rgba(255,85,0,0.2)] hover:shadow-[0_6px_20px_rgba(255,85,0,0.3)] text-white rounded-[4px] px-10 h-[52px] text-xs font-extrabold tracking-[0.2em] uppercase transition-all duration-300 w-full sm:w-auto"
             >
               SELECT ENVIRONMENT
@@ -337,19 +422,5 @@ export function ConfigurationOverview() {
     );
   }
 
-  // FALLBACK (List View if no drone is selected)
-  return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col mt-6 pb-20">
-      <div className="w-full flex items-center justify-between mb-8 mt-6">
-        <div>
-          <h2 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-            MY AIRCRAFT CONFIGURATIONS
-          </h2>
-        </div>
-      </div>
-      <div className="flex flex-col gap-6">
-        <p className="text-neutral-500">Select an aircraft from the hangar to view its engineering specification.</p>
-      </div>
-    </div>
-  );
+  return null;
 }

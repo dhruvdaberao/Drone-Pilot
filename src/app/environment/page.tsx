@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 
 function FlightPrepLoading() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAF7F2]">
+    <div className="min-h-screen flex items-center justify-center bg-[#08090a]">
       <div className="flex flex-col items-center gap-3">
         <Loader2 className="h-8 w-8 text-[#FF5500] animate-spin" />
         <span className="font-mono text-xs uppercase tracking-widest text-neutral-600">
@@ -22,7 +22,7 @@ function FlightPrepLoading() {
 export default function FlightSelectPage() {
   return (
     <ProtectedRoute>
-      <div className="relative min-h-screen flex flex-col justify-between bg-[#FAF7F2]">
+      <div className="relative min-h-screen flex flex-col justify-between bg-[#08090a] text-white">
         <DashboardHeader />
         <Suspense fallback={<FlightPrepLoading />}>
           <FlightPrepContainer />
