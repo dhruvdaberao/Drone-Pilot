@@ -87,7 +87,7 @@ export function ParameterField({
           value={String(value)}
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
-          className="h-12 px-4 rounded-lg border border-white/10 bg-black/50 text-base font-medium text-white focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] focus:border-transparent transition-all disabled:opacity-50 disabled:bg-white/5"
+          className="w-full min-w-0 h-12 px-4 rounded border border-white/10 bg-black text-sm md:text-base font-medium text-white focus:outline-none focus:ring-1 focus:ring-[#FF5500] focus:border-[#FF5500] transition-all disabled:opacity-50 disabled:bg-white/5 truncate"
         >
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -102,10 +102,10 @@ export function ParameterField({
           value={String(value)}
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
-          className="h-12 px-4 rounded-lg border border-white/10 bg-black/50 text-base font-medium text-white focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] focus:border-transparent transition-all disabled:opacity-50 disabled:bg-white/5"
+          className="w-full min-w-0 h-12 px-4 rounded border border-white/10 bg-black text-sm md:text-base font-medium text-white focus:outline-none focus:ring-1 focus:ring-[#FF5500] focus:border-[#FF5500] transition-all disabled:opacity-50 disabled:bg-white/5 truncate"
         />
       ) : (
-        <div className="relative flex items-center">
+        <div className="relative flex items-center w-full min-w-0">
           <input
             id={id}
             type="number"
@@ -115,13 +115,13 @@ export function ParameterField({
             step={step}
             disabled={disabled}
             onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-            className="w-full h-12 px-4 rounded-lg border border-white/10 bg-black/50 text-base font-mono font-semibold text-white focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] focus:border-transparent transition-all disabled:opacity-50 disabled:bg-white/5"
+            className="w-full min-w-0 h-12 px-4 rounded border border-white/10 bg-black text-sm md:text-base font-mono font-semibold text-white focus:outline-none focus:ring-1 focus:ring-[#FF5500] focus:border-[#FF5500] transition-all disabled:opacity-50 disabled:bg-white/5"
           />
         </div>
       )}
 
       {helperText && (
-        <p className="text-[11px] text-neutral-500 leading-tight">{helperText}</p>
+        <p className="text-[11px] text-neutral-500 leading-tight mt-1">{helperText}</p>
       )}
     </div>
   );

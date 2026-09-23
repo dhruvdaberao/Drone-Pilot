@@ -314,20 +314,20 @@ export function DigitalTwinConfigurator() {
         {/* High-Level Stats Panel */}
         <div className="border-t border-b border-white/10 py-6 grid grid-cols-2 md:grid-cols-4 gap-6">
            <div>
-             <span className="block text-xs uppercase font-bold text-neutral-400 tracking-widest">Total Mass</span>
-             <span className="text-2xl font-bold text-white">{config.massProperties.totalMassKg.toFixed(2)} kg</span>
+             <span className="block text-[10px] uppercase font-bold text-neutral-400 tracking-widest mb-1">Total Mass</span>
+             <span className="text-xl md:text-2xl font-bold text-white leading-none">{config.massProperties.totalMassKg.toFixed(2)} kg</span>
            </div>
            <div>
-             <span className="block text-xs uppercase font-bold text-neutral-400 tracking-widest">Battery</span>
-             <span className="text-2xl font-bold text-white">{config.battery.cellCount}S</span>
+             <span className="block text-[10px] uppercase font-bold text-neutral-400 tracking-widest mb-1">Battery</span>
+             <span className="text-xl md:text-2xl font-bold text-white leading-none">{config.battery.cellCount}S</span>
            </div>
            <div>
-             <span className="block text-xs uppercase font-bold text-neutral-400 tracking-widest">Motors</span>
-             <span className="text-2xl font-bold text-white">{config.airframe.motorCount}</span>
+             <span className="block text-[10px] uppercase font-bold text-neutral-400 tracking-widest mb-1">Motors</span>
+             <span className="text-xl md:text-2xl font-bold text-white leading-none">{config.airframe.motorCount}</span>
            </div>
            <div>
-             <span className="block text-xs uppercase font-bold text-neutral-400 tracking-widest">Payload Mass</span>
-             <span className="text-2xl font-bold text-white">{config.payload.massKg.toFixed(2)} kg</span>
+             <span className="block text-[10px] uppercase font-bold text-neutral-400 tracking-widest mb-1">Active Payload</span>
+             <span className="text-xl md:text-2xl font-bold text-white leading-none">{config.payload.massKg.toFixed(2)} kg</span>
            </div>
         </div>
       </div>
@@ -337,35 +337,27 @@ export function DigitalTwinConfigurator() {
         
         {/* Document Section Header / Tabs */}
         <div className="flex flex-col gap-6 mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-               <Settings2 className="w-6 h-6 text-[#FF5500]" />
-               <h3 className="text-lg font-bold uppercase tracking-widest text-white">Configure Aircraft Parameters</h3>
+               <Settings2 className="w-6 h-6 text-[#FF5500] shrink-0" />
+               <h3 className="text-lg md:text-xl font-bold uppercase tracking-widest text-white leading-tight">Configure Aircraft<br className="md:hidden" /> Parameters</h3>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
               <Button 
                 onClick={() => router.push(`/configure?drone=${config.identity.category}`)} 
                 variant="ghost" 
-                className="text-neutral-400 hover:text-white hover:bg-white/5 rounded-lg text-sm font-semibold tracking-wider uppercase h-12 px-6 shadow-none flex items-center justify-center"
               >
-                Cancel Edit
+                CANCEL EDIT
               </Button>
               <Button 
                 onClick={handleSave} 
                 disabled={isSaving}
-                className="bg-[#FF5500] hover:bg-[#E64800] text-white rounded-lg text-sm font-bold tracking-widest uppercase h-12 px-8 transition-colors shadow-none hover:shadow-none focus:shadow-none flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary"
+                isLoading={isSaving}
+                loadingText="SAVING CONFIGURATION..."
+                leftIcon={!isSaving ? <Save className="w-4 h-4" /> : undefined}
               >
-                {isSaving ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2 shrink-0" />
-                    SAVING CONFIGURATION...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2 shrink-0" />
-                    SAVE CONFIGURATION
-                  </>
-                )}
+                SAVE CONFIGURATION
               </Button>
             </div>
           </div>
@@ -375,10 +367,10 @@ export function DigitalTwinConfigurator() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`shrink-0 px-6 py-3 rounded-full text-xs font-bold tracking-widest uppercase transition-all ${
+                className={`shrink-0 px-6 py-0 h-10 rounded text-[10px] font-bold tracking-widest uppercase transition-all ${
                   activeTab === tab 
                     ? "bg-[#FF5500] text-white" 
-                    : "bg-white/5 text-neutral-400 hover:bg-white/10 hover:text-white border border-transparent hover:border-white/10"
+                    : "bg-[#0c0d0e] text-neutral-400 border border-white/5 hover:bg-white/5 hover:text-white"
                 }`}
               >
                 {tab}
@@ -394,33 +386,26 @@ export function DigitalTwinConfigurator() {
           {activeTab === "BATTERY" && <ConfigBatteryTab config={config} onChange={handleConfigChange} />}
           {activeTab === "AVIONICS" && <ConfigAvionicsTab config={config} onChange={handleConfigChange} />}
           {activeTab === "PAYLOAD" && <ConfigPayloadTab config={config} onChange={handleConfigChange} />}
+          {activeTab === "PERFORMANCE" && <ConfigPerformanceTab config={config} onChange={handleConfigChange} />}
         </div>
 
         {/* Document Footer Actions */}
-        <div className="pt-8 border-t border-white/10 flex justify-end items-center gap-4">
+        <div className="pt-8 border-t border-white/10 flex flex-col-reverse md:flex-row justify-end md:items-center gap-4">
           <Button 
             onClick={() => router.push(`/configure?drone=${config.identity.category}`)} 
             variant="ghost" 
-            className="text-neutral-400 hover:text-white hover:bg-white/5 rounded-lg text-sm font-semibold tracking-wider uppercase h-12 px-6 shadow-none flex items-center justify-center"
           >
-            Cancel Edit
+            CANCEL EDIT
           </Button>
           <Button 
             onClick={handleSave} 
             disabled={isSaving}
-            className="bg-[#FF5500] hover:bg-[#E64800] text-white rounded-lg text-sm font-bold tracking-widest uppercase h-12 px-8 transition-colors shadow-none hover:shadow-none focus:shadow-none flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="primary"
+            isLoading={isSaving}
+            loadingText="SAVING CONFIGURATION..."
+            leftIcon={!isSaving ? <Save className="w-4 h-4" /> : undefined}
           >
-            {isSaving ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2 shrink-0" />
-                SAVING CONFIGURATION...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2 shrink-0" />
-                SAVE CONFIGURATION
-              </>
-            )}
+            SAVE CONFIGURATION
           </Button>
         </div>
       </div>

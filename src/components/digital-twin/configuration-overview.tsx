@@ -62,7 +62,8 @@ export function ConfigurationOverview() {
     const fetchConfig = async () => {
       try {
         setLoadError(false);
-        const savedConfig = await getUserConfiguration(user?.uid || null, activeCategory);
+        // If we just saved, the local cache has the freshest data. Don't block on a redundant Firebase read.
+        const savedConfig = await getUserConfiguration(user?.uid || null, activeCategory, showSavedSuccess);
         setConfig(savedConfig);
       } catch (err) {
         console.error("Failed to load config", err);
@@ -72,7 +73,7 @@ export function ConfigurationOverview() {
       }
     };
     fetchConfig();
-  }, [user, authLoading, activeCategory, router]);
+  }, [user, authLoading, activeCategory, showSavedSuccess, router]);
 
   if (loading || authLoading) {
     return (
@@ -90,9 +91,10 @@ export function ConfigurationOverview() {
         <p className="text-xs font-bold uppercase tracking-widest text-neutral-500">Unable to load your aircraft configuration.</p>
         <Button 
           onClick={() => window.location.reload()}
-          className="mt-4 bg-[#FF5500] hover:bg-[#E64800] text-white px-8 h-10 text-xs font-bold tracking-widest uppercase rounded-[4px]"
+          variant="primary"
+          className="mt-4"
         >
-          Retry
+          RETRY
         </Button>
       </div>
     );
@@ -112,9 +114,9 @@ export function ConfigurationOverview() {
             </h1>
             <Button 
               onClick={() => router.push('/dashboard')}
-              className="inline-flex items-center justify-center gap-2 bg-transparent hover:bg-white/5 border border-neutral-700 text-white rounded-[4px] px-6 h-[44px] text-xs font-bold tracking-widest uppercase transition-all duration-300 w-full md:w-auto shrink-0"
+              variant="outline"
+              leftIcon={<ArrowLeft className="w-4 h-4" />}
             >
-              <ArrowLeft className="w-[16px] h-[16px]" />
               RETURN TO HANGAR
             </Button>
           </div>
@@ -129,9 +131,9 @@ export function ConfigurationOverview() {
              </p>
              <Button 
                 onClick={() => router.push(`/configure/edit?drone=${activeCategory}`)}
-                className="inline-flex items-center justify-center gap-3 bg-[#FF5500] hover:bg-[#ff6a1a] text-white rounded-[4px] px-10 h-[52px] text-xs font-extrabold tracking-[0.2em] uppercase transition-all duration-300"
+                variant="primary"
+                leftIcon={<Settings2 className="w-4 h-4" />}
               >
-                <Settings2 className="w-[18px] h-[18px]" />
                 CONFIGURE AIRCRAFT
              </Button>
           </div>
@@ -144,10 +146,10 @@ export function ConfigurationOverview() {
               </span>
               <Button
                 disabled
-                className="inline-flex items-center justify-center gap-3 bg-neutral-800 text-neutral-500 rounded-[4px] px-10 h-[52px] text-xs font-extrabold tracking-[0.2em] uppercase w-full sm:w-auto cursor-not-allowed opacity-50"
+                variant="black"
+                rightIcon={<ArrowRight className="w-4 h-4" />}
               >
                 SELECT ENVIRONMENT
-                <ArrowRight className="w-[18px] h-[18px]" />
               </Button>
             </div>
           </div>
@@ -184,9 +186,9 @@ export function ConfigurationOverview() {
           
           <Button 
             onClick={() => router.push('/dashboard')}
-            className="inline-flex items-center justify-center gap-2 bg-transparent hover:bg-white/5 border border-neutral-700 text-white rounded-[4px] px-6 h-[44px] text-xs font-bold tracking-widest uppercase transition-all duration-300 w-full md:w-auto mt-2 md:mt-0 shrink-0"
+            variant="outline"
+            leftIcon={<ArrowLeft className="w-4 h-4" />}
           >
-            <ArrowLeft className="w-[16px] h-[16px]" />
             RETURN TO HANGAR
           </Button>
         </div>
@@ -404,17 +406,19 @@ export function ConfigurationOverview() {
           <div className="max-w-5xl mx-auto flex flex-col-reverse sm:flex-row items-center justify-center sm:justify-end gap-4 pointer-events-auto">
             <Button
               onClick={() => router.push(`/configure/edit?drone=${activeCategory}`)}
-              className="inline-flex items-center justify-center gap-3 bg-[#08090a] hover:bg-white/5 border border-white/20 text-white rounded-[4px] px-8 h-[52px] text-xs font-bold tracking-[0.2em] uppercase transition-all duration-300 w-full sm:w-auto"
+              variant="black"
+              className="w-full sm:w-auto"
+              leftIcon={<Settings2 className="w-4 h-4" />}
             >
-              <Settings2 className="w-[18px] h-[18px]" />
               EDIT CONFIGURATION
             </Button>
             <Button
               onClick={() => router.push(`/environment?drone=${activeCategory}`)}
-              className="inline-flex items-center justify-center gap-3 bg-[#FF5500] hover:bg-[#ff6a1a] hover:brightness-105 active:scale-[0.98] hover:-translate-y-[1px] shadow-[0_4px_14px_0_rgba(255,85,0,0.2)] hover:shadow-[0_6px_20px_rgba(255,85,0,0.3)] text-white rounded-[4px] px-10 h-[52px] text-xs font-extrabold tracking-[0.2em] uppercase transition-all duration-300 w-full sm:w-auto"
+              variant="primary"
+              className="w-full sm:w-auto"
+              rightIcon={<ArrowRight className="w-4 h-4" />}
             >
               SELECT ENVIRONMENT
-              <ArrowRight className="w-[18px] h-[18px]" />
             </Button>
           </div>
         </div>

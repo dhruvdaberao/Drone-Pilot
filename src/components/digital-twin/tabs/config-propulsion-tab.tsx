@@ -131,7 +131,7 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
         <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF5500]">
           GLOBAL MOTOR TUNING (ALL {motors.length} MOTORS)
         </span>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <ParameterField
             id="nominal-rpm"
             label="Nominal Hover RPM"
@@ -209,7 +209,7 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
 
         {/* Selected Motor Detail Panel */}
         {activeMotor && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6">
             <div>
               <span className="text-[10px] font-mono uppercase text-neutral-400">Motor ID</span>
               <p className="text-sm font-mono font-bold text-white mt-0.5">
@@ -273,7 +273,7 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
         <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF5500]">
           AERODYNAMIC PROPELLER GEOMETRY
         </span>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <ParameterField
             id="prop-diameter"
             label="Propeller Diameter"
@@ -339,7 +339,7 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
         <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF5500]">
           ELECTRONIC SPEED CONTROLLER (ESC) POWER STAGE
         </span>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <ParameterField
             id="esc-rated"
             label="Rated Continuous Current"

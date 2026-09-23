@@ -89,10 +89,10 @@ export function FlightPrepContainer() {
               <div
                 key={region.id}
                 onClick={() => setSelectedRegionId(region.id as RegionId)}
-                className={`group relative flex flex-col h-72 rounded-lg cursor-pointer overflow-hidden transition-all duration-300 ${
+                className={`group relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 min-h-[360px] md:min-h-[420px] bg-[#0c0d0e] border ${
                   isSelected 
-                    ? "border border-[#FF5500] shadow-[0_4px_24px_rgba(255,85,0,0.15)] -translate-y-1" 
-                    : "border border-white/10 hover:border-white/20 hover:bg-white/5"
+                    ? "border-[#FF5500] -translate-y-1" 
+                    : "border-white/10 hover:border-white/30 hover:-translate-y-1"
                 }`}
               >
                 {/* Image Area */}
@@ -144,19 +144,21 @@ export function FlightPrepContainer() {
           
           <Button
             onClick={handleBack}
-            className="inline-flex items-center justify-center gap-3 bg-transparent hover:bg-white/5 border border-neutral-700 text-white rounded-[4px] px-8 h-[52px] text-xs font-bold tracking-widest uppercase transition-all duration-300 w-full sm:w-auto"
+            variant="outline"
+            className="w-full sm:w-auto"
+            leftIcon={<ArrowLeft className="w-4 h-4" />}
           >
-            <ArrowLeft className="w-[18px] h-[18px]" />
             BACK TO CONFIGURATION
           </Button>
           
           <Button
             onClick={handleEnterSimulation}
             disabled={!selectedRegionId}
-            className="inline-flex items-center justify-center gap-3 bg-[#FF5500] hover:bg-[#ff6a1a] hover:brightness-105 active:scale-[0.98] hover:-translate-y-[1px] shadow-[0_4px_14px_0_rgba(255,85,0,0.2)] hover:shadow-[0_6px_20px_rgba(255,85,0,0.3)] text-white rounded-[4px] px-10 h-[52px] text-xs font-extrabold tracking-widest uppercase transition-all duration-300 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+            variant="primary"
+            className="w-full sm:w-auto"
+            rightIcon={<ArrowRight className="w-4 h-4" />}
           >
             ENTER SIMULATOR
-            <ArrowRight className="w-[18px] h-[18px]" />
           </Button>
         </div>
       </div>

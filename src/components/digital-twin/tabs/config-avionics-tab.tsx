@@ -67,7 +67,7 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <ParameterField
             id="fc-type"
             label="Autopilot Platform"
@@ -201,7 +201,7 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <ParameterField
             id="comm-type"
             label="Carrier Link Type"

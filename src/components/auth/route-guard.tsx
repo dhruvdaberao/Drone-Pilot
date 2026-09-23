@@ -13,12 +13,12 @@ interface RouteGuardProps {
  * Screen displayed during authentication state resolution.
  * Minimalist luxury white canvas loader.
  */
-export function FlightSysLoader({ message = "Loading..." }: { message?: string }) {
+export function FlightSysLoader({ message = "AUTHENTICATING..." }: { message?: string }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-white p-4 text-neutral-900">
-      <div className="flex flex-col items-center space-y-3">
-        <Loader2 className="h-6 w-6 animate-spin text-black" />
-        <p className="text-xs font-medium text-neutral-500">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#08090a] p-4 text-white">
+      <div className="flex flex-col items-center space-y-4">
+        <Loader2 className="h-6 w-6 animate-spin text-[#FF5500]" />
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500">
           {message}
         </p>
       </div>

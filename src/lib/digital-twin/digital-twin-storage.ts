@@ -242,7 +242,24 @@ export async function listUserConfigurations(uid: string | null): Promise<DroneD
 /**
  * Loads a specific category user configuration. Returns null if not configured.
  */
-export async function getUserConfiguration(uid: string | null, category: DroneCategory): Promise<DroneDigitalTwinConfiguration | null> {
+export async function getUserConfiguration(
+  uid: string | null, 
+  category: DroneCategory, 
+  preferLocal: boolean = false
+): Promise<DroneDigitalTwinConfiguration | null> {
+  
+  // Fast path: if preferLocal is true, try to load from cache immediately
+  if (preferLocal && typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem(getLocalSavedKey(uid));
+      if (raw) {
+        const customConfigs: DroneDigitalTwinConfiguration[] = JSON.parse(raw);
+        const found = customConfigs.find(c => c.identity.category === category);
+        if (found) return found;
+      }
+    } catch {}
+  }
+
   if (uid && isFirebaseConfigured() && db) {
     try {
       const docRef = doc(db, "users", uid, "droneConfigurations", category);
@@ -255,7 +272,7 @@ export async function getUserConfiguration(uid: string | null, category: DroneCa
     }
   }
   
-  // Check local fallback
+  // Fallback path: if Firebase fails or no auth, try local storage
   if (typeof window !== "undefined") {
     try {
       const raw = localStorage.getItem(getLocalSavedKey(uid));
