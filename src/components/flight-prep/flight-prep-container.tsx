@@ -40,7 +40,7 @@ export function FlightPrepContainer() {
         }
       }
       setSelectedDrone(activeDrone);
-      setDigitalTwin(getActiveDigitalTwin());
+      setDigitalTwin(getActiveDigitalTwin(null));
     } catch {
       // Fallback
     }

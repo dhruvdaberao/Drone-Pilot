@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 
 interface Drone3DViewerProps {
   type: string; // "quadcopter" | "hexacopter" | "octacopter"
@@ -21,7 +22,14 @@ export function Drone3DViewer({
 }: Drone3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isSelectedRef = useRef(isSelected);
-  const [, setIsInteracting] = useState(false);
+  const [isInteracting, setIsInteracting] = useState(false);
+  
+  // Track target rotation for smooth transitioning and parallax
+  const targetRotationRef = useRef<{ x: number; y: number }>({ x: 0.15, y: -Math.PI / 6 });
+  
+  // Track internal state for smooth switching between platforms
+  const currentTypeRef = useRef(type);
+  const droneGroupRef = useRef<THREE.Group | null>(null);
 
   useEffect(() => {
     isSelectedRef.current = isSelected;
@@ -33,15 +41,15 @@ export function Drone3DViewer({
 
     // SCENE & CAMERA
     const scene = new THREE.Scene();
-
     const width = container.clientWidth || 300;
     const height = container.clientHeight || 200;
 
-    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    camera.position.set(0, 3.4, 5.8);
-    camera.lookAt(0, -0.05, 0);
+    // Cinematic hero angle setup (slightly above, 3/4 front view)
+    const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 100);
+    // User requested the massive framing back, even if extreme angles clip slightly
+    camera.position.set(0, 1.8, 5.5); 
+    camera.lookAt(0, -0.2, 0);
 
-    // RENDERER
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
       antialias: true,
@@ -50,664 +58,503 @@ export function Drone3DViewer({
     renderer.setSize(width, height, false);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.domElement.style.width = "100%";
     renderer.domElement.style.height = "100%";
     renderer.domElement.style.display = "block";
     container.appendChild(renderer.domElement);
 
     // ==============================================
-    // STUDIO AEROSPACE LIGHTING
-    // Highlights chiseled chamfers and metallic hardware
+    // LIGHTING (Aerospace Product Presentation)
     // ==============================================
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
     scene.add(ambientLight);
 
-    // Primary Key Sunlight (crisp specular highlights on tactical gray hull)
     const keyLight = new THREE.DirectionalLight(0xffffff, 3.5);
-    keyLight.position.set(6, 12, 6);
+    keyLight.position.set(5, 8, 5);
     keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
+    keyLight.shadow.bias = -0.0005;
     scene.add(keyLight);
 
-    // Secondary Fill Light (subtle cool shadow fill)
-    const fillLight = new THREE.DirectionalLight(0xbbe3ff, 2.0);
-    fillLight.position.set(-6, 5, -3);
+    const fillLight = new THREE.DirectionalLight(0xe0eeff, 1.8);
+    fillLight.position.set(-5, 3, -5);
     scene.add(fillLight);
 
-    // Aerospace Rim Light (illuminates rear carbon bevels & motor edges)
-    const rimLight = new THREE.DirectionalLight(0xffeedd, 2.4);
-    rimLight.position.set(0, 6, -6);
+    // Sharp rim light for highlights on the composite edges
+    const rimLight = new THREE.DirectionalLight(0xffffff, 3.0);
+    rimLight.position.set(0, 5, -8);
     scene.add(rimLight);
 
-    // Subtle Ground Bounce
-    const groundBounce = new THREE.DirectionalLight(0xffa855, 0.45);
-    groundBounce.position.set(0, -4, 2);
-    scene.add(groundBounce);
-
     // ==============================================
-    // REALISTIC ENTERPRISE UAV MATERIALS (DJI MATRICE SPEC)
+    // PREMIUM MATERIALS
     // ==============================================
-    // Tactical Matte Gray Composite Hull (as seen in DJI Matrice 4 / Matrice 30)
-    const tacticalHullMat = new THREE.MeshStandardMaterial({
-      color: 0x5a5f67,
-      roughness: 0.38,
-      metalness: 0.25,
+    
+    // The sleek, premium silver body requested by the user
+    const silverAlloy = new THREE.MeshStandardMaterial({
+      color: 0xd1d5db, 
+      roughness: 0.35,
+      metalness: 0.85,
     });
 
-    // Darker Magnesium / Underbody Shell
-    const underHullMat = new THREE.MeshStandardMaterial({
-      color: 0x383c43,
-      roughness: 0.42,
-      metalness: 0.30,
+    const matteComposite = new THREE.MeshStandardMaterial({
+      color: 0x24262a, 
+      roughness: 0.65,
+      metalness: 0.3,
     });
 
-    // Dark Titanium Mechanical Trim & Latches
-    const titaniumTrimMat = new THREE.MeshStandardMaterial({
-      color: 0x22252a,
+    const satinBlack = new THREE.MeshStandardMaterial({
+      color: 0x111112,
+      roughness: 0.4,
+      metalness: 0.4,
+    });
+
+    const machinedAlloy = new THREE.MeshStandardMaterial({
+      color: 0x6b7280,
       roughness: 0.25,
       metalness: 0.75,
     });
 
-    // 3K Matte Carbon-Fiber Structural Arms
-    const carbonArmMat = new THREE.MeshStandardMaterial({
-      color: 0x181a1d,
-      roughness: 0.40,
-      metalness: 0.35,
+    const propellerMat = new THREE.MeshStandardMaterial({
+      color: 0x18181a,
+      roughness: 0.5,
+      metalness: 0.15,
     });
 
-    // CNC Brushed Aluminum Motor Bells & Bulkhead Rings
-    const motorBellMat = new THREE.MeshStandardMaterial({
-      color: 0x2e3238,
-      roughness: 0.18,
-      metalness: 0.88,
-    });
-
-    // Precision Copper Stator Windings
-    const copperStatorMat = new THREE.MeshStandardMaterial({
-      color: 0xcc6f2a,
-      roughness: 0.25,
-      metalness: 0.95,
-    });
-
-    // Aerodynamic Carbon Folding Propeller Blades
-    const bladeMat = new THREE.MeshStandardMaterial({
-      color: 0x1f2125,
-      roughness: 0.35,
-      metalness: 0.20,
-    });
-
-    // HIGH-VISIBILITY AVIATION SAFETY ORANGE TIPS (From Image 3 Reference)
-    const orangeTipMat = new THREE.MeshStandardMaterial({
+    const neonOrange = new THREE.MeshStandardMaterial({
       color: 0xff5500,
-      roughness: 0.30,
-      metalness: 0.10,
+      emissive: 0xff5500,
+      emissiveIntensity: 1.5,
+      roughness: 0.3,
+      metalness: 0.2,
     });
-
-    // Optical Glass Camera Lenses
-    const mainLensMat = new THREE.MeshStandardMaterial({
-      color: 0x050d18,
-      emissive: 0x0088cc,
-      emissiveIntensity: 0.5,
-      roughness: 0.05,
-      metalness: 0.95,
-    });
-
-    // Infrared Thermal Sensor Aperture (Germanium gold/amber reflection)
-    const thermalLensMat = new THREE.MeshStandardMaterial({
-      color: 0x6b5324,
-      emissive: 0xd4a034,
-      emissiveIntensity: 0.45,
-      roughness: 0.15,
-      metalness: 0.85,
-    });
-
-    // Laser Rangefinder Aperture (Dark Ruby)
-    const lrfLensMat = new THREE.MeshStandardMaterial({
-      color: 0x4a0a10,
-      roughness: 0.1,
+    
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0x050505,
       metalness: 0.9,
+      roughness: 0.05,
+      transmission: 0.9,
+      thickness: 0.05,
     });
-
-    // High-Impact Silicone Rubber Landing Pads
-    const rubberPadMat = new THREE.MeshStandardMaterial({
-      color: 0x0a0a0c,
-      roughness: 0.95,
-      metalness: 0.0,
-    });
-
-    // Intense Aviation Emissive LEDs (Sci-Fi Glow)
-    const ledGreen = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x10b981, emissiveIntensity: 4.0 });
-    const ledRed = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xef4444, emissiveIntensity: 4.0 });
-    const ledWhite = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 4.0 });
-    const neonOrange = new THREE.MeshStandardMaterial({ color: 0xff5500, emissive: 0xff5500, emissiveIntensity: 5.0 });
-
-    // ROOT HANGAR DRONE GROUP
-    const droneGroup = new THREE.Group();
-    scene.add(droneGroup);
-
-    // Dynamic Core Glow Light
-    const coreGlow = new THREE.PointLight(0xff5500, 2.0, 4.0);
-    coreGlow.position.set(0, 0, 0);
-    droneGroup.add(coreGlow);
-
-    // Ground Contact Shadow Plane
-    const shadowGeo = new THREE.PlaneGeometry(4.4, 4.4);
-    const canvas = document.createElement("canvas");
-    canvas.width = 128;
-    canvas.height = 128;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-      grad.addColorStop(0, "rgba(0, 0, 0, 0.36)");
-      grad.addColorStop(0.35, "rgba(0, 0, 0, 0.16)");
-      grad.addColorStop(1, "rgba(0, 0, 0, 0)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 128, 128);
-    }
-    const shadowTex = new THREE.CanvasTexture(canvas);
-    const shadowMat = new THREE.MeshBasicMaterial({
-      map: shadowTex,
-      transparent: true,
-      depthWrite: false,
-    });
-    const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-    shadowMesh.rotation.x = -Math.PI / 2;
-    shadowMesh.position.y = -0.52;
-    scene.add(shadowMesh);
 
     // ==============================================
-    // 1. CHISELED ENTERPRISE FUSELAGE (DJI MATRICE ARCHITECTURE)
-    // Angular, chamfered tactical monocoque with zero oval blobs
+    // MASTER DRONE GROUP
     // ==============================================
-    const fuselageGroup = new THREE.Group();
-    droneGroup.add(fuselageGroup);
+    const masterGroup = new THREE.Group();
+    masterGroup.position.set(-0.5, 0, 0); // Shift left slightly to make room for stats
+    masterGroup.scale.set(0.75, 0.75, 0.75);
+    scene.add(masterGroup);
+    
+    let currentDroneGroup: THREE.Group | null = null;
+    let gimbalGroup: THREE.Group | null = null;
+    const propellers: { group: THREE.Group; direction: number }[] = [];
 
-    const bodyScale = type === "octacopter" ? 1.08 : type === "hexacopter" ? 1.02 : 0.96;
-    const bodyLength = 1.05 * bodyScale;
-    const bodyWidth = 0.44 * bodyScale;
-    const bodyHeight = 0.22 * bodyScale;
+    // Factory function to build the drone based on type
+    const buildDrone = (platformType: string) => {
+      const droneGroup = new THREE.Group();
+      propellers.length = 0; // reset
+      gimbalGroup = null;
 
-    // A) Lower Magnesium Belly Chassis
-    const lowerBelly = new THREE.Mesh(
-      new THREE.BoxGeometry(bodyWidth * 0.92, bodyHeight * 0.45, bodyLength * 0.90),
-      underHullMat
-    );
-    lowerBelly.position.set(0, -bodyHeight * 0.24, -bodyLength * 0.02);
-    fuselageGroup.add(lowerBelly);
+      const rotors = platformType === "quadcopter" ? 4 : platformType === "hexacopter" ? 6 : 8;
+      const armLength = platformType === "quadcopter" ? 0.75 : platformType === "hexacopter" ? 1.0 : 1.25;
 
-    // B) Main Mid-Hull Deck (Tactical Gray Chamfered Monocoque)
-    const midHull = new THREE.Mesh(
-      new THREE.BoxGeometry(bodyWidth, bodyHeight * 0.55, bodyLength * 0.88),
-      tacticalHullMat
-    );
-    midHull.position.set(0, bodyHeight * 0.08, -bodyLength * 0.03);
-    fuselageGroup.add(midHull);
+      // ----------------------------------------------
+      // 1. ADVANCED AERODYNAMIC FUSELAGE
+      // ----------------------------------------------
+      const bodyGroup = new THREE.Group();
+      droneGroup.add(bodyGroup);
 
-    // Sci-Fi Orange Emissive Vents on the Side
-    [-1, 1].forEach((side) => {
-      const sideVent = new THREE.Mesh(
-        new THREE.BoxGeometry(0.02, 0.04, 0.3),
-        neonOrange
-      );
-      sideVent.position.set(side * (bodyWidth * 0.5), bodyHeight * 0.08, -bodyLength * 0.05);
-      fuselageGroup.add(sideVent);
-    });
+      // Upper Shell Shape (XZ plane projection)
+      const bodyShape = new THREE.Shape();
+      bodyShape.moveTo(0, 0.55); // Nose
+      bodyShape.lineTo(0.06, 0.48); // Nose right taper
+      bodyShape.bezierCurveTo(0.18, 0.4, 0.25, 0.2, 0.24, 0); // Front right
+      bodyShape.lineTo(0.18, -0.4); // Mid right
+      bodyShape.bezierCurveTo(0.15, -0.55, 0.08, -0.6, 0, -0.65); // Tail right
+      bodyShape.bezierCurveTo(-0.08, -0.6, -0.15, -0.55, -0.18, -0.4); // Tail left
+      bodyShape.lineTo(-0.24, 0); // Mid left
+      bodyShape.bezierCurveTo(-0.25, 0.2, -0.18, 0.4, -0.06, 0.48); // Front left
+      bodyShape.lineTo(0, 0.55); // Nose left
 
-    // C) Forward-Sloping Cockpit Nose Cowl
-    const noseCowl = new THREE.Mesh(
-      new THREE.BoxGeometry(bodyWidth * 0.86, bodyHeight * 0.50, bodyLength * 0.32),
-      tacticalHullMat
-    );
-    noseCowl.position.set(0, bodyHeight * 0.04, bodyLength * 0.44);
-    noseCowl.rotation.x = 0.12; // Forward aerodynamic downward rake
-    fuselageGroup.add(noseCowl);
+      // Silver Metallic Top Shell
+      const topExtrude = { depth: 0.05, bevelEnabled: true, bevelSegments: 6, steps: 1, bevelSize: 0.04, bevelThickness: 0.04 };
+      const topShellGeo = new THREE.ExtrudeGeometry(bodyShape, topExtrude);
+      topShellGeo.rotateX(Math.PI / 2); // Lay flat
+      const topShell = new THREE.Mesh(topShellGeo, silverAlloy);
+      topShell.position.set(0, 0.08, 0);
+      topShell.castShadow = true;
+      topShell.receiveShadow = true;
+      bodyGroup.add(topShell);
 
-    // Front Heat-Sink Grille / Ventilation Louvers
-    [-0.03, 0.02].forEach((yOff) => {
-      const vent = new THREE.Mesh(
-        new THREE.BoxGeometry(bodyWidth * 0.65, 0.018, 0.02),
-        titaniumTrimMat
-      );
-      vent.position.set(0, yOff, bodyLength * 0.59);
-      fuselageGroup.add(vent);
-    });
+      // Dark Graphite Lower Structural Shell
+      const bottomExtrude = { depth: 0.08, bevelEnabled: true, bevelSegments: 4, steps: 1, bevelSize: 0.03, bevelThickness: 0.03 };
+      const bottomShellGeo = new THREE.ExtrudeGeometry(bodyShape, bottomExtrude);
+      bottomShellGeo.rotateX(Math.PI / 2);
+      const bottomShell = new THREE.Mesh(bottomShellGeo, satinBlack);
+      bottomShell.scale.set(0.92, 1, 0.92);
+      bottomShell.position.set(0, 0.0, 0.02);
+      bottomShell.castShadow = true;
+      bodyGroup.add(bottomShell);
 
-    // D) Forward Stereo Obstacle Avoidance Cameras (Upper Nose - Binocular Eyes)
-    [-0.10 * bodyScale, 0.10 * bodyScale].forEach((xOff) => {
-      // Sensor eye housing
-      const eyeHousing = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.035, 0.035, 0.04, 16),
-        titaniumTrimMat
-      );
-      eyeHousing.rotation.x = Math.PI / 2;
-      eyeHousing.position.set(xOff, bodyHeight * 0.14, bodyLength * 0.56);
-      fuselageGroup.add(eyeHousing);
-
-      // Glass camera element
-      const eyeLens = new THREE.Mesh(
-        new THREE.CircleGeometry(0.024, 16),
-        mainLensMat
-      );
-      eyeLens.position.set(xOff, bodyHeight * 0.14, bodyLength * 0.582);
-      fuselageGroup.add(eyeLens);
-    });
-
-    // E) Top RTK GNSS Antenna Module (Centimeter Precision Cylindrical Puck on Roof)
-    const rtkBase = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.12 * bodyScale, 0.13 * bodyScale, 0.04, 20),
-      titaniumTrimMat
-    );
-    rtkBase.position.set(0, bodyHeight * 0.36, -bodyLength * 0.05);
-    fuselageGroup.add(rtkBase);
-
-    const rtkPuck = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.11 * bodyScale, 0.115 * bodyScale, 0.14, 20),
-      tacticalHullMat
-    );
-    rtkPuck.position.set(0, bodyHeight * 0.36 + 0.08, -bodyLength * 0.05);
-    fuselageGroup.add(rtkPuck);
-
-    // RTK Top Beveled Cap & Status Beacon
-    const rtkCap = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.095 * bodyScale, 0.11 * bodyScale, 0.03, 20),
-      titaniumTrimMat
-    );
-    rtkCap.position.set(0, bodyHeight * 0.36 + 0.16, -bodyLength * 0.05);
-    fuselageGroup.add(rtkCap);
-
-    // For Hexacopter & Octacopter: Add dual rear RTK antenna masts
-    if (type !== "quadcopter") {
-      [-0.14 * bodyScale, 0.14 * bodyScale].forEach((xOff) => {
-        const mast = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.015, 0.015, 0.16, 8),
-          carbonArmMat
-        );
-        mast.position.set(xOff, bodyHeight * 0.35 + 0.08, -bodyLength * 0.36);
-        fuselageGroup.add(mast);
-
-        const mastPuck = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.055, 0.06, 0.035, 16),
-          titaniumTrimMat
-        );
-        mastPuck.position.set(xOff, bodyHeight * 0.35 + 0.17, -bodyLength * 0.36);
-        fuselageGroup.add(mastPuck);
-      });
-    }
-
-    // F) Rear Longitudinal Battery Compartment & Release Latch
-    const batteryPack = new THREE.Mesh(
-      new THREE.BoxGeometry(bodyWidth * 0.78, bodyHeight * 0.48, bodyLength * 0.40),
-      underHullMat
-    );
-    batteryPack.position.set(0, bodyHeight * 0.12, -bodyLength * 0.46);
-    fuselageGroup.add(batteryPack);
-
-    // Battery Quick-Release Handle & Dual Safety Latches
-    const batteryHandle = new THREE.Mesh(
-      new THREE.BoxGeometry(bodyWidth * 0.50, 0.05, 0.06),
-      titaniumTrimMat
-    );
-    batteryHandle.position.set(0, bodyHeight * 0.16, -bodyLength * 0.64);
-    fuselageGroup.add(batteryHandle);
-
-    // Rear Anti-Collision Beacon Strobe
-    const tailStrobe = new THREE.Mesh(new THREE.SphereGeometry(0.032, 8, 8), ledWhite);
-    tailStrobe.position.set(0, bodyHeight * 0.14, -bodyLength * 0.67);
-    fuselageGroup.add(tailStrobe);
-
-    // ==============================================
-    // 2. ENTERPRISE MULTI-SENSOR GIMBAL CAMERA (FRONT/UNDERSIDE)
-    // Directly matching the DJI Matrice enterprise sensor payload
-    // ==============================================
-    const gimbalGroup = new THREE.Group();
-    gimbalGroup.position.set(0, -bodyHeight * 0.38, bodyLength * 0.34);
-    fuselageGroup.add(gimbalGroup);
-
-    // Gimbal Yaw Attachment Collar
-    const gimbalCollar = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.07, 0.08, 0.05, 16),
-      motorBellMat
-    );
-    gimbalGroup.add(gimbalCollar);
-
-    // 3-Axis Motorized Gimbal Yoke
-    const gimbalYoke = new THREE.Mesh(
-      new THREE.BoxGeometry(0.24, 0.03, 0.06),
-      titaniumTrimMat
-    );
-    gimbalYoke.position.set(0, -0.06, 0);
-    gimbalGroup.add(gimbalYoke);
-
-    [-0.11, 0.11].forEach((xSide) => {
-      const yokeArm = new THREE.Mesh(
-        new THREE.BoxGeometry(0.025, 0.12, 0.05),
-        titaniumTrimMat
-      );
-      yokeArm.position.set(xSide, -0.11, 0);
-      gimbalGroup.add(yokeArm);
-    });
-
-    // Rugged Multi-Sensor Camera Block
-    const camBlock = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 0.16, 0.16),
-      tacticalHullMat
-    );
-    camBlock.position.set(0, -0.12, 0.04);
-    gimbalGroup.add(camBlock);
-
-    // 1) Primary Zoom Telephoto Lens (Large circular aperture)
-    const zoomBarrel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.042, 0.045, 0.04, 16),
-      motorBellMat
-    );
-    zoomBarrel.rotation.x = Math.PI / 2;
-    zoomBarrel.position.set(-0.042, -0.13, 0.12);
-    gimbalGroup.add(zoomBarrel);
-
-    const zoomLens = new THREE.Mesh(
-      new THREE.CircleGeometry(0.036, 16),
-      mainLensMat
-    );
-    zoomLens.position.set(-0.042, -0.13, 0.142);
-    gimbalGroup.add(zoomLens);
-
-    // 2) Wide-Angle Survey Lens (Medium circular aperture)
-    const wideBarrel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.032, 0.034, 0.03, 14),
-      motorBellMat
-    );
-    wideBarrel.rotation.x = Math.PI / 2;
-    wideBarrel.position.set(0.042, -0.10, 0.12);
-    gimbalGroup.add(wideBarrel);
-
-    const wideLens = new THREE.Mesh(
-      new THREE.CircleGeometry(0.026, 14),
-      mainLensMat
-    );
-    wideLens.position.set(0.042, -0.10, 0.137);
-    gimbalGroup.add(wideLens);
-
-    // 3) Thermal Infrared Sensor (Germanium Gold/Amber Window)
-    const thermalFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(0.055, 0.045, 0.02),
-      titaniumTrimMat
-    );
-    thermalFrame.position.set(0.042, -0.155, 0.12);
-    gimbalGroup.add(thermalFrame);
-
-    const thermalLens = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.04, 0.032),
-      thermalLensMat
-    );
-    thermalLens.position.set(0.042, -0.155, 0.132);
-    gimbalGroup.add(thermalLens);
-
-    // 4) Laser Rangefinder (LRF) Optical Window
-    const lrfFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(0.04, 0.02, 0.01),
-      lrfLensMat
-    );
-    lrfFrame.position.set(-0.042, -0.08, 0.12);
-    gimbalGroup.add(lrfFrame);
-
-    // ==============================================
-    // 3. STRUCTURAL ROTOR ARMS WITH MOTOR-INTEGRATED LANDING FEET
-    // Direct match to Image 3 (landing feet under each motor hub)
-    // ==============================================
-    interface PropellerData {
-      group: THREE.Group;
-      direction: number; // 1 = CW, -1 = CCW
-    }
-    const propellerList: PropellerData[] = [];
-
-    let armAngles: number[] = [];
-    let armLength = 1.35;
-
-    if (type === "quadcopter") {
-      // Symmetrical 4-rotor X-frame (45°, 135°, 225°, 315°)
-      armAngles = [
-        Math.PI * 0.25, // Front-Right
-        Math.PI * 0.75, // Rear-Right
-        Math.PI * 1.25, // Rear-Left
-        Math.PI * 1.75, // Front-Left
-      ];
-      armLength = 1.34;
-    } else if (type === "hexacopter") {
-      // 6-rotor layout (every 60°)
-      armAngles = [0, 1, 2, 3, 4, 5].map((i) => (i * Math.PI) / 3);
-      armLength = 1.38;
-    } else {
-      // Octacopter: 8-rotor heavy lifter (every 45°)
-      armAngles = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => (i * Math.PI) / 4);
-      armLength = 1.42;
-    }
-
-    armAngles.forEach((angle, idx) => {
-      const armGroup = new THREE.Group();
-      armGroup.rotation.y = angle;
-
-      // Reinforced CNC Chassis Root Bulkhead (Square chamfered block)
-      const rootSocket = new THREE.Mesh(
-        new THREE.BoxGeometry(0.14, 0.10, 0.12),
-        titaniumTrimMat
-      );
-      rootSocket.position.x = bodyWidth * 0.42;
-      armGroup.add(rootSocket);
-
-      // Aerodynamic Structural Arm (Chamfered hexagonal profile)
-      const armTube = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.042, 0.046, armLength, 8),
-        carbonArmMat
-      );
-      armTube.rotation.z = Math.PI / 2;
-      armTube.position.x = armLength / 2;
-      armGroup.add(armTube);
-
-      // Motor Hub Outer Bracket Housing (Tactical Gray)
-      const motorHub = new THREE.Mesh(
-        new THREE.BoxGeometry(0.18, 0.12, 0.14),
-        tacticalHullMat
-      );
-      motorHub.position.set(armLength, 0.02, 0);
-      armGroup.add(motorHub);
-
-      // High-Torque Brushless Motor Bell (Brushed CNC metal)
-      const motorBell = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.125, 0.13, 0.09, 20),
-        motorBellMat
-      );
-      motorBell.position.set(armLength, 0.10, 0);
-      armGroup.add(motorBell);
-
-      // Visible Copper Stator Ring
-      const copperRing = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.132, 0.132, 0.028, 20),
-        copperStatorMat
-      );
-      copperRing.position.set(armLength, 0.065, 0);
-      armGroup.add(copperRing);
-
-      // Motor Central Spindle Shaft
-      const spindle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.024, 0.024, 0.08, 12),
-        motorBellMat
-      );
-      spindle.position.set(armLength, 0.17, 0);
-      armGroup.add(spindle);
-
-      // Navigation LED on outer arm tip
-      const isRightSide = angle >= 0 && angle < Math.PI;
-      const navLed = new THREE.Mesh(
-        new THREE.SphereGeometry(0.038, 8, 8),
-        isRightSide ? ledGreen : ledRed
-      );
-      navLed.position.set(armLength + 0.13, 0.04, 0);
-      armGroup.add(navLed);
-
-      // ==============================================
-      // MOTOR-INTEGRATED TAPERED LANDING LEG (FROM IMAGE 3)
-      // Directly extending down beneath each motor hub!
-      // ==============================================
-      const legHeight = 0.44;
-      const landingLeg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.028, 0.018, legHeight, 10),
-        tacticalHullMat
-      );
-      landingLeg.position.set(armLength, -legHeight / 2 - 0.02, 0);
-      armGroup.add(landingLeg);
-
-      // High-Impact Silicone Rubber Foot Pad
-      const rubberFoot = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.026, 0.032, 0.04, 10),
-        rubberPadMat
-      );
-      rubberFoot.position.set(armLength, -legHeight - 0.03, 0);
-      armGroup.add(rubberFoot);
-
-      // ==============================================
-      // PROPELLER WITH VIBRANT AVIATION SAFETY ORANGE TIPS (IMAGE 3)
-      // ==============================================
-      const propGroup = new THREE.Group();
-      propGroup.position.set(armLength, 0.18, 0);
-
-      // Central Aerodynamic Spinner Cap Nut
-      const spinnerNut = new THREE.Mesh(
-        new THREE.ConeGeometry(0.052, 0.08, 16),
-        titaniumTrimMat
-      );
-      spinnerNut.position.y = 0.04;
-      propGroup.add(spinnerNut);
-
-      // 2 Folding Carbon Fiber Airfoil Blades
-      const bladeRadius = type === "octacopter" ? 0.46 : type === "hexacopter" ? 0.50 : 0.55;
-      const orangeTipRatio = 0.24; // 24% of blade tip is safety orange
-
-      [-1, 1].forEach((dir) => {
-        // Main Carbon Blade Body
-        const carbonLength = bladeRadius * (1 - orangeTipRatio);
-        const bladeHalf = new THREE.Mesh(
-          new THREE.BoxGeometry(carbonLength, 0.012, 0.068),
-          bladeMat
-        );
-        bladeHalf.position.x = (dir * carbonLength) / 2;
-        bladeHalf.rotation.x = dir * 0.13;
-        propGroup.add(bladeHalf);
-
-        // Vibrant Safety Orange Tip (As seen on Image 3 DJI Matrice)
-        const tipLength = bladeRadius * orangeTipRatio;
-        const orangeTip = new THREE.Mesh(
-          new THREE.BoxGeometry(tipLength, 0.013, 0.070),
-          orangeTipMat
-        );
-        orangeTip.position.x = dir * (carbonLength + tipLength / 2);
-        orangeTip.rotation.x = dir * 0.13;
-        propGroup.add(orangeTip);
+      // Side Heat Sinks / Avionics Vents
+      [-0.24, 0.24].forEach((xOff, i) => {
+        const vent = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.08, 0.25), machinedAlloy);
+        vent.position.set(xOff, 0.0, 0);
+        vent.rotation.y = i === 0 ? -0.05 : 0.05;
+        bodyGroup.add(vent);
       });
 
-      armGroup.add(propGroup);
+      // Top Sensor Array (GNSS / Compass)
+      const gnssBase = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.02, 32), satinBlack);
+      gnssBase.position.set(0, 0.15, -0.2);
+      bodyGroup.add(gnssBase);
+      
+      const gnssDome = new THREE.Mesh(new THREE.SphereGeometry(0.07, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), matteComposite);
+      gnssDome.position.set(0, 0.16, -0.2);
+      bodyGroup.add(gnssDome);
 
-      // Alternating CW and CCW Rotation
-      const direction = idx % 2 === 0 ? 1 : -1;
-      propellerList.push({ group: propGroup, direction });
+      // Minimal Orange Accent Strip
+      const stripeGeo = new THREE.BoxGeometry(0.02, 0.02, 0.15);
+      const stripe = new THREE.Mesh(stripeGeo, neonOrange);
+      stripe.position.set(0, 0.14, 0.1);
+      stripe.rotation.x = -0.05;
+      bodyGroup.add(stripe);
 
-      droneGroup.add(armGroup);
-    });
+      // Battery Access Panel Seam
+      const seamGeo = new THREE.BoxGeometry(0.18, 0.005, 0.25);
+      const seam = new THREE.Mesh(seamGeo, satinBlack);
+      seam.position.set(0, 0.08, -0.05);
+      bodyGroup.add(seam);
 
-    // Initial cinematic pitch and yaw
-    droneGroup.rotation.x = 0.28;
-    droneGroup.rotation.y = -0.65;
+      // ----------------------------------------------
+      // 2. PROFESSIONAL GIMBAL & PAYLOAD
+      // ----------------------------------------------
+      gimbalGroup = new THREE.Group();
+      gimbalGroup.position.set(0, -0.2, 0.25);
+      bodyGroup.add(gimbalGroup);
+
+      // Vibration Damper
+      const damper = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.03, 24), satinBlack);
+      gimbalGroup.add(damper);
+
+      // Gimbal Base
+      const gBase = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.04, 24), machinedAlloy);
+      gBase.position.set(0, -0.03, 0);
+      gimbalGroup.add(gBase);
+
+      // Gimbal Yoke (Yaw and Pitch Arms)
+      const yokeGroup = new THREE.Group();
+      yokeGroup.position.set(0, -0.05, 0);
+      gimbalGroup.add(yokeGroup);
+      
+      const yokeArm = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.1, 16), machinedAlloy);
+      yokeArm.rotation.x = Math.PI / 2;
+      yokeArm.position.set(0.06, -0.05, 0);
+      yokeGroup.add(yokeArm);
+      
+      const yokeVertical = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.1, 16), machinedAlloy);
+      yokeVertical.position.set(0.06, 0, 0);
+      yokeGroup.add(yokeVertical);
+
+      // Payload Camera Pod (Compact Spherical/Cylindrical Hybrid)
+      const camPod = new THREE.Mesh(new THREE.SphereGeometry(0.045, 32, 32), satinBlack);
+      camPod.position.set(0, -0.04, 0);
+      yokeGroup.add(camPod);
+
+      // Primary Lens
+      const lensRim = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.02, 32), machinedAlloy);
+      lensRim.rotation.x = Math.PI / 2;
+      lensRim.position.set(0, -0.05, 0.07);
+      yokeGroup.add(lensRim);
+
+      const lensGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.01, 32), glassMat);
+      lensGlass.rotation.x = Math.PI / 2;
+      lensGlass.position.set(0, -0.05, 0.08);
+      yokeGroup.add(lensGlass);
+
+      // ----------------------------------------------
+      // 3. STRUCTURAL ARMS & MOTOR PODS
+      // ----------------------------------------------
+      for (let i = 0; i < rotors; i++) {
+        const angle = (i * Math.PI * 2) / rotors + (platformType === "quadcopter" ? Math.PI / 4 : 0);
+        const armGroup = new THREE.Group();
+        armGroup.rotation.y = angle;
+
+        // Integrated Fuselage Root Joint (Housing)
+        const rootJoint = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.07, 0.14), satinBlack);
+        rootJoint.position.set(0.18, 0, 0);
+        armGroup.add(rootJoint);
+
+        // Tapered Structural Arm (Flatter profile)
+        const armMesh = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.02, 0.05, armLength, 8), 
+          matteComposite
+        );
+        armMesh.rotation.z = -Math.PI / 2;
+        armMesh.position.set(0.18 + armLength / 2, 0, 0);
+        armMesh.scale.set(1, 1, 0.6); // Flatter aerodynamic profile
+        armMesh.castShadow = true;
+        armGroup.add(armMesh);
+
+        const motorCenter = 0.18 + armLength;
+
+        // Motor Mounting Plate
+        const mountPlate = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.015, 16), matteComposite);
+        mountPlate.position.set(motorCenter, 0.01, 0);
+        armGroup.add(mountPlate);
+
+        // Lower Motor Housing / Stator base
+        const motorPod = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.055, 0.05, 0.05, 24),
+          satinBlack
+        );
+        motorPod.position.set(motorCenter, 0.04, 0);
+        armGroup.add(motorPod);
+
+        // Upper Brushless Motor Bell / Cap (Metallic)
+        const motorBell = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.052, 0.052, 0.03, 24),
+          machinedAlloy
+        );
+        motorBell.position.set(motorCenter, 0.08, 0);
+        armGroup.add(motorBell);
+
+        // Motor Shaft
+        const motorShaft = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.006, 0.006, 0.04, 12),
+          silverAlloy
+        );
+        motorShaft.position.set(motorCenter, 0.10, 0);
+        armGroup.add(motorShaft);
+
+        // ----------------------------------------------
+        // 4. AERODYNAMIC PROPELLERS
+        // ----------------------------------------------
+        const propGroup = new THREE.Group();
+        propGroup.position.set(motorCenter, 0.11, 0);
+        
+        const propHub = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.015, 16), satinBlack);
+        propGroup.add(propHub);
+
+        // Aerodynamic Blade Profile (Thick root, tapered tip, curved leading edge)
+        const bladeLength = platformType === "quadcopter" ? 0.48 : 0.42;
+        const bladeShape = new THREE.Shape();
+        bladeShape.moveTo(0, 0.015);
+        bladeShape.quadraticCurveTo(bladeLength * 0.4, 0.04, bladeLength, 0.01); // Leading edge
+        bladeShape.lineTo(bladeLength, -0.01); // Tip
+        bladeShape.quadraticCurveTo(bladeLength * 0.4, -0.03, 0, -0.015); // Trailing edge
+
+        const bladeExtrude = { depth: 0.004, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.002, bevelThickness: 0.002 };
+        const bladeGeo = new THREE.ExtrudeGeometry(bladeShape, bladeExtrude);
+        bladeGeo.center();
+        
+        // Blade 1
+        const blade1 = new THREE.Mesh(bladeGeo, propellerMat);
+        blade1.position.set(bladeLength / 2, 0, 0);
+        blade1.rotation.x = 0.15; // Realistic pitch angle
+        blade1.castShadow = true;
+        propGroup.add(blade1);
+
+        // Blade 2
+        const blade2 = new THREE.Mesh(bladeGeo, propellerMat);
+        blade2.position.set(-bladeLength / 2, 0, 0);
+        blade2.rotation.z = Math.PI;
+        blade2.rotation.x = 0.15;
+        blade2.castShadow = true;
+        propGroup.add(blade2);
+
+        // Orange Tip Accents for visibility
+        const tipGeo = new THREE.BoxGeometry(0.04, 0.01, 0.03);
+        const tip1 = new THREE.Mesh(tipGeo, neonOrange);
+        tip1.position.set(bladeLength * 0.85, 0, 0);
+        propGroup.add(tip1);
+        const tip2 = new THREE.Mesh(tipGeo, neonOrange);
+        tip2.position.set(-bladeLength * 0.85, 0, 0);
+        propGroup.add(tip2);
+
+        armGroup.add(propGroup);
+        // Correct rotational direction mapping
+        propellers.push({ group: propGroup, direction: i % 2 === 0 ? 1 : -1 });
+
+        // ----------------------------------------------
+        // 5. ENGINEERED LANDING GEAR
+        // ----------------------------------------------
+        // For larger hex/octa frames, we skip some arms so it isn't cluttered
+        const needsGear = platformType === "quadcopter" || (platformType === "hexacopter" ? i % 3 === 0 : i % 2 === 0);
+        if (needsGear) {
+          const gearGroup = new THREE.Group();
+          gearGroup.position.set(0.18 + armLength * 0.7, -0.04, 0);
+          
+          // Angled structural strut (carbon fiber style)
+          const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.012, 0.35, 12), matteComposite);
+          strut.rotation.z = -0.15; // Sweep outward
+          strut.position.set(0, -0.15, 0);
+          strut.castShadow = true;
+          gearGroup.add(strut);
+
+          // Horizontal ground skid
+          const skid = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.25, 12), satinBlack);
+          skid.rotation.x = Math.PI / 2;
+          skid.position.set(0.03, -0.32, 0);
+          skid.castShadow = true;
+          gearGroup.add(skid);
+
+          // Shock-absorbing rubber boots
+          [-0.1, 0.1].forEach((zOff) => {
+            const boot = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.03, 12), matteComposite);
+            boot.rotation.x = Math.PI / 2;
+            boot.position.set(0.03, -0.32, zOff);
+            boot.castShadow = true;
+            gearGroup.add(boot);
+          });
+
+          armGroup.add(gearGroup);
+        }
+
+        droneGroup.add(armGroup);
+      }
+
+      return droneGroup;
+    };
 
     // ==============================================
-    // 4. FULL 6-DOF ORBIT CONTROLS (PAN, ZOOM, ROTATE)
+    // GROUND SHADOW
+    // ==============================================
+    const planeGeo = new THREE.PlaneGeometry(15, 15);
+    const planeMat = new THREE.ShadowMaterial({ opacity: 0.3 });
+    const plane = new THREE.Mesh(planeGeo, planeMat);
+    plane.rotation.x = -Math.PI / 2;
+    plane.position.y = -0.6; 
+    plane.receiveShadow = true;
+    scene.add(plane);
+
+    // ==============================================
+    // INTERACTION & CONTROLS
     // ==============================================
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.enableZoom = true;
-    controls.enablePan = true;
-    // Removed maxPolarAngle limit so user can look at the belly of the drone freely
-    controls.minDistance = 2.0;
-    controls.maxDistance = 15.0;
+    controls.enableZoom = false; 
+    controls.enablePan = false;
     controls.enabled = interactive;
-    controls.autoRotate = autoRotate && !interactive;
-    controls.autoRotateSpeed = 1.5;
 
-    controls.addEventListener("start", () => setIsInteracting(true));
-    controls.addEventListener("end", () => setIsInteracting(false));
-
-    // RESIZE OBSERVER
     const handleResize = () => {
       if (!container) return;
       const w = container.clientWidth;
       const h = container.clientHeight;
-      if (w === 0 || h === 0) return;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h, false);
     };
-
     const resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(container);
 
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!interactive) return;
+      const rect = container.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      // Map mouse to a subtle parallax rotation
+      targetRotationRef.current = { x: y * 0.1 + 0.15, y: x * 0.2 - Math.PI / 6 };
+    };
+    container.addEventListener("mousemove", handleMouseMove);
+
     // ==============================================
-    // 5. ANIMATION LOOP & SELECTION FLIGHT DYNAMICS
+    // ANIMATION LOOP
     // ==============================================
     let animationId: number;
     const clock = new THREE.Clock();
+    
+    // Initial mount
+    currentDroneGroup = buildDrone(type);
+    masterGroup.add(currentDroneGroup);
+    currentDroneGroup.rotation.y = -Math.PI / 6; // Initial angle
 
-    let currentElevY = 0;
-    let currentPosZ = 0;
+    let transitionProgress = 1.0;
+    let oldDroneGroup: THREE.Group | null = null;
 
     const animate = () => {
       animationId = requestAnimationFrame(animate);
-
       const delta = clock.getDelta();
       const elapsed = clock.getElapsedTime();
 
-      // Dynamic vehicle selection elevation & forward glide
-      const isCurrentSelected = isSelectedRef.current;
-      const targetScale = isCurrentSelected ? 1.05 : 0.92;
-      const targetElevY = isCurrentSelected ? 0.28 : 0;
-      const targetPosZ = isCurrentSelected ? 0.20 : 0;
-
-      droneGroup.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.08);
-
-      // Smooth elevation into the spotlight
-      currentElevY += (targetElevY - currentElevY) * 0.08;
-      currentPosZ += (targetPosZ - currentPosZ) * 0.08;
-      droneGroup.position.z = currentPosZ;
-      droneGroup.position.y = currentElevY + Math.sin(elapsed * 2.2) * (isCurrentSelected ? 0.03 : 0.015);
-
-      // Propellers rotation
-      const propSpeed = isCurrentSelected ? 34 : 22;
-      propellerList.forEach((prop) => {
-        prop.group.rotation.y += prop.direction * propSpeed * delta;
-      });
-
-      // Update OrbitControls
-      controls.update();
-
-      // Ground shadow expansion
-      if (shadowMesh) {
-        const shadowTargetScale = isCurrentSelected ? 1.25 : 1.0;
-        shadowMesh.scale.lerp(new THREE.Vector3(shadowTargetScale, shadowTargetScale, 1), 0.08);
+      // Handle Smooth Switching
+      if (currentTypeRef.current !== type) {
+        currentTypeRef.current = type;
+        transitionProgress = 0.0;
+        
+        oldDroneGroup = currentDroneGroup;
+        currentDroneGroup = buildDrone(type);
+        currentDroneGroup.position.x = 5; // Start offset to the right
+        masterGroup.add(currentDroneGroup);
       }
 
+      if (transitionProgress < 1.0) {
+        transitionProgress += delta * 1.5; // ~660ms transition
+        if (transitionProgress > 1.0) transitionProgress = 1.0;
+
+        // Easing function (easeInOutCubic)
+        const ease = transitionProgress < 0.5 
+          ? 4 * transitionProgress * transitionProgress * transitionProgress 
+          : 1 - Math.pow(-2 * transitionProgress + 2, 3) / 2;
+
+        if (oldDroneGroup) {
+          oldDroneGroup.position.x = -ease * 5;
+          oldDroneGroup.rotation.y -= delta * 2;
+          if (transitionProgress === 1.0) {
+            masterGroup.remove(oldDroneGroup);
+            oldDroneGroup = null;
+          }
+        }
+
+        if (currentDroneGroup) {
+          currentDroneGroup.position.x = 5 - ease * 5;
+        }
+      }
+
+      if (currentDroneGroup) {
+        // Idle Hover Bobbing
+        const hoverY = Math.sin(elapsed * 2.0) * 0.04;
+        currentDroneGroup.position.y = hoverY;
+
+        // Extremely slow presentation rotation if not interacting
+        if (autoRotate && !isInteracting) {
+          targetRotationRef.current.y -= 0.1 * delta;
+        }
+
+        // Smooth orientation spring to target
+        currentDroneGroup.rotation.x += (targetRotationRef.current.x - currentDroneGroup.rotation.x) * 0.05;
+        currentDroneGroup.rotation.y += (targetRotationRef.current.y - currentDroneGroup.rotation.y) * 0.05;
+
+        // Gimbal Independent Stabilization
+        if (gimbalGroup) {
+          gimbalGroup.rotation.x = -currentDroneGroup.rotation.x + 0.15; // +0.15 is baseline offset
+          gimbalGroup.rotation.z = -currentDroneGroup.rotation.z;
+        }
+
+        // Propeller Rotation (Linked to Motor RPM Concept)
+        const baseRPM = isSelectedRef.current ? 18 : 4; // Fast if selected, slow idle if not
+        propellers.forEach((prop) => {
+          prop.group.rotation.y -= prop.direction * baseRPM * delta;
+        });
+      }
+
+      controls.update();
       renderer.render(scene, camera);
     };
 
     animate();
 
-    // CLEANUP
     return () => {
       cancelAnimationFrame(animationId);
       resizeObserver.disconnect();
-
+      container.removeEventListener("mousemove", handleMouseMove);
       controls.dispose();
-
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
-
       renderer.dispose();
     };
   }, [type, autoRotate, interactive]);
@@ -715,7 +562,12 @@ export function Drone3DViewer({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-full select-none cursor-grab active:cursor-grabbing overflow-hidden ${className}`}
+      className={`relative w-full h-full select-none outline-none touch-none ${className}`}
+      onMouseEnter={() => setIsInteracting(true)}
+      onMouseLeave={() => {
+        setIsInteracting(false);
+        targetRotationRef.current = { x: 0.15, y: -Math.PI / 6 };
+      }}
     />
   );
 }

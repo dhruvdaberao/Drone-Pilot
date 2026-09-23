@@ -74,16 +74,19 @@ export function ConfigPayloadTab({ config, onChange }: ConfigPayloadTabProps) {
     { label: "Internal Modular Cargo Bay", value: "Internal Bay" },
   ];
 
-  const isOverweight = (payload.enabled ? payload.massKg : 0) > airframe.maxPayloadKg;
+  const activePayloadMass = payload.enabled ? payload.massKg : 0;
+  const activeCameraMass = camera.enabled ? camera.massKg : 0;
+  const totalAddedMass = Number((activePayloadMass + activeCameraMass).toFixed(2));
+  const isOverweight = totalAddedMass > airframe.maxPayloadKg;
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="border-b border-neutral-200 pb-3">
-        <h3 className="text-base font-heading font-bold text-neutral-950 uppercase">
+      <div className="border-b border-white/10 pb-4 mb-6">
+        <h3 className="text-base font-heading font-bold text-white uppercase">
           MISSION PAYLOAD & OPTICAL EQUIPMENT
         </h3>
-        <p className="text-xs text-neutral-600">
+        <p className="text-xs text-neutral-400">
           Configure specialized airborne payloads, camera gimbals, and observe real-time all-up mass impact.
         </p>
       </div>
@@ -95,30 +98,30 @@ export function ConfigPayloadTab({ config, onChange }: ConfigPayloadTabProps) {
           <div>
             <p className="font-bold">Airframe Structural Overload Warning</p>
             <p className="mt-0.5 text-rose-700">
-              Configured payload mass ({payload.massKg} kg) exceeds the airframe rating ({airframe.maxPayloadKg} kg).
-              Reduce payload mass or select a larger airframe class.
+              Combined active payload and camera mass ({totalAddedMass} kg) exceeds the airframe rating ({airframe.maxPayloadKg} kg).
+              Reduce equipment mass or select a larger airframe class.
             </p>
           </div>
         </div>
       )}
 
       {/* SECTION 1: MISSION PAYLOAD */}
-      <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-300 space-y-4">
-        <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
+      <div className="space-y-6 mb-12">
+        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
           <div className="flex items-center gap-2">
-            <Package className="h-4 w-4 text-[#FF5500]" />
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-900">
+            <Package className="h-5 w-5 text-[#FF5500]" />
+            <span className="text-sm font-mono font-bold uppercase tracking-wider text-white">
               MISSION PAYLOAD MODULE
             </span>
           </div>
 
           <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-xs font-semibold text-neutral-700">Equip Payload</span>
+            <span className="text-xs font-semibold text-neutral-300">Equip Payload</span>
             <input
               type="checkbox"
               checked={payload.enabled}
               onChange={(e) => updatePayload("enabled", e.target.checked)}
-              className="h-4 w-4 text-[#FF5500] rounded border-neutral-300 focus:ring-[#FF5500]"
+              className="h-4 w-4 accent-[#FF5500] text-[#FF5500] rounded border-white/10 focus:ring-[#FF5500]"
             />
           </label>
         </div>
@@ -170,22 +173,22 @@ export function ConfigPayloadTab({ config, onChange }: ConfigPayloadTabProps) {
       </div>
 
       {/* SECTION 2: GIMBAL OPTICAL CAMERA */}
-      <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-300 space-y-4">
-        <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
+      <div className="space-y-6 mb-12">
+        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
           <div className="flex items-center gap-2">
-            <Camera className="h-4 w-4 text-[#FF5500]" />
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-900">
-              ACTIVE STABILIZED CAMERA GIMBAL
+            <Camera className="h-5 w-5 text-[#FF5500]" />
+            <span className="text-sm font-mono font-bold uppercase tracking-wider text-white">
+              ACTIVE CAMERA & GIMBAL SYSTEM
             </span>
           </div>
 
           <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-xs font-semibold text-neutral-700">Mount Camera</span>
+            <span className="text-xs font-semibold text-neutral-300">Mount Camera</span>
             <input
               type="checkbox"
               checked={camera.enabled}
               onChange={(e) => updateCamera("enabled", e.target.checked)}
-              className="h-4 w-4 text-[#FF5500] rounded border-neutral-300 focus:ring-[#FF5500]"
+              className="h-4 w-4 accent-[#FF5500] text-[#FF5500] rounded border-white/10 focus:ring-[#FF5500]"
             />
           </label>
         </div>

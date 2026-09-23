@@ -55,11 +55,11 @@ export function ConfigAirframeTab({ config, onChange }: ConfigAirframeTabProps) 
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-neutral-200 pb-3">
-        <h3 className="text-base font-heading font-bold text-neutral-950 uppercase">
+      <div className="border-b border-white/10 pb-4 mb-6">
+        <h3 className="text-base font-heading font-bold text-white uppercase">
           STRUCTURAL AIRFRAME & GEOMETRY
         </h3>
-        <p className="text-xs text-neutral-600">
+        <p className="text-xs text-neutral-400">
           Configure structural chassis dimensions, structural composite materials, and payload capacity.
         </p>
       </div>
@@ -135,8 +135,8 @@ export function ConfigAirframeTab({ config, onChange }: ConfigAirframeTabProps) 
       </div>
 
       {/* Dimensions Callout Box */}
-      <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200">
-        <span className="text-[10px] font-mono font-bold uppercase text-neutral-500 tracking-wider">
+      <div className="p-4 rounded-xl bg-white/5 border border-white/5">
+        <span className="text-[10px] font-mono font-bold uppercase text-neutral-400 tracking-wider">
           FUSELAGE BOUNDING DIMENSIONS (L × W × H)
         </span>
         <div className="grid grid-cols-3 gap-3 mt-2">

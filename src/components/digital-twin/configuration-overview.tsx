@@ -1,0 +1,355 @@
+import React, { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
+import { DroneCategory, DroneDigitalTwinConfiguration } from "@/types/drone-digital-twin";
+import { listUserConfigurations } from "@/lib/digital-twin/digital-twin-storage";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight, Settings2 } from "lucide-react";
+
+// Helper component for formatting values
+const Value = ({ value, unit = "" }: { value: any, unit?: string }) => {
+  if (value === undefined || value === null || Number.isNaN(value) || value === "") {
+    return <span className="text-neutral-500">—</span>;
+  }
+  if (typeof value === "boolean") {
+    return <span>{value ? "Enabled" : "Disabled"}</span>;
+  }
+  return <span>{String(value)}{unit ? ` ${unit}` : ""}</span>;
+};
+
+// Row layout for engineering specifications
+const SpecRow = ({ label, value, unit }: { label: string, value: any, unit?: string }) => (
+  <div className="flex flex-col md:flex-row md:items-center justify-between py-2.5 border-b border-white/5 group hover:bg-white/[0.02] px-1 transition-colors">
+    <span className="text-xs text-neutral-400 mb-1 md:mb-0">{label}</span>
+    <span className="text-sm font-medium text-white/90 md:text-right">
+      <Value value={value} unit={unit} />
+    </span>
+  </div>
+);
+
+// Group section layout
+const Section = ({ title, children }: { title: string, children: React.ReactNode }) => (
+  <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex items-center gap-4 mb-3">
+      <h3 className="text-[11px] font-bold tracking-[0.2em] uppercase text-[#FF5500] shrink-0">{title}</h3>
+      <div className="h-px bg-white/10 flex-1" />
+    </div>
+    <div className="flex flex-col">
+      {children}
+    </div>
+  </div>
+);
+
+export function ConfigurationOverview() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeCategory = searchParams?.get("drone") as DroneCategory | null;
+
+  const [configs, setConfigs] = useState<DroneDigitalTwinConfiguration[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchConfigs = async () => {
+      try {
+        const savedList = await listUserConfigurations(user?.uid || null);
+        setConfigs(savedList);
+      } catch (err) {
+        console.error("Failed to load configs", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchConfigs();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full min-h-[60vh] gap-4">
+        <div className="w-8 h-8 border-4 border-[#FF5500] border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs font-bold uppercase tracking-widest text-neutral-500">Loading Configuration...</p>
+      </div>
+    );
+  }
+
+  // If a specific drone is selected, show its detailed engineering spec sheet
+  if (activeCategory) {
+    const config = configs.find((c) => c.identity.category === activeCategory);
+    
+    if (!config) {
+      // Configuration not found (meaning they haven't configured it yet)
+      // Redirect to edit mode so they can configure it initially
+      router.push(`/configure/edit?drone=${activeCategory}`);
+      return null;
+    }
+
+    return (
+      <div className="w-full max-w-5xl mx-auto flex flex-col mt-4 pb-32">
+        
+        {/* Page Header (Title + Back Button) */}
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-12">
+          <div className="flex flex-col">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-2">
+              {config.identity.name}
+            </h1>
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#FF5500]">
+              {config.identity.category}
+            </p>
+          </div>
+          
+          <Button 
+            onClick={() => router.push('/dashboard')}
+            className="inline-flex items-center justify-center gap-2 bg-transparent hover:bg-white/5 border border-neutral-700 text-white rounded-[4px] px-6 h-[44px] text-xs font-bold tracking-widest uppercase transition-all duration-300 w-full md:w-auto mt-2 md:mt-0 shrink-0"
+          >
+            <ArrowLeft className="w-[16px] h-[16px]" />
+            RETURN TO HANGAR
+          </Button>
+        </div>
+
+        {/* High-Level Summary Strip */}
+        <div className="flex flex-wrap items-center gap-8 md:gap-16 mb-16 pb-8 border-b border-white/10">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-500 uppercase mb-2">Total Mass</span>
+            <span className="text-2xl font-bold text-white tracking-tight">{config.massProperties.totalMassKg.toFixed(2)} kg</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-500 uppercase mb-2">Battery</span>
+            <span className="text-2xl font-bold text-white tracking-tight">{config.battery.cellCount}S</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-500 uppercase mb-2">Motors</span>
+            <span className="text-2xl font-bold text-white tracking-tight">{config.airframe.motorCount}</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-500 uppercase mb-2">Active Payload</span>
+            <span className="text-2xl font-bold text-white tracking-tight">{config.payload.enabled ? config.payload.massKg.toFixed(2) : "0.00"} kg</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-500 uppercase mb-2">Thrust / Weight</span>
+            <span className="text-2xl font-bold text-white tracking-tight">{config.performance.thrustToWeightRatio.toFixed(2)}:1</span>
+          </div>
+        </div>
+
+        {/* Main Tabular Engineering Specification */}
+        <div className="w-full">
+          <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-white mb-10">
+            DIGITAL TWIN CONFIGURATION
+          </h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16">
+            <div className="flex flex-col">
+              <Section title="AIRFRAME">
+                <SpecRow label="Frame type" value={config.airframe.frameType.toUpperCase()} />
+                <SpecRow label="Frame material" value={config.airframe.frameMaterial} />
+                <SpecRow label="Dry mass" value={config.airframe.dryMassKg.toFixed(2)} unit="kg" />
+                <SpecRow label="Maximum payload" value={config.airframe.maxPayloadKg.toFixed(2)} unit="kg" />
+                <SpecRow label="Wheelbase" value={config.airframe.frameDiagonalMm} unit="mm" />
+                <SpecRow label="Arm length" value={config.airframe.armLengthMeters.toFixed(2)} unit="m" />
+                <SpecRow label="Dimensions (L×W×H)" value={`${config.airframe.dimensions.lengthM.toFixed(2)} × ${config.airframe.dimensions.widthM.toFixed(2)} × ${config.airframe.dimensions.heightM.toFixed(2)}`} unit="m" />
+                <SpecRow label="Landing gear" value={config.airframe.landingGearType} />
+                <SpecRow label="Center of gravity" value={`X:${config.airframe.centerOfGravity.x.toFixed(3)}, Y:${config.airframe.centerOfGravity.y.toFixed(3)}, Z:${config.airframe.centerOfGravity.z.toFixed(3)}`} unit="m" />
+              </Section>
+
+              <Section title="PROPULSION">
+                <SpecRow label="Motor count" value={config.airframe.motorCount} />
+                <SpecRow label="Motor KV" value={config.motors[0]?.kvRating} unit="KV" />
+                <SpecRow label="Nominal RPM" value={config.motors[0]?.nominalRpm} unit="RPM" />
+                <SpecRow label="Maximum RPM" value={config.motors[0]?.maxRpm} unit="RPM" />
+                <SpecRow label="Rated voltage" value={config.motors[0]?.ratedVoltageV} unit="V" />
+                <SpecRow label="Maximum motor power" value={config.motors[0]?.maxPowerWatts} unit="W" />
+                <SpecRow label="Motor efficiency" value={config.motors[0]?.efficiencyPercent} unit="%" />
+                <SpecRow label="Propeller diameter" value={config.propeller.diameterInches} unit="in" />
+                <SpecRow label="Propeller pitch" value={config.propeller.pitchInches} unit="in" />
+                <SpecRow label="Blade count" value={config.propeller.bladeCount} />
+                <SpecRow label="Propeller material" value={config.propeller.material} />
+                <SpecRow label="ESC protocol" value={config.esc.protocol} />
+                <SpecRow label="ESC rated current" value={config.esc.ratedCurrentAmps} unit="A" />
+                <SpecRow label="ESC burst current" value={config.esc.burstCurrentAmps} unit="A" />
+                <SpecRow label="ESC voltage range" value={`${config.esc.voltageMinV}-${config.esc.voltageMaxV}`} unit="V" />
+              </Section>
+
+              <Section title="BATTERY & ENERGY">
+                <SpecRow label="Chemistry" value={config.battery.chemistry} />
+                <SpecRow label="Cell count" value={`${config.battery.cellCount}S`} />
+                <SpecRow label="Nominal voltage" value={config.battery.nominalVoltageV.toFixed(1)} unit="V" />
+                <SpecRow label="Capacity" value={config.battery.capacityMah} unit="mAh" />
+                <SpecRow label="Energy" value={config.battery.energyWh.toFixed(1)} unit="Wh" />
+                <SpecRow label="Maximum discharge" value={config.battery.maxContinuousDischargeC} unit="C" />
+                <SpecRow label="Internal resistance" value={config.battery.internalResistanceMilliOhm} unit="mΩ" />
+                <SpecRow label="Battery mass" value={config.battery.massKg.toFixed(2)} unit="kg" />
+                <SpecRow label="Battery health" value={config.battery.batteryHealthPercent} unit="%" />
+              </Section>
+            </div>
+
+            <div className="flex flex-col">
+              <Section title="FLIGHT CONTROLLER">
+                <SpecRow label="Controller" value={config.flightController.controllerType} />
+                <SpecRow label="Firmware" value={config.flightController.firmwareVersion} />
+                <SpecRow label="Stabilization" value={config.flightController.stabilizationEnabled} />
+                <SpecRow label="GPS assisted mode" value={config.flightController.gpsAssistedMode} />
+                <SpecRow label="Failsafe action" value={config.flightController.failsafeAction} />
+                <SpecRow label="Control loop" value={config.flightController.controlLoopFrequencyHz} unit="Hz" />
+              </Section>
+
+              <Section title="SENSORS & AVIONICS">
+                {config.sensors.map(sensor => (
+                  <SpecRow 
+                    key={sensor.id} 
+                    label={sensor.type} 
+                    value={`${sensor.name} (${sensor.enabled ? 'Enabled' : 'Disabled'})`} 
+                  />
+                ))}
+              </Section>
+
+              <Section title="PAYLOAD">
+                <SpecRow label="Maximum payload capacity" value={config.airframe.maxPayloadKg.toFixed(2)} unit="kg" />
+                <SpecRow label="Payload status" value={config.payload.enabled} />
+                <SpecRow label="Payload type" value={config.payload.enabled ? config.payload.type : undefined} />
+                <SpecRow label="Payload name" value={config.payload.enabled ? config.payload.name : undefined} />
+                <SpecRow label="Active payload mass" value={config.payload.enabled ? config.payload.massKg.toFixed(2) : undefined} unit="kg" />
+                <SpecRow label="Attachment" value={config.payload.enabled ? config.payload.attachmentPoint : undefined} />
+              </Section>
+
+              <Section title="CAMERA / GIMBAL">
+                <SpecRow label="Camera status" value={config.camera.enabled} />
+                <SpecRow label="Sensor type" value={config.camera.enabled ? config.camera.sensorType : undefined} />
+                <SpecRow label="Resolution" value={config.camera.enabled ? config.camera.resolution : undefined} />
+                <SpecRow label="Field of view" value={config.camera.enabled ? config.camera.fovDegrees : undefined} unit="°" />
+                <SpecRow label="Gimbal axes" value={config.camera.enabled ? config.camera.gimbalAxisCount : undefined} />
+                <SpecRow label="Gimbal mass" value={config.camera.enabled ? config.camera.massKg.toFixed(2) : undefined} unit="kg" />
+              </Section>
+
+              <Section title="COMMUNICATION">
+                <SpecRow label="Link type" value={config.communication.type} />
+                <SpecRow label="Range" value={config.communication.rangeKm} unit="km" />
+                <SpecRow label="Frequency" value={config.communication.frequencyMhz} unit="MHz" />
+                <SpecRow label="Transmit power" value={config.communication.txPowerMilliWatts} unit="mW" />
+              </Section>
+
+              <Section title="PERFORMANCE">
+                <SpecRow label="Total mass" value={config.massProperties.totalMassKg.toFixed(2)} unit="kg" />
+                <SpecRow label="Total thrust" value={config.performance.totalThrustNewtons.toFixed(1)} unit="N" />
+                <SpecRow label="Thrust-to-weight" value={config.performance.thrustToWeightRatio.toFixed(2)} />
+                <SpecRow label="Hover throttle" value={`${(config.performance.hoverThrottleEstimate * 100).toFixed(1)}`} unit="%" />
+                <SpecRow label="Estimated flight time" value={config.performance.estimatedFlightTimeMinutes.toFixed(1)} unit="min" />
+                <SpecRow label="Maximum horizontal speed" value={config.performance.maxHorizontalSpeedMs.toFixed(1)} unit="m/s" />
+                <SpecRow label="Maximum ascent speed" value={config.performance.maxAscentSpeedMs.toFixed(1)} unit="m/s" />
+                <SpecRow label="Maximum descent speed" value={config.performance.maxDescentSpeedMs.toFixed(1)} unit="m/s" />
+                <SpecRow label="Maximum tilt angle" value={config.performance.maxTiltAngleDeg} unit="°" />
+                <SpecRow label="Maximum operating altitude" value={config.performance.maxOperatingAltitudeM} unit="m" />
+              </Section>
+            </div>
+          </div>
+
+          {/* Grouped Component Arrays */}
+          <div className="mt-8 mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
+            <h3 className="text-[11px] font-bold tracking-[0.2em] uppercase text-[#FF5500] mb-4">MOTOR CONFIGURATION</h3>
+            <div className="w-full overflow-x-auto rounded border border-white/10 bg-black/20">
+              <table className="w-full text-left text-xs text-neutral-300 whitespace-nowrap">
+                <thead className="bg-white/5 font-mono text-[10px] uppercase tracking-wider text-neutral-400">
+                  <tr>
+                    <th className="px-5 py-3 font-semibold">Motor</th>
+                    <th className="px-5 py-3 font-semibold">Position (x,y,z)</th>
+                    <th className="px-5 py-3 font-semibold">Direction</th>
+                    <th className="px-5 py-3 font-semibold">Nominal RPM</th>
+                    <th className="px-5 py-3 font-semibold">Max RPM</th>
+                    <th className="px-5 py-3 font-semibold">KV</th>
+                    <th className="px-5 py-3 font-semibold">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 font-medium">
+                  {config.motors.map((m) => (
+                    <tr key={m.motorId} className="hover:bg-white/5 transition-colors">
+                      <td className="px-5 py-3 text-white font-bold">{m.motorId}</td>
+                      <td className="px-5 py-3 font-mono">{m.position.x.toFixed(2)}, {m.position.y.toFixed(2)}, {m.position.z.toFixed(2)}</td>
+                      <td className="px-5 py-3">{m.direction === 1 ? 'CW' : 'CCW'}</td>
+                      <td className="px-5 py-3">{m.nominalRpm}</td>
+                      <td className="px-5 py-3">{m.maxRpm}</td>
+                      <td className="px-5 py-3">{m.kvRating}</td>
+                      <td className="px-5 py-3">
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-widest font-bold ${m.status === 'HEALTHY' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                          {m.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div className="mt-8 mb-24 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500">
+            <h3 className="text-[11px] font-bold tracking-[0.2em] uppercase text-[#FF5500] mb-4">SENSOR SUITE STATUS</h3>
+            <div className="w-full overflow-x-auto rounded border border-white/10 bg-black/20">
+              <table className="w-full text-left text-xs text-neutral-300 whitespace-nowrap">
+                <thead className="bg-white/5 font-mono text-[10px] uppercase tracking-wider text-neutral-400">
+                  <tr>
+                    <th className="px-5 py-3 font-semibold">Sensor</th>
+                    <th className="px-5 py-3 font-semibold">Type</th>
+                    <th className="px-5 py-3 font-semibold">Enabled</th>
+                    <th className="px-5 py-3 font-semibold">Accuracy</th>
+                    <th className="px-5 py-3 font-semibold">Update Rate</th>
+                    <th className="px-5 py-3 font-semibold">Health</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 font-medium">
+                  {config.sensors.map((s) => (
+                    <tr key={s.id} className="hover:bg-white/5 transition-colors">
+                      <td className="px-5 py-3 text-white">{s.name}</td>
+                      <td className="px-5 py-3">{s.type}</td>
+                      <td className="px-5 py-3">{s.enabled ? 'Enabled' : 'Disabled'}</td>
+                      <td className="px-5 py-3">{s.accuracy}</td>
+                      <td className="px-5 py-3">{s.updateRateHz} Hz</td>
+                      <td className="px-5 py-3">
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-widest font-bold ${s.health === 'HEALTHY' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                          {s.health}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Bottom Action Area */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-[#08090a] via-[#08090a]/90 to-transparent z-50 pointer-events-none">
+          <div className="max-w-5xl mx-auto flex flex-col-reverse sm:flex-row items-center justify-center sm:justify-end gap-4 pointer-events-auto">
+            <Button
+              onClick={() => router.push(`/configure/edit?drone=${activeCategory}`)}
+              className="inline-flex items-center justify-center gap-3 bg-[#08090a] hover:bg-white/5 border border-white/20 text-white rounded-[4px] px-8 h-[52px] text-xs font-bold tracking-[0.2em] uppercase transition-all duration-300 w-full sm:w-auto"
+            >
+              <Settings2 className="w-[18px] h-[18px]" />
+              EDIT CONFIGURATION
+            </Button>
+            <Button
+              onClick={() => router.push(`/flight-prep?drone=${activeCategory}`)}
+              className="inline-flex items-center justify-center gap-3 bg-[#FF5500] hover:bg-[#ff6a1a] hover:brightness-105 active:scale-[0.98] hover:-translate-y-[1px] shadow-[0_4px_14px_0_rgba(255,85,0,0.2)] hover:shadow-[0_6px_20px_rgba(255,85,0,0.3)] text-white rounded-[4px] px-10 h-[52px] text-xs font-extrabold tracking-[0.2em] uppercase transition-all duration-300 w-full sm:w-auto"
+            >
+              SELECT ENVIRONMENT
+              <ArrowRight className="w-[18px] h-[18px]" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // FALLBACK (List View if no drone is selected)
+  return (
+    <div className="w-full max-w-5xl mx-auto flex flex-col mt-6 pb-20">
+      <div className="w-full flex items-center justify-between mb-8 mt-6">
+        <div>
+          <h2 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+            MY AIRCRAFT CONFIGURATIONS
+          </h2>
+        </div>
+      </div>
+      <div className="flex flex-col gap-6">
+        <p className="text-neutral-500">Select an aircraft from the hangar to view its engineering specification.</p>
+      </div>
+    </div>
+  );
+}

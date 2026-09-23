@@ -34,19 +34,16 @@ export function ProtectedRoute({ children }: RouteGuardProps) {
   const router = useRouter();
 
   useEffect(() => {
-    const hasMock = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mock") === "true";
-    if (!loading && !user && !hasMock) {
+    if (!loading && !user) {
       router.replace("/login");
     }
   }, [user, loading, router]);
 
-  const hasMock = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mock") === "true";
-
-  if (loading && !hasMock) {
-    return <FlightSysLoader message="Verifying session..." />;
+  if (loading) {
+    return <FlightSysLoader message="Authenticating..." />;
   }
 
-  if (!user && !hasMock) {
+  if (!user) {
     return null;
   }
 
@@ -66,7 +63,11 @@ export function PublicOnlyRoute({ children }: RouteGuardProps) {
     }
   }, [user, loading, router]);
 
-  if (!loading && user) {
+  if (loading) {
+    return <FlightSysLoader message="Checking session..." />;
+  }
+
+  if (user) {
     return null;
   }
 

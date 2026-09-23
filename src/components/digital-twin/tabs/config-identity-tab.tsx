@@ -44,11 +44,11 @@ export function ConfigIdentityTab({ config, onChange }: ConfigIdentityTabProps) 
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-neutral-200 pb-3">
-        <h3 className="text-base font-heading font-bold text-neutral-950 uppercase">
+      <div className="border-b border-white/10 pb-4 mb-6">
+        <h3 className="text-base font-heading font-bold text-white uppercase">
           AIRCRAFT IDENTITY & DESIGNATION
         </h3>
-        <p className="text-xs text-neutral-600">
+        <p className="text-xs text-neutral-400">
           Define unique registration details, mission category, and configuration version.
         </p>
       </div>
@@ -120,7 +120,7 @@ export function ConfigIdentityTab({ config, onChange }: ConfigIdentityTabProps) 
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="drone-desc"
-          className="text-xs font-semibold text-neutral-800 uppercase tracking-wider"
+          className="text-xs font-semibold text-neutral-300 uppercase tracking-wider"
         >
           Operational Mission Description
         </label>
@@ -129,7 +129,7 @@ export function ConfigIdentityTab({ config, onChange }: ConfigIdentityTabProps) 
           rows={3}
           value={identity.description}
           onChange={(e) => updateIdentity("description", e.target.value)}
-          className="w-full px-3 py-2 rounded-lg border border-neutral-300 bg-white text-xs font-medium text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] focus:border-transparent transition-all"
+          className="w-full px-3 py-2 rounded-lg border border-white/10 bg-transparent text-xs font-medium text-white focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] focus:border-transparent transition-all"
         />
       </div>
     </div>

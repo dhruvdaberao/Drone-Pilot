@@ -3,34 +3,51 @@
 // Dual-layer persistence: Firestore (authenticated) + LocalStorage (offline/demo)
 // ==========================================================
 
-import { DroneDigitalTwinConfiguration } from "@/types/drone-digital-twin";
-import { auth, db, isFirebaseConfigured } from "@/lib/firebase/client";
+import { DroneCategory, DroneDigitalTwinConfiguration } from "@/types/drone-digital-twin";
+import { db, isFirebaseConfigured } from "@/lib/firebase/client";
 import {
   collection,
   doc,
   setDoc,
   getDoc,
   getDocs,
-  deleteDoc,
+  writeBatch,
 } from "firebase/firestore";
 import {
   TRAINING_QUADCOPTER_PRESET,
-  DIGITAL_TWIN_PRESETS,
 } from "./digital-twin-presets";
 
-const LOCAL_STORAGE_ACTIVE_KEY = "drone_pilot_active_digital_twin";
-const LOCAL_STORAGE_SAVED_KEY = "drone_pilot_saved_digital_twins";
+// ----------------------------------------------------------
+// 1. LOCAL STORAGE HELPERS
+// ----------------------------------------------------------
+function getLocalSavedKey(uid: string | null): string {
+  if (!uid) return "drone_pilot:anon:saved_digital_twins";
+  return `drone_pilot:${uid}:saved_digital_twins`;
+}
+
+function getLocalActiveKey(uid: string | null): string {
+  if (!uid) return "drone_pilot:anon:active_digital_twin";
+  return `drone_pilot:${uid}:active_digital_twin`;
+}
+
+function getLocalLastSelectedKey(uid: string | null): string {
+  if (!uid) return "drone_pilot:anon:last_selected_drone";
+  return `drone_pilot:${uid}:last_selected_drone`;
+}
+
+// ----------------------------------------------------------
+// 2. ACTIVE DIGITAL TWIN
+// ----------------------------------------------------------
 
 /**
- * Returns the currently active drone digital twin configuration.
- * Falls back to the factory Training Quadcopter if none selected.
+ * Returns the currently active drone digital twin configuration for the simulator.
  */
-export function getActiveDigitalTwin(): DroneDigitalTwinConfiguration {
+export function getActiveDigitalTwin(uid: string | null): DroneDigitalTwinConfiguration {
   if (typeof window === "undefined") {
     return TRAINING_QUADCOPTER_PRESET;
   }
   try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_ACTIVE_KEY);
+    const raw = localStorage.getItem(getLocalActiveKey(uid));
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed?.identity?.id) {
@@ -46,173 +63,273 @@ export function getActiveDigitalTwin(): DroneDigitalTwinConfiguration {
 /**
  * Sets the active digital twin in local session storage for simulator initialization.
  */
-export function setActiveDigitalTwin(config: DroneDigitalTwinConfiguration): void {
+export function setActiveDigitalTwin(uid: string | null, config: DroneDigitalTwinConfiguration): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(LOCAL_STORAGE_ACTIVE_KEY, JSON.stringify(config));
+    localStorage.setItem(getLocalActiveKey(uid), JSON.stringify(config));
   } catch {
     // Storage error
   }
 }
 
-/**
- * Loads all saved user configurations.
- * Merges built-in factory presets with custom saved configurations.
- */
-export async function listUserConfigurations(): Promise<DroneDigitalTwinConfiguration[]> {
-  const result: DroneDigitalTwinConfiguration[] = [...DIGITAL_TWIN_PRESETS];
+// ----------------------------------------------------------
+// 3. LAST SELECTED DRONE
+// ----------------------------------------------------------
 
-  // 1. Try Firestore if authenticated and live
-  const currentUser = auth.currentUser;
-  if (isFirebaseConfigured() && db && currentUser) {
+export async function getLastSelectedDrone(uid: string | null): Promise<DroneCategory> {
+  // 1. Try Firestore if authenticated
+  if (uid && isFirebaseConfigured() && db) {
     try {
-      const colRef = collection(db, "users", currentUser.uid, "droneConfigurations");
-      const snap = await getDocs(colRef);
-      snap.forEach((docSnap) => {
-        const data = docSnap.data() as DroneDigitalTwinConfiguration;
-        if (data?.identity?.id && !result.some((r) => r.identity.id === data.identity.id)) {
-          result.push(data);
-        }
-      });
-      return result;
+      const docRef = doc(db, "users", uid);
+      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 3000));
+      const snap = await Promise.race([getDoc(docRef), timeoutPromise]);
+      if (snap.exists() && snap.data().lastSelectedDrone) {
+        return snap.data().lastSelectedDrone as DroneCategory;
+      }
     } catch (e) {
-      console.warn("Firestore list configurations error, falling back to localStorage:", e);
+      console.warn("Firestore getLastSelectedDrone error:", e);
     }
   }
 
-  // 2. LocalStorage fallback
+  // 2. Local storage fallback
   if (typeof window !== "undefined") {
     try {
-      const raw = localStorage.getItem(LOCAL_STORAGE_SAVED_KEY);
+      const stored = localStorage.getItem(getLocalLastSelectedKey(uid));
+      if (stored === "quadcopter" || stored === "hexacopter" || stored === "octacopter") {
+        return stored;
+      }
+    } catch {}
+  }
+  
+  return "quadcopter";
+}
+
+export async function setLastSelectedDrone(uid: string | null, category: DroneCategory): Promise<void> {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(getLocalLastSelectedKey(uid), category);
+  }
+
+  if (uid && isFirebaseConfigured() && db) {
+    try {
+      const docRef = doc(db, "users", uid);
+      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 3000));
+      await Promise.race([setDoc(docRef, { lastSelectedDrone: category, updatedAt: Date.now() }, { merge: true }), timeoutPromise]);
+    } catch (e) {
+      console.warn("Firestore setLastSelectedDrone error:", e);
+    }
+  }
+}
+
+// ----------------------------------------------------------
+// 4. MIGRATION OF EXISTING DATA
+// ----------------------------------------------------------
+
+async function migrateLegacyConfigurations(uid: string): Promise<void> {
+  if (!isFirebaseConfigured() || !db) return;
+  
+  try {
+    if (!db) return;
+    const colRef = collection(db, "users", uid, "droneConfigurations");
+    const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 3000));
+    const snap = await Promise.race([getDocs(colRef), timeoutPromise]);
+    
+    if (snap.empty) return;
+
+    const byCategory: Record<string, DroneDigitalTwinConfiguration[]> = {
+      quadcopter: [],
+      hexacopter: [],
+      octacopter: []
+    };
+    
+    const docsToDelete: string[] = [];
+    
+    snap.forEach((docSnap) => {
+      const data = docSnap.data() as DroneDigitalTwinConfiguration;
+      const docId = docSnap.id;
+      
+      // If it's already a category doc ID, it's migrated
+      if (docId === "quadcopter" || docId === "hexacopter" || docId === "octacopter") {
+        byCategory[docId].push(data);
+        return;
+      }
+      
+      // If it has a category, group it
+      if (data?.identity?.category) {
+        byCategory[data.identity.category].push(data);
+        docsToDelete.push(docId);
+      } else {
+        // Junk data
+        docsToDelete.push(docId);
+      }
+    });
+    
+    if (docsToDelete.length === 0) return; // Nothing to migrate
+    
+    const batch = writeBatch(db!);
+    
+    // Pick the most recent valid config for each category
+    for (const cat of ["quadcopter", "hexacopter", "octacopter"] as DroneCategory[]) {
+      const configs = byCategory[cat];
+      if (configs && configs.length > 0) {
+        configs.sort((a, b) => (b.identity.updatedAt || 0) - (a.identity.updatedAt || 0));
+        const latest = configs[0];
+        // Enforce the new ID structure internally too
+        latest.identity.id = cat;
+        const ref = doc(db!, "users", uid, "droneConfigurations", cat);
+        batch.set(ref, latest);
+      }
+    }
+    
+    // Delete old ones
+    docsToDelete.forEach(id => {
+      batch.delete(doc(db!, "users", uid, "droneConfigurations", id));
+    });
+    
+    await batch.commit();
+    console.log(`Migrated legacy drone configurations for user ${uid}. Deleted ${docsToDelete.length} obsolete documents.`);
+  } catch (e) {
+    console.warn("Migration failed:", e);
+  }
+}
+
+// ----------------------------------------------------------
+// 5. USER CONFIGURATIONS
+// ----------------------------------------------------------
+
+/**
+ * Loads all saved user configurations for the user.
+ */
+export async function listUserConfigurations(uid: string | null): Promise<DroneDigitalTwinConfiguration[]> {
+  const customMap = new Map<string, DroneDigitalTwinConfiguration>();
+  
+  if (uid && isFirebaseConfigured() && db) {
+    await migrateLegacyConfigurations(uid);
+    
+    try {
+      const colRef = collection(db, "users", uid, "droneConfigurations");
+      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 3000));
+      const snap = await Promise.race([getDocs(colRef), timeoutPromise]);
+      
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() as DroneDigitalTwinConfiguration;
+        if (data?.identity?.category) {
+          customMap.set(data.identity.category, data);
+        }
+      });
+      return Array.from(customMap.values());
+    } catch (e) {
+      console.warn("Firestore list configurations error:", e);
+    }
+  }
+
+  // LocalStorage fallback
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem(getLocalSavedKey(uid));
       if (raw) {
         const customConfigs: DroneDigitalTwinConfiguration[] = JSON.parse(raw);
         customConfigs.forEach((c) => {
-          if (!result.some((r) => r.identity.id === c.identity.id)) {
-            result.push(c);
+          if (c?.identity?.category) {
+            customMap.set(c.identity.category, c);
           }
         });
       }
-    } catch {
-      // LocalStorage error
-    }
+    } catch {}
   }
 
-  return result;
+  return Array.from(customMap.values());
 }
 
 /**
- * Saves or updates a drone digital twin configuration.
+ * Loads a specific category user configuration. Returns null if not configured.
+ */
+export async function getUserConfiguration(uid: string | null, category: DroneCategory): Promise<DroneDigitalTwinConfiguration | null> {
+  if (uid && isFirebaseConfigured() && db) {
+    try {
+      const docRef = doc(db, "users", uid, "droneConfigurations", category);
+      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 3000));
+      const snap = await Promise.race([getDoc(docRef), timeoutPromise]);
+      if (snap.exists()) {
+        return snap.data() as DroneDigitalTwinConfiguration;
+      }
+    } catch (e) {
+      console.warn("Firestore getUserConfiguration error:", e);
+    }
+  }
+  
+  // Check local fallback
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem(getLocalSavedKey(uid));
+      if (raw) {
+        const customConfigs: DroneDigitalTwinConfiguration[] = JSON.parse(raw);
+        const found = customConfigs.find(c => c.identity.category === category);
+        if (found) return found;
+      }
+    } catch {}
+  }
+  
+  return null;
+}
+
+/**
+ * Saves or updates a drone digital twin configuration for a specific category.
  */
 export async function saveUserConfiguration(
+  uid: string,
+  category: DroneCategory,
   config: DroneDigitalTwinConfiguration
 ): Promise<void> {
   const toSave: DroneDigitalTwinConfiguration = {
     ...config,
     identity: {
       ...config.identity,
+      id: category, // Enforce canonical ID
+      category: category,
       updatedAt: Date.now(),
       isPreset: false,
     },
   };
 
-  // 1. Save to Firestore if available
-  const currentUser = auth.currentUser;
-  if (isFirebaseConfigured() && db && currentUser) {
+  // 1. Save to Firestore via batch
+  if (isFirebaseConfigured() && db) {
     try {
-      const docRef = doc(
-        db,
-        "users",
-        currentUser.uid,
-        "droneConfigurations",
-        toSave.identity.id
-      );
-      await setDoc(docRef, toSave);
+      const batch = writeBatch(db);
+      
+      const configRef = doc(db, "users", uid, "droneConfigurations", category);
+      batch.set(configRef, toSave);
+      
+      const userRef = doc(db, "users", uid);
+      batch.set(userRef, { lastSelectedDrone: category, updatedAt: Date.now() }, { merge: true });
+      
+      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 3000));
+      await Promise.race([batch.commit(), timeoutPromise]);
     } catch (e) {
       console.warn("Firestore save error, preserving locally:", e);
+      throw e; // Rethrow to inform UI of sync failure
     }
   }
 
-  // 2. Always persist locally as well
+  // 2. Persist locally
   if (typeof window !== "undefined") {
     try {
-      const raw = localStorage.getItem(LOCAL_STORAGE_SAVED_KEY);
+      const key = getLocalSavedKey(uid);
+      const raw = localStorage.getItem(key);
       let list: DroneDigitalTwinConfiguration[] = raw ? JSON.parse(raw) : [];
-      list = list.filter((item) => item.identity.id !== toSave.identity.id);
+      list = list.filter((item) => item.identity.category !== category);
       list.push(toSave);
-      localStorage.setItem(LOCAL_STORAGE_SAVED_KEY, JSON.stringify(list));
-      setActiveDigitalTwin(toSave);
+      localStorage.setItem(key, JSON.stringify(list));
+      
+      // Update last selected locally
+      localStorage.setItem(getLocalLastSelectedKey(uid), category);
     } catch {
       // Storage error
     }
   }
-}
-
-/**
- * Deletes a saved custom configuration.
- * Factory presets cannot be deleted.
- */
-export async function deleteUserConfiguration(configId: string): Promise<boolean> {
-  if (DIGITAL_TWIN_PRESETS.some((p) => p.identity.id === configId)) {
-    return false; // Protected factory preset
-  }
-
-  // 1. Delete from Firestore if available
-  const currentUser = auth.currentUser;
-  if (isFirebaseConfigured() && db && currentUser) {
-    try {
-      const docRef = doc(
-        db,
-        "users",
-        currentUser.uid,
-        "droneConfigurations",
-        configId
-      );
-      await deleteDoc(docRef);
-    } catch (e) {
-      console.warn("Firestore delete error:", e);
-    }
-  }
-
-  // 2. Delete locally
-  if (typeof window !== "undefined") {
-    try {
-      const raw = localStorage.getItem(LOCAL_STORAGE_SAVED_KEY);
-      if (raw) {
-        let list: DroneDigitalTwinConfiguration[] = JSON.parse(raw);
-        list = list.filter((item) => item.identity.id !== configId);
-        localStorage.setItem(LOCAL_STORAGE_SAVED_KEY, JSON.stringify(list));
-      }
-    } catch {
-      // Storage error
-    }
-  }
-
-  return true;
-}
-
-/**
- * Duplicates an existing configuration with a new unique ID and copy name.
- */
-export function duplicateConfiguration(
-  source: DroneDigitalTwinConfiguration
-): DroneDigitalTwinConfiguration {
-  const newId = `custom-${source.identity.category}-${Date.now().toString(36)}`;
-  return {
-    ...JSON.parse(JSON.stringify(source)),
-    identity: {
-      ...source.identity,
-      id: newId,
-      name: `${source.identity.name} (Copy)`,
-      isPreset: false,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    },
-  };
 }
 
 // ----------------------------------------------------------
-// DIGITAL TWIN IMPORT / EXPORT (PHASE 7)
-// Safe serialization format (.drone.json) with strict validation
+// 6. EXPORT / IMPORT
 // ----------------------------------------------------------
 export interface DroneExportPackage {
   format: "DRONE_PILOT_DIGITAL_TWIN";
@@ -221,9 +338,6 @@ export interface DroneExportPackage {
   configuration: DroneDigitalTwinConfiguration;
 }
 
-/**
- * Serializes a DroneDigitalTwinConfiguration into a standardized JSON string.
- */
 export function exportDigitalTwinToJson(config: DroneDigitalTwinConfiguration): string {
   const pkg: DroneExportPackage = {
     format: "DRONE_PILOT_DIGITAL_TWIN",
@@ -234,10 +348,6 @@ export function exportDigitalTwinToJson(config: DroneDigitalTwinConfiguration): 
   return JSON.stringify(pkg, null, 2);
 }
 
-/**
- * Parses and validates an imported .drone.json string.
- * Ensures no arbitrary code execution and strict aerodynamic rule conformance.
- */
 export function importDigitalTwinFromJson(
   jsonStr: string
 ): { success: boolean; config?: DroneDigitalTwinConfiguration; error?: string } {
@@ -256,14 +366,11 @@ export function importDigitalTwinFromJson(
       };
     }
 
-    // Assign safe new ID so it doesn't overwrite existing configurations unexpectedly
     const importedConfig: DroneDigitalTwinConfiguration = {
       ...configToValidate,
       digitalTwinSchemaVersion: configToValidate.digitalTwinSchemaVersion || "1.0",
       identity: {
         ...configToValidate.identity,
-        id: `imported-${Date.now().toString(36)}`,
-        name: configToValidate.identity.name ? `${configToValidate.identity.name} (Imported)` : "Imported Aircraft",
         isPreset: false,
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -281,4 +388,3 @@ export function importDigitalTwinFromJson(
     };
   }
 }
-

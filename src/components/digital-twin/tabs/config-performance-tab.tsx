@@ -26,48 +26,48 @@ export function ConfigPerformanceTab({ config, onChange }: ConfigPerformanceTabP
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="border-b border-neutral-200 pb-3">
-        <h3 className="text-base font-heading font-bold text-neutral-950 uppercase">
+      <div className="border-b border-white/10 pb-4 mb-6">
+        <h3 className="text-base font-heading font-bold text-white uppercase">
           MASS BREAKDOWN & FLIGHT PERFORMANCE ENVELOPE
         </h3>
-        <p className="text-xs text-neutral-600">
+        <p className="text-xs text-neutral-400">
           Observe mass distribution, estimated moments of inertia, and flight envelope boundaries.
         </p>
       </div>
 
       {/* SECTION 1: MASS PROPERTIES BREAKDOWN */}
-      <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-300 space-y-4">
-        <div className="flex items-center gap-2 border-b border-neutral-200 pb-2">
+      <div className="space-y-6 mb-12">
+        <div className="flex items-center gap-2 border-b border-white/5 pb-2">
           <Scale className="h-4 w-4 text-[#FF5500]" />
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-900">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-white">
             TOTAL ALL-UP WEIGHT BREAKDOWN
           </span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-          <div className="p-3 rounded-xl bg-white border border-neutral-200">
-            <span className="text-[10px] font-mono uppercase text-neutral-500">Airframe Dry</span>
-            <p className="text-base font-mono font-bold text-neutral-900 mt-0.5">
+          <div className="p-3 rounded-xl bg-transparent border border-white/5">
+            <span className="text-[10px] font-mono uppercase text-neutral-400">Airframe Dry</span>
+            <p className="text-base font-mono font-bold text-white mt-0.5">
               {massProperties.dryMassKg} kg
             </p>
           </div>
 
-          <div className="p-3 rounded-xl bg-white border border-neutral-200">
-            <span className="text-[10px] font-mono uppercase text-neutral-500">Battery Pack</span>
-            <p className="text-base font-mono font-bold text-neutral-900 mt-0.5">
+          <div className="p-3 rounded-xl bg-transparent border border-white/5">
+            <span className="text-[10px] font-mono uppercase text-neutral-400">Battery Pack</span>
+            <p className="text-base font-mono font-bold text-white mt-0.5">
               {massProperties.batteryMassKg} kg
             </p>
           </div>
 
-          <div className="p-3 rounded-xl bg-white border border-neutral-200">
-            <span className="text-[10px] font-mono uppercase text-neutral-500">Active Payload</span>
-            <p className="text-base font-mono font-bold text-neutral-900 mt-0.5">
+          <div className="p-3 rounded-xl bg-transparent border border-white/5">
+            <span className="text-[10px] font-mono uppercase text-neutral-400">Active Payload</span>
+            <p className="text-base font-mono font-bold text-white mt-0.5">
               {massProperties.payloadMassKg} kg
             </p>
           </div>
 
-          <div className="p-3 rounded-xl bg-orange-50 border border-orange-200">
-            <span className="text-[10px] font-mono uppercase text-orange-700 font-bold">Total AUW</span>
+          <div className="p-3 rounded-xl bg-[#FF5500]/10 border border-[#FF5500]/20">
+            <span className="text-[10px] font-mono uppercase text-[#FF5500] font-bold">Total AUW</span>
             <p className="text-base font-mono font-bold text-[#FF5500] mt-0.5">
               {massProperties.totalMassKg} kg
             </p>
@@ -75,11 +75,11 @@ export function ConfigPerformanceTab({ config, onChange }: ConfigPerformanceTabP
         </div>
 
         {/* Inertia Estimates */}
-        <div className="pt-2 border-t border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <span className="text-neutral-600 font-medium">
+        <div className="pt-2 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <span className="text-neutral-400 font-medium">
             Estimated Moments of Inertia:
           </span>
-          <div className="flex items-center gap-3 font-mono text-[11px] text-neutral-700">
+          <div className="flex items-center gap-3 font-mono text-[11px] text-neutral-300">
             <span>I_xx (Roll): {massProperties.estimatedInertiaKgM2.roll} kg·m²</span>
             <span>I_yy (Pitch): {massProperties.estimatedInertiaKgM2.pitch} kg·m²</span>
             <span>I_zz (Yaw): {massProperties.estimatedInertiaKgM2.yaw} kg·m²</span>
@@ -96,7 +96,7 @@ export function ConfigPerformanceTab({ config, onChange }: ConfigPerformanceTabP
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <ParameterField
             id="perf-speed"
             label="Max Horizontal Velocity"
@@ -136,38 +136,38 @@ export function ConfigPerformanceTab({ config, onChange }: ConfigPerformanceTabP
 
       {/* SECTION 3: DERIVED PERFORMANCE INDICATORS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="p-4 rounded-xl bg-white border border-neutral-300 flex flex-col">
-          <span className="text-xs font-mono uppercase text-neutral-500 flex items-center gap-1.5">
+        <div className="p-4 rounded-xl bg-transparent border border-white/10 flex flex-col">
+          <span className="text-xs font-mono uppercase text-neutral-400 flex items-center gap-1.5">
             <Zap className="h-3.5 w-3.5 text-[#FF5500]" /> Thrust-to-Weight Ratio
           </span>
-          <span className="text-2xl font-mono font-bold text-neutral-900 mt-1">
+          <span className="text-2xl font-mono font-bold text-white mt-1">
             {performance.thrustToWeightRatio}:1
           </span>
-          <span className="text-[11px] text-neutral-500 mt-1">
+          <span className="text-[11px] text-neutral-400 mt-1">
             Total Collective Lift: {performance.totalThrustNewtons} N
           </span>
         </div>
 
-        <div className="p-4 rounded-xl bg-white border border-neutral-300 flex flex-col">
-          <span className="text-xs font-mono uppercase text-neutral-500 flex items-center gap-1.5">
+        <div className="p-4 rounded-xl bg-transparent border border-white/10 flex flex-col">
+          <span className="text-xs font-mono uppercase text-neutral-400 flex items-center gap-1.5">
             <Timer className="h-3.5 w-3.5 text-[#FF5500]" /> Hover Throttle Point
           </span>
-          <span className="text-2xl font-mono font-bold text-neutral-900 mt-1">
+          <span className="text-2xl font-mono font-bold text-white mt-1">
             {Math.round(performance.hoverThrottleEstimate * 100)}%
           </span>
-          <span className="text-[11px] text-neutral-500 mt-1">
+          <span className="text-[11px] text-neutral-400 mt-1">
             Calculated equilibrium thrust output
           </span>
         </div>
 
-        <div className="p-4 rounded-xl bg-white border border-neutral-300 flex flex-col">
-          <span className="text-xs font-mono uppercase text-neutral-500 flex items-center gap-1.5">
+        <div className="p-4 rounded-xl bg-transparent border border-white/10 flex flex-col">
+          <span className="text-xs font-mono uppercase text-neutral-400 flex items-center gap-1.5">
             <Compass className="h-3.5 w-3.5 text-[#FF5500]" /> Hover Endurance
           </span>
-          <span className="text-2xl font-mono font-bold text-neutral-900 mt-1">
+          <span className="text-2xl font-mono font-bold text-white mt-1">
             ~{performance.estimatedFlightTimeMinutes} min
           </span>
-          <span className="text-[11px] text-neutral-500 mt-1">
+          <span className="text-[11px] text-neutral-400 mt-1">
             Calculated at 80% battery depth-of-discharge
           </span>
         </div>

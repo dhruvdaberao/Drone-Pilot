@@ -43,7 +43,7 @@ export function ParameterField({
       <div className="flex items-center justify-between">
         <label
           htmlFor={id}
-          className="text-xs font-semibold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5"
+          className="text-sm font-semibold text-neutral-300 uppercase tracking-wider flex items-center gap-1.5"
         >
           <span>{label}</span>
           {tooltip && (
@@ -75,7 +75,7 @@ export function ParameterField({
         </label>
 
         {unit && (
-          <span className="text-[10px] font-mono font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded border border-neutral-200">
+          <span className="text-xs font-mono font-medium text-neutral-500 bg-white/5 px-2 py-0.5 rounded border border-white/10">
             {unit}
           </span>
         )}
@@ -87,7 +87,7 @@ export function ParameterField({
           value={String(value)}
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
-          className="h-10 px-3 rounded-lg border border-neutral-300 bg-white text-sm font-medium text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] focus:border-transparent transition-all disabled:opacity-50 disabled:bg-neutral-50"
+          className="h-12 px-4 rounded-lg border border-white/10 bg-black/50 text-base font-medium text-white focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] focus:border-transparent transition-all disabled:opacity-50 disabled:bg-white/5"
         >
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -102,7 +102,7 @@ export function ParameterField({
           value={String(value)}
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
-          className="h-10 px-3 rounded-lg border border-neutral-300 bg-white text-sm font-medium text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] focus:border-transparent transition-all disabled:opacity-50 disabled:bg-neutral-50"
+          className="h-12 px-4 rounded-lg border border-white/10 bg-black/50 text-base font-medium text-white focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] focus:border-transparent transition-all disabled:opacity-50 disabled:bg-white/5"
         />
       ) : (
         <div className="relative flex items-center">
@@ -115,7 +115,7 @@ export function ParameterField({
             step={step}
             disabled={disabled}
             onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-            className="w-full h-10 px-3 rounded-lg border border-neutral-300 bg-white text-sm font-mono font-semibold text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] focus:border-transparent transition-all disabled:opacity-50 disabled:bg-neutral-50"
+            className="w-full h-12 px-4 rounded-lg border border-white/10 bg-black/50 text-base font-mono font-semibold text-white focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] focus:border-transparent transition-all disabled:opacity-50 disabled:bg-white/5"
           />
         </div>
       )}

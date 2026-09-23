@@ -103,23 +103,23 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="border-b border-neutral-200 pb-3">
-        <h3 className="text-base font-heading font-bold text-neutral-950 uppercase">
+      <div className="border-b border-white/10 pb-4 mb-6">
+        <h3 className="text-base font-heading font-bold text-white uppercase">
           PROPULSION ARCHITECTURE: MOTORS, PROPELLERS & ESCS
         </h3>
-        <p className="text-xs text-neutral-600">
+        <p className="text-xs text-neutral-400">
           Configure individual motor parameters, aerodynamic propeller disk geometry, and speed controllers.
         </p>
       </div>
 
       {/* EDUCATIONAL CALLOUT: Distinguishing Configuration vs Live Simulation */}
-      <div className="p-4 rounded-xl bg-blue-50/80 border border-blue-200 text-blue-900 text-xs flex items-start gap-3">
-        <Activity className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+      <div className="p-4 rounded-xl bg-[#FF5500]/10 border border-[#FF5500]/20 text-white text-xs flex items-start gap-3">
+        <Activity className="h-5 w-5 text-[#FF5500] shrink-0 mt-0.5" />
         <div>
-          <p className="font-bold uppercase tracking-wider text-[11px] text-blue-800">
+          <p className="font-bold uppercase tracking-wider text-[11px] text-[#FF5500]">
             Aeronautical Concept: Static Configuration vs. Live Simulation State
           </p>
-          <p className="mt-1 leading-relaxed text-blue-700">
+          <p className="mt-1 leading-relaxed text-neutral-300">
             The values configured below define the <strong>Aircraft Limits & Specifications</strong> (e.g. Max RPM = {activeMotor.maxRpm}).
             In the 3D simulator, the <strong>Live Flight Telemetry</strong> will dynamically fluctuate (e.g. Current Hover RPM ≈ {Math.round(activeMotor.nominalRpm * 0.95)} RPM) based on throttle commands, wind forces, and battery voltage sag.
           </p>
@@ -131,7 +131,7 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
         <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF5500]">
           GLOBAL MOTOR TUNING (ALL {motors.length} MOTORS)
         </span>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <ParameterField
             id="nominal-rpm"
             label="Nominal Hover RPM"
@@ -177,13 +177,13 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
       </div>
 
       {/* SECTION 2: INDIVIDUAL MOTOR INSPECTOR & CONTROLS */}
-      <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-200 pb-3">
+      <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4 mb-6">
           <div>
-            <span className="text-[10px] font-mono font-bold uppercase text-neutral-500 tracking-wider">
+            <span className="text-[10px] font-mono font-bold uppercase text-neutral-400 tracking-wider">
               INDIVIDUAL MOTOR ARRAY INSPECTOR
             </span>
-            <p className="text-xs text-neutral-600">
+            <p className="text-xs text-neutral-400">
               Inspect and configure position and rotational polarity for each motor.
             </p>
           </div>
@@ -197,8 +197,8 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
                 onClick={() => setSelectedMotorIdx(idx)}
                 className={`px-2.5 py-1 text-xs font-mono font-bold rounded-lg border transition-all ${
                   selectedMotorIdx === idx
-                    ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
-                    : "bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-100"
+                    ? "bg-black/50 text-white border-white/10 shadow-[0_0_10px_rgba(255,85,0,0.2)] shadow-xs"
+                    : "bg-transparent text-neutral-400 border-white/10 hover:bg-transparent/5"
                 }`}
               >
                 {m.motorId}
@@ -209,13 +209,13 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
 
         {/* Selected Motor Detail Panel */}
         {activeMotor && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-white p-3.5 rounded-xl border border-neutral-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
               <span className="text-[10px] font-mono uppercase text-neutral-400">Motor ID</span>
-              <p className="text-sm font-mono font-bold text-neutral-950 mt-0.5">
+              <p className="text-sm font-mono font-bold text-white mt-0.5">
                 {activeMotor.motorId}
               </p>
-              <span className="text-[10px] text-neutral-500">
+              <span className="text-[10px] text-neutral-400">
                 Pos: ({activeMotor.position.x}, {activeMotor.position.z})
               </span>
             </div>
@@ -230,7 +230,7 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
                       direction: activeMotor.direction === 1 ? -1 : 1,
                     })
                   }
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-mono font-semibold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-mono font-semibold bg-white/10 hover:bg-white/10 text-neutral-300 border border-white/10 transition-colors"
                 >
                   {activeMotor.direction === 1 ? (
                     <>
@@ -249,10 +249,10 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
 
             <div>
               <span className="text-[10px] font-mono uppercase text-neutral-400">Configured Max Power</span>
-              <p className="text-sm font-mono font-bold text-neutral-950 mt-0.5">
+              <p className="text-sm font-mono font-bold text-white mt-0.5">
                 {activeMotor.maxPowerWatts} W
               </p>
-              <span className="text-[10px] text-neutral-500">
+              <span className="text-[10px] text-neutral-400">
                 Efficiency: {activeMotor.efficiencyPercent}%
               </span>
             </div>
@@ -262,7 +262,7 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
               <p className="text-sm font-mono font-bold text-emerald-600 mt-0.5">
                 {activeMotor.status}
               </p>
-              <span className="text-[10px] text-neutral-500">Hardware Ready</span>
+              <span className="text-[10px] text-neutral-400">Hardware Ready</span>
             </div>
           </div>
         )}
@@ -273,7 +273,7 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
         <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF5500]">
           AERODYNAMIC PROPELLER GEOMETRY
         </span>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <ParameterField
             id="prop-diameter"
             label="Propeller Diameter"
@@ -339,7 +339,7 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
         <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF5500]">
           ELECTRONIC SPEED CONTROLLER (ESC) POWER STAGE
         </span>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <ParameterField
             id="esc-rated"
             label="Rated Continuous Current"

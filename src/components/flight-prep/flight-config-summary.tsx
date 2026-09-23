@@ -95,7 +95,7 @@ export function FlightConfigSummary({
             </div>
 
             <span className="font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-orange-50 text-[#FF5500] border border-orange-200">
-              {selectedDrone.specs.rotors} ROTORS • {selectedDrone.badge}
+              {selectedDrone.platformId === "quadcopter" ? 4 : selectedDrone.platformId === "hexacopter" ? 6 : 8} ROTORS • {selectedDrone.badge}
             </span>
           </div>
 

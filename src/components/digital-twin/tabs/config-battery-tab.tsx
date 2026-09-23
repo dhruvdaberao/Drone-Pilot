@@ -65,11 +65,11 @@ export function ConfigBatteryTab({ config, onChange }: ConfigBatteryTabProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="border-b border-neutral-200 pb-3">
-        <h3 className="text-base font-heading font-bold text-neutral-950 uppercase">
+      <div className="border-b border-white/10 pb-4 mb-6">
+        <h3 className="text-base font-heading font-bold text-white uppercase">
           ELECTROCHEMICAL ENERGY STORAGE (BATTERY)
         </h3>
-        <p className="text-xs text-neutral-600">
+        <p className="text-xs text-neutral-400">
           Configure battery chemistry, series cell topology, discharge capability, and energy capacity.
         </p>
       </div>
@@ -77,8 +77,8 @@ export function ConfigBatteryTab({ config, onChange }: ConfigBatteryTabProps) {
       {/* DUAL LAYER ARCHITECTURE: CONFIGURATION VS LIVE TELEMETRY COMPARISON */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* PANEL A: CONFIGURATION (Static Specifications) */}
-        <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-300 space-y-3">
-          <div className="flex items-center gap-2 text-neutral-900 border-b border-neutral-200 pb-2">
+        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+          <div className="flex items-center gap-2 text-white border-b border-white/5 pb-2">
             <Zap className="h-4 w-4 text-[#FF5500]" />
             <span className="text-xs font-mono font-bold uppercase tracking-wider">
               AIRCRAFT CONFIGURATION SPECIFICATION
@@ -161,7 +161,7 @@ export function ConfigBatteryTab({ config, onChange }: ConfigBatteryTabProps) {
                 LIVE FLIGHT SIMULATION STATE
               </span>
             </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/100/20 text-emerald-400 border border-emerald-500/30">
               TELEMETRY BUS
             </span>
           </div>
@@ -216,10 +216,10 @@ export function ConfigBatteryTab({ config, onChange }: ConfigBatteryTabProps) {
         </div>
 
         <div className="text-right shrink-0">
-          <span className="font-mono font-bold text-neutral-900">
+          <span className="font-mono font-bold text-white">
             Internal Resistance: {battery.internalResistanceMilliOhm} mΩ
           </span>
-          <p className="text-[10px] text-neutral-500">Pack Health: {battery.batteryHealthPercent}%</p>
+          <p className="text-[10px] text-neutral-400">Pack Health: {battery.batteryHealthPercent}%</p>
         </div>
       </div>
     </div>

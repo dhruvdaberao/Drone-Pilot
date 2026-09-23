@@ -1,19 +1,18 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { DroneDigitalTwinConfiguration, DigitalTwinValidationResult } from "@/types/drone-digital-twin";
+import { DroneCategory, DroneDigitalTwinConfiguration, DigitalTwinValidationResult } from "@/types/drone-digital-twin";
 import { 
-  getActiveDigitalTwin, 
-  setActiveDigitalTwin, 
-  saveUserConfiguration, 
-  duplicateConfiguration 
+  getUserConfiguration, 
+  saveUserConfiguration,
 } from "@/lib/digital-twin/digital-twin-storage";
+import { useAuth } from "@/context/auth-context";
 import { validateDroneDigitalTwin } from "@/lib/digital-twin/digital-twin-validator";
 import { DRONES, getDroneById } from "@/lib/drones";
 import { Drone3DViewer } from "@/components/dashboard/drone-3d-viewer";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, CheckCircle2, AlertTriangle, ArrowRight, Save, Info, Settings, Settings2, Download } from "lucide-react";
+import { ChevronDown, ChevronRight, CheckCircle2, AlertTriangle, ArrowRight, ArrowLeft, Save, Info, Settings, Settings2, Download } from "lucide-react";
 
 // Import existing form sections
 import { ConfigAirframeTab } from "./tabs/config-airframe-tab";
@@ -35,14 +34,14 @@ const Accordion = ({
 }) => {
   const [expanded, setExpanded] = useState(defaultExpanded);
   return (
-    <div className="border-b border-neutral-200 last:border-0">
+    <div className="border-b border-white/5 last:border-0">
       <button 
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between py-5 px-6 hover:bg-neutral-50 transition-colors"
+        className="w-full flex items-center justify-between py-5 px-6 hover:bg-white/5 transition-colors"
       >
-        <span className="text-sm font-bold tracking-widest uppercase text-neutral-900">{title}</span>
-        {expanded ? <ChevronDown className="w-4 h-4 text-neutral-400" /> : <ChevronRight className="w-4 h-4 text-neutral-400" />}
+        <span className="text-sm font-bold tracking-widest uppercase text-white">{title}</span>
+        {expanded ? <ChevronDown className="w-4 h-4 text-neutral-500" /> : <ChevronRight className="w-4 h-4 text-neutral-500" />}
       </button>
       {expanded && (
         <div className="px-6 pb-6 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -59,75 +58,170 @@ export function DigitalTwinConfigurator() {
   const [config, setConfig] = useState<DroneDigitalTwinConfiguration | null>(null);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
   const [showTechnicalManifest, setShowTechnicalManifest] = useState(false);
+  const { user } = useAuth();
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
-    const presetId = searchParams?.get("preset");
-    if (presetId) {
-      // Create a new config from a preset
-      const presetDrone = getDroneById(presetId);
-      if (presetDrone) {
-        // Build a baseline digital twin config for a new drone based on preset
-        const newConfig: DroneDigitalTwinConfiguration = {
-          identity: {
-            id: crypto.randomUUID(),
-            name: `${presetDrone.name} (Custom)`,
-            category: presetDrone.platformId,
-            manufacturer: "Drone Pilot Lab",
-            isPreset: false,
-            version: "1.0.0",
-          },
-          metadata: {
-            createdAt: new Date().toISOString(),
-            lastModified: new Date().toISOString(),
-            author: "User",
-          },
-          massProperties: {
-            dryMassKg: presetDrone.baseMassKg,
-            totalMassKg: presetDrone.baseMassKg + presetDrone.defaultPayloadKg,
-            centerOfGravity: [0, 0, 0],
-            momentsOfInertia: [0.05, 0.05, 0.1],
-          },
-          aerodynamics: {
-            dragCoefficient: 0.8,
-            frontalAreaM2: 0.05,
-            topAreaM2: 0.15,
-          },
-          propulsion: {
-            motorCount: presetDrone.specs.rotors,
-            motorKv: 900,
-            maxRpm: 12000,
-            propellerDiameterInches: 10,
-            propellerPitchInches: 4.5,
-          },
-          battery: {
-            capacityMah: 5000,
-            cellCount: presetDrone.batteryCells,
-            voltageNominal: presetDrone.batteryCells * 3.7,
-            voltageMax: presetDrone.batteryCells * 4.2,
-            maxDischargeRateC: 50,
-          },
-          avionics: {
-            flightControllerType: "PX4",
-            imuCount: 2,
-            hasGps: presetDrone.sensors.includes("GPS") || presetDrone.sensors.includes("RTK GPS"),
-            hasRtk: presetDrone.sensors.includes("RTK GPS"),
-            hasObstacleAvoidance: presetDrone.sensors.includes("Stereo Vision"),
-            telemetryRangeKm: 5,
-          },
-          payload: {
-            capacityKg: presetDrone.defaultPayloadKg,
-            currentPayloadKg: 0,
-            type: "None",
-          },
-        };
-        setConfig(newConfig);
-      }
-    } else {
-      // Edit an existing config
-      const active = getActiveDigitalTwin();
-      setConfig(active);
+    if (hasInitialized.current) return;
+    
+    const initConfig = async () => {
+      try {
+        const category = searchParams?.get("drone") as DroneCategory | null;
+        if (!category) {
+          router.replace("/configure");
+          return;
+        }
+
+        const existing = await getUserConfiguration(user?.uid || null, category);
+        
+        if (existing) {
+          setConfig(existing);
+        } else {
+          // Create a new config from a preset based on category
+          const presetId = category === "quadcopter" ? "aero-trainer-x4" : category === "hexacopter" ? "skymapper-6b" : "titan-octo-8c";
+          const presetDrone = getDroneById(presetId);
+          if (presetDrone) {
+            const motorCount = category === "quadcopter" ? 4 : category === "hexacopter" ? 6 : 8;
+            const initialMotors = Array.from({ length: motorCount }).map((_, i) => ({
+              motorId: `M${i + 1}`,
+              index: i,
+              position: { x: 0, y: 0, z: 0 },
+              direction: i % 2 === 0 ? 1 : -1 as 1 | -1,
+              nominalRpm: 6000,
+              minRpm: 1200,
+              maxRpm: 12000,
+              kvRating: 900,
+              ratedVoltageV: 22.2,
+              maxThrustNewtons: 50,
+              maxPowerWatts: 450,
+              efficiencyPercent: 85,
+              status: "HEALTHY" as any
+            }));
+
+            const newConfig: DroneDigitalTwinConfiguration = {
+              identity: {
+                id: category,
+                name: presetDrone.name + " (Custom)",
+                category: category,
+                application: presetDrone.missionCategory as any,
+                manufacturer: "Drone Pilot Lab",
+                modelName: presetDrone.name,
+                description: presetDrone.description,
+                configurationVersion: "1.0",
+                isPreset: false,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+              },
+                airframe: {
+                  frameType: presetDrone.platformId,
+                  frameMaterial: "Carbon Fiber",
+                  frameDiagonalMm: 1200,
+                  armLengthMeters: 0.8,
+                  dimensions: { lengthM: 1.5, widthM: 1.5, heightM: 0.5 },
+                  centerOfGravity: { x: 0, y: 0, z: 0 },
+                  maxPayloadKg: category === "quadcopter" ? 5.0 : category === "hexacopter" ? 12.0 : 25.0,
+                  dryMassKg: presetDrone.baseMassKg,
+                  motorCount: motorCount,
+                  landingGearType: "Fixed Skid"
+                },
+                propeller: {
+                  diameterInches: 18,
+                  pitchInches: 6,
+                  bladeCount: 2,
+                  material: "Carbon Fiber Composite",
+                  massGrams: 50,
+                  thrustFactor: 1.5
+                },
+                esc: {
+                  protocol: "DShot600",
+                  ratedCurrentAmps: 60,
+                  burstCurrentAmps: 80,
+                  voltageMinV: 12,
+                  voltageMaxV: 50,
+                  efficiencyPercent: 95
+                },
+                motors: initialMotors,
+                battery: {
+                  chemistry: "LiPo (Lithium Polymer)",
+                  cellCount: presetDrone.batteryCells,
+                  nominalVoltageV: presetDrone.batteryCells * 3.7,
+                  capacityMah: 16000,
+                  energyWh: (presetDrone.batteryCells * 3.7 * 16000) / 1000,
+                  maxContinuousDischargeC: 25,
+                  internalResistanceMilliOhm: 5,
+                  batteryHealthPercent: 100,
+                  massKg: 1.5
+                },
+                flightController: {
+                  controllerType: "Pixhawk 4",
+                  firmwareVersion: "PX4 v1.13.0",
+                  failsafeAction: "RTH",
+                  stabilizationEnabled: true,
+                  gpsAssistedMode: true,
+                  controlLoopFrequencyHz: 400
+                },
+                sensors: [
+                  { id: "s1", type: "GPS", name: "Primary GPS/RTK", enabled: true, accuracy: "±2cm", updateRateHz: 10, health: "HEALTHY" as any },
+                  { id: "s2", type: "IMU", name: "Primary IMU", enabled: true, accuracy: "High", updateRateHz: 400, health: "HEALTHY" as any }
+                ],
+                payload: {
+                  id: "pl_1",
+                  type: "Camera",
+                  name: "Default Payload",
+                  massKg: 0,
+                  attachmentPoint: "Belly Gimbal",
+                  enabled: false
+                },
+                camera: {
+                  sensorType: "CMOS 1-inch",
+                  resolution: "4K 60fps",
+                  fovDegrees: 84,
+                  gimbalAxisCount: 3,
+                  massKg: 0.5,
+                  enabled: true
+                },
+                communication: {
+                  type: "2.4GHz Spread Spectrum",
+                  rangeKm: 5,
+                  frequencyMhz: 2400,
+                  txPowerMilliWatts: 100
+                },
+                massProperties: {
+                  dryMassKg: presetDrone.baseMassKg,
+                  batteryMassKg: 1.5,
+                  payloadMassKg: 0,
+                  cameraMassKg: 0.5,
+                  totalMassKg: presetDrone.baseMassKg + 1.5 + 0.5,
+                  centerOfGravity: { x: 0, y: 0, z: 0 },
+                  estimatedInertiaKgM2: { pitch: 0.5, roll: 0.5, yaw: 0.8 }
+                },
+                performance: {
+                  maxHorizontalSpeedMs: 20,
+                  maxAscentSpeedMs: 5,
+                  maxDescentSpeedMs: 3,
+                  maxTiltAngleDeg: 35,
+                  hoverThrottleEstimate: 0.45,
+                  estimatedFlightTimeMinutes: 25,
+                  maxOperatingAltitudeM: 400,
+                  thrustToWeightRatio: 2.5,
+                  totalThrustNewtons: 400
+                }
+              };
+              
+              setConfig(newConfig);
+            }
+          }
+        
+          hasInitialized.current = true;
+        } catch (err: any) {
+          console.error("Config init error:", err);
+        }
+      };
+
+    if (user !== undefined) {
+      initConfig();
     }
-  }, [searchParams]);
+  }, [searchParams, user, router]);
 
   const validationResult: DigitalTwinValidationResult = useMemo(() => {
     if (!config) return { valid: false, errors: [], warnings: [], infos: [] };
@@ -139,165 +233,174 @@ export function DigitalTwinConfigurator() {
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!config) return;
-    const toSave = {
-      ...config,
-      metadata: { ...config.metadata, lastModified: new Date().toISOString() }
-    };
-    await saveUserConfiguration(toSave);
-    setActiveDigitalTwin(toSave);
-    setSaveFeedback("✓ Aircraft saved");
-    setTimeout(() => setSaveFeedback(null), 3000);
-  }, [config]);
+    if (!config || !user?.uid) {
+      setSaveFeedback("Must be logged in to save.");
+      return;
+    }
+    try {
+      const toSave = {
+        ...config,
+        identity: { ...config.identity, updatedAt: Date.now() }
+      };
+      await saveUserConfiguration(user.uid, config.identity.category, toSave);
+      
+      // Redirect back to overview with a success indicator
+      router.push(`/configure?drone=${config.identity.category}&saved=true`);
+    } catch (err: any) {
+      console.error("Save error:", err);
+      setSaveFeedback("Error saving: " + String(err.message || err));
+      setTimeout(() => setSaveFeedback(null), 4000);
+    }
+  }, [config, user, router]);
 
-  const handleContinue = () => {
-    if (!config) return;
-    setActiveDigitalTwin(config);
-    router.push(`/fly/select?drone=${config.identity.category}&dt=${config.identity.id}`);
-  };
 
-  if (!config) return null;
+
+  const [activeTab, setActiveTab] = useState<"AIRFRAME" | "PROPULSION" | "BATTERY" | "AVIONICS" | "PAYLOAD">("AIRFRAME");
+  const tabs = ["AIRFRAME", "PROPULSION", "BATTERY", "AVIONICS", "PAYLOAD"] as const;
+
+  if (!config) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full min-h-[60vh] gap-4">
+        <div className="w-8 h-8 border-4 border-[#FF5500] border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs font-bold uppercase tracking-widest text-neutral-500">Initializing Digital Twin...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col lg:flex-row h-full min-h-[85vh] bg-white rounded-3xl border border-neutral-200 shadow-2xl overflow-hidden mt-6 relative">
+    <div className="w-full max-w-5xl mx-auto h-full min-h-[85vh] bg-transparent flex flex-col mt-6 pb-20">
       
       {/* Save Notification Overlay */}
       {saveFeedback && (
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-white px-6 py-3 rounded-full shadow-lg font-bold text-xs uppercase tracking-widest animate-in slide-in-from-top-4 fade-in flex items-center gap-2">
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-[#FF5500] text-white px-6 py-3 rounded border border-[#FF5500]/50 shadow-2xl shadow-[#FF5500]/20 font-bold text-xs uppercase tracking-widest animate-in slide-in-from-top-8 fade-in flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4" />
           {saveFeedback}
         </div>
       )}
 
-      {/* Left: 3D Preview (Sticky on desktop) */}
-      <div className="w-full lg:w-[45%] xl:w-1/2 bg-[#FAF7F2] border-r border-neutral-200 relative flex flex-col">
-        <div className="absolute top-6 left-6 z-20">
-          <h2 className="text-2xl font-extrabold text-neutral-900 tracking-tight">{config.identity.name}</h2>
-          <p className="text-xs font-bold uppercase tracking-widest text-[#FF5500] mt-1">{config.identity.category}</p>
-        </div>
-        
-        <div className="flex-1 min-h-[400px] lg:min-h-0 relative">
-          <Drone3DViewer 
-            type={config.identity.category as any}
-            autoRotate={true}
-            interactive={true}
-            isSelected={true}
-            className="w-full h-full"
-          />
+      {/* Header: Title and Stats */}
+      <div className="w-full flex flex-col gap-6 mb-8 mt-6">
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col">
+              <h2 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+                {config.identity.name}
+                {config.identity.isPreset && (
+                  <span className="px-2 py-0.5 bg-neutral-800 text-neutral-400 text-[10px] uppercase tracking-widest rounded-full font-bold ml-2">
+                    Preset
+                  </span>
+                )}
+              </h2>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#FF5500]">
+                  {config.identity.category}
+                </span>
+              </div>
+            </div>
+            
+            {/* Return to Hangar Button */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => router.push('/hangar')} 
+              className="text-neutral-400 border-neutral-700 hover:text-white hover:bg-neutral-800 uppercase text-[10px] tracking-widest font-bold h-8 ml-4"
+            >
+              Return to Hangar
+            </Button>
+          </div>
         </div>
 
-        {/* Essential High-Level Specs Panel (Bottom of 3D view) */}
-        <div className="p-6 bg-white/60 backdrop-blur-md border-t border-neutral-200 z-10 grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* High-Level Stats Panel */}
+        <div className="border-t border-b border-white/10 py-6 grid grid-cols-2 md:grid-cols-4 gap-6">
            <div>
-             <span className="block text-[10px] uppercase font-bold text-neutral-400 tracking-widest">Total Mass</span>
-             <span className="text-lg font-bold text-neutral-900">{config.massProperties.totalMassKg.toFixed(2)} kg</span>
+             <span className="block text-xs uppercase font-bold text-neutral-400 tracking-widest">Total Mass</span>
+             <span className="text-2xl font-bold text-white">{config.massProperties.totalMassKg.toFixed(2)} kg</span>
            </div>
            <div>
-             <span className="block text-[10px] uppercase font-bold text-neutral-400 tracking-widest">Battery</span>
-             <span className="text-lg font-bold text-neutral-900">{config.battery.cellCount}S</span>
+             <span className="block text-xs uppercase font-bold text-neutral-400 tracking-widest">Battery</span>
+             <span className="text-2xl font-bold text-white">{config.battery.cellCount}S</span>
            </div>
            <div>
-             <span className="block text-[10px] uppercase font-bold text-neutral-400 tracking-widest">Motors</span>
-             <span className="text-lg font-bold text-neutral-900">{config.propulsion.motorCount}</span>
+             <span className="block text-xs uppercase font-bold text-neutral-400 tracking-widest">Motors</span>
+             <span className="text-2xl font-bold text-white">{config.airframe.motorCount}</span>
            </div>
            <div>
-             <span className="block text-[10px] uppercase font-bold text-neutral-400 tracking-widest">Payload</span>
-             <span className="text-lg font-bold text-neutral-900">{config.payload.capacityKg} kg</span>
+             <span className="block text-xs uppercase font-bold text-neutral-400 tracking-widest">Payload Mass</span>
+             <span className="text-2xl font-bold text-white">{config.payload.massKg.toFixed(2)} kg</span>
            </div>
         </div>
       </div>
 
-      {/* Right: Progressive Configuration Accordion */}
-      <div className="w-full lg:w-[55%] xl:w-1/2 flex flex-col bg-white h-[85vh] overflow-hidden">
+      {/* Edit Mode: Tabbed Configuration Document */}
+      <div className="flex-1 flex flex-col animate-in fade-in">
         
-        {/* Header / Actions */}
-        <div className="p-6 border-b border-neutral-100 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-             <Settings2 className="w-5 h-5 text-[#FF5500]" />
-             <h3 className="text-sm font-bold uppercase tracking-widest text-neutral-900">Configure Aircraft</h3>
+        {/* Document Section Header / Tabs */}
+        <div className="flex flex-col gap-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+               <Settings2 className="w-6 h-6 text-[#FF5500]" />
+               <h3 className="text-lg font-bold uppercase tracking-widest text-white">Configure Aircraft Parameters</h3>
+            </div>
+            <div className="flex items-center gap-4">
+              <Button 
+                onClick={() => router.push(`/configure?drone=${config.identity.category}`)} 
+                variant="ghost" 
+                className="text-neutral-400 hover:text-white hover:bg-white/5 rounded-lg text-sm font-semibold tracking-wider uppercase h-12 px-6 shadow-none flex items-center justify-center"
+              >
+                Cancel Edit
+              </Button>
+              <Button 
+                onClick={handleSave} 
+                className="bg-[#FF5500] hover:bg-[#E64800] text-white rounded-lg text-sm font-bold tracking-widest uppercase h-12 px-8 transition-colors shadow-none hover:shadow-none focus:shadow-none flex items-center justify-center"
+              >
+                <Save className="w-4 h-4 mr-2 shrink-0" />
+                Save Configurations
+              </Button>
+            </div>
           </div>
           
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={handleSave} 
-              variant="outline" 
-              className="border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-lg text-xs font-semibold tracking-wider uppercase h-10 px-4"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Save
-            </Button>
-            <Button 
-              onClick={handleContinue}
-              className="bg-[#FF5500] hover:bg-neutral-900 text-white rounded-lg text-xs font-bold tracking-widest uppercase h-10 px-6 shadow-md transition-all"
-            >
-              Continue <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-2">
+            {tabs.map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`shrink-0 px-6 py-3 rounded-full text-xs font-bold tracking-widest uppercase transition-all ${
+                  activeTab === tab 
+                    ? "bg-[#FF5500] text-white" 
+                    : "bg-white/5 text-neutral-400 hover:bg-white/10 hover:text-white border border-transparent hover:border-white/10"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
         </div>
+        
+        {/* Active Tab Content (No Cards, Flat) */}
+        <div className="flex-1 mb-12">
+          {activeTab === "AIRFRAME" && <ConfigAirframeTab config={config} onChange={handleConfigChange} />}
+          {activeTab === "PROPULSION" && <ConfigPropulsionTab config={config} onChange={handleConfigChange} />}
+          {activeTab === "BATTERY" && <ConfigBatteryTab config={config} onChange={handleConfigChange} />}
+          {activeTab === "AVIONICS" && <ConfigAvionicsTab config={config} onChange={handleConfigChange} />}
+          {activeTab === "PAYLOAD" && <ConfigPayloadTab config={config} onChange={handleConfigChange} />}
+        </div>
 
-        {/* Validation Warning Inline */}
-        {!validationResult.valid && (
-          <div className="bg-amber-50 border-b border-amber-100 p-4 flex items-start gap-3 shrink-0">
-            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-bold text-amber-900">⚠ Configuration Warning</p>
-              <p className="text-xs text-amber-800 mt-1">{validationResult.errors[0]?.message || "Please review configuration parameters."}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Scrollable Accordions */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-200">
-          {!showTechnicalManifest ? (
-            <div className="divide-y divide-neutral-100">
-              <Accordion title="Airframe & Mass" defaultExpanded={true}>
-                <ConfigAirframeTab config={config} onChange={handleConfigChange} />
-              </Accordion>
-              <Accordion title="Propulsion">
-                <ConfigPropulsionTab config={config} onChange={handleConfigChange} />
-              </Accordion>
-              <Accordion title="Battery System">
-                <ConfigBatteryTab config={config} onChange={handleConfigChange} />
-              </Accordion>
-              <Accordion title="Payload">
-                <ConfigPayloadTab config={config} onChange={handleConfigChange} />
-              </Accordion>
-              <Accordion title="Sensors & Avionics">
-                <ConfigAvionicsTab config={config} onChange={handleConfigChange} />
-              </Accordion>
-              
-              {/* Performance Summary */}
-              <div className="p-6 bg-[#FAF7F2]">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-500">Calculated Performance</h3>
-                  <span className="text-[10px] font-mono bg-neutral-200 text-neutral-600 px-2 py-1 rounded">CALCULATED</span>
-                </div>
-                <ConfigPerformanceTab config={config} onChange={handleConfigChange} />
-                
-                <button 
-                  onClick={() => setShowTechnicalManifest(true)}
-                  className="mt-6 text-xs font-bold uppercase tracking-widest text-[#FF5500] hover:text-neutral-900 transition-colors flex items-center gap-1"
-                >
-                  View Digital Twin Manifest <ArrowRight className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="p-6 bg-neutral-900 text-neutral-300 min-h-full font-mono text-xs">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-sm font-bold text-white uppercase tracking-widest">Digital Twin Manifest</h3>
-                <button 
-                  onClick={() => setShowTechnicalManifest(false)}
-                  className="px-3 py-1 bg-neutral-800 hover:bg-neutral-700 text-white rounded transition-colors"
-                >
-                  Close Technical View
-                </button>
-              </div>
-              <pre className="whitespace-pre-wrap">
-                {JSON.stringify(config, null, 2)}
-              </pre>
-            </div>
-          )}
+        {/* Document Footer Actions */}
+        <div className="pt-8 border-t border-white/10 flex justify-end items-center gap-4">
+          <Button 
+            onClick={() => router.push(`/configure?drone=${config.identity.category}`)} 
+            variant="ghost" 
+            className="text-neutral-400 hover:text-white hover:bg-white/5 rounded-lg text-sm font-semibold tracking-wider uppercase h-12 px-6 shadow-none flex items-center justify-center"
+          >
+            Cancel Edit
+          </Button>
+          <Button 
+            onClick={handleSave} 
+            className="bg-[#FF5500] hover:bg-[#E64800] text-white rounded-lg text-sm font-bold tracking-widest uppercase h-12 px-8 transition-colors shadow-none hover:shadow-none focus:shadow-none flex items-center justify-center"
+          >
+            <Save className="w-4 h-4 mr-2 shrink-0" />
+            Save Configurations
+          </Button>
         </div>
       </div>
     </div>

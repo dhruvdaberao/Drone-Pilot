@@ -49,11 +49,11 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="border-b border-neutral-200 pb-3">
-        <h3 className="text-base font-heading font-bold text-neutral-950 uppercase">
+      <div className="border-b border-white/10 pb-4 mb-6">
+        <h3 className="text-base font-heading font-bold text-white uppercase">
           AVIONICS, SENSORS & TELEMETRY LINK
         </h3>
-        <p className="text-xs text-neutral-600">
+        <p className="text-xs text-neutral-400">
           Configure central flight controller, navigation sensor suite, and long-range datalink.
         </p>
       </div>
@@ -67,7 +67,7 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <ParameterField
             id="fc-type"
             label="Autopilot Platform"
@@ -100,12 +100,12 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
 
         {/* Toggles */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-          <label className="flex items-center justify-between p-3 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 cursor-pointer transition-colors">
+          <label className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 cursor-pointer transition-colors">
             <div>
-              <span className="text-xs font-semibold text-neutral-900 block">
+              <span className="text-xs font-semibold text-white block">
                 6-DoF Attitude Stabilization Loop
               </span>
-              <span className="text-[11px] text-neutral-500">
+              <span className="text-[11px] text-neutral-400">
                 Self-levels pitch and roll angles using real-time gyro/accelerometer data.
               </span>
             </div>
@@ -113,16 +113,16 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
               type="checkbox"
               checked={flightController.stabilizationEnabled}
               onChange={(e) => updateFC("stabilizationEnabled", e.target.checked)}
-              className="h-5 w-5 text-[#FF5500] rounded border-neutral-300 focus:ring-[#FF5500]"
+              className="h-5 w-5 accent-[#FF5500] text-[#FF5500] rounded border-white/10 focus:ring-[#FF5500]"
             />
           </label>
 
-          <label className="flex items-center justify-between p-3 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 cursor-pointer transition-colors">
+          <label className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 cursor-pointer transition-colors">
             <div>
-              <span className="text-xs font-semibold text-neutral-900 block">
+              <span className="text-xs font-semibold text-white block">
                 GPS Position Hold Assist
               </span>
-              <span className="text-[11px] text-neutral-500">
+              <span className="text-[11px] text-neutral-400">
                 Counteracts external wind drift to maintain accurate spatial coordinates.
               </span>
             </div>
@@ -130,7 +130,7 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
               type="checkbox"
               checked={flightController.gpsAssistedMode}
               onChange={(e) => updateFC("gpsAssistedMode", e.target.checked)}
-              className="h-5 w-5 text-[#FF5500] rounded border-neutral-300 focus:ring-[#FF5500]"
+              className="h-5 w-5 accent-[#FF5500] text-[#FF5500] rounded border-white/10 focus:ring-[#FF5500]"
             />
           </label>
         </div>
@@ -145,7 +145,7 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
               INTEGRATED SENSOR SUITE
             </span>
           </div>
-          <span className="text-[11px] font-mono text-neutral-500">
+          <span className="text-[11px] font-mono text-neutral-400">
             {sensors.filter((s) => s.enabled).length} of {sensors.length} Active
           </span>
         </div>
@@ -156,21 +156,21 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
               key={sensor.id}
               className={`p-3.5 rounded-xl border transition-all flex items-start justify-between ${
                 sensor.enabled
-                  ? "border-neutral-300 bg-white shadow-2xs"
-                  : "border-neutral-200 bg-neutral-100/60 opacity-60"
+                  ? "border-white/10 bg-transparent shadow-2xs"
+                  : "border-white/5 bg-white/10/60 opacity-60"
               }`}
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-neutral-100 border border-neutral-200 text-neutral-800">
+                  <span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-white/10 border border-white/5 text-neutral-300">
                     {sensor.type}
                   </span>
-                  <span className="text-xs font-heading font-bold text-neutral-900">
+                  <span className="text-xs font-heading font-bold text-white">
                     {sensor.name}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 text-[11px] font-mono text-neutral-500 pt-1">
+                <div className="flex items-center gap-3 text-[11px] font-mono text-neutral-400 pt-1">
                   <span>Rate: {sensor.updateRateHz} Hz</span>
                   <span>Precision: {sensor.accuracy}</span>
                 </div>
@@ -181,8 +181,8 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
                 onClick={() => toggleSensor(sensor.id)}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider transition-colors ${
                   sensor.enabled
-                    ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
-                    : "bg-neutral-200 text-neutral-600 hover:bg-neutral-300"
+                    ? "bg-emerald-100 text-emerald-500 hover:bg-emerald-200"
+                    : "bg-white/10 text-neutral-400 hover:bg-neutral-300"
                 }`}
               >
                 {sensor.enabled ? "Enabled" : "Offline"}
@@ -201,7 +201,7 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <ParameterField
             id="comm-type"
             label="Carrier Link Type"

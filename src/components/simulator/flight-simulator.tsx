@@ -659,14 +659,14 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
     spawnConfigRef.current = spawnConfig;
 
     // 5. MODULAR DRONE & CANONICAL DIGITAL TWIN RESOLUTION
-    let dtConfig = getActiveDigitalTwin();
+    let dtConfig = getActiveDigitalTwin(null);
     const dtParam = urlParams?.get("dt");
     if (dtParam) {
       dtConfig = getDigitalTwinPresetById(dtParam);
     } else if (dtConfig.identity.category !== selectedDrone.id) {
       dtConfig = getDigitalTwinPresetById(selectedDrone.id);
     }
-    setActiveDigitalTwin(dtConfig);
+    setActiveDigitalTwin(null, dtConfig);
     setActiveDigitalTwinState(dtConfig);
     activeDtRef.current = dtConfig;
 

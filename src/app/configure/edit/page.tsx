@@ -3,9 +3,9 @@
 import React from "react";
 import { ProtectedRoute } from "@/components/auth/route-guard";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { ConfigurationOverview } from "@/components/digital-twin/configuration-overview";
+import { DigitalTwinConfigurator } from "@/components/digital-twin/digital-twin-configurator";
 
-export default function ConfigurePage() {
+export default function ConfigureEditPage() {
   return (
     <ProtectedRoute>
       <div className="relative min-h-screen w-full max-w-full flex flex-col justify-between bg-[#08090a] text-white overflow-x-hidden font-sans">
@@ -37,7 +37,7 @@ export default function ConfigurePage() {
 
         {/* Main Workstation Container */}
         <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-          <ConfigurationOverview />
+          <DigitalTwinConfigurator />
         </main>
       </div>
     </ProtectedRoute>

@@ -41,7 +41,7 @@ export function LeftGlassPanel({
           <Plane className="w-5 h-5 text-white" />
           <h2 className="font-heading font-extrabold text-lg uppercase tracking-wider">{drone.name}</h2>
         </div>
-        <p className="text-xs text-white/60 tracking-widest uppercase">{drone.specs.rotors} MOTORS • {drone.specs.weightClass}</p>
+        <p className="text-xs text-white/60 tracking-widest uppercase">{drone.platformId === "quadcopter" ? 4 : drone.platformId === "hexacopter" ? 6 : 8} MOTORS • {drone.platformCategory}</p>
       </div>
 
       {/* Primary Status */}

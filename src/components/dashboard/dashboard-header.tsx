@@ -24,32 +24,35 @@ export function DashboardHeader() {
   const displayName = user?.displayName || user?.email?.split("@")[0] || "Pilot";
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-gradient-to-r from-[#FF5500] via-[#FF5F08] to-[#E64800] px-3 py-2.5 sm:px-8 sm:py-3 text-white shadow-[0_4px_20px_rgba(255,85,0,0.35)] border-b border-[#D43F00]">
+    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-black/40 backdrop-blur-md px-4 sm:px-10 py-4 sm:py-5 border-b border-white/5">
+      {/* Subtle Orange Accent Line at the top */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#FF5500] to-transparent opacity-50" />
+
       {/* Brand */}
-      <Link href="/dashboard" className="flex items-center gap-2 group">
-        <DroneIcon className="h-4 w-4 sm:h-5 sm:w-5 text-black transition-transform group-hover:scale-105 shrink-0" />
-        <span className="font-machinic text-sm sm:text-lg font-bold tracking-wider sm:tracking-widest text-black uppercase flex items-center gap-1.5 whitespace-nowrap">
-          DRONE <span className="text-white">PILOT</span>
+      <Link href="/dashboard" className="flex items-center gap-3 group">
+        <DroneIcon invert={true} className="h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:scale-105 shrink-0" />
+        <span className="font-machinic text-base sm:text-xl font-bold tracking-widest text-white uppercase flex items-center gap-2 whitespace-nowrap">
+          DRONE <span className="text-[#FF5500] font-medium">PILOT</span>
         </span>
       </Link>
 
       {/* User info & Logout */}
-      <div className="flex items-center gap-2 sm:gap-4">
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/15 border border-white/20 text-xs text-white">
-          <User className="h-3.5 w-3.5 text-white/90" />
-          <span className="font-medium tracking-wide">
-            CALL SIGN: <strong className="font-semibold text-white uppercase">{displayName}</strong>
+      <div className="flex items-center gap-3 sm:gap-6">
+        <div className="hidden sm:flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-neutral-300">
+          <User className="h-4 w-4 text-[#FF5500]" />
+          <span className="font-medium tracking-widest">
+            CALL SIGN: <strong className="font-bold text-white uppercase ml-1">{displayName}</strong>
           </span>
         </div>
 
         <Button
-          variant="black"
+          variant="ghost"
           size="sm"
-          className="h-8 sm:h-9 px-2.5 sm:px-4 text-[11px] sm:text-xs font-semibold shadow-sm"
+          className="h-9 sm:h-10 px-3 sm:px-5 text-xs sm:text-sm font-semibold tracking-wider text-neutral-300 hover:text-white hover:bg-white/10 transition-colors rounded-full"
           onClick={handleSignOut}
-          leftIcon={<LogOut className="h-3.5 w-3.5" />}
+          leftIcon={<LogOut className="h-4 w-4" />}
         >
-          Sign Out
+          SIGN OUT
         </Button>
       </div>
     </header>
