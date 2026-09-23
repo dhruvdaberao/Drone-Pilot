@@ -235,25 +235,64 @@ export function DigitalTwinConfigurator() {
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!config || !user?.uid || isSaving) {
-      if (!user?.uid) setSaveFeedback("Must be logged in to save.");
+    console.log("SAVE CLICK");
+    if (isSaving) return;
+    console.log("SAVE FUNCTION START");
+
+    if (!user?.uid) {
+      console.warn("CONFIGURATION SAVE ABORTED: auth.currentUser?.uid is missing or unauthenticated");
+      setSaveFeedback("Must be logged in to save configuration.");
       return;
     }
-    
+
+    if (!config) {
+      console.warn("CONFIGURATION SAVE ABORTED: No configuration object loaded");
+      return;
+    }
+
+    const category = config.identity?.category;
+    if (!category || !["quadcopter", "hexacopter", "octacopter"].includes(category)) {
+      console.error("CONFIGURATION SAVE ABORTED: Invalid drone category:", category);
+      setSaveFeedback("Invalid drone category.");
+      return;
+    }
+
+    console.log("SAVE CONFIGURATION", {
+      UID: user.uid,
+      DRONE: category,
+      PATH: `users/${user.uid}/droneConfigurations/${category}`
+    });
+
     setIsSaving(true);
     try {
-      const toSave = {
+      const toSave: DroneDigitalTwinConfiguration = {
         ...config,
-        identity: { ...config.identity, updatedAt: Date.now() }
+        identity: {
+          ...config.identity,
+          id: category,
+          category: category,
+          updatedAt: Date.now()
+        }
       };
-      await saveUserConfiguration(user.uid, config.identity.category, toSave);
-      
+
+      await saveUserConfiguration(user.uid, category, toSave);
+
+      console.log("FIRESTORE WRITE SUCCESS for", category);
+
       // Redirect back to overview with a success indicator
-      router.push(`/configure?drone=${config.identity.category}&saved=true`);
+      router.push(`/configure?drone=${category}&saved=true`);
     } catch (err: any) {
-      console.error("Save error:", err);
-      setSaveFeedback("Error saving: " + String(err.message || err));
-      setTimeout(() => setSaveFeedback(null), 4000);
+      console.error("CONFIGURATION SAVE FAILED", {
+        error: err,
+        code: err?.code || (err instanceof Error ? err.name : undefined),
+        name: err?.name,
+        message: err instanceof Error ? err.message : String(err),
+        uid: user.uid,
+        droneType: category,
+      });
+
+      setSaveFeedback("Unable to save aircraft configuration.");
+      setTimeout(() => setSaveFeedback(null), 5000);
       setIsSaving(false);
     }
   }, [config, user, router, isSaving]);
@@ -386,7 +425,6 @@ export function DigitalTwinConfigurator() {
           {activeTab === "BATTERY" && <ConfigBatteryTab config={config} onChange={handleConfigChange} />}
           {activeTab === "AVIONICS" && <ConfigAvionicsTab config={config} onChange={handleConfigChange} />}
           {activeTab === "PAYLOAD" && <ConfigPayloadTab config={config} onChange={handleConfigChange} />}
-          {activeTab === "PERFORMANCE" && <ConfigPerformanceTab config={config} onChange={handleConfigChange} />}
         </div>
 
         {/* Document Footer Actions */}

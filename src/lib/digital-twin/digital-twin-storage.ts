@@ -312,6 +312,11 @@ export async function saveUserConfiguration(
   // 1. Save to Firestore via batch
   if (isFirebaseConfigured() && db) {
     try {
+      console.log("FIRESTORE WRITE START", {
+        path: `users/${uid}/droneConfigurations/${category}`,
+        userDocPath: `users/${uid}`,
+      });
+
       const batch = writeBatch(db);
       
       const configRef = doc(db, "users", uid, "droneConfigurations", category);
@@ -326,9 +331,15 @@ export async function saveUserConfiguration(
       );
       
       await Promise.race([batch.commit(), timeoutPromise]);
+
+      console.log("FIRESTORE WRITE SUCCESS", {
+        category,
+        uid
+      });
     } catch (e: any) {
-      console.error("Firestore save failed", {
+      console.error("FIRESTORE WRITE FAILURE", {
         code: e?.code,
+        name: e?.name,
         message: e?.message,
         uid,
         category
