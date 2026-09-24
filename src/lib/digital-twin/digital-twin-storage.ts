@@ -11,6 +11,8 @@ import {
   setDoc,
   getDoc,
   getDocs,
+  getDocFromServer,
+  getDocsFromServer,
   writeBatch,
 } from "firebase/firestore";
 import {
@@ -81,8 +83,7 @@ export async function getLastSelectedDrone(uid: string | null): Promise<DroneCat
   if (uid && isFirebaseConfigured() && db) {
     try {
       const docRef = doc(db, "users", uid);
-      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 3000));
-      const snap = await Promise.race([getDoc(docRef), timeoutPromise]);
+      const snap = await getDoc(docRef);
       if (snap.exists() && snap.data().lastSelectedDrone) {
         return snap.data().lastSelectedDrone as DroneCategory;
       }
@@ -111,9 +112,9 @@ export async function setLastSelectedDrone(uid: string | null, category: DroneCa
 
   if (uid && isFirebaseConfigured() && db) {
     try {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return;
       const docRef = doc(db, "users", uid);
-      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 3000));
-      await Promise.race([setDoc(docRef, { lastSelectedDrone: category, updatedAt: Date.now() }, { merge: true }), timeoutPromise]);
+      await setDoc(docRef, { lastSelectedDrone: category, updatedAt: Date.now() }, { merge: true });
     } catch (e) {
       console.warn("Firestore setLastSelectedDrone error:", e);
     }
@@ -140,10 +141,7 @@ export async function listUserConfigurations(uid: string | null): Promise<DroneD
     if (!(typeof navigator !== "undefined" && !navigator.onLine)) {
       try {
         const colRef = collection(db, "users", uid, "aircraftConfigurations");
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Firestore timeout")), 5000)
-        );
-        const snap = await Promise.race([getDocs(colRef), timeoutPromise]);
+        const snap = await getDocsFromServer(colRef);
         snap.forEach((docSnap) => {
           const data = docSnap.data() as DroneDigitalTwinConfiguration;
           if (data?.identity?.category) customMap.set(data.identity.category, data);
@@ -191,9 +189,6 @@ export async function getUserConfiguration(
 
     try {
       const docRef = doc(db, 'users', uid, 'aircraftConfigurations', category);
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Firestore timeout after 5s')), 5000)
-      );
 
       console.log('FIRESTORE READ START', {
         OPERATION: 'getUserConfiguration',
@@ -203,7 +198,7 @@ export async function getUserConfiguration(
         START_TIME: Date.now(),
       });
 
-      const snap = await Promise.race([getDoc(docRef), timeoutPromise]);
+      const snap = await getDocFromServer(docRef);
 
       if (snap.exists()) {
         const data = snap.data() as DroneDigitalTwinConfiguration;

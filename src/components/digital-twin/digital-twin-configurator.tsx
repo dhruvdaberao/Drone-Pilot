@@ -56,11 +56,13 @@ export function DigitalTwinConfigurator() {
   const searchParams = useSearchParams();
   const [config, setConfig] = useState<DroneDigitalTwinConfiguration | null>(null);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showTechnicalManifest, setShowTechnicalManifest] = useState(false);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const hasInitialized = useRef(false);
 
   useEffect(() => {
+    if (authLoading) return;
     if (hasInitialized.current) return;
     
     const initConfig = async () => {
@@ -76,7 +78,7 @@ export function DigitalTwinConfigurator() {
         if (existing.status === "SUCCESS" && existing.data) {
           // deep clone so we don't mutate the fetched object
           setConfig(JSON.parse(JSON.stringify(existing.data)));
-        } else {
+        } else if (existing.status === "NOT_FOUND") {
           // Create a new config from a preset based on category
           const presetId = category === "quadcopter" ? "aero-trainer-x4" : category === "hexacopter" ? "skymapper-6b" : "titan-octo-8c";
           const presetDrone = getDroneById(presetId);
@@ -210,6 +212,8 @@ export function DigitalTwinConfigurator() {
               
               setConfig(newConfig);
             }
+          } else {
+            setLoadError(existing.error || "Client is offline or unable to load configuration.");
           }
         
           hasInitialized.current = true;
@@ -218,10 +222,10 @@ export function DigitalTwinConfigurator() {
         }
       };
 
-    if (user !== undefined) {
+    if (user !== undefined && !authLoading) {
       initConfig();
     }
-  }, [searchParams, user, router]);
+  }, [searchParams, user, authLoading, router]);
 
   const validationResult: DigitalTwinValidationResult = useMemo(() => {
     if (!config) return { valid: false, errors: [], warnings: [], infos: [] };
@@ -281,7 +285,6 @@ export function DigitalTwinConfigurator() {
 
       // Redirect back to overview with a success indicator
       router.push(`/configure?drone=${category}&saved=true`);
-      setIsSaving(false);
     } catch (err: any) {
       console.error("CONFIGURATION SAVE FAILED", {
         error: err,
@@ -294,10 +297,24 @@ export function DigitalTwinConfigurator() {
 
       setSaveFeedback("Unable to save aircraft configuration.");
       setTimeout(() => setSaveFeedback(null), 5000);
+    } finally {
       setIsSaving(false);
     }
   }, [config, user, router, isSaving]);
   const tabs = ["AIRFRAME", "PROPULSION", "BATTERY", "AVIONICS", "PAYLOAD"] as const;
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full min-h-[60vh] gap-4">
+        <AlertTriangle className="w-10 h-10 text-rose-500" />
+        <p className="text-xs font-bold uppercase tracking-widest text-neutral-500">Unable to enter configuration</p>
+        <p className="text-[10px] text-neutral-600">{loadError}</p>
+        <Button onClick={() => router.push('/dashboard')} variant="outline" className="mt-4">
+          RETURN TO HANGAR
+        </Button>
+      </div>
+    );
+  }
 
   if (!config) {
     return (
