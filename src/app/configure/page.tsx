@@ -8,7 +8,7 @@ import { ConfigurationOverview } from "@/components/digital-twin/configuration-o
 export default function ConfigurePage() {
   return (
     <ProtectedRoute>
-      <div className="relative min-h-screen w-full max-w-full flex flex-col justify-between bg-[#08090a] text-white overflow-x-hidden font-sans">
+      <div className="relative min-h-dvh w-full max-w-full flex flex-col justify-between bg-[#08090a] text-white overflow-x-hidden font-sans safe-area-pb">
         {/* Subtle Dark Ambient Background */}
         <div 
           className="fixed inset-0 z-0 pointer-events-none opacity-40"
@@ -21,8 +21,8 @@ export default function ConfigurePage() {
         <DashboardHeader />
 
         {/* Step Indicator */}
-        <div className="w-full border-b border-white/5 bg-[#08090a]/80 backdrop-blur-md relative z-10">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4 sm:gap-8 overflow-x-auto scrollbar-none text-[11px] font-bold tracking-widest text-neutral-500">
+        <div className="w-full pt-20 border-b border-white/5 bg-[#08090a]/80 backdrop-blur-md relative z-10 safe-area-padding">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4 sm:gap-8 overflow-x-auto custom-scrollbar text-[11px] font-bold tracking-widest text-neutral-500">
             <span className="shrink-0 text-white">01 AIRCRAFT</span>
             <span className="shrink-0 text-neutral-700">/</span>
             <span className="text-[#FF5500] shrink-0">02 CONFIGURE</span>

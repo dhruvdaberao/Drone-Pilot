@@ -24,8 +24,8 @@ export function FlightAnalysisModal({
   const isCrash = report.landingQuality === "CRASH";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-mono select-none overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-white border-2 border-black rounded-3xl shadow-2xl p-6 my-8 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs font-mono select-none">
+      <div className="relative w-full max-w-2xl max-h-[95dvh] overflow-y-auto custom-scrollbar bg-white border-2 border-black rounded-3xl shadow-2xl p-4 sm:p-6 my-2 sm:my-8 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-start justify-between pb-4 border-b border-neutral-200">
           <div className="flex items-center gap-3">
             <div

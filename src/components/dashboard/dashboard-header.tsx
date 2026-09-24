@@ -24,7 +24,7 @@ export function DashboardHeader() {
   const displayName = user?.displayName || user?.email?.split("@")[0] || "Pilot";
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-black/40 backdrop-blur-md px-4 sm:px-10 py-4 sm:py-5 border-b border-white/5">
+    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-black/40 backdrop-blur-md px-4 sm:px-10 py-4 sm:py-5 border-b border-white/5 safe-area-padding">
       {/* Subtle Orange Accent Line at the top */}
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#FF5500] to-transparent opacity-50" />
 

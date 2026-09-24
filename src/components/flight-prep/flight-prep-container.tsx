@@ -57,8 +57,8 @@ export function FlightPrepContainer() {
   return (
     <div className="flex-1 flex flex-col bg-[#08090a] text-white overflow-hidden pb-24">
       {/* Step Indicator */}
-      <div className="w-full border-b border-white/5 bg-[#08090a]/80 backdrop-blur-md relative z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4 sm:gap-8 overflow-x-auto scrollbar-none text-[11px] font-bold tracking-widest text-neutral-500">
+      <div className="w-full pt-20 border-b border-white/5 bg-[#08090a]/80 backdrop-blur-md relative z-10 safe-area-padding">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4 sm:gap-8 overflow-x-auto custom-scrollbar text-[11px] font-bold tracking-widest text-neutral-500">
           <span className="shrink-0 text-white">01 AIRCRAFT</span>
           <span className="shrink-0 text-neutral-700">/</span>
           <span className="shrink-0 text-white">02 CONFIGURE</span>
@@ -81,7 +81,7 @@ export function FlightPrepContainer() {
         </div>
 
         {/* Environment Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div className="grid grid-cols-1 landscape:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
           {REGION_LIST.map((region) => {
             const isSelected = selectedRegionId === region.id;
             
@@ -89,7 +89,7 @@ export function FlightPrepContainer() {
               <div
                 key={region.id}
                 onClick={() => setSelectedRegionId(region.id as RegionId)}
-                className={`group relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 min-h-[360px] md:min-h-[420px] bg-[#0c0d0e] border ${
+                className={`group relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 min-h-[250px] md:min-h-[360px] bg-[#0c0d0e] border ${
                   isSelected 
                     ? "border-[#FF5500] -translate-y-1" 
                     : "border-white/10 hover:border-white/30 hover:-translate-y-1"
@@ -97,7 +97,7 @@ export function FlightPrepContainer() {
               >
                 {/* Image Area */}
                 <div 
-                  className="h-36 w-full relative overflow-hidden bg-neutral-900"
+                  className="h-28 md:h-36 w-full relative overflow-hidden bg-neutral-900"
                 >
                   <div 
                     className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.02]"
@@ -113,15 +113,15 @@ export function FlightPrepContainer() {
                 </div>
 
                 {/* Content Area */}
-                <div className="flex-1 flex flex-col p-5 bg-[#0c0d0e] z-10">
-                  <h3 className="text-lg font-bold tracking-widest text-white uppercase mb-1 flex items-center justify-between">
+                <div className="flex-1 flex flex-col p-4 md:p-5 bg-[#0c0d0e] z-10">
+                  <h3 className="text-base md:text-lg font-bold tracking-widest text-white uppercase mb-1 flex items-center justify-between">
                     {region.name}
                   </h3>
-                  <p className="text-xs text-neutral-400 leading-relaxed line-clamp-2 mb-4">
+                  <p className="text-[11px] md:text-xs text-neutral-400 leading-relaxed line-clamp-2 mb-4">
                     {region.description}
                   </p>
                   
-                  <div className="mt-auto pt-3 border-t border-white/5 flex items-center gap-4 text-[10px] font-bold tracking-widest uppercase text-neutral-500">
+                  <div className="mt-auto pt-3 border-t border-white/5 flex items-center gap-4 text-[9px] md:text-[10px] font-bold tracking-widest uppercase text-neutral-500">
                     <span className="flex items-center gap-1.5">
                       <Wind className="w-3.5 h-3.5 text-neutral-400" />
                       {region.environment.baseWindSpeedMs} m/s
@@ -139,8 +139,8 @@ export function FlightPrepContainer() {
       </main>
 
       {/* Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-[#08090a] via-[#08090a]/95 to-transparent z-50 pointer-events-none">
-        <div className="max-w-7xl mx-auto flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pointer-events-auto">
+      <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 landscape:py-2 bg-gradient-to-t from-[#08090a] via-[#08090a]/95 to-transparent z-50 pointer-events-none safe-area-pb">
+        <div className="max-w-7xl mx-auto flex flex-col-reverse sm:flex-row items-center justify-between gap-2 sm:gap-4 pointer-events-auto px-4 safe-area-padding">
           
           <Button
             onClick={handleBack}

@@ -44,10 +44,10 @@ export function ScenarioSelectorModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md font-mono text-xs select-none">
-      <div className="w-full max-w-3xl max-h-[85vh] flex flex-col bg-neutral-950 text-white border border-neutral-800 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-md font-mono text-xs select-none">
+      <div className="w-full max-w-3xl max-h-[95dvh] flex flex-col bg-neutral-950 text-white border border-neutral-800 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-neutral-800 bg-neutral-900/60">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-neutral-800 bg-neutral-900/60">
           <div>
             <div className="flex items-center gap-2 text-emerald-400 font-bold tracking-wider text-xs uppercase mb-1">
               <Sparkles className="h-4 w-4" />
@@ -67,7 +67,7 @@ export function ScenarioSelectorModal({
         </div>
 
         {/* Scenario Grid */}
-        <div className="p-5 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3.5 flex-1 custom-scrollbar">
+        <div className="p-4 sm:p-5 overflow-y-auto grid grid-cols-1 landscape:grid-cols-2 md:grid-cols-2 gap-3.5 flex-1 custom-scrollbar">
           {TRAINING_SCENARIOS.map((sc) => {
             const isActive = sc.id === activeScenarioId;
 

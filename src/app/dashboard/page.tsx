@@ -82,19 +82,19 @@ export default function AircraftHangarPage() {
           <DashboardHeader />
         </div>
 
-        <main className="relative z-10 flex-1 w-full h-full flex flex-col md:flex-row items-center justify-between px-6 md:px-12 xl:px-24 py-8">
+        <main className="relative z-10 flex-1 w-full flex flex-col landscape:flex-row items-center justify-between px-4 sm:px-8 xl:px-24 py-4 md:py-8 min-h-0 safe-area-pb">
           
           {/* Left: Refined Navigator */}
-          <div className="w-full md:w-64 shrink-0 flex flex-col gap-8 z-10 animate-in slide-in-from-left-8 fade-in duration-700 delay-300">
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-500 pl-4 hidden md:block">Select Drone</h3>
-            <div className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-visible">
+          <div className="w-full landscape:w-48 md:w-64 shrink-0 flex flex-row landscape:flex-col gap-2 md:gap-8 z-10 animate-in slide-in-from-left-8 fade-in duration-700 delay-300 mt-16 landscape:mt-0 overflow-x-auto landscape:overflow-visible">
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-500 pl-4 hidden landscape:block">Select Drone</h3>
+            <div className="flex flex-row landscape:flex-col gap-2">
               {showcaseDrones.map((drone) => {
                 const isActive = drone.id === selectedId;
                 return (
                   <button
                     key={drone.id}
                     onClick={() => handleSelect(drone.id)}
-                    className={`group text-left py-4 md:py-5 px-5 rounded-lg md:rounded-r-full transition-all duration-300 relative overflow-hidden whitespace-nowrap md:whitespace-normal ${
+                    className={`group text-left py-3 landscape:py-4 px-4 rounded-lg landscape:rounded-r-full transition-all duration-300 relative overflow-hidden whitespace-nowrap landscape:whitespace-normal ${
                       isActive ? "bg-white/[0.04]" : "hover:bg-white/[0.02]"
                     }`}
                   >
@@ -103,8 +103,8 @@ export default function AircraftHangarPage() {
                       isActive ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0 group-hover:opacity-50 group-hover:scale-y-100"
                     }`} />
                     
-                    <span className={`block text-sm md:text-base font-bold tracking-[0.2em] uppercase transition-all duration-300 ${
-                      isActive ? "text-white md:translate-x-4" : "text-neutral-500 group-hover:text-neutral-300 md:group-hover:translate-x-2"
+                    <span className={`block text-xs md:text-base font-bold tracking-[0.2em] uppercase transition-all duration-300 ${
+                      isActive ? "text-white landscape:translate-x-4" : "text-neutral-500 group-hover:text-neutral-300 landscape:group-hover:translate-x-2"
                     }`}>
                       {drone.platformId}
                     </span>
@@ -115,7 +115,7 @@ export default function AircraftHangarPage() {
           </div>
 
           {/* Center 3D Hero */}
-          <div className="absolute inset-0 z-0 flex items-center justify-center pt-20 md:pt-0 pointer-events-none">
+          <div className="absolute inset-0 z-0 flex items-center justify-center pt-24 landscape:pt-10 pointer-events-none">
              <div className="w-full h-full max-w-[1200px] max-h-[800px] pointer-events-auto">
                {activeDrone && (
                  <Drone3DViewer 
@@ -129,20 +129,20 @@ export default function AircraftHangarPage() {
           </div>
 
           {/* Right: Premium Information Block */}
-          <div className="w-full md:w-80 xl:w-96 shrink-0 flex flex-col items-center md:items-end text-center md:text-right z-10 mt-auto md:mt-0 mb-8 md:mb-0">
+          <div className="w-full landscape:w-72 md:w-80 xl:w-96 shrink-0 flex flex-col items-center landscape:items-end text-center landscape:text-right z-10 mt-auto landscape:mt-0 mb-4 landscape:mb-0">
             
             {/* Massive Title Block */}
-            <div className="mb-8 md:mb-12">
-              <h1 className={`${spaceGrotesk.className} text-5xl md:text-6xl xl:text-7xl font-extrabold tracking-tighter text-white mb-2 leading-none`}>
+            <div className="mb-4 md:mb-12">
+              <h1 className={`${spaceGrotesk.className} text-3xl landscape:text-4xl md:text-6xl xl:text-7xl font-extrabold tracking-tighter text-white mb-1 md:mb-2 leading-none`}>
                 {activeDrone?.platformId.toUpperCase()}
               </h1>
-              <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.4em] text-[#FF5500]/90">
+              <p className="text-[9px] md:text-xs font-bold uppercase tracking-[0.4em] text-[#FF5500]/90">
                 {activeDrone?.missionCategory} PLATFORM
               </p>
             </div>
 
             {/* Horizontal Divider */}
-            <div className="w-full h-px bg-white/10 mb-8 hidden md:block" />
+            <div className="w-full h-px bg-white/10 mb-4 md:mb-8 hidden landscape:block" />
 
             {/* High-Value Primary Stats */}
             {activeDrone && (() => {
@@ -153,31 +153,31 @@ export default function AircraftHangarPage() {
               const motors = savedConfig ? savedConfig.airframe.motorCount : (activeDrone.platformId === 'quadcopter' ? 4 : activeDrone.platformId === 'hexacopter' ? 6 : 8);
 
               return (
-                <div className="flex items-center gap-8 md:gap-12 mb-6 w-full justify-center md:justify-end">
-                  <div className="flex flex-col items-center md:items-end">
-                    <span className="block text-2xl md:text-3xl font-bold text-white tracking-tight">
-                      {totalMass.toFixed(2)} <span className="text-sm text-neutral-500 font-normal ml-0.5">kg</span>
+                <div className="flex landscape:flex-col items-center gap-4 landscape:gap-4 md:gap-8 mb-4 landscape:mb-6 w-full justify-center landscape:justify-end">
+                  <div className="flex flex-col items-center landscape:items-end">
+                    <span className="block text-xl landscape:text-2xl md:text-3xl font-bold text-white tracking-tight">
+                      {totalMass.toFixed(2)} <span className="text-xs md:text-sm text-neutral-500 font-normal ml-0.5">kg</span>
                     </span>
-                    <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-500 mt-1">Total Mass</span>
+                    <span className="block text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-500 mt-0.5 md:mt-1">Total Mass</span>
                   </div>
-                  <div className="flex flex-col items-center md:items-end">
-                    <span className="block text-2xl md:text-3xl font-bold text-white tracking-tight">
-                      {motors} <span className="text-sm text-neutral-500 font-normal ml-1.5">× MOTOR</span>
+                  <div className="flex flex-col items-center landscape:items-end">
+                    <span className="block text-xl landscape:text-2xl md:text-3xl font-bold text-white tracking-tight">
+                      {motors} <span className="text-xs md:text-sm text-neutral-500 font-normal ml-1.5">× MOTOR</span>
                     </span>
-                    <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-500 mt-1">Propulsion</span>
+                    <span className="block text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-500 mt-0.5 md:mt-1">Propulsion</span>
                   </div>
-                  <div className="flex flex-col items-center md:items-end">
-                    <span className="block text-2xl md:text-3xl font-bold text-white tracking-tight">
-                      {payloadMass.toFixed(2)} <span className="text-sm text-neutral-500 font-normal ml-0.5">kg</span>
+                  <div className="flex flex-col items-center landscape:items-end">
+                    <span className="block text-xl landscape:text-2xl md:text-3xl font-bold text-white tracking-tight">
+                      {payloadMass.toFixed(2)} <span className="text-xs md:text-sm text-neutral-500 font-normal ml-0.5">kg</span>
                     </span>
-                    <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-[#FF5500] mt-1">Payload Mass</span>
+                    <span className="block text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] text-[#FF5500] mt-0.5 md:mt-1">Payload Mass</span>
                   </div>
                 </div>
               );
             })()}
 
             {/* Secondary Badges Row */}
-            <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-4 gap-y-2 text-[10px] font-bold tracking-wider text-neutral-400 mb-10 md:mb-12">
+            <div className="flex flex-wrap items-center justify-center landscape:justify-end gap-x-3 gap-y-1 text-[9px] md:text-[10px] font-bold tracking-wider text-neutral-400 mb-6 md:mb-12">
               <span>GPS HOLD</span>
               <span className="w-1 h-1 rounded-full bg-neutral-700" />
               <span>RTK GNSS</span>
@@ -189,9 +189,9 @@ export default function AircraftHangarPage() {
             <Button 
               onClick={handleConfigure}
               variant="primary"
-              size="lg"
-              className="w-full md:w-auto mt-4 px-10"
-              leftIcon={<Settings2 className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />}
+              size="md"
+              className="w-full landscape:w-auto mt-2 px-6 md:px-10 landscape:min-w-[200px]"
+              leftIcon={<Settings2 className="w-4 h-4 md:w-5 md:h-5 group-hover:rotate-90 transition-transform duration-500" />}
             >
               CONFIGURE AIRCRAFT
             </Button>

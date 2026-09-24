@@ -17,7 +17,7 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
 
       // Private Drone Digital Twin Configurations (Strict user isolation)
-      match /droneConfigurations/{configId} {
+      match /aircraftConfigurations/{configId} {
         allow read, write: if isOwner(userId);
       }
 

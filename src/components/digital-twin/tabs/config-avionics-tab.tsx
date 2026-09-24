@@ -67,7 +67,7 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 landscape:grid-cols-2 md:grid-cols-2 gap-8">
           <ParameterField
             id="fc-type"
             label="Autopilot Platform"
@@ -99,7 +99,7 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
         </div>
 
         {/* Toggles */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-1 landscape:grid-cols-2 sm:grid-cols-2 gap-3 pt-2">
           <label className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 cursor-pointer transition-colors">
             <div>
               <span className="text-xs font-semibold text-white block">
@@ -150,7 +150,7 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 landscape:grid-cols-2 sm:grid-cols-2 gap-3">
           {sensors.map((sensor) => (
             <div
               key={sensor.id}
@@ -201,7 +201,7 @@ export function ConfigAvionicsTab({ config, onChange }: ConfigAvionicsTabProps) 
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 landscape:grid-cols-2 md:grid-cols-2 gap-8">
           <ParameterField
             id="comm-type"
             label="Carrier Link Type"

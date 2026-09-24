@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { DroneCategory, DroneDigitalTwinConfiguration } from "@/types/drone-digital-twin";
+import { DroneCategory, DroneDigitalTwinConfiguration, ConfigStatus } from "@/types/drone-digital-twin";
 import { getUserConfiguration } from "@/lib/digital-twin/digital-twin-storage";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Settings2, AlertTriangle, CheckCircle2 } from "lucide-react";
@@ -47,35 +47,56 @@ export function ConfigurationOverview() {
   const activeCategory = searchParams?.get("drone") as DroneCategory | null;
   const showSavedSuccess = searchParams?.get("saved") === "true";
 
-  const [config, setConfig] = useState<DroneDigitalTwinConfiguration | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  const [status, setStatus] = useState<ConfigStatus>("UNKNOWN");
+  const [persistedConfig, setPersistedConfig] = useState<DroneDigitalTwinConfiguration | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (authLoading) return; // Wait for auth
+    if (authLoading) {
+      setStatus("LOADING");
+      return;
+    }
     
     if (!activeCategory) {
       router.replace("/dashboard");
       return;
     }
 
+    if (!user) {
+      return;
+    }
+
     const fetchConfig = async () => {
+      setStatus("LOADING");
       try {
-        setLoadError(false);
-        // If we just saved, the local cache has the freshest data. Don't block on a redundant Firebase read.
-        const savedConfig = await getUserConfiguration(user?.uid || null, activeCategory, showSavedSuccess);
-        setConfig(savedConfig);
-      } catch (err) {
+        const result = await getUserConfiguration(user.uid, activeCategory, showSavedSuccess);
+        
+        if (result.status === "SUCCESS" && result.data) {
+          setPersistedConfig(result.data);
+          setStatus("CONFIGURED");
+        } else if (result.status === "NOT_FOUND") {
+          setPersistedConfig(null);
+          setStatus("NOT_CONFIGURED");
+        } else if (result.status === "OFFLINE") {
+          setPersistedConfig(null);
+          setErrorMsg(result.error || "Client is offline");
+          setStatus("OFFLINE");
+        } else {
+          setPersistedConfig(null);
+          setErrorMsg(result.error || "Load error");
+          setStatus("LOAD_ERROR");
+        }
+      } catch (err: any) {
         console.error("Failed to load config", err);
-        setLoadError(true);
-      } finally {
-        setLoading(false);
+        setErrorMsg(err.message || "Unknown error");
+        setStatus("LOAD_ERROR");
       }
     };
+    
     fetchConfig();
   }, [user, authLoading, activeCategory, showSavedSuccess, router]);
 
-  if (loading || authLoading) {
+  if (status === "LOADING" || status === "UNKNOWN") {
     return (
       <div className="flex flex-col items-center justify-center w-full min-h-[60vh] gap-4">
         <div className="w-8 h-8 border-4 border-[#FF5500] border-t-transparent rounded-full animate-spin"></div>
@@ -84,13 +105,16 @@ export function ConfigurationOverview() {
     );
   }
 
-  if (loadError) {
+  if (status === "LOAD_ERROR" || status === "OFFLINE") {
     return (
       <div className="flex flex-col items-center justify-center w-full min-h-[60vh] gap-4">
         <AlertTriangle className="w-10 h-10 text-rose-500" />
-        <p className="text-xs font-bold uppercase tracking-widest text-neutral-500">Unable to load your aircraft configuration.</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-neutral-500">
+          {status === "OFFLINE" ? "You are currently offline." : "Unable to load your aircraft configuration."}
+        </p>
+        {errorMsg && <p className="text-[10px] text-neutral-600">{errorMsg}</p>}
         <Button 
-          onClick={() => { setLoadError(false); setLoading(true); router.refresh(); }}
+          onClick={() => { setStatus("LOADING"); router.refresh(); }}
           variant="primary"
           className="mt-4 inline-flex items-center justify-center gap-2"
         >
@@ -100,68 +124,73 @@ export function ConfigurationOverview() {
     );
   }
 
-  // If a specific drone is selected, show its detailed engineering spec sheet
-  if (activeCategory) {
-    
-    if (!config) {
-      // Configuration not found (meaning they haven't configured it yet)
-      return (
-        <div className="w-full max-w-5xl mx-auto flex flex-col mt-8 pb-32">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight uppercase">
-              {activeCategory}
-            </h1>
-            <Button 
-              onClick={() => router.push('/dashboard')}
-              variant="outline"
-              leftIcon={<ArrowLeft className="w-4 h-4" />}
-            >
-              RETURN TO HANGAR
-            </Button>
-          </div>
-          
-          <div className="w-full flex flex-col items-center justify-center py-20 px-6 border border-white/10 rounded-lg bg-[#0c0d0e] mt-4">
-             <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/5 mb-6">
-                <Settings2 className="w-8 h-8 text-neutral-500" />
-             </div>
-             <h2 className="text-xl md:text-2xl font-bold text-white mb-2 uppercase tracking-widest">NOT CONFIGURED</h2>
-             <p className="text-sm text-neutral-400 text-center max-w-md mb-8">
-               Configure your aircraft's airframe, propulsion, battery, avionics, payload and performance parameters before entering simulation.
-             </p>
-             <Button 
-                onClick={() => router.push(`/configure/edit?drone=${activeCategory}`)}
-                variant="primary"
-                leftIcon={<Settings2 className="w-4 h-4" />}
-              >
-                CONFIGURE AIRCRAFT
-             </Button>
-          </div>
-
-          {/* Bottom Action Area (Disabled Environment) */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-[#08090a] via-[#08090a]/90 to-transparent z-50 pointer-events-none">
-            <div className="max-w-5xl mx-auto flex flex-col-reverse sm:flex-row items-center justify-center sm:justify-end gap-4 pointer-events-auto">
-              <span className="text-xs font-medium text-neutral-500 mr-4">
-                Complete aircraft configuration to continue.
-              </span>
-              <Button
-                disabled
-                variant="black"
-                rightIcon={<ArrowRight className="w-4 h-4" />}
-              >
-                SELECT ENVIRONMENT
-              </Button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
+  if (status === "NOT_CONFIGURED" || !persistedConfig) {
     return (
+        <div className="w-full max-w-5xl mx-auto flex flex-col mt-8 pb-32">
+            <div className="flex items-center justify-between mb-8">
+                <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight uppercase">
+                    {activeCategory}
+                </h1>
+                <Button  
+                    onClick={() => router.push('/dashboard')}
+                    variant="outline"
+                    leftIcon={<ArrowLeft className="w-4 h-4" />}
+                >
+                    RETURN TO HANGAR
+                </Button>
+            </div>
+            
+            <div className="w-full flex flex-col items-center justify-center py-20 px-6 border border-white/10 rounded-lg bg-[#0c0d0e] mt-4">
+                  <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/5 mb-6">
+                        <Settings2 className="w-8 h-8 text-neutral-500" />
+                  </div>
+                  <h2 className="text-xl md:text-2xl font-bold text-white mb-2 uppercase tracking-widest">NOT CONFIGURED</h2>
+                  <p className="text-sm text-neutral-400 text-center max-w-md mb-8">
+                      Configure your aircraft's airframe, propulsion, battery, avionics, payload and performance parameters before entering simulation.
+                  </p>
+                  <Button  
+                        onClick={() => router.push(`/configure/edit?drone=${activeCategory}`)}
+                        variant="primary"
+                        leftIcon={<Settings2 className="w-4 h-4" />}
+                    >
+                        CONFIGURE AIRCRAFT
+                  </Button>
+            </div>
+
+            <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 landscape:py-2 bg-gradient-to-t from-[#08090a] via-[#08090a]/90 to-transparent z-50 pointer-events-none safe-area-pb">
+                <div className="max-w-5xl mx-auto flex items-center justify-center sm:justify-end gap-2 sm:gap-4 pointer-events-auto px-4 safe-area-padding">
+                    <span className="text-xs font-medium text-neutral-500 mr-4">
+                        Complete aircraft configuration to continue.
+                    </span>
+                    <Button
+                        disabled
+                        variant="black"
+                        rightIcon={<ArrowRight className="w-4 h-4" />}
+                    >
+                        SELECT ENVIRONMENT
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+  }
+
+  const config = persistedConfig;
+
+  return (
       <div className="w-full max-w-5xl mx-auto flex flex-col mt-4 pb-32 relative">
         
         {/* Success Toast Overlay */}
         {showSavedSuccess && (
+        <div className="mb-8 p-4 bg-[#FF5500]/10 border border-[#FF5500]/20 rounded flex items-start gap-3 animate-in fade-in slide-in-from-top-4">
+          <CheckCircle2 className="w-5 h-5 text-[#FF5500] shrink-0 mt-0.5" />
+          <div>
+            <h4 className="text-sm font-bold text-[#FF5500] uppercase tracking-wider">Configuration Saved Successfully</h4>
+            <p className="text-xs text-[#FF5500]/80 mt-1">Your aircraft digital twin has been verified and stored.</p>
+          </div>
+        </div>
+      )}
+      {false && (
           <div className="absolute top-0 left-1/2 -translate-x-1/2 z-50 bg-[#08090a] border border-[#FF5500]/50 shadow-md text-white px-6 py-3 rounded-[4px] font-bold text-xs uppercase tracking-widest animate-in slide-in-from-top-4 fade-in duration-500 flex items-center gap-3">
             <CheckCircle2 className="w-4 h-4 text-[#FF5500]" />
             Changes saved successfully
@@ -219,7 +248,7 @@ export function ConfigurationOverview() {
             DIGITAL TWIN CONFIGURATION
           </h2>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16">
+          <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-x-8 lg:gap-x-16">
             <div className="flex flex-col">
               <Section title="AIRFRAME">
                 <SpecRow label="Frame type" value={config.airframe.frameType.toUpperCase()} />
@@ -398,8 +427,8 @@ export function ConfigurationOverview() {
         </div>
 
         {/* Bottom Action Area */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-[#08090a] via-[#08090a]/90 to-transparent z-50 pointer-events-none">
-          <div className="max-w-5xl mx-auto flex flex-col-reverse sm:flex-row items-center justify-center sm:justify-end gap-4 pointer-events-auto">
+        <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 landscape:py-2 bg-gradient-to-t from-[#08090a] via-[#08090a]/90 to-transparent z-50 pointer-events-none safe-area-pb">
+          <div className="max-w-5xl mx-auto flex items-center justify-center sm:justify-end gap-2 sm:gap-4 pointer-events-auto px-4 safe-area-padding">
             <Button
               onClick={() => router.push(`/configure/edit?drone=${activeCategory}`)}
               variant="black"
@@ -421,6 +450,3 @@ export function ConfigurationOverview() {
       </div>
     );
   }
-
-  return null;
-}

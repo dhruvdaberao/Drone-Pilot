@@ -73,8 +73,9 @@ export function DigitalTwinConfigurator() {
 
         const existing = await getUserConfiguration(user?.uid || null, category);
         
-        if (existing) {
-          setConfig(existing);
+        if (existing.status === "SUCCESS" && existing.data) {
+          // deep clone so we don't mutate the fetched object
+          setConfig(JSON.parse(JSON.stringify(existing.data)));
         } else {
           // Create a new config from a preset based on category
           const presetId = category === "quadcopter" ? "aero-trainer-x4" : category === "hexacopter" ? "skymapper-6b" : "titan-octo-8c";
@@ -280,6 +281,7 @@ export function DigitalTwinConfigurator() {
 
       // Redirect back to overview with a success indicator
       router.push(`/configure?drone=${category}&saved=true`);
+      setIsSaving(false);
     } catch (err: any) {
       console.error("CONFIGURATION SAVE FAILED", {
         error: err,
@@ -400,7 +402,7 @@ export function DigitalTwinConfigurator() {
             </div>
           </div>
           
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-2">
+          <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-2">
             {tabs.map(tab => (
               <button
                 key={tab}

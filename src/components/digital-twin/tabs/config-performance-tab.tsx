@@ -96,7 +96,7 @@ export function ConfigPerformanceTab({ config, onChange }: ConfigPerformanceTabP
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 landscape:grid-cols-2 md:grid-cols-2 gap-8">
           <ParameterField
             id="perf-speed"
             label="Max Horizontal Velocity"

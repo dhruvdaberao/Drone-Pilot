@@ -126,7 +126,7 @@ export function ConfigPayloadTab({ config, onChange }: ConfigPayloadTabProps) {
           </label>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 landscape:grid-cols-2 md:grid-cols-2 gap-4">
           <ParameterField
             id="payload-type"
             label="Equipment Category"
@@ -193,7 +193,7 @@ export function ConfigPayloadTab({ config, onChange }: ConfigPayloadTabProps) {
           </label>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 landscape:grid-cols-2 md:grid-cols-2 gap-4">
           <ParameterField
             id="cam-type"
             label="Optical Sensor Type"

@@ -15,18 +15,18 @@ export function PasswordStrengthMeter({ password, className }: PasswordStrengthP
   const strength = evaluatePasswordStrength(password);
 
   const segmentColor = (step: number) => {
-    if (strength.score < step) return "bg-neutral-200";
-    if (strength.score === 1) return "bg-neutral-400";
-    if (strength.score === 2) return "bg-neutral-600";
-    if (strength.score === 3) return "bg-neutral-800";
+    if (strength.score < step) return "bg-white/10";
+    if (strength.score === 1) return "bg-red-500";
+    if (strength.score === 2) return "bg-orange-500";
+    if (strength.score === 3) return "bg-emerald-500";
     return "bg-[#FF5500]";
   };
 
   return (
     <div className={cn("space-y-1 pt-0.5", className)}>
-      <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center justify-between text-[10px] font-bold tracking-widest uppercase mb-1">
         <span className="text-neutral-500">Security rating</span>
-        <span className="font-semibold text-neutral-800">
+        <span className="text-white">
           {strength.label}
         </span>
       </div>

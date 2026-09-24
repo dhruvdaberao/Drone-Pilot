@@ -460,7 +460,7 @@ export function TelemetryHUD({
       {/* Left: Direction Pad + Altitude Controls              */}
       {/* Right: Compact Utility Dock + Tactical Map Circle    */}
       {/* ---------------------------------------------------- */}
-      <footer className="w-full flex items-end justify-between pointer-events-none z-20 gap-2 pb-1 sm:pb-2 px-1 sm:px-2">
+      <footer className="w-full flex items-end justify-between pointer-events-none z-20 gap-2 pb-1 sm:pb-2 px-1 sm:px-2 safe-area-padding">
         {/* ==================================================== */}
         {/* BOTTOM-LEFT: DIRECTION PAD (WASD) + ALTITUDE BUTTONS */}
         {/* ==================================================== */}

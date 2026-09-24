@@ -342,3 +342,11 @@ export interface DigitalTwinValidationResult {
   infos: ValidationIssue[];
 }
 
+export type ConfigStatus = "UNKNOWN" | "LOADING" | "NOT_CONFIGURED" | "EDITING" | "SAVING" | "CONFIGURED" | "SAVE_ERROR" | "OFFLINE" | "LOAD_ERROR";
+
+export interface ConfigurationFetchResult {
+  status: "SUCCESS" | "NOT_FOUND" | "OFFLINE" | "ERROR";
+  data: DroneDigitalTwinConfiguration | null;
+  error?: string;
+}
+

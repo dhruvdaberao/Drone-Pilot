@@ -22,7 +22,7 @@ function FlightPrepLoading() {
 export default function FlightSelectPage() {
   return (
     <ProtectedRoute>
-      <div className="relative min-h-screen flex flex-col justify-between bg-[#08090a] text-white">
+      <div className="relative min-h-dvh flex flex-col justify-between bg-[#08090a] text-white">
         <DashboardHeader />
         <Suspense fallback={<FlightPrepLoading />}>
           <FlightPrepContainer />

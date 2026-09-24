@@ -31,8 +31,8 @@ export function EnvironmentControlPanel({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs font-mono select-none">
-      <div className="relative w-full max-w-lg bg-white border-2 border-black rounded-2xl shadow-2xl p-5 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/40 backdrop-blur-xs font-mono select-none">
+      <div className="relative w-full max-w-lg max-h-[95dvh] overflow-y-auto custom-scrollbar bg-white border-2 border-black rounded-2xl shadow-2xl p-4 sm:p-5 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between pb-3 border-b border-neutral-200">
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-lg bg-orange-100 border border-[#FF5500] flex items-center justify-center text-[#FF5500]">

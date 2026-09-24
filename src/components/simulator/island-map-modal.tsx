@@ -304,10 +304,10 @@ export function IslandMapModal({
         </header>
 
         {/* Map Canvas & Sidebar */}
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
+        <div className="flex-1 flex flex-col landscape:flex-row lg:flex-row overflow-hidden min-h-0">
           
           {/* Main Topographical Map Viewport */}
-          <div className="flex-1 bg-neutral-100 relative overflow-hidden flex items-center justify-center p-2 sm:p-4 min-h-[350px] sm:min-h-[480px]">
+          <div className="flex-1 bg-neutral-100 relative overflow-hidden flex items-center justify-center p-2 sm:p-4 min-h-[300px] sm:min-h-[480px] landscape:min-h-[200px]">
             
             {/* Multi-Level Zoom Toolbar (100%, 160%, 240%) */}
             <div className="absolute top-4 left-4 z-20 flex items-center gap-1 bg-white/95 border border-neutral-200/90 rounded-xl p-1 shadow-md backdrop-blur-md">
@@ -677,7 +677,7 @@ export function IslandMapModal({
           </div>
 
           {/* Tactical Info & Waypoint Selector Sidebar — White Theme */}
-          <div className="w-full lg:w-84 bg-neutral-50/90 border-t lg:border-t-0 lg:border-l border-neutral-200 flex flex-col justify-between p-4 overflow-y-auto max-h-[40vh] lg:max-h-none text-xs">
+          <div className="w-full landscape:w-72 lg:w-84 bg-neutral-50/90 border-t landscape:border-t-0 landscape:border-l lg:border-t-0 lg:border-l border-neutral-200 flex flex-col justify-between p-4 overflow-y-auto max-h-[40vh] landscape:max-h-none lg:max-h-none text-xs custom-scrollbar">
             
             <div className="space-y-4">
               {/* Active Target Banner */}

@@ -23,7 +23,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-xs font-semibold text-neutral-800 tracking-tight"
+            className="block text-[10px] font-bold text-neutral-400 tracking-widest uppercase mb-2"
           >
             {label}
           </label>
@@ -43,13 +43,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-invalid={Boolean(error)}
             aria-describedby={error ? errorId : hint ? hintId : undefined}
             className={cn(
-              "w-full rounded-xl border bg-white px-3 py-2 text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 transition-all duration-200",
-              "border-orange-200/80 hover:border-orange-400",
-              "focus:border-[#FF5500] focus:outline-none focus:ring-2 focus:ring-[#FF5500]/20",
-              "disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:opacity-60",
+              "w-full rounded-[4px] border border-white/10 bg-black/40 px-3 py-2.5 text-xs sm:text-sm text-white placeholder-neutral-600 transition-all duration-200",
+              "hover:border-white/20",
+              "focus:border-[#FF5500] focus:outline-none focus:ring-1 focus:ring-[#FF5500]/50",
+              "disabled:cursor-not-allowed disabled:bg-white/5 disabled:opacity-60",
               leftIcon && "pl-9",
               rightElement && "pr-9",
-              error && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
+              error && "border-red-500 focus:border-red-500 focus:ring-red-500/50",
               className
             )}
             {...props}

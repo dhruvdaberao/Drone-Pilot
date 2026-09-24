@@ -86,52 +86,39 @@ export function SignupForm() {
       subheading="Register your flight credentials."
       belowCard={
         <>
-          {/* Subtle Canvas-blended Divider with Warm Tint */}
-          <div className="relative flex items-center justify-center my-1.5">
+          {/* Subtle Canvas-blended Divider */}
+          <div className="relative flex items-center justify-center my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-orange-200/80" />
+              <div className="w-full border-t border-white/10" />
             </div>
-            <div className="relative bg-[#FFF9F4] px-3.5 py-0.5 rounded-full text-[11px] font-semibold text-[#FF5500] uppercase tracking-wider border border-orange-200/90 shadow-sm">
-              or continue with
+            <div className="relative bg-[#08090a] px-4 py-1 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
+              OR CONTINUE WITH
             </div>
           </div>
 
           {/* Premium Google OAuth Bar Button with Warm Tint */}
           <Button
             type="button"
-            variant="secondary"
+            variant="outline"
             size="md"
-            className="w-full justify-center text-xs sm:text-sm font-semibold transition-all"
+            className="w-full justify-center text-xs sm:text-sm font-semibold transition-all border-white/10 text-white hover:bg-white/5"
             onClick={handleGoogleSignUp}
             isLoading={isGoogleLoading}
-            loadingText="Connecting..."
-            leftIcon={<GoogleIcon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />}
+            loadingText="CONNECTING..."
+            leftIcon={<GoogleIcon className="h-4 w-4 shrink-0" />}
           >
-            Continue with Google
+            CONTINUE WITH GOOGLE
           </Button>
 
-          {/* Existing User Account Switch directly on canvas */}
-          <div className="relative flex justify-center pt-1">
-            <div
-              className="absolute -inset-x-8 -inset-y-2 -z-10 pointer-events-none"
-              style={{
-                background:
-                  "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.75) 50%, transparent 80%)",
-                backdropFilter: "blur(6px)",
-                WebkitBackdropFilter: "blur(6px)",
-                maskImage:
-                  "radial-gradient(ellipse at center, black 35%, transparent 80%)",
-                WebkitMaskImage:
-                  "radial-gradient(ellipse at center, black 35%, transparent 80%)",
-              }}
-            />
-            <p className="text-center text-xs sm:text-sm text-neutral-700">
-              Already have an account?{" "}
+          {/* Existing User Account Switch */}
+          <div className="relative flex justify-center pt-6 pb-2">
+            <p className="text-center text-xs font-bold tracking-wider uppercase text-neutral-500">
+              ALREADY HAVE AN ACCOUNT?{" "}
               <Link
                 href="/login"
-                className="font-bold text-[#FF5500] hover:text-[#D43F00] hover:underline transition-colors ml-1 focus-visible:outline-none focus-visible:underline"
+                className="text-[#FF5500] hover:text-white transition-colors ml-1 focus-visible:outline-none focus-visible:underline"
               >
-                Sign in
+                SIGN IN
               </Link>
             </p>
           </div>

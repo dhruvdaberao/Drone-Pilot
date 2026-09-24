@@ -53,7 +53,7 @@ export function FaultInjectionPanel({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed top-14 right-4 z-40 w-96 max-w-[calc(100vw-2rem)] max-h-[85vh] flex flex-col bg-neutral-950/95 text-white border border-neutral-800 rounded-2xl shadow-2xl backdrop-blur-xl font-mono text-xs select-none animate-in fade-in slide-in-from-right-4 duration-200">
+    <div className="fixed top-14 right-4 z-40 w-96 max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-4rem)] flex flex-col bg-neutral-950/95 text-white border border-neutral-800 rounded-2xl shadow-2xl backdrop-blur-xl font-mono text-xs select-none animate-in fade-in slide-in-from-right-4 duration-200">
       {/* Header */}
       <div className="flex items-center justify-between p-3.5 border-b border-neutral-800 shrink-0 bg-neutral-900/60 rounded-t-2xl">
         <div className="flex items-center gap-2 text-rose-400">

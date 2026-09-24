@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Rajdhani, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import { AuthProvider } from "@/context/auth-context";
+import { OrientationGate } from "@/components/ui/orientation-gate";
 
 const rajdhani = Rajdhani({
   subsets: ["latin"],
@@ -31,6 +32,7 @@ export const metadata: Metadata = {
     icon: "/drone-icon.png",
     apple: "/drone-icon.png",
   },
+  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
@@ -49,9 +51,14 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`${spaceGrotesk.variable} ${rajdhani.variable} ${jetbrainsMono.variable} font-sans min-h-screen bg-white text-neutral-900 antialiased selection:bg-[#FF5500] selection:text-white`}
+        className={`${spaceGrotesk.variable} ${rajdhani.variable} ${jetbrainsMono.variable} font-sans min-h-dvh bg-white text-neutral-900 antialiased selection:bg-[#FF5500] selection:text-white flex flex-col`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <OrientationGate />
+          <div className="flex-1 flex flex-col min-h-0 min-w-0">
+            {children}
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );

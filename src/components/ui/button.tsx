@@ -34,7 +34,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       "group relative inline-flex items-center justify-center font-semibold select-none transition-all duration-200 ease-out rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#08090a] disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] active:translate-y-0";
 
     const sizeStyles = {
-      sm: "h-8 px-3 text-[10px] gap-2",
+      sm: "h-11 sm:h-9 px-4 text-xs gap-2", // 44px min-height for touch on mobile, slightly smaller on desktop
       md: "h-12 px-6 text-sm gap-2",
       lg: "h-14 px-8 text-sm gap-2",
     };

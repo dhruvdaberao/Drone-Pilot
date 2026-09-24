@@ -53,7 +53,7 @@ export function ConfigIdentityTab({ config, onChange }: ConfigIdentityTabProps) 
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 landscape:grid-cols-2 md:grid-cols-2 gap-4">
         <ParameterField
           id="drone-name"
           label="Aircraft Designation / Name"
