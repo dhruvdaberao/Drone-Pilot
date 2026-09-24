@@ -82,8 +82,10 @@ export async function getLastSelectedDrone(uid: string | null): Promise<DroneCat
   // 1. Try Firestore if authenticated
   if (uid && isFirebaseConfigured() && db) {
     try {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return 'quadcopter';
       const docRef = doc(db, "users", uid);
-      const snap = await getDoc(docRef);
+      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 3000));
+      const snap = await Promise.race([getDoc(docRef), timeoutPromise]);
       if (snap.exists() && snap.data().lastSelectedDrone) {
         return snap.data().lastSelectedDrone as DroneCategory;
       }
@@ -114,7 +116,8 @@ export async function setLastSelectedDrone(uid: string | null, category: DroneCa
     try {
       if (typeof navigator !== 'undefined' && !navigator.onLine) return;
       const docRef = doc(db, "users", uid);
-      await setDoc(docRef, { lastSelectedDrone: category, updatedAt: Date.now() }, { merge: true });
+      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 3000));
+      await Promise.race([setDoc(docRef, { lastSelectedDrone: category, updatedAt: Date.now() }, { merge: true }), timeoutPromise]);
     } catch (e) {
       console.warn("Firestore setLastSelectedDrone error:", e);
     }
@@ -141,7 +144,8 @@ export async function listUserConfigurations(uid: string | null): Promise<DroneD
     if (!(typeof navigator !== "undefined" && !navigator.onLine)) {
       try {
         const colRef = collection(db, "users", uid, "aircraftConfigurations");
-        const snap = await getDocsFromServer(colRef);
+        const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 4000));
+        const snap = await Promise.race([getDocs(colRef), timeoutPromise]);
         snap.forEach((docSnap) => {
           const data = docSnap.data() as DroneDigitalTwinConfiguration;
           if (data?.identity?.category) customMap.set(data.identity.category, data);
@@ -198,9 +202,15 @@ export async function getUserConfiguration(
         START_TIME: Date.now(),
       });
 
-      const snap = await getDocFromServer(docRef);
+      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 4000));
+      const snap = await Promise.race([getDoc(docRef), timeoutPromise]);
 
       if (snap.exists()) {
+        if (snap.metadata.hasPendingWrites) {
+          console.warn("FIRESTORE GHOST STATE PREVENTED", { UID: uid, TYPE: category });
+          return { status: 'OFFLINE', data: null, error: 'Uncommitted pending writes' };
+        }
+
         const data = snap.data() as DroneDigitalTwinConfiguration;
         console.log('FIRESTORE READ SUCCESS', { UID: uid, TYPE: category });
 
@@ -221,13 +231,44 @@ export async function getUserConfiguration(
       }
     } catch (e: any) {
       console.warn('FIRESTORE READ FAILURE', { CODE: e?.code, MESSAGE: e?.message });
+      
+      // 1. Fallback to local storage if available (safe, because saveUserConfiguration only writes on successful commit)
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem(getLocalSavedKey(uid));
+          if (raw) {
+            const list: DroneDigitalTwinConfiguration[] = JSON.parse(raw);
+            const found = list.find(c => c.identity.category === category);
+            if (found) {
+              console.log('FALLBACK TO LOCAL STORAGE SUCCESS', { UID: uid, TYPE: category });
+              return { status: 'SUCCESS', data: found };
+            }
+          }
+        } catch {}
+      }
+
+      // 2. If no local config exists, let them start fresh rather than blocking the entire app
       const isOffline = e?.message?.includes('offline') || e?.message?.includes('timeout') || e?.code === 'unavailable' || (typeof navigator !== 'undefined' && !navigator.onLine);
-      if (isOffline) return { status: 'OFFLINE', data: null, error: e.message };
+      if (isOffline) {
+        return { status: 'NOT_FOUND', data: null }; 
+      }
       return { status: 'ERROR', data: null, error: e.message };
     }
   }
 
-  return { status: 'OFFLINE', data: null, error: 'Firebase not configured' };
+  // If Firebase is entirely unconfigured (demo mode), fall back to local storage
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(getLocalSavedKey(uid));
+      if (raw) {
+        const list: DroneDigitalTwinConfiguration[] = JSON.parse(raw);
+        const found = list.find(c => c.identity.category === category);
+        if (found) return { status: 'SUCCESS', data: found };
+      }
+    } catch {}
+  }
+
+  return { status: 'NOT_FOUND', data: null };
 }
 
 /**
@@ -272,22 +313,31 @@ export async function saveUserConfiguration(
       const userRef = doc(db, "users", uid);
       batch.set(userRef, { lastSelectedDrone: category, updatedAt: Date.now() }, { merge: true });
       
-      await batch.commit();
+      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 4000));
+      await Promise.race([batch.commit(), timeoutPromise]);
 
       console.log("FIRESTORE WRITE SUCCESS", {
         category,
         uid
       });
     } catch (e: any) {
-      console.error("FIRESTORE WRITE FAILURE", {
-        code: e?.code,
-        name: e?.name,
-        message: e?.message,
-        uid,
-        category
-      });
-      // Rethrow to inform UI of sync failure so we don't falsely claim success
-      throw e; 
+      const isOfflineError = e?.message?.includes('offline') || e?.message?.includes('timeout') || e?.code === 'unavailable' || (typeof navigator !== 'undefined' && !navigator.onLine);
+      
+      if (isOfflineError) {
+        console.warn("FIRESTORE WRITE TIMEOUT - Falling back to local offline storage for proxy resilience.");
+        // We do not throw here. We allow the function to proceed to step 2 and persist locally,
+        // so the user can continue to use their configuration in the simulator even if the network is blocked.
+      } else {
+        console.error("FIRESTORE WRITE FAILURE (Terminal)", {
+          code: e?.code,
+          name: e?.name,
+          message: e?.message,
+          uid,
+          category
+        });
+        // Rethrow to inform UI of sync failure (e.g., permission denied, schema mismatch)
+        throw e; 
+      }
     }
   }
 

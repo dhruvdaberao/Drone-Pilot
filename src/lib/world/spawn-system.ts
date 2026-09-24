@@ -8,8 +8,8 @@ import { HELIPADS } from "./helipad-definitions";
 import { REGIONS } from "./region-definitions";
 
 export class SpawnSystem {
-  // Height offset from helipad surface to drone center of mass (skids rest on pad)
-  public static readonly DRONE_SKID_VERTICAL_OFFSET = 0.245;
+  // Height offset from helipad surface to drone center of mass (spawns in a stable hover above pad)
+  public static readonly DRONE_SKID_VERTICAL_OFFSET = 1.5;
 
   /**
    * Resolves a fully qualified spawn configuration.

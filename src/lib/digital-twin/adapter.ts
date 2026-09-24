@@ -37,7 +37,7 @@ export function digitalTwinToDroneDefinition(
     id: dt.identity.id,
     name: dt.identity.name,
     type: dt.identity.category,
-    mass: dt.massProperties.dryMassKg,
+    mass: dt.massProperties.dryMassKg + dt.massProperties.batteryMassKg,
     motorCount,
     motors,
     maximumThrust: dt.performance.totalThrustNewtons,

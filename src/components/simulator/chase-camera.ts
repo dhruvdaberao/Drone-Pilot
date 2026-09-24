@@ -71,8 +71,8 @@ export class ChaseCameraController {
 
     if (this.mode === "chase") {
       // Third-Person Spherical Orbit Follow Cam
-      const followDistance = 4.8;
-      const effectivePitch = this.orbitPitch + 0.36;
+      const followDistance = 6.8;
+      const effectivePitch = this.orbitPitch + 0.45;
 
       // Spherical coordinate offset
       const clampedPitch = Math.max(-0.6, Math.min(1.35, effectivePitch));
@@ -82,10 +82,10 @@ export class ChaseCameraController {
       const targetX = dronePos.x + Math.sin(droneYaw) * horizDist;
       const targetZ = dronePos.z + Math.cos(droneYaw) * horizDist;
       // Ensure camera stays safely above terrain (at least 1.0m)
-      const targetY = Math.max(1.0, dronePos.y + vertDist + 0.6);
+      const targetY = Math.max(1.0, dronePos.y + vertDist + 0.8);
 
       const targetPos = new THREE.Vector3(targetX, targetY, targetZ);
-      const targetLookAt = dronePos.clone().add(new THREE.Vector3(0, 0.35, 0));
+      const targetLookAt = dronePos.clone().add(new THREE.Vector3(0, 0.5, 0));
 
       // Smooth lerp
       const lerpSpeed = Math.min(1.0, dt * 10.0);

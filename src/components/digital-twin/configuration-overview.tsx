@@ -50,6 +50,18 @@ export function ConfigurationOverview() {
   const [status, setStatus] = useState<ConfigStatus>("UNKNOWN");
   const [persistedConfig, setPersistedConfig] = useState<DroneDigitalTwinConfiguration | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(showSavedSuccess);
+
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {
+        setShowToast(false);
+        // Also remove ?saved=true from the URL cleanly
+        router.replace(`/configure?drone=${activeCategory}`, { scroll: false });
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [showToast, router, activeCategory]);
 
   useEffect(() => {
     if (authLoading) {
@@ -181,19 +193,13 @@ export function ConfigurationOverview() {
       <div className="w-full max-w-5xl mx-auto flex flex-col mt-4 pb-32 relative">
         
         {/* Success Toast Overlay */}
-        {showSavedSuccess && (
-        <div className="mb-8 p-4 bg-[#FF5500]/10 border border-[#FF5500]/20 rounded flex items-start gap-3 animate-in fade-in slide-in-from-top-4">
-          <CheckCircle2 className="w-5 h-5 text-[#FF5500] shrink-0 mt-0.5" />
-          <div>
-            <h4 className="text-sm font-bold text-[#FF5500] uppercase tracking-wider">Configuration Saved Successfully</h4>
-            <p className="text-xs text-[#FF5500]/80 mt-1">Your aircraft digital twin has been verified and stored.</p>
-          </div>
-        </div>
-      )}
-      {false && (
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-50 bg-[#08090a] border border-[#FF5500]/50 shadow-md text-white px-6 py-3 rounded-[4px] font-bold text-xs uppercase tracking-widest animate-in slide-in-from-top-4 fade-in duration-500 flex items-center gap-3">
-            <CheckCircle2 className="w-4 h-4 text-[#FF5500]" />
-            Changes saved successfully
+        {showToast && (
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-black/90 backdrop-blur-md border border-[#FF5500]/50 shadow-2xl px-6 py-4 rounded flex items-center gap-4 animate-in slide-in-from-top-4 fade-in duration-500">
+            <CheckCircle2 className="w-5 h-5 text-[#FF5500]" />
+            <div>
+              <h4 className="text-sm font-bold text-[#FF5500] uppercase tracking-wider">Configuration Saved Successfully</h4>
+              <p className="text-[11px] text-neutral-400 mt-0.5">Your aircraft digital twin has been verified and stored.</p>
+            </div>
           </div>
         )}
 

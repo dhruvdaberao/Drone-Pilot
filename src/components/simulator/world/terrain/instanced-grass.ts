@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { evaluateIslandElevation } from "@/lib/world/terrain-math";
 import { isWaterAt } from "@/lib/world/hydrology-mask";
 import { getDistanceToRoad, getBiomeAt } from "@/lib/world/biome-system";
+import { HELIPAD_LIST } from "@/lib/world/helipad-definitions";
 import { EnvironmentManager } from "../environment-manager";
 
 export class InstancedGrass {
@@ -277,10 +278,16 @@ export class InstancedGrass {
           continue;
         }
 
-        // Avoid runway and helipads
+        // Avoid runway and all helipads
         const distToRunway = Math.hypot(x - 20, z - (-40));
-        const distToCenterPad = Math.hypot(x, z);
-        if (distToRunway < 26 || distToCenterPad < 12) {
+        let nearHelipad = false;
+        for (const hp of HELIPAD_LIST) {
+          if (Math.hypot(x - hp.position.x, z - hp.position.z) < 14) {
+            nearHelipad = true;
+            break;
+          }
+        }
+        if (distToRunway < 26 || nearHelipad) {
           dummy.position.set(0, -999, 0);
           dummy.scale.set(0, 0, 0);
           dummy.updateMatrix();

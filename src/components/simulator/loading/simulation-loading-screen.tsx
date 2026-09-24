@@ -38,40 +38,40 @@ export function SimulationLoadingScreen({ onReady }: SimulationLoadingScreenProp
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#FAF7F2] font-mono select-none">
-      <div className="w-full max-w-md p-6 bg-white border-2 border-black rounded-3xl shadow-2xl space-y-4 text-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#08090a] font-mono select-none">
+      <div className="w-full max-w-md p-8 bg-[#0c0d0e] border border-white/10 rounded-2xl shadow-2xl space-y-6 text-center">
         <div className="flex items-center justify-center">
-          <div className="h-14 w-14 rounded-2xl bg-orange-100 border-2 border-[#FF5500] flex items-center justify-center text-[#FF5500]">
-            <Loader2 className="h-7 w-7 animate-spin" />
+          <div className="h-16 w-16 rounded-full bg-[#FF5500]/5 border border-[#FF5500]/20 flex items-center justify-center text-[#FF5500]">
+            <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         </div>
 
         <div>
-          <h2 className="font-heading text-lg font-black text-neutral-950 uppercase tracking-wide">
+          <h2 className="font-sans text-xl font-black text-white uppercase tracking-widest">
             DRONE PILOT SIMULATOR
           </h2>
-          <p className="text-xs text-neutral-500 mt-0.5">Aeronautical Environment Initialization</p>
+          <p className="text-[10px] text-[#FF5500] font-bold tracking-[0.2em] mt-2 uppercase">Aeronautical Environment Initialization</p>
         </div>
 
-        <div className="space-y-1.5 text-left bg-neutral-50 p-3 rounded-2xl border border-neutral-200">
+        <div className="space-y-3 text-left bg-black/50 p-5 rounded-xl border border-white/5">
           {PHASES.map((phase, idx) => {
             const isDone = idx < currentPhase;
             const isCurrent = idx === currentPhase;
             return (
               <div
                 key={idx}
-                className={"flex items-center gap-2 text-[11px] " + (
+                className={"flex items-center gap-3 text-[10px] md:text-[11px] font-bold tracking-wider uppercase " + (
                   isDone
-                    ? "text-emerald-700 font-semibold"
+                    ? "text-emerald-500"
                     : isCurrent
-                    ? "text-[#FF5500] font-bold animate-pulse"
-                    : "text-neutral-400"
+                    ? "text-white"
+                    : "text-neutral-700"
                 )}
               >
                 {isDone ? (
-                  <Check className="h-3 w-3 text-emerald-600 shrink-0" />
+                  <Check className="h-4 w-4 text-emerald-500 shrink-0" />
                 ) : (
-                  <span className="h-1.5 w-1.5 rounded-full bg-neutral-300 shrink-0 ml-0.5" />
+                  <span className={`h-1.5 w-1.5 rounded-full shrink-0 ml-1.5 ${isCurrent ? "bg-[#FF5500]" : "bg-neutral-800"}`} />
                 )}
                 <span className="truncate">{phase}</span>
               </div>
