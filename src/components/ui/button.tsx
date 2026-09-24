@@ -66,14 +66,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {isLoading ? (
           <>
-            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-current block" />
-            <span className="leading-none">{loadingText || "PROCESSING..."}</span>
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-current" />
+            <span className="leading-none flex items-center justify-center">{loadingText || "PROCESSING..."}</span>
           </>
         ) : (
           <>
-            {leftIcon && <span className="inline-flex shrink-0 block">{leftIcon}</span>}
-            <span className="leading-none">{children}</span>
-            {rightIcon && <span className="inline-flex shrink-0 block">{rightIcon}</span>}
+            {leftIcon && <span className="shrink-0 flex items-center justify-center">{leftIcon}</span>}
+            <span className="leading-none flex items-center justify-center">{children}</span>
+            {rightIcon && <span className="shrink-0 flex items-center justify-center">{rightIcon}</span>}
           </>
         )}
       </button>

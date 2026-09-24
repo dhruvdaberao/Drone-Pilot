@@ -970,7 +970,7 @@ export function FlightSimulator({ selectedDrone, onExit }: FlightSimulatorProps)
       scene.remove(remoteDroneMgr.group);
       renderer.dispose();
     };
-  }, [selectedDrone, isDebugOpen, callsign]);
+  }, [selectedDrone, callsign]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-sky-200 select-none">

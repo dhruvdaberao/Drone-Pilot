@@ -95,7 +95,7 @@ export function ConfigBatteryTab({ config, onChange }: ConfigBatteryTabProps) {
               onChange={(v) => updateBattery("chemistry", v)}
             />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <ParameterField
                 id="bat-cells"
                 label="Series Cells (S)"
@@ -123,7 +123,7 @@ export function ConfigBatteryTab({ config, onChange }: ConfigBatteryTabProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <ParameterField
                 id="bat-discharge"
                 label="Max Continuous C"
@@ -166,7 +166,7 @@ export function ConfigBatteryTab({ config, onChange }: ConfigBatteryTabProps) {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div className="p-3 rounded-xl bg-neutral-800/80 border border-neutral-700">
               <span className="text-[10px] font-mono uppercase text-neutral-400">State of Charge (SOC)</span>
               <p className="text-xl font-mono font-bold text-emerald-400 mt-0.5">100%</p>

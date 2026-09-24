@@ -139,7 +139,7 @@ export function ConfigAirframeTab({ config, onChange }: ConfigAirframeTabProps) 
         <span className="text-[10px] font-mono font-bold uppercase text-neutral-400 tracking-wider">
           FUSELAGE BOUNDING DIMENSIONS (L × W × H)
         </span>
-        <div className="grid grid-cols-3 gap-3 mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
           <ParameterField
             id="dim-l"
             label="Length"

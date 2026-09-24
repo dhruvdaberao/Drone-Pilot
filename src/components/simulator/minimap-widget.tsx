@@ -133,7 +133,7 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
       title="Tactical Radar GPS — Click to open Full Island Map (M)"
     >
       {/* Outer Tactical Bezel Frame */}
-      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-white/95 border-2 border-neutral-300 shadow-[0_8px_30px_rgba(0,0,0,0.15),0_0_15px_rgba(255,85,0,0.12)] relative overflow-hidden flex items-center justify-center backdrop-blur-md">
+      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-white/95 border-2 border-neutral-300 shadow-lg relative overflow-hidden flex items-center justify-center backdrop-blur-md">
         
         {/* Dynamic SVG Radar Canvas */}
         <svg viewBox="0 0 200 200" className="w-full h-full">

@@ -325,12 +325,7 @@ export async function saveUserConfiguration(
       const userRef = doc(db, "users", uid);
       batch.set(userRef, { lastSelectedDrone: category, updatedAt: Date.now() }, { merge: true });
       
-      // Allow up to 20 seconds for cold start connection, but usually resolves immediately
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error("Firestore timeout: Could not connect to Firebase after 20 seconds.")), 20000)
-      );
-      
-      await Promise.race([batch.commit(), timeoutPromise]);
+      await batch.commit();
 
       console.log("FIRESTORE WRITE SUCCESS", {
         category,

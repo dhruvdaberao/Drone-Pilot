@@ -105,7 +105,7 @@ function StepVisualIndicator({ stepId }: { stepId: string }) {
   switch (stepId) {
     case "takeoff":
       return (
-        <div className="relative flex flex-col items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-orange-500/20 border border-orange-500/40 text-orange-400 shrink-0 shadow-[0_0_15px_rgba(255,85,0,0.25)]">
+        <div className="relative flex flex-col items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-orange-500/20 border border-orange-500/40 text-orange-400 shrink-0 shadow-sm">
           <ArrowUp className="h-6 w-6 animate-bounce" />
           <div className="absolute -bottom-0.5 w-5 h-0.5 bg-orange-400 rounded-full animate-pulse" />
         </div>

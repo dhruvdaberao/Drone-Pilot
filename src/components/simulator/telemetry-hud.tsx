@@ -506,8 +506,8 @@ export function TelemetryHUD({
 
         {/* Auto-Move Active Indicator Badge */}
         {autoMoveLocked && (
-          <div className="fixed bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 border-2 border-[#FF5500] shadow-[0_4px_20px_rgba(255,85,0,0.25)] backdrop-blur-md text-xs font-mono font-bold text-neutral-900 animate-pulse select-none pointer-events-auto">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#FF5500] shadow-[0_0_8px_#FF5500]" />
+          <div className="fixed bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 border-2 border-[#FF5500] shadow-md backdrop-blur-md text-xs font-mono font-bold text-neutral-900 animate-pulse select-none pointer-events-auto">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#FF5500]" />
             <span>AUTO-MOVE: {autoMoveLocked} [LOCKED]</span>
             {onCancelAutoMove && (
               <button

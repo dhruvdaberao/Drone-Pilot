@@ -30,10 +30,15 @@ export function Drone3DViewer({
   // Track internal state for smooth switching between platforms
   const currentTypeRef = useRef(type);
   const droneGroupRef = useRef<THREE.Group | null>(null);
+  const targetTypeRef = useRef(type);
 
   useEffect(() => {
     isSelectedRef.current = isSelected;
   }, [isSelected]);
+
+  useEffect(() => {
+    targetTypeRef.current = type;
+  }, [type]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -468,7 +473,7 @@ export function Drone3DViewer({
     const clock = new THREE.Clock();
     
     // Initial mount
-    currentDroneGroup = buildDrone(type);
+    currentDroneGroup = buildDrone(targetTypeRef.current);
     masterGroup.add(currentDroneGroup);
     currentDroneGroup.rotation.y = -Math.PI / 6; // Initial angle
 
@@ -481,12 +486,12 @@ export function Drone3DViewer({
       const elapsed = clock.getElapsedTime();
 
       // Handle Smooth Switching
-      if (currentTypeRef.current !== type) {
-        currentTypeRef.current = type;
+      if (currentTypeRef.current !== targetTypeRef.current) {
+        currentTypeRef.current = targetTypeRef.current;
         transitionProgress = 0.0;
         
         oldDroneGroup = currentDroneGroup;
-        currentDroneGroup = buildDrone(type);
+        currentDroneGroup = buildDrone(targetTypeRef.current);
         currentDroneGroup.position.x = 5; // Start offset to the right
         masterGroup.add(currentDroneGroup);
       }
@@ -557,7 +562,7 @@ export function Drone3DViewer({
       }
       renderer.dispose();
     };
-  }, [type, autoRotate, interactive]);
+  }, [autoRotate, interactive]);
 
   return (
     <div

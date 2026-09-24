@@ -90,11 +90,11 @@ export function ConfigurationOverview() {
         <AlertTriangle className="w-10 h-10 text-rose-500" />
         <p className="text-xs font-bold uppercase tracking-widest text-neutral-500">Unable to load your aircraft configuration.</p>
         <Button 
-          onClick={() => window.location.reload()}
+          onClick={() => { setLoadError(false); setLoading(true); router.refresh(); }}
           variant="primary"
-          className="mt-4"
+          className="mt-4 inline-flex items-center justify-center gap-2"
         >
-          RETRY
+          <span>RETRY</span>
         </Button>
       </div>
     );
@@ -162,7 +162,7 @@ export function ConfigurationOverview() {
         
         {/* Success Toast Overlay */}
         {showSavedSuccess && (
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-50 bg-[#08090a] border border-[#FF5500]/50 shadow-[0_4px_20px_rgba(255,85,0,0.15)] text-white px-6 py-3 rounded-[4px] font-bold text-xs uppercase tracking-widest animate-in slide-in-from-top-4 fade-in duration-500 flex items-center gap-3">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-50 bg-[#08090a] border border-[#FF5500]/50 shadow-md text-white px-6 py-3 rounded-[4px] font-bold text-xs uppercase tracking-widest animate-in slide-in-from-top-4 fade-in duration-500 flex items-center gap-3">
             <CheckCircle2 className="w-4 h-4 text-[#FF5500]" />
             Changes saved successfully
           </div>
@@ -194,7 +194,7 @@ export function ConfigurationOverview() {
         </div>
 
         {/* High-Level Summary Strip */}
-        <div className="flex flex-wrap items-center gap-8 md:gap-16 mb-16 pb-8 border-b border-white/10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-16 pb-8 border-b border-white/10">
           <div className="flex flex-col">
             <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-500 uppercase mb-2">Total Mass</span>
             <span className="text-2xl font-bold text-white tracking-tight">{config.massProperties.totalMassKg.toFixed(2)} kg</span>
@@ -210,10 +210,6 @@ export function ConfigurationOverview() {
           <div className="flex flex-col">
             <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-500 uppercase mb-2">Active Payload</span>
             <span className="text-2xl font-bold text-white tracking-tight">{config.payload.enabled ? config.payload.massKg.toFixed(2) : "0.00"} kg</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-500 uppercase mb-2">Thrust / Weight</span>
-            <span className="text-2xl font-bold text-white tracking-tight">{config.performance.thrustToWeightRatio.toFixed(2)}:1</span>
           </div>
         </div>
 

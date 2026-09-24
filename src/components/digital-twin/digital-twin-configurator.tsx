@@ -10,7 +10,6 @@ import {
 import { useAuth } from "@/context/auth-context";
 import { validateDroneDigitalTwin } from "@/lib/digital-twin/digital-twin-validator";
 import { DRONES, getDroneById } from "@/lib/drones";
-import { Drone3DViewer } from "@/components/dashboard/drone-3d-viewer";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight, CheckCircle2, AlertTriangle, ArrowRight, ArrowLeft, Save, Info, Settings, Settings2, Download } from "lucide-react";
 
@@ -312,7 +311,7 @@ export function DigitalTwinConfigurator() {
       
       {/* Save Notification Overlay */}
       {saveFeedback && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-[#FF5500] text-white px-6 py-3 rounded border border-[#FF5500]/50 shadow-2xl shadow-[#FF5500]/20 font-bold text-xs uppercase tracking-widest animate-in slide-in-from-top-8 fade-in flex items-center gap-2">
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-[#FF5500] text-white px-6 py-3 rounded border border-[#FF5500]/50 shadow-2xl font-bold text-xs uppercase tracking-widest animate-in slide-in-from-top-8 fade-in flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4" />
           {saveFeedback}
         </div>

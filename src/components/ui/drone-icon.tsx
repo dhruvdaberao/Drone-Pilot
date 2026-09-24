@@ -25,9 +25,9 @@ export function DroneIcon({
       className={cn(
         "object-contain select-none shrink-0 transition-all",
         isWhite ? "brightness-0 invert" : "",
-        orange ? "brightness-0 invert drop-shadow-[0_0_8px_rgba(255,85,0,0.9)]" : "",
         className
       )}
+      style={orange ? { filter: 'invert(42%) sepia(93%) saturate(1352%) hue-rotate(360deg) brightness(119%) contrast(119%)' } : undefined}
       {...props}
     />
   );

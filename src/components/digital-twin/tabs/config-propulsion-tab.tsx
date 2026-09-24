@@ -197,7 +197,7 @@ export function ConfigPropulsionTab({ config, onChange }: ConfigPropulsionTabPro
                 onClick={() => setSelectedMotorIdx(idx)}
                 className={`px-2.5 py-1 text-xs font-mono font-bold rounded-lg border transition-all ${
                   selectedMotorIdx === idx
-                    ? "bg-black/50 text-white border-white/10 shadow-[0_0_10px_rgba(255,85,0,0.2)] shadow-xs"
+                    ? "bg-black/50 text-white border-[#FF5500] shadow-sm"
                     : "bg-transparent text-neutral-400 border-white/10 hover:bg-transparent/5"
                 }`}
               >

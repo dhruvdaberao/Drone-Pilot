@@ -18,6 +18,14 @@ export default function HomePage() {
     }
   }, [user, loading, router]);
 
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#08090a]">
+        <div className="w-8 h-8 border-4 border-[#FF5500] border-t-transparent rounded-full animate-spin"></div>
+      </main>
+    );
+  }
+
   return (
     <main className="relative flex min-h-screen flex-col justify-between bg-white text-neutral-900 overflow-x-hidden">
       {/* Pristine Drone Flight Illustration Background with Aerospace Orange Blueprint Tint */}
