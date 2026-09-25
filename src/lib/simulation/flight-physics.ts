@@ -64,7 +64,7 @@ export class FlightPhysicsEngine {
   public isAutoLanding = false;
   public payloadMass = 0.0; // kg
 
-  // Phase 5: Individual Motor Health & Overrides (0.0 to 1.0)
+  // Runtime experiment controls: health/failure and command multipliers (0.0 to 1.0)
   public motorHealth: number[] = [1, 1, 1, 1, 1, 1, 1, 1];
   public motorOverrides: Array<number | null> = [null, null, null, null, null, null, null, null];
 
@@ -315,8 +315,10 @@ export class FlightPhysicsEngine {
     for (let i = 0; i < this.motorOutputs.length; i++) {
       const h = this.motorHealth[i] !== undefined ? this.motorHealth[i] : 1.0;
       const override = this.motorOverrides[i] !== undefined ? this.motorOverrides[i] : null;
-      const nominalOutput = override !== null ? override : this.motorOutputs[i];
-      this.motorOutputs[i] = nominalOutput * Math.max(0, h);
+      const commandMultiplier = override !== null ? override : 1.0;
+      // Overrides are multipliers, preserving the mixer/controller command while
+      // allowing a learner to reduce one motor within physical output limits.
+      this.motorOutputs[i] = this.motorOutputs[i] * commandMultiplier * Math.max(0, h);
     }
 
     // Phase 5: Calculate physical asymmetric torque from unequal motor thrusts
