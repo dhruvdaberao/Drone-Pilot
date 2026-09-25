@@ -1043,10 +1043,23 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       );
 
       // Render 3D Frame
-      scene.traverse((obj) => {
+      scene.traverse((obj: any) => {
         if (obj.children && obj.children.includes(undefined as any)) {
-          console.error("CORRUPTED THREE.JS OBJECT FOUND:", obj, obj.name, obj.type);
-          obj.children = obj.children.filter(c => c !== undefined);
+          console.error("CORRUPTED THREE.JS OBJECT FOUND (undefined child):", obj, obj.name, obj.type);
+          obj.children = obj.children.filter((c: any) => c !== undefined);
+        }
+        if (obj.isMesh || obj.isPoints || obj.isLine || obj.isSprite) {
+          if (!obj.material) {
+            console.error("OBJECT MISSING MATERIAL:", obj, obj.name);
+            obj.material = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+          } else if (Array.isArray(obj.material)) {
+            for (let i = 0; i < obj.material.length; i++) {
+              if (!obj.material[i]) {
+                console.error("OBJECT MATERIAL ARRAY MISSING ITEM AT INDEX", i, obj, obj.name);
+                obj.material[i] = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+              }
+            }
+          }
         }
       });
       renderer.render(scene, chaseCam.camera);
