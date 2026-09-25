@@ -146,7 +146,7 @@ export default function AircraftHangarPage() {
               <div className="w-full h-px bg-white/10 mb-8 hidden lg:block" />
               
               {activeDrone && (() => {
-                const savedConfig = savedConfigs.find(c => c.identity.id === activeDrone.id);
+                const savedConfig = savedConfigs.find(c => c.identity.category === activeDrone.platformId);
                 const totalMass = savedConfig ? savedConfig.massProperties.totalMassKg : activeDrone.baseMassKg;
                 const payloadMass = savedConfig ? savedConfig.payload.massKg : 0;
                 const battery = savedConfig ? savedConfig.battery.cellCount + "S" : activeDrone.batteryCells + "S";

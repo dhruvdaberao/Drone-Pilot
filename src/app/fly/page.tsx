@@ -46,7 +46,7 @@ export default function FlyPage() {
         
         // Fetch specific config
         const uid = user ? user.uid : null;
-        const fetchResult = await getUserConfiguration(uid, activeDrone.id as DroneCategory);
+        const fetchResult = await getUserConfiguration(uid, activeDrone.platformId as DroneCategory);
         if (!isMounted) return;
         
         if (fetchResult.status === "SUCCESS" && fetchResult.data) {
