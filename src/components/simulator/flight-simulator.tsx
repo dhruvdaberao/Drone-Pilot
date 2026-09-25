@@ -470,11 +470,72 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     }
   }, []);
 
-  // Environment Control Handlers
   const handleUpdateEnvironment = useCallback((updates: Partial<EnvironmentState>) => {
     if (physicsEngineRef.current) {
+      const prevEnv = physicsEngineRef.current.environment.getState();
       physicsEngineRef.current.environment.setState(updates);
-      setEnvState({ ...physicsEngineRef.current.environment.getState() });
+      const newEnv = physicsEngineRef.current.environment.getState();
+      setEnvState({ ...newEnv });
+
+      import("@/components/simulator/world/environment-manager").then(({ EnvironmentManager }) => {
+        EnvironmentManager.getInstance().setWind(newEnv.windSpeed, newEnv.windDirection);
+      });
+
+      let title = "";
+      let message = "";
+      let type: SimulationEvent["type"] | null = null;
+      let severity: "INFO" | "WARNING" = "INFO";
+
+      if (updates.windSpeed !== undefined && updates.windSpeed !== prevEnv.windSpeed) {
+        type = "WIND_SPEED_CHANGED";
+        const dir = updates.windSpeed > prevEnv.windSpeed ? "increased" : "decreased";
+        title = `WIND ${dir.toUpperCase()}`;
+        message = `Wind speed has ${dir} from ${prevEnv.windSpeed.toFixed(1)} m/s to ${newEnv.windSpeed.toFixed(1)} m/s. The aircraft is experiencing ${dir === "increased" ? "greater" : "less"} environmental disturbance.`;
+        if (updates.windSpeed > 0) message += " The aircraft is drifting laterally relative to its previous state.";
+      } else if (updates.windDirection !== undefined && updates.windDirection !== prevEnv.windDirection) {
+        type = "WIND_DIRECTION_CHANGED";
+        title = `WIND DIRECTION CHANGED`;
+        message = `Wind direction changed from ${prevEnv.windDirection}° to ${newEnv.windDirection}°. The direction of the environmental aerodynamic force acting on the aircraft has shifted.`;
+      } else if (updates.turbulence !== undefined && updates.turbulence !== prevEnv.turbulence) {
+        type = "TURBULENCE_CHANGED";
+        const dir = updates.turbulence > (prevEnv.turbulence || 0) ? "increased" : "decreased";
+        title = `TURBULENCE ${dir.toUpperCase()}`;
+        message = `Turbulence intensity ${dir}. The aircraft is experiencing ${dir === "increased" ? "additional" : "reduced"} environmental disturbance.`;
+      } else if (updates.temperature !== undefined && updates.temperature !== prevEnv.temperature) {
+        type = "TEMPERATURE_CHANGED";
+        title = `TEMPERATURE CHANGED`;
+        message = `Air temperature changed to ${newEnv.temperature}°C. Air density changes inversely with temperature, affecting aerodynamic drag and motor thrust efficiency slightly.`;
+      } else if (updates.rainIntensity !== undefined && updates.rainIntensity !== prevEnv.rainIntensity) {
+        type = "RAIN_CHANGED";
+        title = `RAIN INTENSITY CHANGED`;
+        message = `Rain intensity changed to ${newEnv.rainIntensity.toUpperCase()}. Rain is currently affecting the environment visually. No aerodynamic rain effect is modeled by the current physics engine.`;
+      } else if (updates.visibility !== undefined && updates.visibility !== prevEnv.visibility) {
+        type = "VISIBILITY_CHANGED";
+        title = `VISIBILITY CHANGED`;
+        message = `Visibility changed to ${newEnv.visibility.toUpperCase()}. Visual environment perception is reduced. No navigation or sensor degradation is currently modeled by the physics engine for this condition.`;
+      }
+
+      if (type && title && message) {
+        const eduEvent: EducationalEvent = {
+          id: `env-${Date.now()}`,
+          title,
+          message,
+          severity: "info",
+          timestamp: Date.now(),
+        };
+        setCurrentEduEvent(eduEvent);
+        setEduEventHistory((prev) => [eduEvent, ...prev].slice(0, 30));
+        
+        SimulationEventBus.getInstance().emit({
+          timestamp: Date.now(),
+          simTime: simClockRef.current.getSimTime(),
+          type: type as any,
+          severity: severity,
+          source: "ENVIRONMENT",
+          title,
+          message
+        });
+      }
     }
   }, []);
 
@@ -1114,10 +1175,12 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
         <div className="w-[340px] shrink-0 border-l border-white/10 hidden lg:block bg-neutral-900/40 backdrop-blur-md relative z-20 overflow-y-auto">
           <RightGlassPanel
             environment={envState}
-            onUpdateWind={(speed) => handleUpdateEnvironment({ windSpeed: speed })}
+            onUpdateEnvironment={handleUpdateEnvironment}
             telemetry={telemetry}
             activeWaypoint={activeWaypoint}
             onToggleMap={() => setIsMapModalOpen(true)}
+            onResetEnvironment={() => handleApplyWeatherPreset("normal")}
+            currentEvent={currentEduEvent}
           />
         </div>
 
@@ -1142,10 +1205,12 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
           />
           <RightGlassPanel
             environment={envState}
-            onUpdateWind={(speed) => handleUpdateEnvironment({ windSpeed: speed })}
+            onUpdateEnvironment={handleUpdateEnvironment}
             telemetry={telemetry}
             activeWaypoint={activeWaypoint}
             onToggleMap={() => setIsMapModalOpen(true)}
+            onResetEnvironment={() => handleApplyWeatherPreset("normal")}
+            currentEvent={currentEduEvent}
           />
         </div>
       </div>

@@ -31,7 +31,14 @@ export type SimulationEventType =
   | "PAYLOAD_SHIFT"
   | "SCENARIO_STARTED"
   | "SCENARIO_COMPLETED"
-  | "SCENARIO_FAILED";
+  | "SCENARIO_FAILED"
+  | "WIND_SPEED_CHANGED"
+  | "WIND_DIRECTION_CHANGED"
+  | "TURBULENCE_CHANGED"
+  | "TEMPERATURE_CHANGED"
+  | "RAIN_CHANGED"
+  | "VISIBILITY_CHANGED"
+  | "ENVIRONMENT_WARNING";
 
 export interface SimulationEvent {
   id: string;
