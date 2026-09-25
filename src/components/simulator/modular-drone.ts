@@ -7,6 +7,7 @@
 
 import * as THREE from "three";
 import { DroneDefinition, TelemetryState } from "@/lib/simulation/types";
+import { buildProfessionalUAV } from "../ui/aircraft-model-builder";
 
 interface PropellerAssembly {
   bladeGroup: THREE.Group;
@@ -213,97 +214,95 @@ export class ModularDrone {
   }
 
   private buildDrone() {
-    import("../ui/aircraft-model-builder").then((mod) => {
-      const parts = mod.buildProfessionalUAV(
-        this.def.type as any,
-        this.def.motors.map((m, i) => ({ index: i, position: m.position, direction: m.direction }))
-      );
+    const parts = buildProfessionalUAV(
+      this.def.type as any,
+      this.def.motors.map((m, i) => ({ index: i, position: m.position, direction: m.direction }))
+    );
 
-      this.group.add(parts.rootGroup);
+    this.group.add(parts.rootGroup);
 
-      this.gimbalGroup = parts.gimbalGroup;
-      this.gimbalRollArm = parts.gimbalGroup; // Fallback mapping
-      this.cameraPod = parts.cameraPitchGroup;
+    this.gimbalGroup = parts.gimbalGroup;
+    this.gimbalRollArm = parts.gimbalGroup; // Fallback mapping
+    this.cameraPod = parts.cameraPitchGroup;
 
-      this.batteryLeds = parts.batteryLeds;
-      this.tailStrobeMesh = parts.tailStrobe;
+    this.batteryLeds = parts.batteryLeds;
+    this.tailStrobeMesh = parts.tailStrobe;
 
-      const propBlurTex = this.createPropBlurTexture();
+    const propBlurTex = this.createPropBlurTexture();
 
-      parts.propellers.forEach((p, idx) => {
-        // Add high RPM blur disc
-        const bladeRadius = this.def.type === "quadcopter" ? 0.18 : this.def.type === "hexacopter" ? 0.25 : 0.32;
-        const blurDiscGeo = new THREE.PlaneGeometry(bladeRadius * 2.12, bladeRadius * 2.12);
-        const blurDiscMat = new THREE.MeshBasicMaterial({
-          map: propBlurTex,
-          transparent: true,
-          opacity: 0.0,
-          depthWrite: false,
-          side: THREE.DoubleSide,
-        });
-        const blurMesh = new THREE.Mesh(blurDiscGeo, blurDiscMat);
-        blurMesh.rotation.x = -Math.PI / 2;
-        blurMesh.position.y = 0.005;
-        p.bladeGroup.parent?.add(blurMesh);
+    parts.propellers.forEach((p, idx) => {
+      // Add high RPM blur disc
+      const bladeRadius = this.def.type === "quadcopter" ? 0.18 : this.def.type === "hexacopter" ? 0.25 : 0.32;
+      const blurDiscGeo = new THREE.PlaneGeometry(bladeRadius * 2.12, bladeRadius * 2.12);
+      const blurDiscMat = new THREE.MeshBasicMaterial({
+        map: propBlurTex,
+        transparent: true,
+        opacity: 0.0,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const blurMesh = new THREE.Mesh(blurDiscGeo, blurDiscMat);
+      blurMesh.rotation.x = -Math.PI / 2;
+      blurMesh.position.y = 0.005;
+      p.bladeGroup.parent?.add(blurMesh);
 
-        // Access the blade meshes to modify materials (they are children of bladeGroup)
-        const bladeMaterial = new THREE.MeshStandardMaterial({
-          color: 0x1d1f24,
-          roughness: 0.30,
-          metalness: 0.25,
-          transparent: true,
-          opacity: 1.0,
-        });
-
-        p.bladeGroup.children.forEach(c => {
-          if ((c as THREE.Mesh).isMesh) {
-            (c as THREE.Mesh).material = bladeMaterial;
-          }
-        });
-
-        this.propellers.push({
-          bladeGroup: p.bladeGroup,
-          blurMesh,
-          blurMaterial: blurDiscMat,
-          bladeMaterial,
-          direction: p.direction,
-          motorIndex: p.motorIndex,
-        });
-        
-        // Push arm and prop group for animation
-        this.armGroups.push(p.bladeGroup.parent?.parent as THREE.Group);
-        this.propGroups.push(p.bladeGroup.parent as THREE.Group);
+      // Access the blade meshes to modify materials (they are children of bladeGroup)
+      const bladeMaterial = new THREE.MeshStandardMaterial({
+        color: 0x1d1f24,
+        roughness: 0.30,
+        metalness: 0.25,
+        transparent: true,
+        opacity: 1.0,
       });
 
-      this.buildCrashFX();
-
-      this.group.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh) !== this.groundShadowMesh) {
-          child.castShadow = true;
+      p.bladeGroup.children.forEach(c => {
+        if ((c as THREE.Mesh).isMesh) {
+          (c as THREE.Mesh).material = bladeMaterial;
         }
       });
+
+      this.propellers.push({
+        bladeGroup: p.bladeGroup,
+        blurMesh,
+        blurMaterial: blurDiscMat,
+        bladeMaterial,
+        direction: p.direction,
+        motorIndex: p.motorIndex,
+      });
       
-      const shadowCanvas = document.createElement("canvas");
-      shadowCanvas.width = 128;
-      shadowCanvas.height = 128;
-      const ctx = shadowCanvas.getContext("2d");
-      if (ctx) {
-        const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-        grad.addColorStop(0, "rgba(0,0,0,0.55)");
-        grad.addColorStop(0.35, "rgba(0,0,0,0.28)");
-        grad.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 128, 128);
-      }
-      const shadowTex = new THREE.CanvasTexture(shadowCanvas);
-      this.groundShadowMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(2.2, 2.2),
-        new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false })
-      );
-      this.groundShadowMesh.rotation.x = -Math.PI / 2;
-      this.groundShadowMesh.position.y = -0.12;
-      this.group.add(this.groundShadowMesh);
+      // Push arm and prop group for animation
+      this.armGroups.push(p.bladeGroup.parent?.parent as THREE.Group);
+      this.propGroups.push(p.bladeGroup.parent as THREE.Group);
     });
+
+    this.buildCrashFX();
+
+    this.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh) !== this.groundShadowMesh) {
+        child.castShadow = true;
+      }
+    });
+    
+    const shadowCanvas = document.createElement("canvas");
+    shadowCanvas.width = 128;
+    shadowCanvas.height = 128;
+    const ctx = shadowCanvas.getContext("2d");
+    if (ctx) {
+      const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+      grad.addColorStop(0, "rgba(0,0,0,0.55)");
+      grad.addColorStop(0.35, "rgba(0,0,0,0.28)");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 128, 128);
+    }
+    const shadowTex = new THREE.CanvasTexture(shadowCanvas);
+    this.groundShadowMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.2, 2.2),
+      new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false })
+    );
+    this.groundShadowMesh.rotation.x = -Math.PI / 2;
+    this.groundShadowMesh.position.y = -0.12;
+    this.group.add(this.groundShadowMesh);
   }
 
 
