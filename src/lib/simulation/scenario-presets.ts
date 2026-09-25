@@ -4,6 +4,7 @@
 // ==========================================================
 
 import { EnvironmentState } from "./types";
+import { ScenarioObjective } from "./scenario-engine";
 
 export interface ScenarioFaults {
   motorHealth?: Record<number, number>; // index (0-based) -> health (0.0 to 1.0)
@@ -28,196 +29,151 @@ export interface TrainingScenario {
   faults: ScenarioFaults;
   expectedBehavior: string;
   recommendedOperatorAction: string;
+  objectives?: ScenarioObjective[];
 }
 
 export const TRAINING_SCENARIOS: TrainingScenario[] = [
   {
-    id: "demo-agri-wind-payload",
-    name: "Flagship Demo: Agricultural Wind + Payload",
-    category: "Industrial",
-    badgeColor: "#059669", // emerald
-    description: "Flagship CDAC / Reviewer demonstration highlighting multi-variable flight physics: 8.5 m/s crosswind gusts coupled with a 4.5 kg agricultural crop-sprayer payload tank.",
-    learningObjective: "Observe real-time digital-twin dynamics: elevated hover throttle (65%), aerodynamic pitch/roll compensation into crosswinds, and Ohm's law battery voltage sag under heavy motor current draw.",
+    id: "edu-basic-hover",
+    name: "Scenario 1: Basic Hover",
+    category: "Standard",
+    badgeColor: "#10b981", 
+    description: "Learn how the aircraft maintains stable hover equilibrium in calm conditions.",
+    learningObjective: "Understand how the aircraft maintains stable hover.",
     environment: {
-      preset: "windy",
-      weather: "windy",
-      windSpeed: 8.5,
-      windDirection: 120,
-      windGust: 2.5,
-      temperature: 26.0,
-      rainIntensity: "off",
-      visibility: "clear",
-      turbulence: 0.35,
+      preset: "normal", weather: "clear", windSpeed: 0.0, windDirection: 0,
+      temperature: 20.0, turbulence: 0.0,
     },
     faults: {
       motorHealth: { 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0 },
       sensorHealth: { gps: true, imu: true, baro: true, compass: true },
-      batteryInitialSocPercent: 92,
+      batteryInitialSocPercent: 100,
+      payloadMassKg: 0.0,
+    },
+    expectedBehavior: "Altitude remains stable inside the allowed safety envelope.",
+    recommendedOperatorAction: "Take off to 10m and maintain hover without drifting.",
+    objectives: [
+      {
+        id: "obj-hover-10s",
+        type: "ALTITUDE_HOLD",
+        description: "Maintain 10m altitude for 10 seconds",
+        targetValue: 10,
+        tolerance: 1.5,
+        requiredDurationSeconds: 10
+      }
+    ]
+  },
+  {
+    id: "edu-wind-response",
+    name: "Scenario 2: Wind Response",
+    category: "Environmental",
+    badgeColor: "#0284c7", 
+    description: "Learn how environmental wind affects aircraft stability and power consumption.",
+    learningObjective: "Understand how environmental wind affects aircraft stability.",
+    environment: {
+      preset: "windy", weather: "windy", windSpeed: 6.0, windDirection: 90,
+      temperature: 20.0, turbulence: 0.2,
+    },
+    faults: {
+      motorHealth: { 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0 },
+      sensorHealth: { gps: true, imu: true, baro: true, compass: true },
+      batteryInitialSocPercent: 100,
+      payloadMassKg: 0.0,
+    },
+    expectedBehavior: "The aircraft tilts into the wind to maintain horizontal position. Total motor thrust increases.",
+    recommendedOperatorAction: "Observe position drift and flight controller response.",
+    objectives: [
+      {
+        id: "obj-wind-15s",
+        type: "POSITION_HOLD",
+        description: "Maintain position for 15 seconds in crosswind",
+        tolerance: 3.5,
+        requiredDurationSeconds: 15
+      }
+    ]
+  },
+  {
+    id: "edu-motor-imbalance",
+    name: "Scenario 3: Motor Imbalance",
+    category: "Emergency",
+    badgeColor: "#f59e0b", 
+    description: "Experience the effects of a partially degraded propulsion system.",
+    learningObjective: "Understand asymmetric propulsion.",
+    environment: {
+      preset: "normal", weather: "clear", windSpeed: 2.0, windDirection: 0,
+      temperature: 20.0, turbulence: 0.0,
+    },
+    faults: {
+      motorHealth: { 0: 1.0, 1: 1.0, 2: 0.6, 3: 1.0 },
+      sensorHealth: { gps: true, imu: true, baro: true, compass: true },
+      batteryInitialSocPercent: 100,
+      payloadMassKg: 0.0,
+    },
+    expectedBehavior: "Opposing motors must spin faster to compensate for the torque imbalance, increasing battery drain.",
+    recommendedOperatorAction: "Maintain hover and observe individual motor RPM and attitude stability.",
+    objectives: [
+      {
+        id: "obj-imbalance-10s",
+        type: "MOTOR_RESPONSE",
+        description: "Observe asymmetric motor response for 10 seconds",
+        requiredDurationSeconds: 10
+      }
+    ]
+  },
+  {
+    id: "edu-payload-effect",
+    name: "Scenario 4: Payload Effect",
+    category: "Industrial",
+    badgeColor: "#8b5cf6", 
+    description: "Understand the consequences of flying at maximum takeoff weight (MTOW).",
+    learningObjective: "Understand how additional mass affects aircraft performance.",
+    environment: {
+      preset: "normal", weather: "clear", windSpeed: 0.0, windDirection: 0,
+      temperature: 20.0, turbulence: 0.0,
+    },
+    faults: {
+      motorHealth: { 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0 },
+      sensorHealth: { gps: true, imu: true, baro: true, compass: true },
+      batteryInitialSocPercent: 100,
       payloadMassKg: 4.5,
     },
-    expectedBehavior: "Hover equilibrium requires ~65% throttle instead of ~40%. Aircraft tilts ~12° into the 120° wind vector to hold position. Battery terminal voltage drops ~0.6V under current surge (>36A).",
-    recommendedOperatorAction: "Perform a 10m climb over the runway, execute a 360° yaw turn to observe windward vs leeward motor loading, and land smoothly.",
+    expectedBehavior: "The aircraft requires significantly more throttle to climb, and will lose altitude faster on descent.",
+    recommendedOperatorAction: "Lift off carefully and note the higher hover throttle equilibrium.",
+    objectives: [
+      {
+        id: "obj-payload-15s",
+        type: "PAYLOAD_TEST",
+        description: "Operate at high payload mass for 15 seconds",
+        requiredDurationSeconds: 15
+      }
+    ]
   },
   {
-    id: "normal-cruise",
-    name: "Standard Navigational Cruise",
-    category: "Standard",
-    badgeColor: "#10b981", // green
-    description: "Baseline flight operations under standard atmospheric conditions with all digital twin systems operating at 100% nominal capacity.",
-    learningObjective: "Observe nominal hover throttle equilibrium (~38-42%), symmetric motor RPM distribution, and balanced battery discharge.",
-    environment: {
-      preset: "normal",
-      weather: "clear",
-      windSpeed: 2.0,
-      windDirection: 45,
-      windGust: 1.0,
-      temperature: 20.0,
-      rainIntensity: "off",
-      visibility: "clear",
-      turbulence: 0.05,
-    },
-    faults: {
-      motorHealth: { 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0 },
-      sensorHealth: { gps: true, imu: true, baro: true, compass: true },
-      batteryInitialSocPercent: 100,
-      payloadMassKg: 0.0,
-    },
-    expectedBehavior: "Smooth attitude response, stable GPS hover hold, low vibration, and linear battery consumption (~18-24A draw).",
-    recommendedOperatorAction: "Perform basic climb, translation, and yaw maneuvers to establish baseline flight metrics.",
-  },
-  {
-    id: "high-wind-gusts",
-    name: "High Wind & Severe Turbulence",
-    category: "Environmental",
-    badgeColor: "#f59e0b", // amber
-    description: "Challenging meteorological condition featuring 14.5 m/s (52 km/h) northwest gale with continuous atmospheric wind gust turbulence.",
-    learningObjective: "Understand how external aerodynamic drag and wind force tilt the aircraft, force the flight controller to raise RPM to maintain position, and accelerate battery drain by up to 45%.",
-    environment: {
-      preset: "windy",
-      weather: "windy",
-      windSpeed: 14.5,
-      windDirection: 315,
-      windGust: 6.5,
-      temperature: 15.0,
-      rainIntensity: "off",
-      visibility: "clear",
-      turbulence: 0.65,
-    },
-    faults: {
-      motorHealth: { 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0 },
-      sensorHealth: { gps: true, imu: true, baro: true, compass: true },
-      batteryInitialSocPercent: 90,
-      payloadMassKg: 0.0,
-    },
-    expectedBehavior: "Aircraft tilts into the wind vector to produce opposing horizontal thrust. High motor RPM fluctuation and elevated power draw (>350W).",
-    recommendedOperatorAction: "Keep throttle active to maintain altitude, avoid flying directly downwind at low altitudes, and prepare to crab into the wind on approach.",
-  },
-  {
-    id: "low-battery-emergency",
-    name: "Critical Battery & Voltage Sag",
+    id: "edu-battery-effect",
+    name: "Scenario 5: Battery Drain",
     category: "Emergency",
-    badgeColor: "#ef4444", // red
-    description: "Low-state-of-charge emergency scenario with battery at 14% SOC under high internal resistance and terminal voltage drop.",
-    learningObjective: "Observe how Ohm's Law voltage sag (V_terminal = V_oc - I * R_int) reduces available propulsion power, derates climb performance, and triggers emergency RTL.",
+    badgeColor: "#ef4444", 
+    description: "Observe the physics of battery voltage sag at low state-of-charge.",
+    learningObjective: "Understand the effect of reduced battery state.",
     environment: {
-      preset: "normal",
-      weather: "clear",
-      windSpeed: 3.5,
-      windDirection: 90,
-      windGust: 1.5,
-      temperature: 12.0,
-      rainIntensity: "off",
-      visibility: "clear",
-      turbulence: 0.1,
+      preset: "normal", weather: "clear", windSpeed: 0.0, windDirection: 0,
+      temperature: 20.0, turbulence: 0.0,
     },
     faults: {
       motorHealth: { 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0 },
       sensorHealth: { gps: true, imu: true, baro: true, compass: true },
-      batteryInitialSocPercent: 14,
+      batteryInitialSocPercent: 25,
       payloadMassKg: 0.0,
     },
-    expectedBehavior: "Telemetry HUD displays amber LOW BATTERY warning. Maximum climb rate is restricted by the battery manager. Voltage drops noticeably when full throttle is applied.",
-    recommendedOperatorAction: "Throttle back to minimum safe hover, turn immediately toward nearest helipad, and initiate auto-land sequence.",
-  },
-  {
-    id: "motor-degraded",
-    name: "Motor 3 Asymmetric Thrust Degradation",
-    category: "Emergency",
-    badgeColor: "#dc2626", // dark red
-    description: "Propulsion fault injection simulating a damaged rotor or overheating ESC on Motor 3 (rear-left), dropping its output capacity to 45%.",
-    learningObjective: "Demonstrate how asymmetric motor thrust causes severe roll and pitch attitude torque, requiring counter-trim and increasing demand on opposing motors.",
-    environment: {
-      preset: "normal",
-      weather: "clear",
-      windSpeed: 2.5,
-      windDirection: 0,
-      windGust: 1.0,
-      temperature: 22.0,
-      rainIntensity: "off",
-      visibility: "clear",
-      turbulence: 0.1,
-    },
-    faults: {
-      motorHealth: { 0: 1.0, 1: 1.0, 2: 0.45, 3: 1.0 },
-      sensorHealth: { gps: true, imu: true, baro: true, compass: true },
-      batteryInitialSocPercent: 85,
-      payloadMassKg: 0.0,
-    },
-    expectedBehavior: "Aircraft develops roll instability. Opposite motors (M1, M4) spool to near maximum RPM to keep the frame level, leading to high current consumption and loss of climb authority.",
-    recommendedOperatorAction: "Apply gentle right cyclic trim, reduce forward speed, avoid aggressive banking turns, and land immediately.",
-  },
-  {
-    id: "gps-loss",
-    name: "Avionics GPS Signal Loss (ATTI Mode)",
-    category: "Emergency",
-    badgeColor: "#8b5cf6", // purple
-    description: "Satellite navigation blackout simulating GPS antenna disconnect or multi-path canyon interference.",
-    learningObjective: "Experience the transition from automated GPS Position Hold to manual Attitude (ATTI) mode, where the aircraft no longer auto-brakes when control sticks are centered.",
-    environment: {
-      preset: "normal",
-      weather: "clear",
-      windSpeed: 6.5,
-      windDirection: 225,
-      windGust: 2.0,
-      temperature: 19.0,
-      rainIntensity: "off",
-      visibility: "clear",
-      turbulence: 0.2,
-    },
-    faults: {
-      motorHealth: { 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0 },
-      sensorHealth: { gps: false, imu: true, baro: true, compass: true },
-      batteryInitialSocPercent: 95,
-      payloadMassKg: 0.0,
-    },
-    expectedBehavior: "When control sticks are released to center, the drone does NOT stop. It drifts downwind at ambient wind speed (6.5 m/s). Active braking is disabled.",
-    recommendedOperatorAction: "Actively steer into the wind with subtle cyclic corrections to maintain visual position. Orient using visual island landmarks.",
-  },
-  {
-    id: "heavy-payload",
-    name: "Agricultural Heavy-Lift Payload (AUW Limit)",
-    category: "Industrial",
-    badgeColor: "#0284c7", // sky blue
-    description: "Industrial agricultural mission with a full 6.5 kg liquid crop-spray tank and underslung dispersal boom at near maximum airframe AUW.",
-    learningObjective: "Analyze the fundamental relationship between total mass, hover equilibrium throttle, climb acceleration, and endurance.",
-    environment: {
-      preset: "normal",
-      weather: "clear",
-      windSpeed: 4.0,
-      windDirection: 180,
-      windGust: 1.5,
-      temperature: 24.0,
-      rainIntensity: "off",
-      visibility: "clear",
-      turbulence: 0.15,
-    },
-    faults: {
-      motorHealth: { 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0 },
-      sensorHealth: { gps: true, imu: true, baro: true, compass: true },
-      batteryInitialSocPercent: 100,
-      payloadMassKg: 6.5,
-    },
-    expectedBehavior: "Hover throttle jumps from ~40% to ~72%. Sluggish vertical climb rate. Total mass causes significant inertia when stopping. High motor heat and battery discharge (~42A).",
-    recommendedOperatorAction: "Anticipate braking distance early when descending or translating. Maintain smooth collective throttle inputs.",
-  },
+    expectedBehavior: "Voltage sags heavily under load, potentially restricting maximum climb rate.",
+    recommendedOperatorAction: "Apply full throttle and observe the terminal voltage drop and current surge.",
+    objectives: [
+      {
+        id: "obj-battery-10s",
+        type: "BATTERY_TEST",
+        description: "Operate at low battery capacity for 10 seconds",
+        requiredDurationSeconds: 10
+      }
+    ]
+  }
 ];
