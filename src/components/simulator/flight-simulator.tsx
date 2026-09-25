@@ -755,6 +755,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
 
     // 3. 3D WORLD SCENE (Irregular Island World Root)
     const worldScene = new WorldScene(scene);
+    scene.add(worldScene.group);
 
     // 4. DYNAMIC SPAWN RESOLUTION & CONFIGURATION
     const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
@@ -768,7 +769,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     const dtParam = urlParams?.get("dt");
     if (dtParam) {
       dtConfig = getDigitalTwinPresetById(dtParam);
-    } else if (dtConfig.identity.category !== selectedDrone.id) {
+    } else if (dtConfig.identity.category !== selectedDrone.platformId) {
       dtConfig = getDigitalTwinPresetById(selectedDrone.id);
     }
     setActiveDigitalTwin(null, dtConfig);
@@ -977,6 +978,10 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
 
       // Update Remote Drones in Airspace (with Dead Reckoning)
       remoteDroneMgr.update(remotePlayersRef.current, dt);
+
+      // Update World Environment animations (grass, NPCs, traffic, etc.)
+      const dPos = new THREE.Vector3(curTelemetry.position.x, curTelemetry.position.y, curTelemetry.position.z);
+      worldScene.update(dt, elapsed, dPos, (curTelemetry.rotorRpmPercent || 0) / 100);
 
       // Update Follow Camera
       chaseCam.update(curTelemetry, dt);

@@ -79,24 +79,24 @@ export default function FlyPage() {
           onExit={handleExitToDashboard}
         />
       ) : (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAF7F2] text-neutral-900">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[#08090a] text-white">
           <div className="flex flex-col items-center gap-3">
             {errorMsg ? (
               <div className="flex flex-col items-center gap-4">
-                <p className="font-heading font-bold text-xs uppercase tracking-widest text-red-600">
+                <p className="font-heading font-bold text-xs uppercase tracking-widest text-rose-500">
                   {errorMsg}
                 </p>
                 <button
                   onClick={handleExitToDashboard}
-                  className="px-4 py-2 bg-neutral-200 hover:bg-neutral-300 rounded text-xs font-bold transition-colors"
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded border border-white/20 text-xs font-bold transition-colors"
                 >
-                  RETURN TO GARAGE
+                  RETURN TO HANGAR
                 </button>
               </div>
             ) : (
               <>
-                <Loader2 className="h-8 w-8 text-[#FF5500] animate-spin" />
-                <p className="font-heading font-bold text-xs uppercase tracking-widest text-neutral-600">
+                <div className="w-8 h-8 border-4 border-[#FF5500] border-t-transparent rounded-full animate-spin"></div>
+                <p className="font-heading font-bold text-[10px] uppercase tracking-[0.2em] text-neutral-500 mt-2">
                   INITIALIZING FLIGHT SIMULATION...
                 </p>
               </>
