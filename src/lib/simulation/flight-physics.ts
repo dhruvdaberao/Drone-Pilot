@@ -104,17 +104,18 @@ export class FlightPhysicsEngine {
   }
 
   public setPayloadMass(kg: number) {
+    if (!Number.isFinite(kg)) return;
     this.payloadMass = Math.max(0, Math.min(this.def.payloadCapacity * 1.5, kg));
   }
 
   public setMotorHealth(motorIndex: number, health: number) {
-    if (motorIndex >= 0 && motorIndex < this.motorHealth.length) {
+    if (motorIndex >= 0 && motorIndex < this.motorHealth.length && Number.isFinite(health)) {
       this.motorHealth[motorIndex] = Math.max(0, Math.min(1.0, health));
     }
   }
 
   public setMotorOverride(motorIndex: number, override: number | null) {
-    if (motorIndex >= 0 && motorIndex < this.motorOverrides.length) {
+    if (motorIndex >= 0 && motorIndex < this.motorOverrides.length && (override === null || Number.isFinite(override))) {
       this.motorOverrides[motorIndex] = override !== null ? Math.max(0, Math.min(1.0, override)) : null;
     }
   }
