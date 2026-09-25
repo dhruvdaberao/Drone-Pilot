@@ -18,6 +18,7 @@ import { FlightRecorder } from "@/lib/simulation/flight-recorder";
 import { RemotePlayerState } from "@/lib/multiplayer/multiplayer-types";
 import { MultiplayerClient } from "@/lib/multiplayer/multiplayer-client";
 import { WorldScene } from "./world-scene";
+import { EnvironmentManager } from "./world/environment-manager";
 import { ModularDrone } from "./modular-drone";
 import { ChaseCameraController, CameraMode } from "./chase-camera";
 import { TelemetryHUD } from "./telemetry-hud";
@@ -477,9 +478,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       const newEnv = physicsEngineRef.current.environment.getState();
       setEnvState({ ...newEnv });
 
-      import("@/components/simulator/world/environment-manager").then(({ EnvironmentManager }) => {
-        EnvironmentManager.getInstance().setWind(newEnv.windSpeed, newEnv.windDirection);
-      });
+      EnvironmentManager.getInstance().setWind(newEnv.windSpeed, newEnv.windDirection);
 
       let title = "";
       let message = "";
