@@ -638,9 +638,13 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       }
       
       // We do not apply faults yet, we wait for "START SIMULATION"
-      scenarioEngineRef.current.startScenario(scenario, telemetry);
+      scenarioEngineRef.current.startScenario(scenario, telemetry, {
+        userId: user?.uid || "guest",
+        configRef: selectedDrone.platformId || selectedDrone.id,
+        configVersion: activeDtRef.current?.identity?.configurationVersion || "1.0"
+      });
     },
-    [telemetry]
+    [telemetry, user, selectedDrone, activeDtRef]
   );
 
   const handleStartScenario = useCallback(() => {
@@ -1097,6 +1101,16 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       scene.remove(droneMesh.groundShadowMesh);
       scene.remove(remoteDroneMgr.group);
       renderer.dispose();
+      
+      if (audioManagerRef.current) {
+        audioManagerRef.current.dispose();
+        audioManagerRef.current = null;
+      }
+      droneAudioRef.current = null;
+      windAudioRef.current = null;
+      envZoneAudioRef.current = null;
+
+      SimulationEventBus.getInstance().clear();
     };
   }, [selectedDrone, callsign]);
 

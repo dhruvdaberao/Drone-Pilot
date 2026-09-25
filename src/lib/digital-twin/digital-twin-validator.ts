@@ -17,6 +17,29 @@ export function validateDroneDigitalTwin(
   const infos: ValidationIssue[] = [];
 
   // --------------------------------------------------------
+  // 0. NAN / INFINITY SAFETY
+  // --------------------------------------------------------
+  const checkNaN = (obj: any, path: string) => {
+    if (obj === null || obj === undefined) return;
+    if (typeof obj === 'number') {
+      if (Number.isNaN(obj) || !Number.isFinite(obj)) {
+        errors.push({
+          code: "INVALID_NUMBER",
+          field: path,
+          severity: "ERROR",
+          message: `Value at ${path} is invalid (NaN or Infinity).`,
+          educationalFixAdvice: "Ensure all physical parameters are valid numbers."
+        });
+      }
+    } else if (typeof obj === 'object') {
+      for (const key in obj) {
+        checkNaN(obj[key], path ? `${path}.${key}` : key);
+      }
+    }
+  };
+  checkNaN(config, "");
+
+  // --------------------------------------------------------
   // 1. MOTOR & AIRFRAME COMPATIBILITY
   // --------------------------------------------------------
   if (!config.motors || config.motors.length === 0) {

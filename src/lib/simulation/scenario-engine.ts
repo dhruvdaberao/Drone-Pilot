@@ -21,6 +21,9 @@ export type ScenarioStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "FAIL
 
 export interface SessionState {
   sessionId: string;
+  userId?: string;
+  configRef?: string;
+  configVersion?: string;
   scenarioId: string;
   status: ScenarioStatus;
   startTime: number;
@@ -58,7 +61,11 @@ export class ScenarioEngine {
     this.onStateChange = listener;
   }
 
-  public startScenario(scenario: TrainingScenario, initialTelemetry: TelemetryState) {
+  public startScenario(
+    scenario: TrainingScenario, 
+    initialTelemetry: TelemetryState,
+    metadata?: { userId: string; configRef: string; configVersion: string }
+  ) {
     this.activeScenario = scenario;
     this.startPos = { ...initialTelemetry.position };
     this.startBattery = initialTelemetry.batteryLevel;
@@ -72,6 +79,9 @@ export class ScenarioEngine {
 
     this.session = {
       sessionId: "sess_" + Date.now(),
+      userId: metadata?.userId,
+      configRef: metadata?.configRef,
+      configVersion: metadata?.configVersion,
       scenarioId: scenario.id,
       status: "NOT_STARTED",
       startTime: initialTelemetry.flightTimeSeconds,
