@@ -73,6 +73,7 @@ import { SimulationEventBus, SimulationEvent } from "@/lib/simulation/event-bus"
 import { ConnectionStatus } from "@/lib/multiplayer/multiplayer-types";
 import { SimulationDiagnosticsOverlay } from "./debug/simulation-diagnostics-overlay";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { AircraftControlPanel, ManipulationEvent } from "./aircraft-control-panel";
 function getWindExposure(x: number, z: number): number {
   for (const r of REGION_LIST) {
     if (x >= r.bounds.minX && x <= r.bounds.maxX && z >= r.bounds.minZ && z <= r.bounds.maxZ) {
@@ -286,6 +287,9 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     compass: true,
   });
   const [payloadMassKg, setPayloadMassKg] = useState(0.0);
+  const [motorOverrides, setMotorOverrides] = useState<number[]>([1, 1, 1, 1, 1, 1, 1, 1]);
+  const [manipulationEvents, setManipulationEvents] = useState<ManipulationEvent[]>([]);
+  const baselineExperimentRef = useRef({ payloadKg: 0, batteryPercent: 100 });
   const [activeScenarioId, setActiveScenarioId] = useState<string>("normal-cruise");
 
   // Educational Event Engine
@@ -482,6 +486,46 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
   }, []);
 
   // Phase 5: Fault Injection & Manipulation Handlers
+  const recordManipulation = useCallback((type: string, title: string) => {
+    const event = { id: `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, type, title, timestamp: Date.now() };
+    setManipulationEvents((previous) => [event, ...previous].slice(0, 12));
+    SimulationEventBus.getInstance().emit({ timestamp: event.timestamp, simTime: simClockRef.current.getSimTime(), type: type as SimulationEvent["type"], severity: "INFO", source: "PILOT", title, message: title });
+  }, []);
+
+  const handleSetMotorOverride = useCallback((index: number, percent: number) => {
+    if (!Number.isInteger(index) || index < 0 || index >= (physicsEngineRef.current?.def.motorCount || 0) || !Number.isFinite(percent)) return;
+    const multiplier = Math.max(0, Math.min(1, percent / 100));
+    const previous = motorOverrides[index] ?? 1;
+    setMotorOverrides((values) => { const next = [...values]; next[index] = multiplier; return next; });
+    physicsEngineRef.current?.setMotorOverride(index, multiplier === 1 ? null : multiplier);
+    if (Math.abs(previous - multiplier) > 0.001) recordManipulation("MOTOR_RPM_CHANGED", `Motor ${index + 1} command set to ${Math.round(multiplier * 100)}%`);
+  }, [motorOverrides, recordManipulation]);
+
+  const handleMotorFailure = useCallback((index: number, failed: boolean) => {
+    if (!Number.isInteger(index) || index < 0 || index >= (physicsEngineRef.current?.def.motorCount || 0)) return;
+    const health = failed ? 0 : 1;
+    setMotorHealths((values) => { const next = [...values]; next[index] = health; return next; });
+    physicsEngineRef.current?.setMotorHealth(index, health);
+    recordManipulation("MOTOR_FAILURE", failed ? `Motor ${index + 1} failed` : `Motor ${index + 1} restored`);
+  }, [recordManipulation]);
+
+  const handleSetBatteryState = useCallback((percent: number) => {
+    if (!Number.isFinite(percent)) return;
+    const value = Math.max(0, Math.min(100, percent));
+    physicsEngineRef.current?.battery.reset(value);
+    setTelemetry((previous) => ({ ...previous, batteryLevel: value }));
+    recordManipulation("BATTERY_CHANGED", `Battery state set to ${value}%`);
+  }, [recordManipulation]);
+
+  const handleResetExperiment = useCallback(() => {
+    const physics = physicsEngineRef.current;
+    if (!physics) return;
+    const baseline = baselineExperimentRef.current;
+    physics.motorHealth.fill(1); physics.motorOverrides.fill(null); physics.setPayloadMass(baseline.payloadKg); physics.battery.reset(baseline.batteryPercent); physics.resetCrash();
+    setMotorHealths(new Array(8).fill(1)); setMotorOverrides(new Array(8).fill(1)); setPayloadMassKg(baseline.payloadKg); setManipulationEvents([]);
+    recordManipulation("ATTITUDE_CHANGED", "Simulation experiment reset to saved Digital Twin baseline");
+  }, [recordManipulation]);
+
   const handleSetMotorHealth = useCallback((index: number, health: number) => {
     setMotorHealths((prev) => {
       const next = [...prev];
@@ -706,11 +750,12 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     // Configure payload mass based on digital twin (plus override if specified in URL)
     const payloadParam = parseFloat(urlParams?.get("payload") || "0");
     const dtPayload = dtConfig.massProperties.payloadMassKg + dtConfig.massProperties.cameraMassKg;
-    if (!isNaN(payloadParam) && payloadParam > 0) {
-      physics.setPayloadMass(payloadParam);
-    } else if (dtPayload > 0) {
-      physics.setPayloadMass(dtPayload);
-    }
+    const baselinePayload = !isNaN(payloadParam) && payloadParam > 0 ? Math.min(droneDef.payloadCapacity * 1.5, payloadParam) : Math.max(0, dtPayload);
+    physics.setPayloadMass(baselinePayload);
+    baselineExperimentRef.current = { payloadKg: baselinePayload, batteryPercent: 100 };
+    setPayloadMassKg(baselinePayload);
+    setMotorOverrides(new Array(droneDef.motorCount).fill(1));
+    setMotorHealths(new Array(droneDef.motorCount).fill(1));
 
     // Configure initial weather preset if requested
     const weatherParam = (urlParams?.get("weather") as WeatherPreset) || "normal";
@@ -986,12 +1031,21 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       <div className="flex flex-1 w-full relative overflow-hidden">
         {/* Left Panel (Desktop) */}
         <div className="w-[340px] shrink-0 border-r border-white/10 hidden lg:block bg-neutral-900/40 backdrop-blur-md relative z-20 overflow-y-auto">
-          <LeftGlassPanel
+          <AircraftControlPanel
+            droneName={activeDigitalTwin?.identity.name || selectedDrone.name}
             telemetry={telemetry}
-            drone={selectedDrone}
             motorCount={physicsEngineRef.current?.def.motorCount || 4}
+            motorOverrides={motorOverrides}
             motorHealths={motorHealths}
-            onSetMotorHealth={handleSetMotorHealth}
+            payloadKg={payloadMassKg}
+            maxPayloadKg={physicsEngineRef.current?.def.payloadCapacity || 4}
+            sensors={sensorHealth}
+            events={manipulationEvents}
+            onMotorOverride={handleSetMotorOverride}
+            onMotorFailure={handleMotorFailure}
+            onBattery={handleSetBatteryState}
+            onPayload={(kg) => { handleSetPayloadMass(kg); recordManipulation("PAYLOAD_CHANGED", `Payload set to ${kg.toFixed(1)} kg`); }}
+            onReset={handleResetExperiment}
             onExit={onExit}
           />
         </div>
@@ -1069,12 +1123,21 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
 
         {/* Mobile Hidden Panels (rendered but hidden by css on desktop) */}
         <div className="lg:hidden">
-          <LeftGlassPanel
+          <AircraftControlPanel
+            droneName={activeDigitalTwin?.identity.name || selectedDrone.name}
             telemetry={telemetry}
-            drone={selectedDrone}
             motorCount={physicsEngineRef.current?.def.motorCount || 4}
+            motorOverrides={motorOverrides}
             motorHealths={motorHealths}
-            onSetMotorHealth={handleSetMotorHealth}
+            payloadKg={payloadMassKg}
+            maxPayloadKg={physicsEngineRef.current?.def.payloadCapacity || 4}
+            sensors={sensorHealth}
+            events={manipulationEvents}
+            onMotorOverride={handleSetMotorOverride}
+            onMotorFailure={handleMotorFailure}
+            onBattery={handleSetBatteryState}
+            onPayload={(kg) => { handleSetPayloadMass(kg); recordManipulation("PAYLOAD_CHANGED", `Payload set to ${kg.toFixed(1)} kg`); }}
+            onReset={handleResetExperiment}
             onExit={onExit}
           />
           <RightGlassPanel
