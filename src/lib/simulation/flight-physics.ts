@@ -64,7 +64,7 @@ export class FlightPhysicsEngine {
   public isAutoLanding = false;
   public payloadMass = 0.0; // kg
 
-  // Phase 5: Individual Motor Health & Overrides (0.0 to 1.0)
+  // Runtime experiment controls: health/failure and command multipliers (0.0 to 1.0)
   public motorHealth: number[] = [1, 1, 1, 1, 1, 1, 1, 1];
   public motorOverrides: Array<number | null> = [null, null, null, null, null, null, null, null];
 
@@ -104,17 +104,18 @@ export class FlightPhysicsEngine {
   }
 
   public setPayloadMass(kg: number) {
+    if (!Number.isFinite(kg)) return;
     this.payloadMass = Math.max(0, Math.min(this.def.payloadCapacity * 1.5, kg));
   }
 
   public setMotorHealth(motorIndex: number, health: number) {
-    if (motorIndex >= 0 && motorIndex < this.motorHealth.length) {
+    if (motorIndex >= 0 && motorIndex < this.motorHealth.length && Number.isFinite(health)) {
       this.motorHealth[motorIndex] = Math.max(0, Math.min(1.0, health));
     }
   }
 
   public setMotorOverride(motorIndex: number, override: number | null) {
-    if (motorIndex >= 0 && motorIndex < this.motorOverrides.length) {
+    if (motorIndex >= 0 && motorIndex < this.motorOverrides.length && (override === null || Number.isFinite(override))) {
       this.motorOverrides[motorIndex] = override !== null ? Math.max(0, Math.min(1.0, override)) : null;
     }
   }
@@ -315,8 +316,10 @@ export class FlightPhysicsEngine {
     for (let i = 0; i < this.motorOutputs.length; i++) {
       const h = this.motorHealth[i] !== undefined ? this.motorHealth[i] : 1.0;
       const override = this.motorOverrides[i] !== undefined ? this.motorOverrides[i] : null;
-      const nominalOutput = override !== null ? override : this.motorOutputs[i];
-      this.motorOutputs[i] = nominalOutput * Math.max(0, h);
+      const commandMultiplier = override !== null ? override : 1.0;
+      // Overrides are multipliers, preserving the mixer/controller command while
+      // allowing a learner to reduce one motor within physical output limits.
+      this.motorOutputs[i] = this.motorOutputs[i] * commandMultiplier * Math.max(0, h);
     }
 
     // Phase 5: Calculate physical asymmetric torque from unequal motor thrusts

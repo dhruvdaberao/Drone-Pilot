@@ -8,10 +8,6 @@ import { DRONES, getDroneById } from "@/lib/drones";
 import { Drone3DViewer } from "@/components/dashboard/drone-3d-viewer";
 import { Button } from "@/components/ui/button";
 import { Settings2 } from "lucide-react";
-import { Space_Grotesk } from "next/font/google";
-
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["700", "500"] });
-
 import { useAuth } from "@/context/auth-context";
 
 export default function AircraftHangarPage() {
@@ -136,7 +132,7 @@ export default function AircraftHangarPage() {
             
             {/* Title & Platform (Mobile: Order 1, Desktop: Order 1) */}
             <div className="order-1 lg:order-none relative z-10 w-full flex flex-col items-center lg:items-start mb-2 lg:mb-8">
-              <h1 className={`${spaceGrotesk.className} text-[clamp(28px,4vw,48px)] font-extrabold tracking-tight text-white mb-1 lg:mb-2 leading-none uppercase`}>
+              <h1 className={`font-sans text-[clamp(28px,4vw,48px)] font-extrabold tracking-tight text-white mb-1 lg:mb-2 leading-none uppercase`}>
                 {activeDrone?.platformId}
               </h1>
               <p className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.25em] text-[#FF5500]">

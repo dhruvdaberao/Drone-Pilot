@@ -1,29 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Rajdhani, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import { AuthProvider } from "@/context/auth-context";
 import { OrientationGate } from "@/components/ui/orientation-gate";
-
-const rajdhani = Rajdhani({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-machinic",
-  display: "swap",
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-sans",
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-mono",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "DRONE PILOT | Flight Telemetry & Simulation",
@@ -51,7 +29,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`${spaceGrotesk.variable} ${rajdhani.variable} ${jetbrainsMono.variable} font-sans min-h-dvh bg-white text-neutral-900 antialiased selection:bg-[#FF5500] selection:text-white flex flex-col`}
+        className="font-sans min-h-dvh bg-white text-neutral-900 antialiased selection:bg-[#FF5500] selection:text-white flex flex-col"
       >
         <AuthProvider>
           <OrientationGate />

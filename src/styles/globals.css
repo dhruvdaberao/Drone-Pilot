@@ -5,6 +5,10 @@
 :root {
   --background: #ffffff;
   --foreground: #09090b;
+  /* Local/system fallbacks keep builds deterministic when remote font fetching is unavailable. */
+  --font-sans: "Space Grotesk", "Segoe UI", Arial, sans-serif;
+  --font-machinic: "Rajdhani", "Arial Narrow", "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
 }
 
 * {
@@ -20,7 +24,7 @@ body {
 body {
   color: var(--foreground);
   background-color: var(--background);
-  font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
