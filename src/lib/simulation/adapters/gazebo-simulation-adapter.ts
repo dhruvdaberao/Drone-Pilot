@@ -9,7 +9,7 @@
 // it gracefully delegates execution to the internal LocalSimulationAdapter.
 // ==========================================================
 
-import { DroneDefinition, TelemetryState, EnvironmentState, PhysicsDebugTelemetry, CrashState } from "../types";
+import { DroneDefinition, TelemetryState, EnvironmentState, PhysicsDebugTelemetry, CrashState, WeatherPreset } from "../types";
 import { NormalizedControlInput } from "../normalized-control";
 import { SimulationAdapter, SimulationAdapterStatus, AdapterType } from "./simulation-adapter";
 import { LocalSimulationAdapter } from "./local-simulation-adapter";
@@ -142,6 +142,14 @@ export class GazeboSimulationAdapter implements SimulationAdapter {
     this.fallbackAdapter.setEnvironment(env);
   }
 
+  public updateEnvironment(updates: Partial<EnvironmentState>): void {
+    this.fallbackAdapter.updateEnvironment(updates);
+  }
+
+  public applyWeatherPreset(preset: WeatherPreset): void {
+    this.fallbackAdapter.applyWeatherPreset(preset);
+  }
+
   public setPayloadMass(kg: number): void {
     this.fallbackAdapter.setPayloadMass(kg);
   }
@@ -176,6 +184,34 @@ export class GazeboSimulationAdapter implements SimulationAdapter {
 
   public resetCrash(): void {
     this.fallbackAdapter.resetCrash();
+  }
+
+  public revive(): TelemetryState {
+    return this.fallbackAdapter.revive();
+  }
+
+  public getTelemetry(): TelemetryState {
+    return this.fallbackAdapter.getTelemetry();
+  }
+
+  public getEnvironment(): EnvironmentState {
+    return this.fallbackAdapter.getEnvironment();
+  }
+
+  public getDefinition(): DroneDefinition {
+    return this.fallbackAdapter.getDefinition();
+  }
+
+  public setMotorOverride(index: number, multiplier: number | null): void {
+    this.fallbackAdapter.setMotorOverride(index, multiplier);
+  }
+
+  public setBatteryState(percent: number): void {
+    this.fallbackAdapter.setBatteryState(percent);
+  }
+
+  public setHoverMode(enabled: boolean): void {
+    this.fallbackAdapter.setHoverMode(enabled);
   }
 
   public setElevationQueryFn(fn: (x: number, z: number) => number): void {

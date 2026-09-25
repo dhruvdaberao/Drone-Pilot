@@ -18,6 +18,7 @@ import {
 import {
   TRAINING_QUADCOPTER_PRESET,
 } from "./digital-twin-presets";
+import { migrateDigitalTwinConfig } from "./digital-twin-migration";
 
 // ----------------------------------------------------------
 // 1. LOCAL STORAGE HELPERS
@@ -147,8 +148,10 @@ export async function listUserConfigurations(uid: string | null): Promise<DroneD
         const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Firestore timeout")), 4000));
         const snap = await Promise.race([getDocs(colRef), timeoutPromise]);
         snap.forEach((docSnap) => {
-          const data = docSnap.data() as DroneDigitalTwinConfiguration;
-          if (data?.identity?.category) customMap.set(data.identity.category, data);
+          const data = docSnap.data();
+          if (data?.identity?.category) {
+            customMap.set(data.identity.category, migrateDigitalTwinConfig(data));
+          }
         });
         return Array.from(customMap.values());
       } catch (e: any) {
@@ -162,9 +165,11 @@ export async function listUserConfigurations(uid: string | null): Promise<DroneD
     try {
       const raw = localStorage.getItem(getLocalSavedKey(uid));
       if (raw) {
-        const customConfigs: DroneDigitalTwinConfiguration[] = JSON.parse(raw);
+        const customConfigs: any[] = JSON.parse(raw);
         customConfigs.forEach((c) => {
-          if (c?.identity?.category) customMap.set(c.identity.category, c);
+          if (c?.identity?.category) {
+            customMap.set(c.identity.category, migrateDigitalTwinConfig(c));
+          }
         });
       }
     } catch {}
@@ -211,7 +216,8 @@ export async function getUserConfiguration(
           return { status: 'OFFLINE', data: null, error: 'Uncommitted pending writes' };
         }
 
-        const data = snap.data() as DroneDigitalTwinConfiguration;
+        const data = snap.data();
+        const migratedData = migrateDigitalTwinConfig(data);
         console.log('FIRESTORE READ SUCCESS', { UID: uid, TYPE: category });
 
         if (typeof window !== 'undefined') {
@@ -219,12 +225,12 @@ export async function getUserConfiguration(
             const raw = localStorage.getItem(getLocalSavedKey(uid));
             let list: DroneDigitalTwinConfiguration[] = raw ? JSON.parse(raw) : [];
             list = list.filter(c => c.identity.category !== category);
-            list.push(data);
+            list.push(migratedData);
             localStorage.setItem(getLocalSavedKey(uid), JSON.stringify(list));
           } catch {}
         }
 
-        return { status: 'SUCCESS', data };
+        return { status: 'SUCCESS', data: migratedData };
       } else {
         console.log('FIRESTORE READ NOT_FOUND', { UID: uid, TYPE: category });
         return { status: 'NOT_FOUND', data: null };
@@ -240,8 +246,9 @@ export async function getUserConfiguration(
             const list: DroneDigitalTwinConfiguration[] = JSON.parse(raw);
             const found = list.find(c => c.identity.category === category);
             if (found) {
+              const migratedFound = migrateDigitalTwinConfig(found);
               console.log('FALLBACK TO LOCAL STORAGE SUCCESS', { UID: uid, TYPE: category });
-              return { status: 'SUCCESS', data: found };
+              return { status: 'SUCCESS', data: migratedFound };
             }
           }
         } catch {}
@@ -397,11 +404,12 @@ export function importDigitalTwinFromJson(
       };
     }
 
+    const migratedConfig = migrateDigitalTwinConfig(configToValidate);
+
     const importedConfig: DroneDigitalTwinConfiguration = {
-      ...configToValidate,
-      digitalTwinSchemaVersion: configToValidate.digitalTwinSchemaVersion || "1.0",
+      ...migratedConfig,
       identity: {
-        ...configToValidate.identity,
+        ...migratedConfig.identity,
         isPreset: false,
         createdAt: Date.now(),
         updatedAt: Date.now(),

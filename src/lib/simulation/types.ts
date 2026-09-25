@@ -235,3 +235,20 @@ export interface TutorialStep {
   actionCallout: string;
   completed: boolean;
 }
+
+// ----------------------------------------------------------
+// PHASE 6: SNAPSHOT SYSTEM
+// ----------------------------------------------------------
+export interface SimulationSnapshot {
+  snapshotId: string;
+  configVersion: string;
+  timestamp: number;
+  simTimeSeconds: number;
+  aircraftConfigurationRef: string; // Configuration ID or Platform Category
+  telemetry: TelemetryState;
+  environment: EnvironmentState;
+  scenarioState?: {
+    scenarioId: string;
+    elapsedTime: number;
+  };
+}

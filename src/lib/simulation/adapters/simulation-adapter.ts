@@ -4,7 +4,7 @@
 // Decouples the 3D world, HUD, and educational engines from the physics solver.
 // ==========================================================
 
-import { DroneDefinition, TelemetryState, EnvironmentState, PhysicsDebugTelemetry, CrashState } from "../types";
+import { DroneDefinition, TelemetryState, EnvironmentState, PhysicsDebugTelemetry, CrashState, WeatherPreset } from "../types";
 import { NormalizedControlInput } from "../normalized-control";
 
 export type AdapterType = "local" | "px4" | "gazebo" | "hardware";
@@ -38,6 +38,8 @@ export interface SimulationAdapter {
   reset(spawnX: number, spawnY: number, spawnZ: number, spawnYaw: number): void;
 
   setEnvironment(env: EnvironmentState): void;
+  updateEnvironment(updates: Partial<EnvironmentState>): void;
+  applyWeatherPreset(preset: WeatherPreset): void;
   setPayloadMass(kg: number): void;
   setMotorHealth(motorIndex: number, health: number): void;
   setSensorHealth(sensors: Partial<{ gps: boolean; imu: boolean; baro: boolean; compass: boolean }>): void;
@@ -48,6 +50,18 @@ export interface SimulationAdapter {
   getDebugTelemetry(): PhysicsDebugTelemetry;
   getCrashState(): CrashState | null;
   resetCrash(): void;
+  revive(): TelemetryState;
+  
+  getTelemetry(): TelemetryState;
+  getEnvironment(): EnvironmentState;
+  getDefinition(): DroneDefinition;
+
+  // Manual overrides
+  setMotorOverride(index: number, multiplier: number | null): void;
+  setBatteryState(percent: number): void;
+  
+  // Assistance modes
+  setHoverMode(enabled: boolean): void;
 
   getStatus(): SimulationAdapterStatus;
   setElevationQueryFn?(fn: (x: number, z: number) => number): void;

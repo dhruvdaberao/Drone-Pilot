@@ -3,7 +3,7 @@
 // Authoritative high-fidelity 6-DoF aerodynamic solver executed in-browser.
 // ==========================================================
 
-import { DroneDefinition, TelemetryState, EnvironmentState, PhysicsDebugTelemetry, CrashState } from "../types";
+import { DroneDefinition, TelemetryState, EnvironmentState, PhysicsDebugTelemetry, CrashState, WeatherPreset } from "../types";
 import { FlightPhysicsEngine } from "../flight-physics";
 import { NormalizedControlInput, normalizedToFlightInput } from "../normalized-control";
 import { SimulationAdapter, SimulationAdapterStatus, AdapterType } from "./simulation-adapter";
@@ -54,6 +54,14 @@ export class LocalSimulationAdapter implements SimulationAdapter {
 
   public setEnvironment(env: EnvironmentState): void {
     this.physics.setEnvironment(env);
+  }
+
+  public updateEnvironment(updates: Partial<EnvironmentState>): void {
+    this.physics.environment.setState(updates);
+  }
+
+  public applyWeatherPreset(preset: WeatherPreset): void {
+    this.physics.environment.applyPreset(preset);
   }
 
   public setPayloadMass(kg: number): void {
@@ -107,6 +115,34 @@ export class LocalSimulationAdapter implements SimulationAdapter {
       packetsReceived: this.packetsReceived,
       statusMessage: "Operational (Local WebAssembly/JS Mathematical Solver)",
     };
+  }
+
+  public revive(): TelemetryState {
+    return this.physics.revive();
+  }
+
+  public getTelemetry(): TelemetryState {
+    return this.physics.generateTelemetry();
+  }
+
+  public getEnvironment(): EnvironmentState {
+    return this.physics.environment.getState();
+  }
+
+  public getDefinition(): DroneDefinition {
+    return this.physics.def;
+  }
+
+  public setMotorOverride(index: number, multiplier: number | null): void {
+    this.physics.setMotorOverride(index, multiplier);
+  }
+
+  public setBatteryState(percent: number): void {
+    this.physics.battery.reset(percent);
+  }
+
+  public setHoverMode(enabled: boolean): void {
+    this.physics.isHoverMode = enabled;
   }
 
   public getPhysicsEngine(): FlightPhysicsEngine {
