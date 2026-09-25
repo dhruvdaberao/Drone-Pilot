@@ -80,7 +80,7 @@ export default function FlyPage() {
         />
       ) : (
         <div className="min-h-screen flex flex-col items-center justify-center bg-[#08090a] text-white">
-          <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center gap-6">
             {errorMsg ? (
               <div className="flex flex-col items-center gap-4">
                 <p className="font-heading font-bold text-xs uppercase tracking-widest text-rose-500">
@@ -88,18 +88,33 @@ export default function FlyPage() {
                 </p>
                 <button
                   onClick={handleExitToDashboard}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded border border-white/20 text-xs font-bold transition-colors"
+                  className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-none border border-white/10 text-xs font-bold tracking-widest transition-colors"
                 >
                   RETURN TO HANGAR
                 </button>
               </div>
             ) : (
-              <>
-                <div className="w-8 h-8 border-4 border-[#FF5500] border-t-transparent rounded-full animate-spin"></div>
-                <p className="font-heading font-bold text-[10px] uppercase tracking-[0.2em] text-neutral-500 mt-2">
+              <div className="flex flex-col items-center max-w-sm">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-2 h-2 bg-[#FF5500] animate-pulse"></div>
+                  <h1 className="font-heading text-lg font-bold tracking-[0.25em]">DRONE<span className="text-neutral-500">PILOT</span></h1>
+                </div>
+                
+                <div className="w-64 h-px bg-white/10 relative overflow-hidden mb-4">
+                  <div className="absolute top-0 left-0 h-full w-1/3 bg-[#FF5500] animate-[slide_1.5s_ease-in-out_infinite]"></div>
+                </div>
+
+                <p className="font-heading font-bold text-[10px] uppercase tracking-[0.2em] text-neutral-500">
                   INITIALIZING FLIGHT SIMULATION...
                 </p>
-              </>
+                
+                <style dangerouslySetInnerHTML={{__html: `
+                  @keyframes slide {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(300%); }
+                  }
+                `}} />
+              </div>
             )}
           </div>
         </div>

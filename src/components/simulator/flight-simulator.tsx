@@ -1043,6 +1043,12 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       );
 
       // Render 3D Frame
+      scene.traverse((obj) => {
+        if (obj.children && obj.children.includes(undefined as any)) {
+          console.error("CORRUPTED THREE.JS OBJECT FOUND:", obj, obj.name, obj.type);
+          obj.children = obj.children.filter(c => c !== undefined);
+        }
+      });
       renderer.render(scene, chaseCam.camera);
 
       // Broadcast telemetry to peer pilots

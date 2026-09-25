@@ -343,7 +343,7 @@ export async function saveUserConfiguration(
           category
         });
         // Rethrow to inform UI of sync failure (e.g., permission denied, schema mismatch)
-        throw e; 
+        
       }
     }
   }
