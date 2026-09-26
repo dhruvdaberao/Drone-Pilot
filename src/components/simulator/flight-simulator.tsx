@@ -1343,6 +1343,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
         environment={envState}
         onUpdateEnvironment={handleUpdateEnvironment}
         onApplyPreset={handleApplyWeatherPreset}
+        telemetry={telemetry}
       />
 
       {/* Full Tactical Island Map Modal */}
