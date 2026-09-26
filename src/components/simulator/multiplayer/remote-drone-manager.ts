@@ -34,7 +34,7 @@ export class RemoteDroneManager {
     for (const p of remotePlayers) {
       let instance = this.drones.get(p.playerId);
       if (!instance) {
-        instance = this.createRemoteDroneMesh(p.callsign);
+        instance = this.createRemoteDroneMesh(p.callsign, p.droneType || p.airframeType);
         this.drones.set(p.playerId, instance);
         this.group.add(instance.group);
       }
@@ -76,7 +76,7 @@ export class RemoteDroneManager {
   }
 
 
-  private createRemoteDroneMesh(callsign: string): RemoteDroneInstance {
+  private createRemoteDroneMesh(callsign: string, droneType?: string): RemoteDroneInstance {
     const group = new THREE.Group();
 
     // Materials
@@ -139,14 +139,43 @@ export class RemoteDroneManager {
     rtkPuck.position.set(0, 0.075, -0.04);
     group.add(rtkPuck);
 
-    // Arms & Rotors (X-Configuration)
+    // Arms & Rotors
     const rotors: THREE.Group[] = [];
-    const armDefs = [
-      { x: 0.22, z: 0.22, isRight: true, dir: 1 },
-      { x: -0.22, z: 0.22, isRight: false, dir: -1 },
-      { x: 0.22, z: -0.22, isRight: true, dir: -1 },
-      { x: -0.22, z: -0.22, isRight: false, dir: 1 },
-    ];
+    let armCount = 4;
+    const lowerType = (droneType || "").toLowerCase();
+    if (lowerType.includes("hexa")) armCount = 6;
+    if (lowerType.includes("octa")) armCount = 8;
+    
+    const armDefs: Array<{ x: number; z: number; isRight: boolean; dir: number }> = [];
+    
+    if (armCount === 8) {
+      armDefs.push(
+        { x: 0.22, z: 0.32, isRight: true, dir: 1 },
+        { x: 0.35, z: 0.10, isRight: true, dir: -1 },
+        { x: 0.35, z: -0.10, isRight: true, dir: 1 },
+        { x: 0.22, z: -0.32, isRight: true, dir: -1 },
+        { x: -0.22, z: 0.32, isRight: false, dir: -1 },
+        { x: -0.35, z: 0.10, isRight: false, dir: 1 },
+        { x: -0.35, z: -0.10, isRight: false, dir: -1 },
+        { x: -0.22, z: -0.32, isRight: false, dir: 1 }
+      );
+    } else if (armCount === 6) {
+      armDefs.push(
+        { x: 0.22, z: 0.28, isRight: true, dir: 1 },
+        { x: 0.32, z: 0.0, isRight: true, dir: -1 },
+        { x: 0.22, z: -0.28, isRight: true, dir: 1 },
+        { x: -0.22, z: 0.28, isRight: false, dir: -1 },
+        { x: -0.32, z: 0.0, isRight: false, dir: 1 },
+        { x: -0.22, z: -0.28, isRight: false, dir: -1 }
+      );
+    } else {
+      armDefs.push(
+        { x: 0.22, z: 0.22, isRight: true, dir: 1 },
+        { x: -0.22, z: 0.22, isRight: false, dir: -1 },
+        { x: 0.22, z: -0.22, isRight: true, dir: -1 },
+        { x: -0.22, z: -0.22, isRight: false, dir: 1 }
+      );
+    }
 
     armDefs.forEach((armDef) => {
       const armLength = Math.hypot(armDef.x, armDef.z);
