@@ -1,23 +1,19 @@
 "use client";
 
 import React from "react";
-import { TRAINING_SCENARIOS, TrainingScenario } from "@/lib/simulation/scenario-presets";
+import { SCENARIO_CATALOG } from "@/lib/simulation/scenario-catalog";
+import { TrainingScenarioDef } from "@/lib/simulation/scenario-types";
 import {
-  Sparkles,
   X,
-  Wind,
-  BatteryCharging,
-  AlertTriangle,
-  Radio,
-  Package,
-  Check,
+  BookOpen,
   ChevronRight,
+  Play
 } from "lucide-react";
 
 interface ScenarioSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectScenario: (scenario: TrainingScenario) => void;
+  onSelectScenario: (scenario: TrainingScenarioDef) => void;
   activeScenarioId?: string;
 }
 
@@ -29,97 +25,54 @@ export function ScenarioSelectorModal({
 }: ScenarioSelectorModalProps) {
   if (!isOpen) return null;
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case "Environmental":
-        return <Wind className="h-4 w-4 text-amber-400" />;
-      case "Emergency":
-        return <AlertTriangle className="h-4 w-4 text-rose-400" />;
-      case "Industrial":
-        return <Package className="h-4 w-4 text-sky-400" />;
-      case "Standard":
-      default:
-        return <Sparkles className="h-4 w-4 text-emerald-400" />;
-    }
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-md font-mono text-xs select-none">
-      <div className="w-full max-w-3xl max-h-[95dvh] flex flex-col bg-neutral-950 text-white border border-neutral-800 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-neutral-800 bg-neutral-900/60">
-          <div>
-            <div className="flex items-center gap-2 text-emerald-400 font-bold tracking-wider text-xs uppercase mb-1">
-              <Sparkles className="h-4 w-4" />
-              <span>AERONAUTICAL TRAINING SCENARIOS</span>
-            </div>
-            <p className="text-[11px] text-neutral-400">
-              Select an educational scenario to simulate physical aerodynamic and mechanical consequences.
-            </p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm font-mono select-none">
+      <div className="w-full max-w-3xl bg-neutral-950 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
+          <div className="flex items-center gap-3 text-white">
+            <BookOpen className="w-5 h-5 text-[#FF5500]" />
+            <h2 className="font-bold tracking-wide uppercase text-sm">Educational Training Catalog</h2>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors"
-          >
-            <X className="h-5 w-5" />
+          <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg text-white/50 transition-colors">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Scenario Grid */}
-        <div className="p-4 sm:p-5 overflow-y-auto grid grid-cols-1 landscape:grid-cols-2 md:grid-cols-2 gap-3.5 flex-1 custom-scrollbar">
-          {TRAINING_SCENARIOS.map((sc) => {
-            const isActive = sc.id === activeScenarioId;
+        <div className="p-4 overflow-y-auto custom-scrollbar flex flex-col gap-3">
+          {SCENARIO_CATALOG.map((scenario) => {
+            const isActive = scenario.id === activeScenarioId;
 
             return (
               <div
-                key={sc.id}
-                onClick={() => {
-                  onSelectScenario(sc);
-                  onClose();
-                }}
-                className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between hover:border-neutral-600 ${
-                  isActive
-                    ? "bg-emerald-950/20 border-emerald-500/80 shadow-[0_0_20px_rgba(16,185,129,0.15)]"
-                    : "bg-neutral-900/50 border-neutral-800 hover:bg-neutral-900/80"
+                key={scenario.id}
+                className={`flex flex-col md:flex-row md:items-center gap-4 p-4 rounded-xl border transition-all ${
+                  isActive 
+                    ? "bg-[#FF5500]/10 border-[#FF5500]/50" 
+                    : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      {getCategoryIcon(sc.category)}
-                      <span className="font-bold text-white text-xs">{sc.name}</span>
-                    </div>
-                    <span
-                      className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase"
-                      style={{
-                        backgroundColor: `${sc.badgeColor}22`,
-                        color: sc.badgeColor,
-                        border: `1px solid ${sc.badgeColor}44`,
-                      }}
-                    >
-                      {sc.category}
-                    </span>
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white uppercase text-sm">{scenario.title}</h3>
                   </div>
-
-                  <p className="text-[11px] text-neutral-400 leading-relaxed mb-3">
-                    {sc.description}
+                  <p className="text-xs text-white/70 leading-relaxed">{scenario.description}</p>
+                  <p className="text-[10px] text-emerald-400/80 font-bold tracking-widest uppercase">
+                    OBJ: {scenario.learningObjective}
                   </p>
-
-                  <div className="p-2.5 rounded-xl bg-black/40 border border-neutral-800/80 mb-3 space-y-1 text-[10px]">
-                    <div className="text-neutral-500 font-bold uppercase tracking-wider text-[9px]">
-                      LEARNING OUTCOME
-                    </div>
-                    <div className="text-neutral-300 leading-normal">{sc.learningObjective}</div>
-                  </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-neutral-800/60 text-[10px]">
-                  <span className="text-neutral-500">Click to Deploy</span>
-                  <div className="flex items-center gap-1 text-emerald-400 font-bold">
-                    <span>INITIALIZE</span>
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </div>
+                <div className="shrink-0 flex flex-col items-stretch gap-2">
+                  <button
+                    onClick={() => onSelectScenario(scenario)}
+                    className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded font-bold uppercase tracking-widest text-xs transition-colors ${
+                      isActive
+                        ? "bg-[#FF5500] hover:bg-[#ff7733] text-white"
+                        : "bg-white/10 hover:bg-white/20 text-white"
+                    }`}
+                  >
+                    {isActive ? "Restart" : "Load Scenario"}
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             );

@@ -38,9 +38,9 @@ import { SpawnSystem } from "@/lib/world/spawn-system";
 import { SpawnConfiguration } from "@/lib/world/world-types";
 import { HELIPADS } from "@/lib/world/helipad-definitions";
 import { useAuth } from "@/context/auth-context";
-import { ScenarioEngine, SessionState } from "@/lib/simulation/scenario-engine";
+import { ScenarioEvaluationEngine } from "@/lib/simulation/scenario-engine";
 import { ScenarioSessionOverlay } from "./scenario-session-overlay";
-import { TrainingScenario } from "@/lib/simulation/scenario-presets";
+import { TrainingScenarioDef, ScenarioSessionState } from "@/lib/simulation/scenario-types";
 import { AudioManager } from "@/lib/audio/audio-manager";
 import { DroneAudio } from "@/lib/audio/drone-audio";
 import { WindAudio } from "@/lib/audio/wind-audio";
@@ -217,8 +217,8 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     return false;
   });
 
-  const scenarioEngineRef = useRef<ScenarioEngine | null>(null);
-  const [sessionState, setSessionState] = useState<SessionState | null>(null);
+  const scenarioEngineRef = useRef<ScenarioEvaluationEngine>(new ScenarioEvaluationEngine());
+  const [sessionState, setSessionState] = useState<ScenarioSessionState | null>(null);
 
   // Simulation Data States
   const [cameraMode, setCameraMode] = useState<CameraMode>("chase");
@@ -626,59 +626,52 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
   }, []);
 
   const handleSelectScenario = useCallback(
-    (scenario: TrainingScenario) => {
+    (scenario: TrainingScenarioDef) => {
       setActiveScenarioId(scenario.id);
       setIsScenarioModalOpen(false);
 
-      if (!scenarioEngineRef.current) {
-        scenarioEngineRef.current = new ScenarioEngine(setSessionState);
-      }
+      const obs = coachEngineRef.current.extractObservation(
+        telemetry,
+        physicsEngineRef.current?.environment.getState() || envState
+      );
       
-      // We do not apply faults yet, we wait for "START SIMULATION"
-      scenarioEngineRef.current.startScenario(scenario, telemetry, {
-        userId: user?.uid || "guest",
-        configRef: selectedDrone.platformId || selectedDrone.id,
-        configVersion: activeDtRef.current?.identity?.configurationVersion || "1.0"
-      });
+      const sp = spawnConfigRef.current;
+      scenarioEngineRef.current.startScenario(scenario, obs, { x: sp.position.x, y: sp.position.y, z: sp.position.z });
+      setSessionState({ ...scenarioEngineRef.current.getSessionState()! });
     },
-    [telemetry, user, selectedDrone, activeDtRef]
+    [telemetry, envState]
   );
 
   const handleStartScenario = useCallback(() => {
-    const scenario = scenarioEngineRef.current?.getActiveScenario();
+    const scenario = scenarioEngineRef.current.getActiveScenario();
     if (!scenario) return;
 
-    scenarioEngineRef.current?.begin();
     handleResetAllFaults();
-
-    if (scenario.environment) {
-      handleUpdateEnvironment(scenario.environment);
-      if (scenario.environment.preset) {
-        handleApplyWeatherPreset(scenario.environment.preset);
+    
+    // Set Environment
+    if (scenario.environmentSetup) {
+      handleUpdateEnvironment(scenario.environmentSetup);
+      if (scenario.environmentSetup.preset) {
+        handleApplyWeatherPreset(scenario.environmentSetup.preset);
       }
     }
 
-    if (scenario.faults.motorHealth) {
-      Object.entries(scenario.faults.motorHealth).forEach(([idxStr, h]) => {
+    // Set Aircraft setup
+    if (scenario.aircraftSetup.motorHealth) {
+      Object.entries(scenario.aircraftSetup.motorHealth).forEach(([idxStr, h]) => {
         handleSetMotorHealth(Number(idxStr), h);
       });
     }
 
-    if (scenario.faults.sensorHealth) {
-      Object.entries(scenario.faults.sensorHealth).forEach(([sensor, healthy]) => {
-        setSensorHealth((prev) => ({ ...prev, [sensor]: healthy }));
-        physicsEngineRef.current?.setSensorHealth({ [sensor]: healthy });
-      });
+    if (scenario.aircraftSetup.payloadKg !== undefined) {
+      handleSetPayloadMass(scenario.aircraftSetup.payloadKg);
     }
 
-    if (scenario.faults.payloadMassKg !== undefined) {
-      handleSetPayloadMass(scenario.faults.payloadMassKg);
-    }
-
-    if (scenario.faults.batteryInitialSocPercent !== undefined && physicsEngineRef.current) {
-      physicsEngineRef.current.battery.reset(scenario.faults.batteryInitialSocPercent);
+    if (scenario.aircraftSetup.batteryPercent !== undefined && physicsEngineRef.current) {
+      physicsEngineRef.current.battery.reset(scenario.aircraftSetup.batteryPercent);
     }
   }, [handleResetAllFaults, handleUpdateEnvironment, handleApplyWeatherPreset, handleSetMotorHealth, handleSetPayloadMass]);
+
 
   // Post-Flight Analysis Handlers
   const handleManualDebrief = useCallback(() => {
@@ -1026,7 +1019,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       remoteDroneMgr.update(remotePlayersRef.current, dt);
 
       // Evaluate active scenario objectives
-      scenarioEngineRef.current?.evaluate(curTelemetry, physics.environment.getState(), dt, physics.crashState);
+
 
       // Update Follow Camera
 
@@ -1129,6 +1122,16 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
               title: insight.title,
               message: insight.explanation.what,
             });
+            scenarioEngineRef.current.registerCoachInsight(insight);
+          }
+          if (activeScenarioId) {
+            scenarioEngineRef.current.evaluate(
+              obs,
+              curTelemetry.position,
+              physics.crashState,
+              (!physics.crashState?.isCrashed && curTelemetry.altitude < 0.25 && Math.abs(curTelemetry.verticalSpeed) < 0.5)
+            );
+            setSessionState({ ...scenarioEngineRef.current.getSessionState()! });
           }
         }
       }
@@ -1323,16 +1326,16 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       {/* Educational Flight Session Scenario Overlay */}
       {activeScenarioId && (
         <ScenarioSessionOverlay
-          scenario={scenarioEngineRef.current?.getActiveScenario() || null}
+          scenario={scenarioEngineRef.current.getActiveScenario()}
           session={sessionState}
           onStart={handleStartScenario}
           onClose={() => {
             setActiveScenarioId(null);
-            scenarioEngineRef.current?.reset();
+            scenarioEngineRef.current.abortScenario();
             handleResetExperiment();
           }}
           onReset={() => {
-             scenarioEngineRef.current?.startScenario(scenarioEngineRef.current!.getActiveScenario()!, telemetry);
+             const scenario = scenarioEngineRef.current.getActiveScenario(); if(scenario) { handleSelectScenario(scenario); }
              handleStartScenario();
           }}
         />
