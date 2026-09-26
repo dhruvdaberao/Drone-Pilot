@@ -31,7 +31,7 @@ export function LeftGlassPanel({
       {/* Mobile Toggle Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-4 left-4 z-40 bg-neutral-900/80 backdrop-blur border border-white/20 p-2 rounded-lg text-white safe-area-mt"
+        className="md:hidden fixed top-4 left-4 z-40 bg-neutral-900/80 backdrop-blur border border-white/20 p-2 rounded-lg text-white safe-area-mt"
       >
         <Settings2 className="w-5 h-5 text-[#FF5500]" />
       </button>
@@ -39,15 +39,15 @@ export function LeftGlassPanel({
       {/* Backdrop for mobile */}
       {isOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black/50 z-30" 
+          className="md:hidden fixed inset-0 bg-black/50 z-30" 
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      <div className={`fixed top-0 left-0 bottom-0 lg:relative lg:w-full lg:h-full lg:top-auto lg:left-auto lg:bottom-auto w-80 lg:rounded-none bg-neutral-900/95 lg:bg-transparent backdrop-blur-xl border-r lg:border-r border-white/10 p-5 flex flex-col gap-6 shadow-2xl z-40 text-white font-mono pointer-events-auto transition-transform duration-300 ease-in-out safe-area-padding ${
-        isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      <div className={`fixed top-0 left-0 bottom-0 md:relative md:w-full md:h-full md:top-auto md:left-auto md:bottom-auto w-80 md:rounded-none bg-neutral-900/95 md:bg-transparent backdrop-blur-xl border-r md:border-r border-white/10 p-5 flex flex-col gap-6 shadow-2xl z-40 text-white font-mono pointer-events-auto transition-transform duration-300 ease-in-out safe-area-padding ${
+        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       }`}>
-        <div className="flex items-center justify-between lg:hidden pb-2 border-b border-white/10">
+        <div className="flex items-center justify-between md:hidden pb-2 border-b border-white/10">
           <h2 className="text-xs font-bold uppercase tracking-widest text-white/50">Aircraft Status</h2>
           <button onClick={() => setIsOpen(false)} className="p-1"><Settings2 className="w-4 h-4 text-white/50" /></button>
         </div>
@@ -156,7 +156,7 @@ export function RightGlassPanel({
       {/* Mobile Toggle Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-4 right-4 z-40 bg-neutral-900/80 backdrop-blur border border-white/20 p-2 rounded-lg text-white safe-area-mt"
+        className="md:hidden fixed top-4 right-4 z-40 bg-neutral-900/80 backdrop-blur border border-white/20 p-2 rounded-lg text-white safe-area-mt"
       >
         <CloudSun className="w-5 h-5 text-[#FF5500]" />
       </button>
@@ -164,22 +164,22 @@ export function RightGlassPanel({
       {/* Backdrop for mobile */}
       {isOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black/50 z-30" 
+          className="md:hidden fixed inset-0 bg-black/50 z-30" 
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      <div className={`fixed top-0 right-0 bottom-0 lg:relative lg:w-full lg:h-full lg:top-auto lg:right-auto lg:bottom-auto w-80 lg:rounded-none bg-neutral-900/95 lg:bg-transparent backdrop-blur-xl border-l lg:border-l border-white/10 p-5 flex flex-col gap-5 shadow-2xl z-40 text-white font-mono pointer-events-auto transition-transform duration-300 ease-in-out safe-area-padding custom-scrollbar overflow-y-auto ${
-        isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+      <div className={`fixed top-0 right-0 bottom-0 md:relative md:w-full md:h-full md:top-auto md:right-auto md:bottom-auto w-80 md:rounded-none bg-neutral-900/95 md:bg-transparent backdrop-blur-xl border-l md:border-l border-white/10 p-5 flex flex-col gap-5 shadow-2xl z-40 text-white font-mono pointer-events-auto transition-transform duration-300 ease-in-out safe-area-padding custom-scrollbar overflow-y-auto ${
+        isOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"
       }`}>
         
-        <div className="flex items-center justify-between lg:hidden pb-2 border-b border-white/10 shrink-0">
+        <div className="flex items-center justify-between md:hidden pb-2 border-b border-white/10 shrink-0">
           <h2 className="text-xs font-bold uppercase tracking-widest text-white/50">Environment</h2>
           <button onClick={() => setIsOpen(false)} className="p-1"><CloudSun className="w-4 h-4 text-white/50" /></button>
         </div>
 
         {/* Header */}
-        <div className="flex items-center gap-2 shrink-0 hidden lg:flex">
+        <div className="flex items-center gap-2 shrink-0 hidden md:flex">
           <CloudSun className="w-5 h-5 text-white" />
           <h2 className="font-heading font-extrabold text-sm uppercase tracking-wider">Environment</h2>
         </div>

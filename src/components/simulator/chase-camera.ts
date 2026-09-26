@@ -2,6 +2,7 @@
 // DRONE PILOT — CHASE CAMERA CONTROLLER
 // Cinematic 3rd-Person Spring-Damped Follow Camera,
 // FPV Gimbal Cockpit View, and Tactical Top-Down Mode.
+// Scroll-to-Zoom supported.
 // ==========================================================
 
 import * as THREE from "three";
@@ -13,7 +14,12 @@ export class ChaseCameraController {
   public camera: THREE.PerspectiveCamera;
   public mode: CameraMode = "chase";
 
-  private currentPos = new THREE.Vector3(0, 3.2, 5.2);
+  // Zoom state (meters)
+  private followDistance = 5.0;
+  private readonly MIN_FOLLOW_DISTANCE = 2.0;
+  private readonly MAX_FOLLOW_DISTANCE = 30.0;
+
+  private currentPos = new THREE.Vector3(0, 3.2, 5.0);
   private currentLookAt = new THREE.Vector3(0, 0.865, 0);
 
   // Orbit drag offset
@@ -22,8 +28,8 @@ export class ChaseCameraController {
   public isOrbiting = false;
 
   constructor(fov = 55, aspect = 16 / 9) {
-    this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.2, 5000);
-    this.camera.position.set(0, 3.2, 5.2);
+    this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.15, 6000);
+    this.camera.position.set(0, 3.2, 5.0);
   }
 
   public setAspect(aspect: number) {
@@ -43,6 +49,23 @@ export class ChaseCameraController {
     return this.mode;
   }
 
+  /**
+   * Adjust follow distance by delta (negative = zoom in, positive = zoom out)
+   * Uses exponential feel: delta in normalized [-1, 1]
+   */
+  public adjustZoom(delta: number) {
+    // delta > 0 = scroll down = zoom out; delta < 0 = scroll up = zoom in
+    const factor = 1.0 + Math.sign(delta) * Math.min(0.15, Math.abs(delta) * 0.002);
+    this.followDistance = Math.max(
+      this.MIN_FOLLOW_DISTANCE,
+      Math.min(this.MAX_FOLLOW_DISTANCE, this.followDistance * factor)
+    );
+  }
+
+  public getFollowDistance(): number {
+    return this.followDistance;
+  }
+
   public setOrbitDelta(deltaX: number, deltaY: number) {
     this.orbitYaw -= deltaX * 0.007;
     // Allows steep overhead top-down (+1.25 rad) down to skyward view (-1.1 rad)
@@ -57,6 +80,7 @@ export class ChaseCameraController {
   public resetOrbit() {
     this.orbitYaw = 0;
     this.orbitPitch = 0;
+    this.followDistance = 5.0;
     this.isOrbiting = false;
   }
 
@@ -71,13 +95,12 @@ export class ChaseCameraController {
 
     if (this.mode === "chase") {
       // Third-Person Spherical Orbit Follow Cam
-      const followDistance = 6.8;
       const effectivePitch = this.orbitPitch + 0.45;
 
       // Spherical coordinate offset
       const clampedPitch = Math.max(-0.6, Math.min(1.35, effectivePitch));
-      const horizDist = followDistance * Math.cos(clampedPitch);
-      const vertDist = followDistance * Math.sin(clampedPitch);
+      const horizDist = this.followDistance * Math.cos(clampedPitch);
+      const vertDist = this.followDistance * Math.sin(clampedPitch);
 
       const targetX = dronePos.x + Math.sin(droneYaw) * horizDist;
       const targetZ = dronePos.z + Math.cos(droneYaw) * horizDist;
@@ -108,7 +131,8 @@ export class ChaseCameraController {
 
     } else if (this.mode === "topdown") {
       // Tactical Top-Down Orthographic feel
-      const targetPos = dronePos.clone().add(new THREE.Vector3(0, 28.0, 0.01));
+      const topDistance = Math.max(10, this.followDistance * 4);
+      const targetPos = dronePos.clone().add(new THREE.Vector3(0, topDistance, 0.01));
       this.currentPos.lerp(targetPos, dt * 10.0);
       this.camera.position.copy(this.currentPos);
       this.camera.lookAt(dronePos);

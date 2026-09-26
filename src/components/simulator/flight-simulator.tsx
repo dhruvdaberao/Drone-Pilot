@@ -788,7 +788,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     if (dtParam) {
       dtConfig = getDigitalTwinPresetById(dtParam);
     } else if (dtConfig.identity.category !== selectedDrone.platformId) {
-      dtConfig = getDigitalTwinPresetById(selectedDrone.id);
+      dtConfig = getDigitalTwinPresetById(selectedDrone.platformId);
     }
     setActiveDigitalTwin(null, dtConfig);
     setActiveDigitalTwinState(dtConfig);
@@ -917,11 +917,17 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       }
     };
 
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      chaseCam.adjustZoom(e.deltaY);
+    };
+
     const domEl = renderer.domElement;
     domEl.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
     domEl.addEventListener("dblclick", onDblClick);
+    domEl.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("keydown", onGlobalKeyDown);
 
     // 12. ANIMATION & SIMULATION LOOP
@@ -1110,6 +1116,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
       domEl.removeEventListener("dblclick", onDblClick);
+      domEl.removeEventListener("wheel", onWheel);
       window.removeEventListener("keydown", onGlobalKeyDown);
 
       if (container.contains(domEl)) {
@@ -1142,7 +1149,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
 
       <div className="flex flex-1 w-full relative overflow-hidden">
         {/* Left Panel (Desktop) */}
-        <div className="w-[340px] shrink-0 border-r border-white/10 hidden lg:block bg-neutral-900/40 backdrop-blur-md relative z-20 overflow-y-auto">
+        <div className="w-[300px] shrink-0 border-r border-white/10 hidden md:block bg-neutral-900/40 backdrop-blur-md relative z-20 overflow-y-auto">
           <AircraftControlPanel
             droneName={activeDigitalTwin?.identity.name || selectedDrone.name}
             telemetry={telemetry}
@@ -1223,7 +1230,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
         </div>
 
         {/* Right Panel (Desktop) */}
-        <div className="w-[340px] shrink-0 border-l border-white/10 hidden lg:block bg-neutral-900/40 backdrop-blur-md relative z-20 overflow-y-auto">
+        <div className="w-[280px] shrink-0 border-l border-white/10 hidden md:block bg-neutral-900/40 backdrop-blur-md relative z-20 overflow-y-auto">
           <RightGlassPanel
             environment={envState}
             onUpdateEnvironment={handleUpdateEnvironment}
@@ -1236,7 +1243,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
         </div>
 
         {/* Mobile Hidden Panels (rendered but hidden by css on desktop) */}
-        <div className="lg:hidden">
+        <div className="md:hidden">
           <AircraftControlPanel
             droneName={activeDigitalTwin?.identity.name || selectedDrone.name}
             telemetry={telemetry}

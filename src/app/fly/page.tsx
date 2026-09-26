@@ -51,7 +51,10 @@ export default function FlyPage() {
         
         if (fetchResult.status === "SUCCESS" && fetchResult.data) {
           setInitialConfig(fetchResult.data);
-        } else if (fetchResult.status === "ERROR") {
+        }
+        // NOT_FOUND, OFFLINE, or ERROR with null uid = no saved config, simulator will use preset fallback
+        // Only show error for authenticated users who failed to load
+        if (fetchResult.status === "ERROR" && uid) {
           setErrorMsg("Unable to load aircraft configuration.");
         }
         

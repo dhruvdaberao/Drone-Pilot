@@ -35,10 +35,9 @@ export class SpawnSystem {
       targetHelipad = HELIPADS[region.primaryHelipadId] || null;
     }
 
-    // 4. If neither specified, drop into a random helipad across the island
+    // 4. If neither specified, always spawn at the primary training helipad (not random)
     if (!targetHelipad) {
-      const spawnable = SpawnSystem.getSpawnableHelipads();
-      targetHelipad = spawnable[Math.floor(Math.random() * spawnable.length)] || HELIPADS["training-alpha"];
+      targetHelipad = HELIPADS["training-alpha"];
     }
 
     return SpawnSystem.createConfigForHelipad(targetHelipad);
