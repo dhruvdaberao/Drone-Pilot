@@ -87,9 +87,9 @@ export function LoginForm() {
           {/* Premium Google OAuth Bar Button with Warm Tint */}
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             size="md"
-            className="w-full justify-center text-xs sm:text-sm font-semibold transition-all border-white/10 text-white hover:bg-white/5"
+            className="w-full justify-center text-xs sm:text-sm font-semibold transition-all bg-white text-black hover:bg-neutral-200 border-none"
             onClick={handleGoogleSignIn}
             isLoading={isGoogleLoading}
             loadingText="CONNECTING..."
