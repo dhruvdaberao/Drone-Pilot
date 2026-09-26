@@ -5,6 +5,7 @@
 
 import * as THREE from "three";
 import { WORLD_DEFINITION } from "@/lib/world/world-definition";
+import { WorldMaterials } from "../world-materials";
 
 export class FreshwaterMesh {
   public group = new THREE.Group();
@@ -120,15 +121,9 @@ export class FreshwaterMesh {
     const lakeGeo = new THREE.ShapeGeometry(lakeShape);
     lakeGeo.rotateX(-Math.PI / 2);
 
-    this.lakeMat = new THREE.MeshStandardMaterial({
-      color: 0x06b6d4, // Bright cyan alpine lake
-      roughness: 0.18,
-      metalness: 0.25,
-      normalMap: this.waveNormalTex,
-      normalScale: new THREE.Vector2(1.2, 1.2),
-      transparent: true,
-      opacity: 0.85,
-    });
+    this.lakeMat = WorldMaterials.waterFresh.clone();
+    this.lakeMat.normalMap = this.waveNormalTex;
+    this.lakeMat.normalScale = new THREE.Vector2(1.2, 1.2);
     this.applyWaterFresnel(this.lakeMat, new THREE.Color(0xbae6fd));
 
     const lakeMesh = new THREE.Mesh(lakeGeo, this.lakeMat);
@@ -144,11 +139,7 @@ export class FreshwaterMesh {
     );
     bankGeo.computeVertexNormals();
 
-    const bankMat = new THREE.MeshStandardMaterial({
-      color: 0x6a7582, // Natural weathered granite gravel
-      roughness: 0.90,
-      metalness: 0.04,
-    });
+    const bankMat = WorldMaterials.rock;
     const bankMesh = new THREE.Mesh(bankGeo, bankMat);
     bankMesh.position.set(lakeCenter.x, lakeCenter.y - 0.05, lakeCenter.z);
     bankMesh.receiveShadow = true;
@@ -297,17 +288,11 @@ export class FreshwaterMesh {
     this.riverFlowTex = this.createRiverFlowTexture();
     this.riverNormalTex = this.createWaterNormal();
 
-    this.riverMat = new THREE.MeshStandardMaterial({
-      color: 0x38bdf8, // Luminous clear cyan-blue river
-      map: this.riverFlowTex,
-      roughness: 0.18, // Glossy reflective water surface
-      metalness: 0.22,
-      normalMap: this.riverNormalTex,
-      normalScale: new THREE.Vector2(1.8, 1.8),
-      transparent: true,
-      opacity: 0.86,
-      envMapIntensity: 2.2,
-    });
+    this.riverMat = WorldMaterials.waterFresh.clone();
+    this.riverMat.map = this.riverFlowTex;
+    this.riverMat.normalMap = this.riverNormalTex;
+    this.riverMat.normalScale = new THREE.Vector2(1.8, 1.8);
+    this.riverMat.envMapIntensity = 2.2;
     this.applyWaterFresnel(this.riverMat, new THREE.Color(0xdff4fc));
 
     const riverMesh = new THREE.Mesh(riverGeo, this.riverMat);
@@ -322,23 +307,14 @@ export class FreshwaterMesh {
     );
     bankGeo.computeVertexNormals();
 
-    const bankMat = new THREE.MeshStandardMaterial({
-      color: 0x64707e, // Natural weathered river stone
-      roughness: 0.88,
-      metalness: 0.05,
-    });
+    const bankMat = WorldMaterials.rock;
     const riverBankMesh = new THREE.Mesh(bankGeo, bankMat);
     riverBankMesh.receiveShadow = true;
     this.group.add(riverBankMesh);
 
     // Scattered natural river boulders in rapids and sandbars
     const boulderGeo = new THREE.DodecahedronGeometry(1.4, 1);
-    const boulderMat = new THREE.MeshStandardMaterial({
-      color: 0x727d8a, // Natural river granite
-      roughness: 0.88,
-      metalness: 0.04,
-      flatShading: true,
-    });
+    const boulderMat = WorldMaterials.rock;
 
     for (let b = 0; b < 28; b++) {
       const p = (b + 1) / 30;

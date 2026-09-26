@@ -539,8 +539,8 @@ export function IslandMapModal({
                 <rect x="-70" y="-60" width="38" height="32" rx="2" fill="#0f172a" stroke="#64748b" strokeWidth="1.5" />
                 <rect x="45" y="-60" width="32" height="32" rx="2" fill="#0f172a" stroke="#64748b" strokeWidth="1.5" />
                 {/* Apex High-Rise Tower */}
-                <rect x="15" y="10" width="40" height="40" rx="2" fill="#020617" stroke="#ff5500" strokeWidth="2" />
-                <text x="35" y="34" fill="#ff5500" fontSize="8" fontWeight="900" textAnchor="middle">
+                <rect x="15" y="10" width="40" height="40" rx="2" fill="#020617" stroke="#38bdf8" strokeWidth="2" />
+                <text x="35" y="34" fill="#38bdf8" fontSize="8" fontWeight="900" textAnchor="middle">
                   APEX
                 </text>
                 <text x="0" y="-66" fill="#93c5fd" fontSize="8" fontWeight="bold" textAnchor="middle">

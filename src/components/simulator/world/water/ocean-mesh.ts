@@ -6,6 +6,7 @@
 import * as THREE from "three";
 import { WORLD_CONFIG } from "@/lib/world/world-config";
 import { getCoastlineRadius, getDistanceToCoast } from "@/lib/world/coastline-math";
+import { WorldMaterials } from "../world-materials";
 
 export class OceanMesh {
   public group = new THREE.Group();
@@ -103,16 +104,10 @@ export class OceanMesh {
     this.waveNormalTex.repeat.set(48, 48);
 
     // Vibrant tropical ocean: Azure `#0284c7` with broad angle visibility & Fresnel sky reflection
-    this.oceanMat = new THREE.MeshStandardMaterial({
-      color: 0x0284c7, // Vibrant deep ocean azure
-      roughness: 0.18, // Balanced roughness so sun glints and wave highlights remain visible from all camera angles
-      metalness: 0.22,
-      normalMap: this.waveNormalTex,
-      normalScale: new THREE.Vector2(2.0, 2.0),
-      transparent: true,
-      opacity: 0.88,
-      envMapIntensity: 2.5,
-    });
+    this.oceanMat = WorldMaterials.waterOcean.clone();
+    this.oceanMat.normalMap = this.waveNormalTex;
+    this.oceanMat.normalScale = new THREE.Vector2(2.0, 2.0);
+    this.oceanMat.envMapIntensity = 2.5;
     this.applyWaterFresnel(this.oceanMat, new THREE.Color(0xa5f3fc));
 
     const ocean = new THREE.Mesh(geo, this.oceanMat);
@@ -185,16 +180,10 @@ export class OceanMesh {
     );
     shelfGeo.computeVertexNormals();
 
-    this.shelfMat = new THREE.MeshStandardMaterial({
-      color: 0x06b6d4, // Luminous tropical cyan shallow water
-      roughness: 0.16,
-      metalness: 0.20,
-      normalMap: this.waveNormalTex,
-      normalScale: new THREE.Vector2(1.5, 1.5),
-      transparent: true,
-      opacity: 0.76,
-      envMapIntensity: 2.2,
-    });
+    this.shelfMat = WorldMaterials.waterFresh.clone();
+    this.shelfMat.normalMap = this.waveNormalTex;
+    this.shelfMat.normalScale = new THREE.Vector2(1.5, 1.5);
+    this.shelfMat.envMapIntensity = 2.2;
     this.applyWaterFresnel(this.shelfMat, new THREE.Color(0xcffafe));
 
     const shelfMesh = new THREE.Mesh(shelfGeo, this.shelfMat);
@@ -286,15 +275,8 @@ export class OceanMesh {
     foamGeo.computeVertexNormals();
 
     this.foamTex = this.createFoamTexture();
-    this.foamMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      map: this.foamTex,
-      roughness: 0.4,
-      metalness: 0.1,
-      transparent: true,
-      opacity: 0.65,
-      depthWrite: false,
-    });
+    this.foamMat = WorldMaterials.foam.clone();
+    this.foamMat.map = this.foamTex;
 
     const foamMesh = new THREE.Mesh(foamGeo, this.foamMat);
     this.group.add(foamMesh);

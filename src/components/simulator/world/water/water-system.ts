@@ -6,6 +6,7 @@
 import * as THREE from "three";
 import { OceanMesh } from "./ocean-mesh";
 import { FreshwaterMesh } from "./freshwater-mesh";
+import { WorldMaterials } from "../world-materials";
 
 export class WaterSystem {
   public group = new THREE.Group();
@@ -87,12 +88,7 @@ export class WaterSystem {
 
     // Rocky escarpment behind waterfall (sunken into canyon wall, fully outside lake boundary)
     const cliffGeo = new THREE.BoxGeometry(20, 10, 2.5);
-    const cliffMat = new THREE.MeshStandardMaterial({
-      color: 0x64748b, // Weathered natural mountain rock face
-      roughness: 0.92,
-      metalness: 0.04,
-      flatShading: true,
-    });
+    const cliffMat = WorldMaterials.rock;
     const cliffMesh = new THREE.Mesh(cliffGeo, cliffMat);
     cliffMesh.position.set(-272, 4.8, -214);
     cliffMesh.rotation.y = Math.PI / 4;
@@ -100,13 +96,7 @@ export class WaterSystem {
 
     // Plunge pool at the base (14m radius)
     const poolGeo = new THREE.CircleGeometry(14, 32);
-    const poolMat = new THREE.MeshStandardMaterial({
-      color: 0x06b6d4, // Vibrant turquoise plunge pool
-      transparent: true,
-      opacity: 0.85,
-      roughness: 0.16,
-      metalness: 0.25,
-    });
+    const poolMat = WorldMaterials.waterFresh.clone();
     const poolMesh = new THREE.Mesh(poolGeo, poolMat);
     poolMesh.rotation.x = -Math.PI / 2;
     poolMesh.position.set(-258, 2.05, -198);
@@ -114,12 +104,7 @@ export class WaterSystem {
 
     // Natural weathered boulders surrounding pool base and splash zone
     const boulderGeo = new THREE.DodecahedronGeometry(1.8, 1);
-    const boulderMat = new THREE.MeshStandardMaterial({
-      color: 0x6e7884, // Natural river granite
-      roughness: 0.85,
-      metalness: 0.04,
-      flatShading: true,
-    });
+    const boulderMat = WorldMaterials.rock;
     const boulderPositions = [
       { x: -248, y: 1.6, z: -200 },
       { x: -252, y: 1.7, z: -188 },
@@ -142,13 +127,7 @@ export class WaterSystem {
 
     // Connecting river outflow channel leading from pool to canyon
     const streamGeo = new THREE.PlaneGeometry(12, 28);
-    const streamMat = new THREE.MeshStandardMaterial({
-      color: 0x38bdf8,
-      transparent: true,
-      opacity: 0.82,
-      roughness: 0.16,
-      metalness: 0.25,
-    });
+    const streamMat = WorldMaterials.waterFresh.clone();
     const streamMesh = new THREE.Mesh(streamGeo, streamMat);
     streamMesh.rotation.x = -Math.PI / 2;
     streamMesh.rotation.z = Math.PI / 4;

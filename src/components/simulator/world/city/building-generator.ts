@@ -68,30 +68,7 @@ const INDUSTRIAL_GLBS = [
   "/models/industrial/building-j.glb",
 ];
 
-// Material palette for procedural fallback buildings
-const FACADE_COLORS = [
-  0x1e293b, // Dark slate (corporate)
-  0x334155, // Slate grey
-  0x475569, // Medium slate
-  0x64748b, // Light slate
-  0x78350f, // Warm brick brown
-  0x92400e, // Terracotta
-  0xfef3c7, // Cream limestone
-  0xe7e5e4, // Light stone
-  0xd6d3d1, // Warm grey
-  0x0f172a, // Deep navy (glass tower)
-  0x1e3a5f, // Steel blue
-  0x44403c, // Charcoal
-] as const;
-
-const GLASS_COLORS = [
-  0x38bdf8, // Sky blue
-  0x60a5fa, // Bright blue
-  0x22d3ee, // Cyan
-  0x0ea5e9, // Deep blue
-  0x6366f1, // Indigo tint
-  0x94a3b8, // Silver mirror
-] as const;
+import { WorldMaterials, FACADE_COLORS, GLASS_COLORS } from "../world-materials";
 
 interface CityRNG {
   next(): number;

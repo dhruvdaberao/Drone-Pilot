@@ -27,8 +27,8 @@ export class InstancedGrass {
    * Generates a 3-blade cross-quad geometry for full 360-degree volumetric thickness
    */
   private createCrossQuadGeometry(): THREE.BufferGeometry {
-    const w = 1.7; // Width of tuft
-    const h = 1.35; // Height of tuft
+    const w = 0.8; // Width of tuft
+    const h = 0.6; // Height of tuft
 
     // 3 intersecting vertical planes at 0, 60, and 120 degrees
     const positions: number[] = [];
@@ -205,11 +205,10 @@ export class InstancedGrass {
         // Instance world position
         vec4 instanceWorldPos = instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
 
-        // Visibly rolling wind wave ripples across meadows
-        float wave1 = sin(uTime * 3.2 + instanceWorldPos.x * 0.05 + instanceWorldPos.z * 0.04);
-        float wave2 = sin(uTime * 5.2 + instanceWorldPos.x * 0.11 - instanceWorldPos.z * 0.08) * 0.42;
-        float gust = cos(uTime * 1.5 + instanceWorldPos.x * 0.025 + instanceWorldPos.z * 0.02) * 0.65;
-        float totalWind = (wave1 + wave2 + gust) * 0.48 * heightFactor * uWindStrength;
+        // Visibly rolling wind wave ripples across meadows (Stylized and subtle)
+        float wave1 = sin(uTime * 1.2 + instanceWorldPos.x * 0.02 + instanceWorldPos.z * 0.02);
+        float wave2 = sin(uTime * 0.8 + instanceWorldPos.x * 0.01 - instanceWorldPos.z * 0.01) * 0.5;
+        float totalWind = (wave1 + wave2) * 0.15 * heightFactor * uWindStrength;
 
         transformed.x += totalWind * uWindDir.x;
         transformed.z += totalWind * uWindDir.y;

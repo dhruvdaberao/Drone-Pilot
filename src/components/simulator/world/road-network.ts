@@ -9,6 +9,7 @@ import { WORLD_DEFINITION } from "@/lib/world/world-definition";
 import { RoadPolyline, Vector3D } from "@/lib/world/world-types";
 import { evaluateIslandElevation } from "@/lib/world/terrain-math";
 import { queryHydrology } from "@/lib/world/hydrology-mask";
+import { WorldMaterials } from "./world-materials";
 
 export class RoadNetwork {
   public group = new THREE.Group();
@@ -22,36 +23,10 @@ export class RoadNetwork {
   private bridgeMat: THREE.MeshStandardMaterial;
 
   constructor() {
-    this.roadMat = new THREE.MeshStandardMaterial({
-      color: 0x1e242b, // Dark fresh asphalt
-      roughness: 0.86,
-      metalness: 0.08,
-      polygonOffset: true,
-      polygonOffsetFactor: -3,
-      polygonOffsetUnits: -3,
-    });
-
-    this.markingMat = new THREE.MeshStandardMaterial({
-      color: 0xfacc15, // Aviation / highway yellow
-      roughness: 0.4,
-      polygonOffset: true,
-      polygonOffsetFactor: -4,
-      polygonOffsetUnits: -4,
-    });
-
-    this.whiteLineMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      roughness: 0.4,
-      polygonOffset: true,
-      polygonOffsetFactor: -4,
-      polygonOffsetUnits: -4,
-    });
-
-    this.bridgeMat = new THREE.MeshStandardMaterial({
-      color: 0x475569, // Reinforced concrete slate
-      roughness: 0.7,
-      metalness: 0.3,
-    });
+    this.roadMat = WorldMaterials.asphalt;
+    this.markingMat = WorldMaterials.markingYellow;
+    this.whiteLineMat = WorldMaterials.markingWhite;
+    this.bridgeMat = WorldMaterials.concrete;
 
     this.buildMasterNetwork();
     this.buildDowntownGrid();
@@ -313,16 +288,8 @@ export class RoadNetwork {
     bridgeGroup.rotation.y = -angle;
 
     const w = bridge.widthMeters;
-    const steelMat = new THREE.MeshStandardMaterial({
-      color: 0x334155, // Weathered structural steel
-      roughness: 0.4,
-      metalness: 0.8,
-    });
-    const cableMat = new THREE.MeshStandardMaterial({
-      color: 0x94a3b8, // Galvanized high-tensile steel cable
-      roughness: 0.25,
-      metalness: 0.9,
-    });
+    const steelMat = WorldMaterials.steel;
+    const cableMat = WorldMaterials.steel;
     const strobeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
     const lampGlowMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
 
@@ -674,7 +641,7 @@ export class RoadNetwork {
    * Installs modern curved LED streetlights along city avenues
    */
   private buildStreetlights() {
-    const poleMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8 });
+    const poleMat = WorldMaterials.steel;
     const lampMat = new THREE.MeshStandardMaterial({
       color: 0xfffaed,
       emissive: 0xffeedd,
@@ -723,17 +690,8 @@ export class RoadNetwork {
    * mountain switchbacks, coastal highway bluffs, bridge approaches, and sharp curves
    */
   private buildRoadGuardrails() {
-    const railMat = new THREE.MeshStandardMaterial({
-      color: 0xa1a1aa, // Galvanized zinc steel
-      roughness: 0.38,
-      metalness: 0.82,
-    });
-
-    const postMat = new THREE.MeshStandardMaterial({
-      color: 0x52525b, // Galvanized I-beam post
-      roughness: 0.55,
-      metalness: 0.65,
-    });
+    const railMat = WorldMaterials.steel;
+    const postMat = WorldMaterials.steel;
 
     const reflectorMat = new THREE.MeshBasicMaterial({
       color: 0xf59e0b, // Amber retroreflective delineator
