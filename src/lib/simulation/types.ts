@@ -28,6 +28,7 @@ export interface DroneDefinition {
   batteryCapacity: number; // mAh (nominal simulation capacity)
   batteryDischargeRate: number; // % per minute hovering
   batteryCells?: number; // LiPo series cell count (e.g. 4S, 6S)
+  batteryInternalResistanceMilliOhm?: number; // pack-level resistance from Digital Twin
   motorTimeConstant?: number; // seconds to reach target RPM (typically 0.05s)
   dimensions: {
     length: number; // meters
@@ -48,7 +49,15 @@ export interface DroneDefinition {
   maxAscentSpeed: number; // m/s
   maxDescentSpeed: number; // m/s
   maxForwardSpeed: number; // m/s
+  // --------------------------------------------------------
+  // FLIGHT CONTROLLER TUNING (from Digital Twin FlightControllerConfig)
+  // --------------------------------------------------------
+  /** Altitude-hold PD proportional gain. Clamped to [0.5, 8.0]. Default: 3.5 */
+  altitudeHoldPGain?: number;
+  /** Altitude-hold PD derivative gain. Clamped to [0.5, 8.0]. Default: 2.8 */
+  altitudeHoldDGain?: number;
 }
+
 
 export interface FlightInput {
   throttle: number; // 1: ascend, -1: descend, 0: hold/neutral

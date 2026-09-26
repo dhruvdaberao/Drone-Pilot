@@ -111,6 +111,8 @@ const trainingDraft: Partial<DroneDigitalTwinConfiguration> = {
     gpsAssistedMode: true,
     failsafeAction: "RTH",
     controlLoopFrequencyHz: 400,
+    altitudeHoldPGain: 3.5,
+    altitudeHoldDGain: 2.8,
   },
   sensors: [
     { id: "s-gps", type: "GPS", name: "High-Precision GNSS Receiver", enabled: true, accuracy: "±0.5m", updateRateHz: 10, health: "HEALTHY" },
@@ -215,6 +217,8 @@ const agriDraft: Partial<DroneDigitalTwinConfiguration> = {
     gpsAssistedMode: true,
     failsafeAction: "AUTO_LAND",
     controlLoopFrequencyHz: 400,
+    altitudeHoldPGain: 3.5,
+    altitudeHoldDGain: 2.8,
   },
   sensors: [
     { id: "s-gps", type: "GPS", name: "RTK Dual-Frequency GNSS", enabled: true, accuracy: "±0.02m", updateRateHz: 20, health: "HEALTHY" },
@@ -321,6 +325,8 @@ const surveyDraft: Partial<DroneDigitalTwinConfiguration> = {
     gpsAssistedMode: true,
     failsafeAction: "RTH",
     controlLoopFrequencyHz: 400,
+    altitudeHoldPGain: 4.2,
+    altitudeHoldDGain: 3.1,
   },
   sensors: [
     { id: "s-gps", type: "GPS", name: "RTK Surveyor GNSS", enabled: true, accuracy: "±0.01m", updateRateHz: 20, health: "HEALTHY" },
@@ -425,6 +431,8 @@ const heavyDraft: Partial<DroneDigitalTwinConfiguration> = {
     gpsAssistedMode: true,
     failsafeAction: "AUTO_LAND",
     controlLoopFrequencyHz: 400,
+    altitudeHoldPGain: 3.5,
+    altitudeHoldDGain: 2.8,
   },
   sensors: [
     { id: "s-gps", type: "GPS", name: "Dual-Antenna RTK GNSS", enabled: true, accuracy: "±0.01m", updateRateHz: 20, health: "HEALTHY" },

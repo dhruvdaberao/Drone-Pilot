@@ -841,6 +841,21 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     physics.environment.applyPreset(weatherParam);
     setEnvState({ ...physics.environment.getState() });
 
+    // Phase 2.1 Digital Twin Fidelity: Map battery internal resistance
+    if (dtConfig.battery.internalResistanceMilliOhm) {
+      physics.battery.setInternalResistance(dtConfig.battery.internalResistanceMilliOhm);
+    }
+
+    // Phase 2.1 Digital Twin Fidelity: Map sensors & GPS assist mode
+    const initSensors = {
+      gps: dtConfig.flightController.gpsAssistedMode && !!dtConfig.sensors.find((s) => s.type === "GPS" && s.enabled && s.health === "HEALTHY"),
+      imu: !!dtConfig.sensors.find((s) => s.type === "IMU" && s.enabled && s.health === "HEALTHY"),
+      baro: !!dtConfig.sensors.find((s) => s.type === "BAROMETER" && s.enabled && s.health === "HEALTHY"),
+      compass: !!dtConfig.sensors.find((s) => s.type === "COMPASS" && s.enabled && s.health === "HEALTHY"),
+    };
+    physics.setSensorHealth(initSensors);
+    setSensorHealth(initSensors);
+
     physics.reset(
       spawnConfig.position.x,
       spawnConfig.position.y,

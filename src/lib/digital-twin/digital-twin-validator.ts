@@ -205,6 +205,24 @@ export function validateDroneDigitalTwin(
       severity: "ERROR",
       message: "No Flight Controller specified. Aircraft cannot be stabilized.",
     });
+  } else {
+    const { altitudeHoldPGain, altitudeHoldDGain } = config.flightController;
+    if (altitudeHoldPGain !== undefined && (altitudeHoldPGain < 0.5 || altitudeHoldPGain > 8.0)) {
+      warnings.push({
+        code: "UNSTABLE_PID_P_GAIN",
+        field: "flightController.altitudeHoldPGain",
+        severity: "WARNING",
+        message: `Altitude Hold P-Gain (${altitudeHoldPGain}) is outside the safe envelope [0.5 - 8.0]. Oscillations or sluggishness may occur.`,
+      });
+    }
+    if (altitudeHoldDGain !== undefined && (altitudeHoldDGain < 0.5 || altitudeHoldDGain > 8.0)) {
+      warnings.push({
+        code: "UNSTABLE_PID_D_GAIN",
+        field: "flightController.altitudeHoldDGain",
+        severity: "WARNING",
+        message: `Altitude Hold D-Gain (${altitudeHoldDGain}) is outside the safe envelope [0.5 - 8.0]. Oscillations or sluggishness may occur.`,
+      });
+    }
   }
 
   const imu = config.sensors?.find((s) => s.type === "IMU");

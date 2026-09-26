@@ -10,13 +10,25 @@ export class BatteryModel {
   private capacityMah: number;
   private remainingMah: number;
   private cellCount: number;
-  private internalResistancePerCell = 0.008; // 8 milliohms per cell (fresh pack)
+  // Internal resistance in Ohms (total pack level, not per-cell).
+  // Default: 8 mΩ/cell × cellCount (typical fresh LiPo).
+  private packInternalResistanceOhm: number;
   private temperatureC = 22.0;
 
   constructor(capacityMah: number, cellCount = 4) {
     this.capacityMah = capacityMah;
     this.remainingMah = capacityMah;
     this.cellCount = cellCount;
+    this.packInternalResistanceOhm = 0.008 * cellCount; // default: 8 mΩ/cell
+  }
+
+  /**
+   * Override pack internal resistance from Digital Twin configuration.
+   * @param milliOhms - Total pack resistance in milliohms (e.g. 12 for 12 mΩ pack)
+   */
+  public setInternalResistance(milliOhms: number): void {
+    if (!Number.isFinite(milliOhms) || milliOhms <= 0) return;
+    this.packInternalResistanceOhm = milliOhms / 1000;
   }
 
   public setTemperature(tempC: number) {
@@ -26,6 +38,7 @@ export class BatteryModel {
   public reset(initialPercentage = 100.0) {
     this.remainingMah = (initialPercentage / 100.0) * this.capacityMah;
   }
+
 
   /**
    * Evaluates battery state given active total current draw (Amperes) and timestep (seconds).
@@ -61,11 +74,13 @@ export class BatteryModel {
       tempFactor = 0.95;
     }
 
-    const packInternalResistance = this.internalResistancePerCell * this.cellCount * tempFactor;
+    // Apply temperature derating to pack-level resistance
+    const packInternalResistance = this.packInternalResistanceOhm * tempFactor;
 
     // 4. Terminal Voltage with Ohm's Law Voltage Sag: V_terminal = V_oc - I * R_int
     const terminalVoltage = Math.max(0, openCircuitVoltage - currentAmps * packInternalResistance);
     const powerWatts = terminalVoltage * currentAmps;
+
 
     const isLow = percentage < 20.0;
     const isCritical = percentage < 8.0;

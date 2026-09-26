@@ -283,8 +283,10 @@ export class FlightPhysicsEngine {
           }
           const altError = this.targetAltitude - this.posY;
           // PD altitude regulator
-          const pGain = 3.5;
-          const dGain = 2.8;
+          const rawPGain = this.def.altitudeHoldPGain ?? 3.5;
+          const rawDGain = this.def.altitudeHoldDGain ?? 2.8;
+          const pGain = Math.max(0.5, Math.min(8.0, rawPGain));
+          const dGain = Math.max(0.5, Math.min(8.0, rawDGain));
           const altCorrection = ((altError * pGain - this.velY * dGain) * totalMass) / this.def.maximumThrust;
           commandedThrottle = baseHoverThrottle + Math.max(-0.30, Math.min(0.45, altCorrection));
         } else {

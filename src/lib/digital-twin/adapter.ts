@@ -63,6 +63,9 @@ export function digitalTwinToDroneDefinition(
     maxAscentSpeed: dt.performance.maxAscentSpeedMs,
     maxDescentSpeed: dt.performance.maxDescentSpeedMs,
     maxForwardSpeed: dt.performance.maxHorizontalSpeedMs,
+    batteryInternalResistanceMilliOhm: dt.battery.internalResistanceMilliOhm,
+    altitudeHoldPGain: dt.flightController.altitudeHoldPGain,
+    altitudeHoldDGain: dt.flightController.altitudeHoldDGain,
   };
 }
 

@@ -140,6 +140,18 @@ export interface FlightControllerConfig {
   gpsAssistedMode: boolean;
   failsafeAction: "RTH" | "AUTO_LAND" | "HOVER";
   controlLoopFrequencyHz: number;
+  /**
+   * Altitude-hold PD regulator proportional gain.
+   * Connected to FlightPhysicsEngine altitude-hold loop.
+   * Safe range: 0.5 – 8.0 (default 3.5). Clamped at runtime.
+   */
+  altitudeHoldPGain?: number;
+  /**
+   * Altitude-hold PD regulator derivative gain.
+   * Connected to FlightPhysicsEngine altitude-hold loop.
+   * Safe range: 0.5 – 8.0 (default 2.8). Clamped at runtime.
+   */
+  altitudeHoldDGain?: number;
 }
 
 // ----------------------------------------------------------
