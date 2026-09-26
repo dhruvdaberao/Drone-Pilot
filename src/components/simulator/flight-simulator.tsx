@@ -948,7 +948,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     // 12. ANIMATION & SIMULATION LOOP
     let animationId: number;
     const clock = new THREE.Clock();
-    let telemetryThrottleTimer = 0;
+    let telemetryThrottleTimer = 0; let coachEvalTimer = 0;
     let framesCount = 0;
     let fpsTimer = 0;
 
@@ -1089,7 +1089,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       mpClient.sendTelemetry(curTelemetry);
 
       // Sync React Telemetry State at ~20Hz to keep UI responsive and light
-      telemetryThrottleTimer += dt;
+      telemetryThrottleTimer += dt; coachEvalTimer += dt;
       if (telemetryThrottleTimer >= 0.05) {
         telemetryThrottleTimer = 0;
         setTelemetry({ ...curTelemetry });
@@ -1107,7 +1107,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
         }
 
         // Phase 8: Flight Coach Observation & Evaluation (Throttled to 10Hz)
-        if (performance.now() - simClockRef.current.getSimTime() % 100 < 16) {
+        if (coachEvalTimer >= 0.1) { coachEvalTimer = 0;
           const obs = coachEngineRef.current.extractObservation(curTelemetry, physics.environment.getState());
           const insight = coachEngineRef.current.evaluate(obs);
           if (insight) {
