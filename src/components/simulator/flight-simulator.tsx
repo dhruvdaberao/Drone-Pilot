@@ -62,14 +62,14 @@ import {
 } from "@/lib/digital-twin/adapter";
 import { DigitalTwinHUD } from "./debug/digital-twin-hud";
 import { FaultInjectionPanel } from "./fault-injection-panel";
-import { EducationalBanner } from "./educational-banner";
+import { FlightCoachPanel } from "./flight-coach-panel";
 import { ScenarioSelectorModal } from "./scenario-selector-modal";
-import { EducationalEventEngine } from "@/lib/simulation/educational-event-engine";
-import { EducationalEvent } from "@/lib/simulation/types";
 import { SimulationClock, ClockSnapshot } from "@/lib/simulation/simulation-clock";
 import { SimulationAdapter, SimulationAdapterStatus } from "@/lib/simulation/adapters/simulation-adapter";
 import { LocalSimulationAdapter } from "@/lib/simulation/adapters/local-simulation-adapter";
 import { HardwareControllerAdapter } from "@/lib/simulation/adapters/hardware-controller-adapter";
+import { FlightCoachEngine } from "@/lib/simulation/flight-coach";
+import { FlightCoachInsight, FlightSessionSummary } from "@/lib/simulation/flight-coach-types";
 import { flightInputToNormalized } from "@/lib/simulation/normalized-control";
 import { TelemetryBus } from "@/lib/simulation/telemetry-bus";
 import { SimulationEventBus, SimulationEvent } from "@/lib/simulation/event-bus";
@@ -298,24 +298,11 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
   const baselineExperimentRef = useRef({ payloadKg: 0, batteryPercent: 100 });
   const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
 
-  // Educational Event Engine
-  const [currentEduEvent, setCurrentEduEvent] = useState<EducationalEvent | null>(null);
-  const [eduEventHistory, setEduEventHistory] = useState<EducationalEvent[]>([]);
-  const eduEngineRef = useRef<EducationalEventEngine>(
-    new EducationalEventEngine((event) => {
-      setCurrentEduEvent(event);
-      setEduEventHistory((prev) => [event, ...prev.slice(0, 29)]);
-      SimulationEventBus.getInstance().emit({
-        timestamp: event.timestamp,
-        simTime: simClockRef.current.getSimTime(),
-        type: "BATTERY_LOW",
-        severity: event.severity === "error" ? "CRITICAL" : event.severity === "warning" ? "WARNING" : "INFO",
-        source: "PHYSICS",
-        title: event.title,
-        message: event.whatHappened || event.message || "",
-      });
-    })
-  );
+  // Flight Coach
+  const [currentInsight, setCurrentInsight] = useState<FlightCoachInsight | null>(null);
+  const [insightHistory, setInsightHistory] = useState<FlightCoachInsight[]>([]);
+  const coachEngineRef = useRef<FlightCoachEngine>(new FlightCoachEngine());
+  const [coachSessionSummary, setCoachSessionSummary] = useState<FlightSessionSummary | null>(null);
 
   // Phase 7: Diagnostics, Simulation Clock & Network Status
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("LOCAL");
@@ -377,6 +364,10 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
   // Reset to Selected Spawn Helipad
   const handleReset = useCallback(() => {
     crashTriggeredRef.current = false;
+    coachEngineRef.current.resetSession();
+    setCurrentInsight(null);
+    setInsightHistory([]);
+    setCoachSessionSummary(null);
     if (physicsEngineRef.current) {
       physicsEngineRef.current.resetCrash();
       const sp = spawnConfigRef.current;
@@ -520,15 +511,21 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       }
 
       if (type && title && message) {
-        const eduEvent: EducationalEvent = {
+        const insight: FlightCoachInsight = {
           id: `env-${Date.now()}`,
-          title,
-          message,
-          severity: "info",
           timestamp: Date.now(),
+          type: type as string,
+          severity: "INFO",
+          title,
+          explanation: {
+            what: message,
+            why: "Environment settings were modified by the user.",
+            learn: "Observe how this parameter affects the simulated flight dynamics."
+          },
+          evidence: []
         };
-        setCurrentEduEvent(eduEvent);
-        setEduEventHistory((prev) => [eduEvent, ...prev].slice(0, 30));
+        setCurrentInsight(insight);
+        setInsightHistory((prev) => [insight, ...prev].slice(0, 30));
         
         SimulationEventBus.getInstance().emit({
           timestamp: Date.now(),
@@ -690,6 +687,16 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       physicsEngineRef.current?.crashState || null
     );
     setAnalysisReport(report);
+    
+    if (physicsEngineRef.current) {
+      setCoachSessionSummary(
+        coachEngineRef.current.generateSessionSummary(
+          report.flightDurationSeconds,
+          physicsEngineRef.current.environment.getState()
+        )
+      );
+    }
+    
     setIsAnalysisOpen(true);
   }, [selectedDrone.name]);
 
@@ -1106,14 +1113,24 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
           );
         }
 
-        // Phase 5: Educational Event Detection
-        eduEngineRef.current.evaluate(
-          curTelemetry,
-          physics.environment.getState(),
-          physics.motorHealth,
-          physics.sensorHealth,
-          physics.payloadMass
-        );
+        // Phase 8: Flight Coach Observation & Evaluation (Throttled to 10Hz)
+        if (performance.now() - simClockRef.current.getSimTime() % 100 < 16) {
+          const obs = coachEngineRef.current.extractObservation(curTelemetry, physics.environment.getState());
+          const insight = coachEngineRef.current.evaluate(obs);
+          if (insight) {
+            setCurrentInsight(insight);
+            setInsightHistory(prev => [insight, ...prev.slice(0, 29)]);
+            SimulationEventBus.getInstance().emit({
+              timestamp: insight.timestamp,
+              simTime: simClockRef.current.getSimTime(),
+              type: "FLIGHT_COACH_INSIGHT" as any,
+              severity: insight.severity === "CRITICAL" ? "CRITICAL" : insight.severity === "ATTENTION" ? "WARNING" : "INFO",
+              source: "SYSTEM",
+              title: insight.title,
+              message: insight.explanation.what,
+            });
+          }
+        }
       }
     };
 
@@ -1268,7 +1285,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
             activeWaypoint={activeWaypoint}
             onToggleMap={() => setIsMapModalOpen(true)}
             onResetEnvironment={() => handleApplyWeatherPreset("normal")}
-            currentEvent={currentEduEvent}
+            currentInsight={currentInsight}
           />
         </div>
 
@@ -1298,7 +1315,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
             activeWaypoint={activeWaypoint}
             onToggleMap={() => setIsMapModalOpen(true)}
             onResetEnvironment={() => handleApplyWeatherPreset("normal")}
-            currentEvent={currentEduEvent}
+            currentInsight={currentInsight}
           />
         </div>
       </div>
@@ -1371,6 +1388,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
         <FlightAnalysisModal
           isOpen={isAnalysisOpen}
           report={analysisReport}
+          coachSummary={coachSessionSummary}
           onFlyAgain={handleFlyAgain}
           onOpenReplay={() => {
             setIsAnalysisOpen(false);
@@ -1402,12 +1420,12 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
         fps={fps}
       />
 
-      {/* Real-Time Aeronautical Cause & Effect Banner */}
-      <EducationalBanner
-        currentEvent={currentEduEvent}
-        history={eduEventHistory}
-        onDismiss={() => setCurrentEduEvent(null)}
-        onClearHistory={() => setEduEventHistory([])}
+      {/* Real-Time Flight Coach Instrumentation */}
+      <FlightCoachPanel
+        insight={currentInsight}
+        history={insightHistory}
+        onDismiss={() => setCurrentInsight(null)}
+        onClearHistory={() => setInsightHistory([])}
       />
 
       {/* Fault Injection Benchmark Panel */}

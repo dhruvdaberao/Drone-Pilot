@@ -1,12 +1,12 @@
-"use client";
-
 import React from "react";
 import { FlightAnalysisReport } from "@/lib/simulation/types";
-import { Award, AlertTriangle, CheckCircle2, RotateCcw, Home, Play } from "lucide-react";
+import { FlightSessionSummary } from "@/lib/simulation/flight-coach-types";
+import { Award, AlertTriangle, RotateCcw, Home, Play, CheckCircle2, ChevronRight, Activity, Zap, Wind } from "lucide-react";
 
 interface FlightAnalysisModalProps {
   isOpen: boolean;
   report: FlightAnalysisReport;
+  coachSummary?: FlightSessionSummary | null;
   onFlyAgain: () => void;
   onOpenReplay: () => void;
   onExitToDashboard: () => void;
@@ -15,6 +15,7 @@ interface FlightAnalysisModalProps {
 export function FlightAnalysisModal({
   isOpen,
   report,
+  coachSummary,
   onFlyAgain,
   onOpenReplay,
   onExitToDashboard,
@@ -24,131 +25,129 @@ export function FlightAnalysisModal({
   const isCrash = report.landingQuality === "CRASH";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs font-mono select-none">
-      <div className="relative w-full max-w-2xl max-h-[95dvh] overflow-y-auto custom-scrollbar bg-white border-2 border-black rounded-3xl shadow-2xl p-4 sm:p-6 my-2 sm:my-8 animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-start justify-between pb-4 border-b border-neutral-200">
-          <div className="flex items-center gap-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm font-mono select-none">
+      <div className="relative w-full max-w-4xl max-h-[90dvh] overflow-y-auto custom-scrollbar bg-neutral-950 border border-white/10 rounded-2xl shadow-2xl p-6 text-white animate-in fade-in zoom-in-95 duration-200">
+        
+        {/* Header */}
+        <div className="flex items-start justify-between pb-6 border-b border-white/10">
+          <div className="flex items-center gap-4">
             <div
-              className={"h-12 w-12 rounded-2xl flex items-center justify-center border-2 " + (
+              className={`h-14 w-14 rounded-xl flex items-center justify-center border ${
                 isCrash
-                  ? "bg-rose-50 border-rose-600 text-rose-600"
-                  : "bg-emerald-50 border-emerald-600 text-emerald-600"
-              )}
+                  ? "bg-rose-500/10 border-rose-500/50 text-rose-500"
+                  : "bg-emerald-500/10 border-emerald-500/50 text-emerald-500"
+              }`}
             >
-              {isCrash ? <AlertTriangle className="h-6 w-6" /> : <Award className="h-6 w-6" />}
+              {isCrash ? <AlertTriangle className="h-7 w-7" /> : <Award className="h-7 w-7" />}
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={"text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border " + (
-                    isCrash
-                      ? "bg-rose-100 text-rose-700 border-rose-300"
-                      : "bg-emerald-100 text-emerald-700 border-emerald-300"
-                  )}
-                >
-                  {report.landingQuality} TOUCHDOWN
-                </span>
-                <span className="text-xs text-neutral-400">•</span>
-                <span className="text-xs font-bold text-neutral-600">{report.droneName}</span>
-              </div>
-              <h2 className="font-heading text-xl sm:text-2xl font-black text-neutral-950 uppercase mt-0.5">
-                {isCrash ? "FLIGHT INCIDENT DEBRIEF" : "POST-FLIGHT MISSION ANALYSIS"}
+              <p className="text-[10px] tracking-[.2em] text-white/50 uppercase">POST-FLIGHT DEBRIEF</p>
+              <h2 className="text-xl font-bold tracking-wide uppercase">
+                {isCrash ? "CATASTROPHIC HULL LOSS" : "FLIGHT COMPLETED SUCCESSFULLY"}
               </h2>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 my-4">
-          <div className="bg-neutral-50 p-2.5 rounded-xl border border-neutral-200">
-            <span className="text-[10px] text-neutral-500 font-bold block">DURATION</span>
-            <span className="text-base font-black text-neutral-900">
-              {Math.floor(report.flightDurationSeconds / 60)}m {report.flightDurationSeconds % 60}s
-            </span>
-          </div>
-          <div className="bg-neutral-50 p-2.5 rounded-xl border border-neutral-200">
-            <span className="text-[10px] text-neutral-500 font-bold block">MAX ALTITUDE</span>
-            <span className="text-base font-black text-neutral-900">{report.maxAltitudeMeters.toFixed(1)}m</span>
-          </div>
-          <div className="bg-neutral-50 p-2.5 rounded-xl border border-neutral-200">
-            <span className="text-[10px] text-neutral-500 font-bold block">TOP SPEED</span>
-            <span className="text-base font-black text-neutral-900">{report.maxSpeedKmh.toFixed(1)} km/h</span>
-          </div>
-          <div className="bg-neutral-50 p-2.5 rounded-xl border border-neutral-200">
-            <span className="text-[10px] text-neutral-500 font-bold block">BATTERY USED</span>
-            <span className="text-base font-black text-neutral-900">{report.batteryConsumedPercent}%</span>
-          </div>
-        </div>
-
-        {report.crashDetails && (
-          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 mb-4 space-y-1 text-xs text-rose-900">
-            <div className="font-bold flex items-center justify-between">
-              <span>IMPACT SPEED: {report.crashDetails.impactSpeedKmh} km/h ({report.crashDetails.impactSpeedMs} m/s)</span>
-              <span>KINETIC ENERGY: {report.crashDetails.kineticEnergyJoules} Joules</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+          
+          {/* Column 1: Core Stats */}
+          <div className="space-y-4">
+            <h3 className="text-[10px] tracking-[.15em] text-[#FF5500] font-bold uppercase border-b border-white/5 pb-2">FLIGHT METRICS</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <StatCard label="DURATION" value={`${Math.floor(report.flightDurationSeconds / 60)}m ${Math.floor(report.flightDurationSeconds % 60)}s`} />
+              <StatCard label="MAX ALTITUDE" value={`${report.maxAltitudeMeters.toFixed(1)}m`} />
+              <StatCard label="MAX SPEED" value={`${report.maxSpeedKmh.toFixed(1)}km/h`} />
+              {coachSummary && (
+                <>
+                  <StatCard label="MAX TILT" value={`${coachSummary.maxAttitudeExcursion.toFixed(1)}°`} />
+                  <StatCard label="AVG POWER" value={`${Math.round(coachSummary.averagePowerWatts)}W`} />
+                  <StatCard label="PEAK POWER" value={`${Math.round(coachSummary.peakPowerWatts)}W`} />
+                </>
+              )}
             </div>
-            <p className="text-rose-700 text-[11px] leading-relaxed mt-1">
-              Primary Cause: {report.crashDetails.primaryCause}
-            </p>
-          </div>
-        )}
-
-        <div className="space-y-3 bg-neutral-50 p-4 rounded-2xl border border-neutral-200 text-xs">
-          <div>
-            <h4 className="font-heading font-bold text-neutral-900 uppercase text-[11px] text-[#FF5500]">
-              1. WHAT HAPPENED?
-            </h4>
-            <p className="text-neutral-700 leading-relaxed mt-0.5">{report.whatHappened}</p>
+            {coachSummary && (
+              <>
+                <h3 className="text-[10px] tracking-[.15em] text-[#FF5500] font-bold uppercase border-b border-white/5 pb-2 mt-4">ENVIRONMENTAL CONDITIONS</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <StatCard label="WIND" value={`${coachSummary.environmentalConditions.wind.toFixed(1)} m/s`} icon={<Wind className="w-3 h-3 text-white/50"/>} />
+                  <StatCard label="TEMPERATURE" value={`${coachSummary.environmentalConditions.temperature.toFixed(0)}°C`} />
+                </div>
+              </>
+            )}
           </div>
 
-          <div className="pt-2 border-t border-neutral-200/60">
-            <h4 className="font-heading font-bold text-neutral-900 uppercase text-[11px] text-neutral-800">
-              2. WHY DID IT HAPPEN?
-            </h4>
-            <p className="text-neutral-700 leading-relaxed mt-0.5">{report.whyItHappened}</p>
-          </div>
-
-          <div className="pt-2 border-t border-neutral-200/60">
-            <h4 className="font-heading font-bold text-neutral-900 uppercase text-[11px] text-emerald-700">
-              3. HOW TO IMPROVE NEXT FLIGHT:
-            </h4>
-            <ul className="mt-1 space-y-1">
-              {report.howToImprove.map((tip, idx) => (
-                <li key={idx} className="flex items-start gap-1.5 text-neutral-700">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>{tip}</span>
-                </li>
-              ))}
-            </ul>
+          {/* Column 2: Flight Coach Insights */}
+          <div className="md:col-span-2 space-y-4">
+            <h3 className="text-[10px] tracking-[.15em] text-[#FF5500] font-bold uppercase border-b border-white/5 pb-2 flex items-center gap-2">
+              <Activity className="w-4 h-4" /> FLIGHT COACH ANALYSIS
+            </h3>
+            
+            <div className="space-y-3">
+              {coachSummary?.insights.length === 0 ? (
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+                  <p className="text-[11px] text-white/50 uppercase tracking-widest">No coaching insights generated during this flight.</p>
+                </div>
+              ) : (
+                coachSummary?.insights.map((insight, idx) => (
+                  <div key={idx} className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                        insight.severity === 'CRITICAL' ? 'bg-rose-500/20 text-rose-400' :
+                        insight.severity === 'ATTENTION' ? 'bg-orange-500/20 text-orange-400' :
+                        'bg-blue-500/20 text-blue-400'
+                      }`}>
+                        {insight.severity}
+                      </span>
+                      <h4 className="font-bold text-sm uppercase">{insight.title}</h4>
+                    </div>
+                    <p className="text-xs text-white/80 leading-relaxed"><span className="text-[#FF5500] font-bold">WHAT:</span> {insight.explanation.what}</p>
+                    <p className="text-xs text-white/80 leading-relaxed"><span className="text-[#FF5500] font-bold">WHY:</span> {insight.explanation.why}</p>
+                    <div className="bg-white/5 p-2 rounded mt-2">
+                      <p className="text-xs text-emerald-400 leading-relaxed"><span className="font-bold uppercase">Learning Objective:</span> {insight.explanation.learn}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+        {/* Footer Actions */}
+        <div className="mt-8 flex flex-wrap gap-3 pt-6 border-t border-white/10">
+          <button
+            onClick={onFlyAgain}
+            className="flex-1 min-w-[200px] flex items-center justify-center gap-2 bg-[#FF5500] hover:bg-[#ff7733] text-white py-3 px-6 rounded-xl font-bold uppercase tracking-widest text-xs transition-colors"
+          >
+            <RotateCcw className="w-4 h-4" /> Fly Again
+          </button>
+          
           <button
             onClick={onOpenReplay}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-neutral-300 text-neutral-800 text-xs font-bold hover:bg-neutral-100 hover:border-black transition-all cursor-pointer"
+            className="flex-1 min-w-[200px] flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white py-3 px-6 rounded-xl font-bold uppercase tracking-widest text-xs transition-colors"
           >
-            <Play className="h-3.5 w-3.5 text-[#FF5500]" />
-            <span>Watch Flight Replay</span>
+            <Play className="w-4 h-4" /> Watch Replay
           </button>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onExitToDashboard}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-bold transition-all cursor-pointer"
-            >
-              <Home className="h-3.5 w-3.5" />
-              <span>Hangar</span>
-            </button>
-
-            <button
-              onClick={onFlyAgain}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white text-xs font-bold transition-all cursor-pointer shadow-sm"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              <span>Fly Again</span>
-            </button>
-          </div>
+          
+          <button
+            onClick={onExitToDashboard}
+            className="flex-1 min-w-[200px] flex items-center justify-center gap-2 border border-white/20 hover:bg-white/5 text-white/70 hover:text-white py-3 px-6 rounded-xl font-bold uppercase tracking-widest text-xs transition-colors"
+          >
+            <Home className="w-4 h-4" /> Exit
+          </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon }: { label: string; value: string | number; icon?: React.ReactNode }) {
+  return (
+    <div className="bg-white/5 rounded-lg p-3 border border-white/10 flex flex-col justify-center">
+      <span className="text-[9px] font-bold text-white/50 tracking-widest uppercase flex items-center gap-1">
+        {icon} {label}
+      </span>
+      <span className="text-sm font-bold text-white mt-1">{value}</span>
     </div>
   );
 }

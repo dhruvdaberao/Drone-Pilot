@@ -130,6 +130,8 @@ export function LeftGlassPanel({
   );
 }
 
+import { FlightCoachInsight } from "@/lib/simulation/flight-coach-types";
+
 interface RightGlassPanelProps {
   environment: EnvironmentState;
   onUpdateEnvironment: (updates: Partial<EnvironmentState>) => void;
@@ -137,7 +139,7 @@ interface RightGlassPanelProps {
   activeWaypoint: NavigationWaypoint | null;
   onToggleMap: () => void;
   onResetEnvironment: () => void;
-  currentEvent: EducationalEvent | null;
+  currentInsight: FlightCoachInsight | null;
 }
 
 export function RightGlassPanel({
@@ -147,7 +149,7 @@ export function RightGlassPanel({
   activeWaypoint,
   onToggleMap,
   onResetEnvironment,
-  currentEvent
+  currentInsight
 }: RightGlassPanelProps) {
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -289,7 +291,7 @@ export function RightGlassPanel({
             <Info className="w-3 h-3" /> WHAT'S HAPPENING
           </h3>
           <p className="text-[10px] text-white/80 leading-relaxed">
-            {currentEvent ? currentEvent.message : "The aircraft is operating in baseline conditions. Adjust environment sliders to observe real-time aerodynamic and visual effects on the simulation."}
+            {currentInsight ? currentInsight.explanation.what : "The aircraft is operating in baseline conditions. Adjust environment sliders to observe real-time aerodynamic and visual effects on the simulation."}
           </p>
         </div>
 

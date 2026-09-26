@@ -32,6 +32,7 @@ export function EnvironmentControlPanel({
   environment,
   onUpdateEnvironment,
   onApplyPreset,
+  telemetry,
 }: EnvironmentControlPanelProps) {
   if (!isOpen) return null;
 
