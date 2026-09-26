@@ -309,7 +309,7 @@ export function DigitalTwinConfigurator() {
         <AlertTriangle className="w-10 h-10 text-rose-500" />
         <p className="text-xs font-bold uppercase tracking-widest text-neutral-500">Unable to enter configuration</p>
         <p className="text-[10px] text-neutral-600">{loadError}</p>
-        <Button onClick={() => router.push('/hanger')} variant="outline" className="mt-4">
+        <Button onClick={() => router.push('/dashboard')} variant="outline" className="mt-4">
           RETURN TO HANGAR
         </Button>
       </div>

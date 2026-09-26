@@ -41,7 +41,7 @@ export function FlightPrepContainer() {
     if (activeCategory) {
       router.push(`/configure?drone=${activeCategory}`);
     } else {
-      router.push("/hanger");
+      router.push("/dashboard");
     }
   };
 

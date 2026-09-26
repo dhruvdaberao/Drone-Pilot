@@ -1178,13 +1178,13 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
   return (
     <div className="flex flex-col h-screen w-full bg-[#08090a] overflow-hidden select-none">
       {/* Top Navigation */}
-      <div className="h-16 shrink-0 z-50 relative">
+      <div className="h-14 shrink-0 z-50 relative">
         <DashboardHeader />
       </div>
 
-      <div className="flex flex-1 w-full relative overflow-hidden">
-        {/* Left Panel (Desktop) */}
-        <div className="w-[300px] shrink-0 border-r border-white/10 hidden md:block bg-neutral-900/40 backdrop-blur-md relative z-20 overflow-y-auto">
+      <div className="flex flex-1 w-full relative overflow-hidden gap-2 p-2">
+        {/* Left Panel (Desktop) — floating glass card with gap from edges */}
+        <div className="w-[270px] shrink-0 hidden md:flex flex-col rounded-xl border border-white/[0.07] bg-neutral-900/60 backdrop-blur-xl relative z-20 overflow-y-auto shadow-2xl">
           <AircraftControlPanel
             droneName={activeDigitalTwin?.identity.name || selectedDrone.name}
             telemetry={telemetry}
@@ -1204,8 +1204,8 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
           />
         </div>
 
-        {/* Center 3D World */}
-        <div className="flex-1 relative z-0">
+        {/* Center 3D World — rounded to match panels */}
+        <div className="flex-1 relative z-0 rounded-xl overflow-hidden min-w-0">
           <div ref={containerRef} className="w-full h-full cursor-crosshair bg-sky-200" />
           
           {/* Loading Screen Overlay */}
@@ -1213,36 +1213,32 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
 
           {/* Tactical Dropzone Deployment Briefing Banner */}
           {!isLoading && showDropBriefing && (
-            <div className="absolute top-8 left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
-              <div className="bg-white/95 backdrop-blur-md text-neutral-900 border border-neutral-200/90 px-4 py-2 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center gap-3 font-mono select-none">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#FF5500] animate-ping shrink-0" />
-                <div className="text-xs">
-                  <span className="text-[#FF5500] font-black uppercase tracking-wider">DROPZONE DEPLOYMENT: </span>
-                  <span className="font-bold text-neutral-900">
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="bg-black/70 backdrop-blur-md text-white/80 border border-white/10 px-4 py-2 rounded-full shadow-lg flex items-center gap-3 font-mono select-none">
+                <div className="w-2 h-2 rounded-full bg-[#FF5500] animate-ping shrink-0" />
+                <div className="text-[11px] tracking-widest">
+                  <span className="text-[#FF5500] font-black uppercase">SPAWN: </span>
+                  <span className="font-bold text-white/80">
                     {HELIPADS[initialSpawn.helipadId]?.name || "Island Helipad"}
-                  </span>
-                  <span className="text-neutral-500 text-[10px] ml-2 hidden sm:inline">
-                    [{initialSpawn.regionId.toUpperCase()} • ELEV {initialSpawn.groundElevation.toFixed(1)}m]
                   </span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Aircraft Identity Badge - Premium Presentation */}
-          {!isLoading && cameraMode === "chase" && (
-            <div className="absolute top-6 left-6 z-30 pointer-events-none animate-in fade-in duration-500 hidden md:block">
-              <div className="bg-[#0f1115]/90 backdrop-blur-md text-white border border-white/10 px-4 py-3 rounded-lg shadow-xl flex flex-col gap-1.5">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#FF5500] animate-pulse" />
-                  <span className="font-bold tracking-widest uppercase">{activeDigitalTwin?.identity.name || selectedDrone.name}</span>
-                </div>
-                <div className="text-[10px] font-mono text-neutral-400 font-bold uppercase tracking-widest pl-3.5">
-                  DIGITAL TWIN • {physicsEngineRef.current?.def.motorCount || 4} MOTORS • {(activeDigitalTwin?.massProperties.totalMassKg || selectedDrone.baseMassKg).toFixed(2)} kg
-                </div>
-              </div>
+
+          {/* Aircraft name — minimal top-right label, no card */}
+          {!isLoading && (
+            <div className="absolute top-4 right-4 z-30 pointer-events-none hidden md:flex flex-col items-end gap-0.5 animate-in fade-in duration-500">
+              <span className="text-[11px] font-bold tracking-[0.18em] text-white/90 uppercase font-mono">
+                {activeDigitalTwin?.identity.name || selectedDrone.name}
+              </span>
+              <span className="text-[9px] text-neutral-500 font-mono tracking-widest uppercase">
+                {physicsEngineRef.current?.def.motorCount || 4} MOTORS · {(activeDigitalTwin?.massProperties.totalMassKg || selectedDrone.baseMassKg).toFixed(2)} KG
+              </span>
             </div>
           )}
+
 
           {/* Avionics Telemetry HUD */}
           <TelemetryHUD
@@ -1279,8 +1275,8 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
           />
         </div>
 
-        {/* Right Panel (Desktop) */}
-        <div className="w-[280px] shrink-0 border-l border-white/10 hidden md:block bg-neutral-900/40 backdrop-blur-md relative z-20 overflow-y-auto">
+        {/* Right Panel (Desktop) — floating glass card */}
+        <div className="w-[265px] shrink-0 hidden md:flex flex-col rounded-xl border border-white/[0.07] bg-neutral-900/60 backdrop-blur-xl relative z-20 overflow-y-auto shadow-2xl">
           <RightGlassPanel
             environment={envState}
             onUpdateEnvironment={handleUpdateEnvironment}
