@@ -36,6 +36,12 @@ export function DashboardHeader() {
         </span>
       </Link>
 
+      {/* Navigation */} 
+      <nav className="hidden md:flex items-center gap-6 mr-4"> 
+        <Link href="/dashboard" className="text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition-colors">Command Center</Link> 
+        <Link href="/hanger" className="text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition-colors">Hanger</Link> 
+      </nav> 
+
       {/* User info & Logout */}
       <div className="flex items-center gap-3 sm:gap-6">
         <div className="hidden sm:flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-neutral-300">

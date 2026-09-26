@@ -144,7 +144,7 @@ export function ConfigurationOverview() {
                     {activeCategory}
                 </h1>
                 <Button  
-                    onClick={() => router.push('/dashboard')}
+                    onClick={() => router.push('/hanger')}
                     variant="outline"
                     leftIcon={<ArrowLeft className="w-4 h-4" />}
                 >
@@ -220,7 +220,7 @@ export function ConfigurationOverview() {
           </div>
           
           <Button 
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push('/hanger')}
             variant="outline"
             leftIcon={<ArrowLeft className="w-4 h-4" />}
           >
