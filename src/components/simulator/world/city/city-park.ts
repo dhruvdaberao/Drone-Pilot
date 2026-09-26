@@ -5,6 +5,7 @@
 // ==========================================================
 
 import * as THREE from "three";
+import { evaluateIslandElevation } from "@/lib/world/terrain-math";
 
 export class CityPark {
   public group = new THREE.Group();
@@ -23,7 +24,7 @@ export class CityPark {
   });
 
   public build(cx: number, cz: number, halfW: number, halfD: number) {
-    const yBase = 2.52;
+    const yBase = evaluateIslandElevation(cx, cz).elevation;
 
     // Main lawn
     const lawnGeo = new THREE.PlaneGeometry(halfW * 2, halfD * 2, 1, 1);

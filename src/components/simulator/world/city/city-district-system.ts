@@ -10,6 +10,7 @@ import { BuildingGenerator, BuildingPlacement } from "./building-generator";
 import { StreetFurniture } from "./street-furniture";
 import { CityPark } from "./city-park";
 import { ParkingSystem } from "./parking-system";
+import { evaluateIslandElevation } from "@/lib/world/terrain-math";
 
 // ──────────────────────────────────────────────────────────────
 // District Definitions
@@ -250,36 +251,48 @@ export class CityDistrictSystem {
       metalness: 0.05,
     });
 
-    const yElev = 2.55;
     const sidewalkH = 0.15;
     const sidewalkW = 2.8;
+    const segmentL = 10; // Break into 10m segments to follow terrain
 
     // Along the 4 Major N-S Avenues (x=540, 640, 740, 840, length 440m)
     [540, 640, 740, 840].forEach((aveX) => {
-      const leftGeo = new THREE.BoxGeometry(sidewalkW, sidewalkH, 440);
-      const leftMesh = new THREE.Mesh(leftGeo, sidewalkMat);
-      leftMesh.position.set(aveX - 7 - sidewalkW / 2, yElev + sidewalkH / 2, 320);
-      leftMesh.receiveShadow = true;
-      this.group.add(leftMesh);
+      const segGeo = new THREE.BoxGeometry(sidewalkW, sidewalkH, segmentL);
+      for (let z = 100; z < 540; z += segmentL) {
+        const cz = z + segmentL / 2;
+        
+        const leftMesh = new THREE.Mesh(segGeo, sidewalkMat);
+        const yL = evaluateIslandElevation(aveX - 7 - sidewalkW / 2, cz).elevation;
+        leftMesh.position.set(aveX - 7 - sidewalkW / 2, yL + sidewalkH / 2, cz);
+        leftMesh.receiveShadow = true;
+        this.group.add(leftMesh);
 
-      const rightMesh = new THREE.Mesh(leftGeo.clone(), sidewalkMat);
-      rightMesh.position.set(aveX + 7 + sidewalkW / 2, yElev + sidewalkH / 2, 320);
-      rightMesh.receiveShadow = true;
-      this.group.add(rightMesh);
+        const rightMesh = new THREE.Mesh(segGeo, sidewalkMat);
+        const yR = evaluateIslandElevation(aveX + 7 + sidewalkW / 2, cz).elevation;
+        rightMesh.position.set(aveX + 7 + sidewalkW / 2, yR + sidewalkH / 2, cz);
+        rightMesh.receiveShadow = true;
+        this.group.add(rightMesh);
+      }
     });
 
     // Along 4 E-W Cross Streets (z=200, 280, 360, 440, length 440m)
     [200, 280, 360, 440].forEach((streetZ) => {
-      const topGeo = new THREE.BoxGeometry(440, sidewalkH, sidewalkW);
-      const topMesh = new THREE.Mesh(topGeo, sidewalkMat);
-      topMesh.position.set(690, yElev + sidewalkH / 2, streetZ - 7 - sidewalkW / 2);
-      topMesh.receiveShadow = true;
-      this.group.add(topMesh);
+      const segGeo = new THREE.BoxGeometry(segmentL, sidewalkH, sidewalkW);
+      for (let x = 470; x < 910; x += segmentL) {
+        const cx = x + segmentL / 2;
 
-      const botMesh = new THREE.Mesh(topGeo.clone(), sidewalkMat);
-      botMesh.position.set(690, yElev + sidewalkH / 2, streetZ + 7 + sidewalkW / 2);
-      botMesh.receiveShadow = true;
-      this.group.add(botMesh);
+        const topMesh = new THREE.Mesh(segGeo, sidewalkMat);
+        const yT = evaluateIslandElevation(cx, streetZ - 7 - sidewalkW / 2).elevation;
+        topMesh.position.set(cx, yT + sidewalkH / 2, streetZ - 7 - sidewalkW / 2);
+        topMesh.receiveShadow = true;
+        this.group.add(topMesh);
+
+        const botMesh = new THREE.Mesh(segGeo, sidewalkMat);
+        const yB = evaluateIslandElevation(cx, streetZ + 7 + sidewalkW / 2).elevation;
+        botMesh.position.set(cx, yB + sidewalkH / 2, streetZ + 7 + sidewalkW / 2);
+        botMesh.receiveShadow = true;
+        this.group.add(botMesh);
+      }
     });
 
     // Crosswalks at major intersections
@@ -315,11 +328,10 @@ export class CityDistrictSystem {
             : new THREE.PlaneGeometry(10, 1.0);
           stripeGeo.rotateX(-Math.PI / 2);
           const stripe = new THREE.Mesh(stripeGeo, crosswalkMat);
-          if (dir === 0) {
-            stripe.position.set(pos.x + s * 2, yElev + 0.02, pos.z);
-          } else {
-            stripe.position.set(pos.x, yElev + 0.02, pos.z + s * 2);
-          }
+          let cx = dir === 0 ? pos.x + s * 2 : pos.x;
+          let cz = dir === 0 ? pos.z : pos.z + s * 2;
+          const y = evaluateIslandElevation(cx, cz).elevation;
+          stripe.position.set(cx, y + 0.02, cz);
           this.group.add(stripe);
         }
       }

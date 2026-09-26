@@ -7,6 +7,7 @@
 import * as THREE from "three";
 import { AssetManager } from "../asset-manager";
 import type { DistrictType } from "./city-district-system";
+import { evaluateIslandElevation } from "@/lib/world/terrain-math";
 
 export interface BuildingPlacement {
   x: number;
@@ -111,7 +112,8 @@ export class BuildingGenerator {
    */
   public createBuilding(p: BuildingPlacement): THREE.Group {
     const group = new THREE.Group();
-    group.position.set(p.x, 2.5, p.z);
+    const terrainY = evaluateIslandElevation(p.x, p.z).elevation;
+    group.position.set(p.x, terrainY, p.z);
     group.rotation.y = p.rotationY;
 
     // Select building type based on district and height

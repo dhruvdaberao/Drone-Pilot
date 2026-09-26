@@ -6,6 +6,7 @@
 // ==========================================================
 
 import * as THREE from "three";
+import { WorldMaterials } from "../world-materials";
 
 /**
  * Cleanly merges an array of BufferGeometries into a single BufferGeometry
@@ -209,35 +210,16 @@ export const ENV_MATERIALS = {
   }),
 
   // Granite Boulder: Glacial speckled natural granite
-  rockGranite: new THREE.MeshStandardMaterial({
-    color: 0x7a8591,
-    roughness: 0.90,
-    metalness: 0.03,
-    flatShading: true,
-  }),
+  rockGranite: WorldMaterials.rock,
 
   // Mountain Scree: Weathered alpine gray talus
-  rockScree: new THREE.MeshStandardMaterial({
-    color: 0x8a929b,
-    roughness: 0.95,
-    metalness: 0.02,
-    flatShading: true,
-  }),
+  rockScree: WorldMaterials.rock,
 
   // River Cobblestone: Smooth weathered river stone
-  rockRiver: new THREE.MeshStandardMaterial({
-    color: 0x6e7882,
-    roughness: 0.82,
-    metalness: 0.04,
-  }),
+  rockRiver: WorldMaterials.rock,
 
   // Coastal Sea Stack: Algae/salt-weathered sandstone
-  rockCoastal: new THREE.MeshStandardMaterial({
-    color: 0x82796e,
-    roughness: 0.88,
-    metalness: 0.04,
-    flatShading: true,
-  }),
+  rockCoastal: WorldMaterials.rock,
 
   // Fallen Log & Stumps: Moss-tinged wet bark
   woodLog: new THREE.MeshStandardMaterial({

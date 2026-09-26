@@ -7,6 +7,7 @@
 import * as THREE from "three";
 import { AssetManager } from "../asset-manager";
 import type { DistrictType } from "./city-district-system";
+import { evaluateIslandElevation } from "@/lib/world/terrain-math";
 
 // GLB paths for road/street furniture
 const GLB_PATHS = {
@@ -82,24 +83,22 @@ export class StreetFurniture {
   // ────────────────────────────────────────────────────────────
 
   private placeStreetlights() {
-    const yElev = 2.5;
     // Along main avenues (x=640 and x=780) every 30m
     [640, 780].forEach(aveX => {
       for (let z = 200; z <= 460; z += 30) {
         // Right side of road
-        this.addStreetlight(aveX + 9, yElev, z);
+        this.addStreetlight(aveX + 9, evaluateIslandElevation(aveX + 9, z).elevation, z);
       }
     });
     // Along cross streets (z=240 and z=400) every 35m
     [240, 400].forEach(streetZ => {
       for (let x = 610; x <= 810; x += 35) {
-        this.addStreetlight(x, yElev, streetZ + 9);
+        this.addStreetlight(x, evaluateIslandElevation(x, streetZ + 9).elevation, streetZ + 9);
       }
     });
   }
 
   private placeTrafficLights() {
-    const yElev = 2.5;
     // At 4 major intersections
     const intersections = [
       { x: 640, z: 240 },
@@ -108,8 +107,8 @@ export class StreetFurniture {
       { x: 780, z: 400 },
     ];
     intersections.forEach(pos => {
-      this.addTrafficLight(pos.x + 8, yElev, pos.z + 8);
-      this.addTrafficLight(pos.x - 8, yElev, pos.z - 8, Math.PI);
+      this.addTrafficLight(pos.x + 8, evaluateIslandElevation(pos.x + 8, pos.z + 8).elevation, pos.z + 8);
+      this.addTrafficLight(pos.x - 8, evaluateIslandElevation(pos.x - 8, pos.z - 8).elevation, pos.z - 8, Math.PI);
     });
   }
 
@@ -224,7 +223,7 @@ export class StreetFurniture {
   }
 
   private addBench(x: number, z: number) {
-    const y = 2.5;
+    const y = evaluateIslandElevation(x, z).elevation;
     // Seat
     const seat = new THREE.Mesh(
       new THREE.BoxGeometry(2.4, 0.12, 0.6),
@@ -253,7 +252,7 @@ export class StreetFurniture {
   }
 
   private addTrashBin(x: number, z: number) {
-    const y = 2.5;
+    const y = evaluateIslandElevation(x, z).elevation;
     const bin = new THREE.Mesh(
       new THREE.CylinderGeometry(0.3, 0.35, 0.9, 8),
       new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.6, metalness: 0.4 })
@@ -271,7 +270,7 @@ export class StreetFurniture {
   }
 
   private addFireHydrant(x: number, z: number) {
-    const y = 2.5;
+    const y = evaluateIslandElevation(x, z).elevation;
     const body = new THREE.Mesh(
       new THREE.CylinderGeometry(0.15, 0.2, 0.7, 8),
       this.redMat
@@ -288,7 +287,7 @@ export class StreetFurniture {
   }
 
   private addBollard(x: number, z: number) {
-    const y = 2.5;
+    const y = evaluateIslandElevation(x, z).elevation;
     const bollard = new THREE.Mesh(
       new THREE.CylinderGeometry(0.1, 0.12, 1.0, 8),
       this.metalMat
@@ -298,7 +297,7 @@ export class StreetFurniture {
   }
 
   private addMailbox(x: number, z: number) {
-    const y = 2.5;
+    const y = evaluateIslandElevation(x, z).elevation;
     // Post
     const post = new THREE.Mesh(
       new THREE.CylinderGeometry(0.05, 0.05, 1.2, 6),

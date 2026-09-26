@@ -5,6 +5,7 @@
 
 import * as THREE from "three";
 import { AssetManager } from "../asset-manager";
+import { evaluateIslandElevation } from "@/lib/world/terrain-math";
 
 const PARKED_VEHICLE_GLBS = [
   "/models/vehicles/sedan.glb",
@@ -43,7 +44,7 @@ export class ParkingSystem {
 
     const idx = Math.floor(parkHash(x, z, 42) * PARKED_VEHICLE_GLBS.length);
     const glbPath = PARKED_VEHICLE_GLBS[idx];
-    const yElev = 2.5;
+    const yElev = evaluateIslandElevation(x, z).elevation;
 
     // Procedural fallback (simple colored box)
     const fallbackColor = [0x1e293b, 0xef4444, 0x3b82f6, 0x22c55e, 0xfbbf24, 0xe7e5e4][
@@ -70,8 +71,6 @@ export class ParkingSystem {
   }
 
   private buildParkingLots() {
-    const yElev = 2.51;
-
     // Surface parking lot near commercial district
     const lotPositions = [
       { cx: 660, cz: 260, rows: 3, cols: 6 },
@@ -79,6 +78,8 @@ export class ParkingSystem {
     ];
 
     lotPositions.forEach(lot => {
+      const yElev = evaluateIslandElevation(lot.cx, lot.cz).elevation + 0.01;
+
       // Asphalt surface
       const surfaceW = lot.cols * 5 + 4;
       const surfaceD = lot.rows * 5 + 4;
@@ -135,8 +136,6 @@ export class ParkingSystem {
   }
 
   private buildRoadsideParking() {
-    const yElev = 2.5;
-
     // Parallel parking along main avenues
     // Along x=640 avenue, right side (x=648), z=200 to z=440
     for (let z = 205; z <= 435; z += 8) {

@@ -15,6 +15,7 @@ import {
 } from "@/lib/world/biome-system";
 import { isWaterAt, getRiverCrossSectionAtZ } from "@/lib/world/hydrology-mask";
 import { ENV_MATERIALS, ENV_GEOMETRIES, FOLIAGE_WIND_UNIFORM } from "./environment/environment-models";
+import { WorldMaterials } from "./world-materials";
 
 export class NatureSystem {
   public group = new THREE.Group();
@@ -1180,12 +1181,7 @@ export class NatureSystem {
 
     // 12 natural boulders flanking the waterfall chute
     const boulderGeo = ENV_GEOMETRIES.buildGraniteBoulder();
-    const wetRockMat = new THREE.MeshStandardMaterial({
-      color: 0x6e7884, // Natural river granite
-      roughness: 0.85,
-      metalness: 0.04,
-      flatShading: true,
-    });
+    const wetRockMat = WorldMaterials.rock;
 
     const boulderOffsets = [
       { x: -245, y: 7.2, z: -205, s: 1.4 },
