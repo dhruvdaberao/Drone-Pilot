@@ -797,7 +797,6 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     const droneDef = digitalTwinToDroneDefinition(dtConfig);
     const droneMesh = new ModularDrone(droneDef, pilotName);
     scene.add(droneMesh.group);
-    scene.add(droneMesh.groundShadowMesh);
     droneMeshRef.current = droneMesh;
 
     // 6. MULTIPLAYER REMOTE DRONES LAYER
@@ -869,6 +868,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
 
     // 8. CHASE CAMERA
     const chaseCam = new ChaseCameraController(55, width / height);
+    chaseCam.setInitialFramingForAircraft(droneDef.type);
     cameraControllerRef.current = chaseCam;
 
     // 9. INPUT MANAGER
@@ -1204,6 +1204,21 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
                   <span className="text-neutral-500 text-[10px] ml-2 hidden sm:inline">
                     [{initialSpawn.regionId.toUpperCase()} • ELEV {initialSpawn.groundElevation.toFixed(1)}m]
                   </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Aircraft Identity Badge - Premium Presentation */}
+          {!isLoading && cameraMode === "chase" && (
+            <div className="absolute top-6 left-6 z-30 pointer-events-none animate-in fade-in duration-500 hidden md:block">
+              <div className="bg-[#0f1115]/90 backdrop-blur-md text-white border border-white/10 px-4 py-3 rounded-lg shadow-xl flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#FF5500] animate-pulse" />
+                  <span className="font-bold tracking-widest uppercase">{activeDigitalTwin?.identity.name || selectedDrone.name}</span>
+                </div>
+                <div className="text-[10px] font-mono text-neutral-400 font-bold uppercase tracking-widest pl-3.5">
+                  DIGITAL TWIN • {physicsEngineRef.current?.def.motorCount || 4} MOTORS • {(activeDigitalTwin?.massProperties.totalMassKg || selectedDrone.baseMassKg).toFixed(2)} kg
                 </div>
               </div>
             </div>

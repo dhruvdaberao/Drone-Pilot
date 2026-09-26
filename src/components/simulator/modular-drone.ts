@@ -7,7 +7,7 @@
 
 import * as THREE from "three";
 import { DroneDefinition, TelemetryState } from "@/lib/simulation/types";
-import { buildProfessionalUAV } from "../ui/aircraft-model-builder";
+import { buildProfessionalUAV, LedMaterials } from "../ui/aircraft-model-builder";
 
 interface PropellerAssembly {
   bladeGroup: THREE.Group;
@@ -20,6 +20,7 @@ interface PropellerAssembly {
 
 export class ModularDrone {
   public group = new THREE.Group();
+  /** Ground contact shadow decal — managed by the drone group internally. */
   public groundShadowMesh!: THREE.Mesh;
   public def: DroneDefinition;
   private propellers: PropellerAssembly[] = [];
@@ -32,12 +33,12 @@ export class ModularDrone {
   private gimbalRollArm: THREE.Group | null = null;
   private cameraPod: THREE.Group | null = null;
 
-  // Battery gauge LEDs
+  // Battery gauge LEDs — use shared materials from builder (always initialized)
   private batteryLeds: THREE.Mesh[] = [];
-  private ledBatteryGreenMat!: THREE.MeshBasicMaterial;
-  private ledBatteryAmberMat!: THREE.MeshBasicMaterial;
-  private ledBatteryRedMat!: THREE.MeshBasicMaterial;
-  private ledBatteryOffMat!: THREE.MeshStandardMaterial;
+  private readonly ledBatteryGreenMat = LedMaterials.green;
+  private readonly ledBatteryAmberMat = LedMaterials.amber;
+  private readonly ledBatteryRedMat   = LedMaterials.red;
+  private readonly ledBatteryOffMat   = LedMaterials.off;
 
   // Anti-collision strobe
   private tailStrobeMesh: THREE.Mesh | null = null;
@@ -230,10 +231,22 @@ export class ModularDrone {
 
     const propBlurTex = this.createPropBlurTexture();
 
-    parts.propellers.forEach((p, idx) => {
-      // Add high RPM blur disc
-      const bladeRadius = this.def.type === "quadcopter" ? 0.18 : this.def.type === "hexacopter" ? 0.25 : 0.32;
-      const blurDiscGeo = new THREE.PlaneGeometry(bladeRadius * 2.12, bladeRadius * 2.12);
+    // Compute inter-motor min distance to derive accurate prop radius for blur disc
+    let minMotorDist = Infinity;
+    for (let i = 0; i < this.def.motors.length; i++) {
+      for (let j = i + 1; j < this.def.motors.length; j++) {
+        const dx = this.def.motors[i].position.x - this.def.motors[j].position.x;
+        const dz = this.def.motors[i].position.z - this.def.motors[j].position.z;
+        const d = Math.sqrt(dx * dx + dz * dz);
+        if (d < minMotorDist) minMotorDist = d;
+      }
+    }
+    const propRadius = minMotorDist * 0.46;
+    const blurDiscDiameter = propRadius * 2.08;
+
+    parts.propellers.forEach((p) => {
+      // High-RPM motion-blur disc — sized to match actual propeller sweep area
+      const blurDiscGeo = new THREE.PlaneGeometry(blurDiscDiameter, blurDiscDiameter);
       const blurDiscMat = new THREE.MeshBasicMaterial({
         map: propBlurTex,
         transparent: true,
@@ -246,31 +259,31 @@ export class ModularDrone {
       blurMesh.position.y = 0.005;
       p.bladeGroup.parent?.add(blurMesh);
 
-      // Access the blade meshes to modify materials (they are children of bladeGroup)
+      // Override blade material with transparent-capable version for blur cross-fade
       const bladeMaterial = new THREE.MeshStandardMaterial({
-        color: 0x1d1f24,
-        roughness: 0.30,
-        metalness: 0.25,
+        color: 0x14161a,
+        roughness: 0.32,
+        metalness: 0.22,
         transparent: true,
         opacity: 1.0,
       });
 
-      p.bladeGroup.children.forEach(c => {
+      p.bladeGroup.children.forEach((c) => {
         if ((c as THREE.Mesh).isMesh) {
           (c as THREE.Mesh).material = bladeMaterial;
         }
       });
 
       this.propellers.push({
-        bladeGroup: p.bladeGroup,
+        bladeGroup:   p.bladeGroup,
         blurMesh,
         blurMaterial: blurDiscMat,
         bladeMaterial,
-        direction: p.direction,
-        motorIndex: p.motorIndex,
+        direction:    p.direction,
+        motorIndex:   p.motorIndex,
       });
-      
-      // Push arm and prop group for animation
+
+      // Track prop and arm groups for crash FX
       this.armGroups.push(p.bladeGroup.parent?.parent as THREE.Group);
       this.propGroups.push(p.bladeGroup.parent as THREE.Group);
     });
@@ -296,12 +309,15 @@ export class ModularDrone {
       ctx.fillRect(0, 0, 128, 128);
     }
     const shadowTex = new THREE.CanvasTexture(shadowCanvas);
+    // Shadow diameter: ~2× the aircraft motor-tip diameter
+    const shadowSize = Math.max(1.8, minMotorDist * 4.2);
     this.groundShadowMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.2, 2.2),
+      new THREE.PlaneGeometry(shadowSize, shadowSize),
       new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false })
     );
     this.groundShadowMesh.rotation.x = -Math.PI / 2;
     this.groundShadowMesh.position.y = -0.12;
+    // Shadow lives inside this.group — do NOT add it to scene separately.
     this.group.add(this.groundShadowMesh);
   }
 

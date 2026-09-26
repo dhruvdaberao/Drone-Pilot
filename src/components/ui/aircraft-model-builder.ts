@@ -16,268 +16,383 @@ export interface AircraftModelParts {
 }
 
 // ------------------------------------------------------------------
-// PROFESSIONAL AEROSPACE MATERIALS
+// CAMERA FRAMING HELPER
+// Returns the approximate bounding radius of the aircraft model
+// so the chase camera can frame the correct initial distance.
+// ------------------------------------------------------------------
+export function getAircraftBoundingRadius(type: "quadcopter" | "hexacopter" | "octacopter"): number {
+  // These values correspond to the physical motor-tip-to-motor-tip extents
+  // derived from the DroneDefinition motor radii + propeller radius allowance.
+  // Quad: motors at r≈0.48m + prop ≈ ~0.23m → span ~0.71m → bounding radius ~0.75m
+  // Hexa: motors at r≈0.55m + prop ≈ ~0.26m → span ~0.81m → bounding radius ~0.90m
+  // Octa: motors at r≈0.65m + prop ≈ ~0.30m → span ~0.95m → bounding radius ~1.05m
+  switch (type) {
+    case "hexacopter": return 0.90;
+    case "octacopter": return 1.10;
+    case "quadcopter":
+    default:           return 0.75;
+  }
+}
+
+// ------------------------------------------------------------------
+// PROFESSIONAL AEROSPACE MATERIALS (shared, static — created once)
 // ------------------------------------------------------------------
 const Materials = {
-  silverAlloy: new THREE.MeshStandardMaterial({
-    color: 0xcccccc, // Bright satin silver
-    roughness: 0.35,
-    metalness: 0.7,
-  }),
-  darkGraphite: new THREE.MeshStandardMaterial({
-    color: 0x222428, // Dark graphite structural
-    roughness: 0.5,
-    metalness: 0.4,
-  }),
+  // Dark structural carbon fibre chassis
   carbonFiber: new THREE.MeshStandardMaterial({
-    color: 0x181a1f, // Carbon structural chassis
-    roughness: 0.4,
-    metalness: 0.3,
+    color: 0x16181d,
+    roughness: 0.45,
+    metalness: 0.30,
   }),
+  // Satin anodized dark alloy (arms, structural tubes)
+  darkGraphite: new THREE.MeshStandardMaterial({
+    color: 0x22252b,
+    roughness: 0.50,
+    metalness: 0.40,
+  }),
+  // Machined / CNC silver alloy (motor bells, connectors, shell)
+  silverAlloy: new THREE.MeshStandardMaterial({
+    color: 0xbfc4cc,
+    roughness: 0.30,
+    metalness: 0.75,
+  }),
+  // Mid-grey machined alloy (motor stators, knuckles)
   machinedAlloy: new THREE.MeshStandardMaterial({
-    color: 0x6b7280, // Darker titanium/alloy
-    roughness: 0.3,
-    metalness: 0.7,
+    color: 0x5a6070,
+    roughness: 0.28,
+    metalness: 0.72,
   }),
+  // Optical glass / sensor lens
   opticalGlass: new THREE.MeshPhysicalMaterial({
-    color: 0x0a0c10,
-    metalness: 0.9,
-    roughness: 0.05,
-    transmission: 0.9,
+    color: 0x080a0e,
+    metalness: 0.90,
+    roughness: 0.04,
+    transmission: 0.88,
     thickness: 0.05,
     clearcoat: 1.0,
   }),
+  // Safety orange accents (front arm stripe, battery latch, prop cap)
   accentOrange: new THREE.MeshStandardMaterial({
-    color: 0xff5500, // Minimal orange accents
-    roughness: 0.3,
-    metalness: 0.2,
+    color: 0xff5500,
+    roughness: 0.28,
+    metalness: 0.18,
   }),
+  // Rubber vibration dampeners / feet
   rubberPad: new THREE.MeshStandardMaterial({
-    color: 0x111111,
-    roughness: 0.9,
-    metalness: 0.05,
+    color: 0x0e0f11,
+    roughness: 0.92,
+    metalness: 0.04,
   }),
+  // Carbon propeller blades
   propeller: new THREE.MeshStandardMaterial({
-    color: 0x151515,
-    roughness: 0.35,
-    metalness: 0.15,
+    color: 0x141618,
+    roughness: 0.38,
+    metalness: 0.18,
   }),
+  // Anti-collision strobe (white)
   strobe: new THREE.MeshBasicMaterial({ color: 0xffffff }),
-  ledGreen: new THREE.MeshBasicMaterial({ color: 0x00e676 }),
+  // Battery gauge LEDs
+  ledGreen:  new THREE.MeshBasicMaterial({ color: 0x00e676 }),
+  ledAmber:  new THREE.MeshBasicMaterial({ color: 0xffa000 }),
+  ledRed:    new THREE.MeshBasicMaterial({ color: 0xff1744 }),
+  ledOff:    new THREE.MeshStandardMaterial({ color: 0x1a1c20, roughness: 0.8, metalness: 0.1 }),
+};
+
+// Export LED materials so ModularDrone can reference them for its battery gauge
+export const LedMaterials = {
+  green: Materials.ledGreen,
+  amber: Materials.ledAmber,
+  red:   Materials.ledRed,
+  off:   Materials.ledOff,
 };
 
 // ------------------------------------------------------------------
 // GEOMETRY UTILS
 // ------------------------------------------------------------------
-function createRoundedRectShape(w: number, l: number, r: number) {
+function createRoundedRectShape(w: number, l: number, r: number): THREE.Shape {
   const shape = new THREE.Shape();
-  shape.moveTo(-w/2 + r, -l/2);
-  shape.lineTo(w/2 - r, -l/2);
-  shape.quadraticCurveTo(w/2, -l/2, w/2, -l/2 + r);
-  shape.lineTo(w/2, l/2 - r);
-  shape.quadraticCurveTo(w/2, l/2, w/2 - r, l/2);
-  shape.lineTo(-w/2 + r, l/2);
-  shape.quadraticCurveTo(-w/2, l/2, -w/2, l/2 - r);
-  shape.lineTo(-w/2, -l/2 + r);
-  shape.quadraticCurveTo(-w/2, -l/2, -w/2 + r, -l/2);
+  shape.moveTo(-w / 2 + r, -l / 2);
+  shape.lineTo( w / 2 - r, -l / 2);
+  shape.quadraticCurveTo( w / 2, -l / 2,  w / 2, -l / 2 + r);
+  shape.lineTo( w / 2,  l / 2 - r);
+  shape.quadraticCurveTo( w / 2,  l / 2,  w / 2 - r,  l / 2);
+  shape.lineTo(-w / 2 + r,  l / 2);
+  shape.quadraticCurveTo(-w / 2,  l / 2, -w / 2,  l / 2 - r);
+  shape.lineTo(-w / 2, -l / 2 + r);
+  shape.quadraticCurveTo(-w / 2, -l / 2, -w / 2 + r, -l / 2);
   return shape;
 }
 
-function buildGimbalAndCamera(scale: number): { gimbal: THREE.Group, pitch: THREE.Group } {
-  const gimbalGroup = new THREE.Group();
-  
-  const baseMount = new THREE.Mesh(new THREE.CylinderGeometry(0.02 * scale, 0.025 * scale, 0.015 * scale, 16), Materials.machinedAlloy);
-  gimbalGroup.add(baseMount);
+// ------------------------------------------------------------------
+// GIMBAL & CAMERA (Hexa and Octa)
+// ------------------------------------------------------------------
+function buildGimbalAndCamera(sc: number): { gimbal: THREE.Group; pitch: THREE.Group } {
+  const g = new THREE.Group();
 
-  const yawMotor = new THREE.Mesh(new THREE.CylinderGeometry(0.018 * scale, 0.018 * scale, 0.012 * scale, 16), Materials.darkGraphite);
-  yawMotor.position.y = -0.012 * scale;
-  gimbalGroup.add(yawMotor);
+  // Gimbal yaw ring / base
+  g.add(Object.assign(
+    new THREE.Mesh(new THREE.CylinderGeometry(0.022 * sc, 0.028 * sc, 0.016 * sc, 16), Materials.machinedAlloy),
+    { position: new THREE.Vector3(0, 0, 0) }
+  ));
 
-  const rollArm = new THREE.Mesh(new THREE.BoxGeometry(0.04 * scale, 0.01 * scale, 0.01 * scale), Materials.machinedAlloy);
-  rollArm.position.set(0.015 * scale, -0.025 * scale, 0);
-  gimbalGroup.add(rollArm);
+  // Roll arm
+  const rollArm = new THREE.Mesh(new THREE.BoxGeometry(0.05 * sc, 0.009 * sc, 0.009 * sc), Materials.darkGraphite);
+  rollArm.position.set(0.02 * sc, -0.018 * sc, 0);
+  g.add(rollArm);
 
-  const rollMotor = new THREE.Mesh(new THREE.CylinderGeometry(0.015 * scale, 0.015 * scale, 0.01 * scale, 16), Materials.darkGraphite);
+  // Roll motor
+  const rollMotor = new THREE.Mesh(new THREE.CylinderGeometry(0.013 * sc, 0.013 * sc, 0.01 * sc, 14), Materials.machinedAlloy);
   rollMotor.rotation.z = Math.PI / 2;
-  rollMotor.position.set(0.035 * scale, -0.025 * scale, 0);
-  gimbalGroup.add(rollMotor);
+  rollMotor.position.set(0.038 * sc, -0.018 * sc, 0);
+  g.add(rollMotor);
 
+  // Pitch group (the "camera pod")
   const pitchGroup = new THREE.Group();
-  pitchGroup.position.set(0.02 * scale, -0.025 * scale, 0);
+  pitchGroup.position.set(0.018 * sc, -0.025 * sc, 0);
 
-  const cameraBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.035 * scale, 0.025 * scale, 0.045 * scale), 
+  const camBody = new THREE.Mesh(
+    new THREE.BoxGeometry(0.038 * sc, 0.028 * sc, 0.050 * sc),
     Materials.darkGraphite
   );
-  cameraBody.position.set(-0.01 * scale, -0.01 * scale, 0.01 * scale);
-  pitchGroup.add(cameraBody);
+  camBody.position.set(-0.008 * sc, -0.008 * sc, 0.012 * sc);
+  pitchGroup.add(camBody);
 
-  const lensBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.014 * scale, 0.014 * scale, 0.015 * scale, 16), Materials.machinedAlloy);
+  const lensBarrel = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.013 * sc, 0.013 * sc, 0.014 * sc, 16),
+    Materials.machinedAlloy
+  );
   lensBarrel.rotation.x = Math.PI / 2;
-  lensBarrel.position.set(-0.01 * scale, -0.01 * scale, 0.035 * scale);
+  lensBarrel.position.set(-0.008 * sc, -0.010 * sc, 0.038 * sc);
   pitchGroup.add(lensBarrel);
 
-  const lensGlass = new THREE.Mesh(new THREE.CircleGeometry(0.012 * scale, 16), Materials.opticalGlass);
-  lensGlass.position.set(-0.01 * scale, -0.01 * scale, 0.043 * scale);
+  const lensGlass = new THREE.Mesh(new THREE.CircleGeometry(0.011 * sc, 16), Materials.opticalGlass);
+  lensGlass.position.set(-0.008 * sc, -0.010 * sc, 0.046 * sc);
   pitchGroup.add(lensGlass);
 
-  gimbalGroup.add(pitchGroup);
-
-  return { gimbal: gimbalGroup, pitch: pitchGroup };
+  g.add(pitchGroup);
+  return { gimbal: g, pitch: pitchGroup };
 }
 
 // ------------------------------------------------------------------
 // UNIFIED FUSELAGE FAMILY BUILDER
 // ------------------------------------------------------------------
-function buildUnifiedFuselage(type: "quadcopter" | "hexacopter" | "octacopter", root: THREE.Group): AircraftModelParts {
-  const parts = { 
-    batteryLeds: [] as THREE.Mesh[], 
-    tailStrobe: null as THREE.Mesh|null, 
-    gimbalGroup: null as THREE.Group|null, 
-    cameraPitchGroup: null as THREE.Group|null, 
-    propellers: [], 
-    rootGroup: root 
+function buildUnifiedFuselage(
+  type: "quadcopter" | "hexacopter" | "octacopter",
+  root: THREE.Group
+): AircraftModelParts {
+  const parts: AircraftModelParts = {
+    batteryLeds: [],
+    tailStrobe: null,
+    gimbalGroup: null,
+    cameraPitchGroup: null,
+    propellers: [],
+    rootGroup: root,
   };
-  
-  const scale = type === "quadcopter" ? 1.0 : type === "hexacopter" ? 1.4 : 1.8;
-  
+
+  // Scale factor: Quad = 1.0, Hexa = 1.35, Octa = 1.70
+  const sc = type === "quadcopter" ? 1.0 : type === "hexacopter" ? 1.35 : 1.70;
+
   const fuselage = new THREE.Group();
 
-  // Core dimensions (substantial, rectangular, heavy volume)
-  const bodyW = 0.16 * scale;
-  const bodyL = 0.22 * scale;
-  const bodyH = 0.08 * scale;
-  const cornerR = 0.02 * scale;
+  // ── Body dimensions ──────────────────────────────────────────────
+  const bodyW = 0.17 * sc;   // width (X)
+  const bodyL = 0.24 * sc;   // length (Z)
+  const bodyH = 0.085 * sc;  // height (Y)
+  const cR    = 0.022 * sc;  // corner radius
 
-  // 1. MIDDLE: Dark Structural Chassis
-  const chassisShape = createRoundedRectShape(bodyW, bodyL, cornerR);
-  const chassisGeo = new THREE.ExtrudeGeometry(chassisShape, { 
-    depth: bodyH, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.005*scale, bevelThickness: 0.005*scale 
+  // 1. STRUCTURAL CHASSIS (carbon fibre box)
+  const chassisShape = createRoundedRectShape(bodyW, bodyL, cR);
+  const chassisGeo = new THREE.ExtrudeGeometry(chassisShape, {
+    depth: bodyH, bevelEnabled: true,
+    bevelSegments: 2, steps: 1,
+    bevelSize: 0.005 * sc, bevelThickness: 0.005 * sc,
   });
   chassisGeo.center();
-  chassisGeo.rotateX(Math.PI / 2); // Lay flat
+  chassisGeo.rotateX(Math.PI / 2);
   const chassis = new THREE.Mesh(chassisGeo, Materials.carbonFiber);
   fuselage.add(chassis);
 
-  // 2. TOP: Smooth Silver Equipment Shell
-  const shellW = bodyW * 0.9;
-  const shellL = bodyL * 0.85;
-  const shellH = 0.03 * scale;
-  const shellShape = createRoundedRectShape(shellW, shellL, cornerR);
-  const shellGeo = new THREE.ExtrudeGeometry(shellShape, { 
-    depth: shellH, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.008*scale, bevelThickness: 0.008*scale 
+  // 2. TOP EQUIPMENT SHELL (silver alloy canopy)
+  const shellW = bodyW * 0.88;
+  const shellL = bodyL * 0.82;
+  const shellH = 0.032 * sc;
+  const shellShape = createRoundedRectShape(shellW, shellL, cR);
+  const shellGeo = new THREE.ExtrudeGeometry(shellShape, {
+    depth: shellH, bevelEnabled: true,
+    bevelSegments: 3, steps: 1,
+    bevelSize: 0.009 * sc, bevelThickness: 0.009 * sc,
   });
   shellGeo.center();
   shellGeo.rotateX(Math.PI / 2);
   const shell = new THREE.Mesh(shellGeo, Materials.silverAlloy);
-  shell.position.y = bodyH/2 + shellH/2 - 0.002; 
+  shell.position.y = bodyH / 2 + shellH / 2 - 0.002;
   shell.castShadow = true;
   fuselage.add(shell);
 
-  // Heat sink vents embedded in silver shell
+  // Heat sink vents in silver shell
   for (let i = -1; i <= 1; i++) {
-    const vent = new THREE.Mesh(new THREE.BoxGeometry(shellW * 0.4, 0.005 * scale, 0.01 * scale), Materials.machinedAlloy);
-    vent.position.set(0, bodyH/2 + shellH, (i * 0.02) * scale);
+    const vent = new THREE.Mesh(
+      new THREE.BoxGeometry(shellW * 0.38, 0.005 * sc, 0.011 * sc),
+      Materials.machinedAlloy
+    );
+    vent.position.set(0, bodyH / 2 + shellH, i * 0.022 * sc);
     fuselage.add(vent);
   }
 
-  // 3. BOTTOM: Payload & Sensor Interface Bay
-  const bayW = bodyW * 0.6;
-  const bayL = bodyL * 0.6;
-  const bayH = 0.02 * scale;
+  // 3. BOTTOM SENSOR / PAYLOAD INTERFACE BAY
+  const bayW = bodyW * 0.58;
+  const bayL = bodyL * 0.58;
+  const bayH = 0.018 * sc;
   const bay = new THREE.Mesh(new THREE.BoxGeometry(bayW, bayH, bayL), Materials.darkGraphite);
-  bay.position.y = -bodyH/2 - bayH/2;
+  bay.position.y = -bodyH / 2 - bayH / 2;
   fuselage.add(bay);
 
-  // Payload: Gimbal or Fixed Sensors
-  if (type === "hexacopter" || type === "octacopter") {
-    const { gimbal, pitch } = buildGimbalAndCamera(scale * 0.8);
-    gimbal.position.set(0, -bodyH/2 - bayH, bodyL * 0.1);
+  // 4. PAYLOAD / CAMERA SYSTEM (type-differentiated)
+  if (type === "octacopter") {
+    // Heavy payload rail mount (industrial)
+    const railW = bodyW * 0.72;
+    const railH = 0.018 * sc;
+    const railL = bodyL * 0.55;
+    const payloadRail = new THREE.Mesh(new THREE.BoxGeometry(railW, railH, railL), Materials.machinedAlloy);
+    payloadRail.position.set(0, -bodyH / 2 - bayH - railH / 2, bodyL * 0.05);
+    fuselage.add(payloadRail);
+    // Payload vibration isolator pucks (4 corners)
+    [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(([sx, sz]) => {
+      const puck = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.012 * sc, 0.012 * sc, 0.022 * sc, 12),
+        Materials.rubberPad
+      );
+      puck.position.set(sx * railW * 0.38, -bodyH / 2 - bayH - railH - 0.011 * sc, sz * railL * 0.38);
+      fuselage.add(puck);
+    });
+    // 3-axis gimbal
+    const { gimbal, pitch } = buildGimbalAndCamera(sc * 0.85);
+    gimbal.position.set(0, -bodyH / 2 - bayH - railH - 0.06 * sc, bodyL * 0.12);
+    fuselage.add(gimbal);
+    parts.gimbalGroup = gimbal;
+    parts.cameraPitchGroup = pitch;
+  } else if (type === "hexacopter") {
+    // Mapping/survey gimbal
+    const { gimbal, pitch } = buildGimbalAndCamera(sc * 0.75);
+    gimbal.position.set(0, -bodyH / 2 - bayH - 0.01 * sc, bodyL * 0.10);
     fuselage.add(gimbal);
     parts.gimbalGroup = gimbal;
     parts.cameraPitchGroup = pitch;
   } else {
-    // Quad uses smaller fixed nose FPV
-    const fpvMount = new THREE.Mesh(new THREE.BoxGeometry(0.03*scale, 0.03*scale, 0.03*scale), Materials.darkGraphite);
-    fpvMount.position.set(0, -bodyH/2, bodyL/2);
+    // Quadcopter: small fixed FPV nose camera
+    const fpvMount = new THREE.Mesh(
+      new THREE.BoxGeometry(0.028 * sc, 0.028 * sc, 0.026 * sc),
+      Materials.darkGraphite
+    );
+    fpvMount.position.set(0, -bodyH / 2, bodyL / 2 + 0.002);
     fuselage.add(fpvMount);
-    const fpvLens = new THREE.Mesh(new THREE.CircleGeometry(0.01*scale, 16), Materials.opticalGlass);
-    fpvLens.position.set(0, -bodyH/2, bodyL/2 + 0.016*scale);
+    const fpvLens = new THREE.Mesh(new THREE.CircleGeometry(0.009 * sc, 16), Materials.opticalGlass);
+    fpvLens.position.set(0, -bodyH / 2, bodyL / 2 + 0.015 * sc);
     fuselage.add(fpvLens);
+    // Quad has front orange accent stripe on nose
+    const noseTip = new THREE.Mesh(
+      new THREE.BoxGeometry(0.030 * sc, 0.006 * sc, 0.008 * sc),
+      Materials.accentOrange
+    );
+    noseTip.position.set(0, -bodyH / 2 + 0.015 * sc, bodyL / 2 - 0.002 * sc);
+    fuselage.add(noseTip);
   }
 
-  // 4. REAR: Heavy Battery Cartridge
-  const batW = bodyW * 0.7;
-  const batL = 0.08 * scale;
-  const batH = bodyH * 0.8;
+  // 5. REAR BATTERY CARTRIDGE
+  const batW = bodyW * 0.68;
+  const batL = 0.085 * sc;
+  const batH = bodyH * 0.82;
   const batteryPack = new THREE.Mesh(new THREE.BoxGeometry(batW, batH, batL), Materials.darkGraphite);
-  batteryPack.position.set(0, 0, -bodyL/2 - batL/2 + 0.02*scale);
+  batteryPack.position.set(0, 0, -bodyL / 2 - batL / 2 + 0.018 * sc);
   fuselage.add(batteryPack);
 
-  const latch = new THREE.Mesh(new THREE.BoxGeometry(batW * 0.4, 0.01*scale, 0.02*scale), Materials.accentOrange);
-  latch.position.set(0, batH/2, -bodyL/2 - batL/2 + 0.01*scale);
+  // Battery latch (orange accent)
+  const latch = new THREE.Mesh(new THREE.BoxGeometry(batW * 0.38, 0.010 * sc, 0.022 * sc), Materials.accentOrange);
+  latch.position.set(0, batH / 2, -bodyL / 2 - batL / 2 + 0.008 * sc);
   fuselage.add(latch);
 
-  // 4-LED Battery Gauge
+  // 4-LED Battery Status Gauge
   for (let i = 0; i < 4; i++) {
-    const led = new THREE.Mesh(new THREE.BoxGeometry(0.015*scale, 0.005*scale, 0.008*scale), Materials.ledGreen);
-    led.position.set((-0.03 + i*0.02)*scale, batH/2 + 0.002, -bodyL/2 - batL/2 + 0.03*scale);
+    const led = new THREE.Mesh(
+      new THREE.BoxGeometry(0.014 * sc, 0.005 * sc, 0.007 * sc),
+      Materials.ledGreen  // initial state: full green
+    );
+    led.position.set((-0.028 + i * 0.019) * sc, batH / 2 + 0.002, -bodyL / 2 - batL / 2 + 0.028 * sc);
     fuselage.add(led);
     parts.batteryLeds.push(led);
   }
 
-  // 5. TOP: RTK GPS Modules
+  // 6. RTK GPS MODULE(S) on top
   const numRtk = type === "quadcopter" ? 1 : 2;
-  const rtkX = type === "quadcopter" ? [0] : [-0.05 * scale, 0.05 * scale];
-  rtkX.forEach(x => {
-    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.006*scale, 0.006*scale, 0.04*scale, 8), Materials.darkGraphite);
-    mast.position.set(x, bodyH/2 + shellH + 0.02*scale, -bodyL*0.2);
+  const rtkPositions = type === "quadcopter"
+    ? [{ x: 0 }]
+    : [{ x: -0.048 * sc }, { x: 0.048 * sc }];
+
+  rtkPositions.forEach(({ x }) => {
+    const mast = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.005 * sc, 0.005 * sc, 0.038 * sc, 8),
+      Materials.darkGraphite
+    );
+    mast.position.set(x, bodyH / 2 + shellH + 0.019 * sc, -bodyL * 0.18);
     fuselage.add(mast);
-    
-    const puck = new THREE.Mesh(new THREE.CylinderGeometry(0.03*scale, 0.03*scale, 0.01*scale, 16), Materials.silverAlloy);
-    puck.position.set(x, bodyH/2 + shellH + 0.04*scale, -bodyL*0.2);
+
+    const puck = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.028 * sc, 0.028 * sc, 0.009 * sc, 16),
+      Materials.silverAlloy
+    );
+    puck.position.set(x, bodyH / 2 + shellH + 0.038 * sc, -bodyL * 0.18);
     fuselage.add(puck);
   });
 
-  // 6. TAIL STROBE (Mounted on top of battery)
-  const strobeMount = new THREE.Mesh(new THREE.CylinderGeometry(0.006*scale, 0.006*scale, 0.02*scale, 8), Materials.machinedAlloy);
-  strobeMount.position.set(0, batH/2 + 0.01*scale, -bodyL/2 - batL/2);
+  // 7. TAIL ANTI-COLLISION STROBE
+  const strobeMount = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.005 * sc, 0.005 * sc, 0.018 * sc, 8),
+    Materials.machinedAlloy
+  );
+  strobeMount.position.set(0, batH / 2 + 0.009 * sc, -bodyL / 2 - batL / 2);
   fuselage.add(strobeMount);
 
-  const strobe = new THREE.Mesh(new THREE.SphereGeometry(0.01*scale, 8, 8), Materials.strobe);
-  strobe.position.set(0, batH/2 + 0.02*scale, -bodyL/2 - batL/2);
-  fuselage.add(strobe);
-  parts.tailStrobe = strobe;
+  const strobeLight = new THREE.Mesh(new THREE.SphereGeometry(0.009 * sc, 8, 8), Materials.strobe);
+  strobeLight.position.set(0, batH / 2 + 0.020 * sc, -bodyL / 2 - batL / 2);
+  fuselage.add(strobeLight);
+  parts.tailStrobe = strobeLight;
 
-  // 7. LANDING GEAR (Consistent structural family)
-  // Legs attach to the sides of the lower chassis
-  [-bodyW/2 + 0.01*scale, bodyW/2 - 0.01*scale].forEach(x => {
-    const isLeft = x < 0;
+  // 8. LANDING GEAR — professional skid design
+  // Legs attach under the body at ±X. Struts angle outward, skids run fore-aft.
+  const gearSpread = bodyW / 2 + 0.005 * sc;
+  [-1, 1].forEach((side) => {
     const gearGroup = new THREE.Group();
-    gearGroup.position.set(x, -bodyH/2, 0);
+    gearGroup.position.set(side * gearSpread, -bodyH / 2, 0);
 
-    const strutH = 0.12 * scale; // Shortened landing gear for realistic proportions
-    const strutThick = 0.015 * scale;
-    const strutGeo = new THREE.CylinderGeometry(strutThick*0.8, strutThick, strutH, 12);
-    const strut = new THREE.Mesh(strutGeo, Materials.carbonFiber);
-    // Angle outwards
-    strut.rotation.z = isLeft ? -0.15 : 0.15;
-    strut.position.set(isLeft ? -strutH*0.075 : strutH*0.075, -strutH/2, 0);
+    const strutH = 0.135 * sc;
+    const strutR  = 0.008 * sc;
+    const leanAngle = side * 0.18; // outward lean
+
+    // Main strut (slightly angled outward)
+    const strut = new THREE.Mesh(
+      new THREE.CylinderGeometry(strutR * 0.75, strutR, strutH, 10),
+      Materials.carbonFiber
+    );
+    strut.rotation.z = leanAngle;
+    strut.position.set(side * strutH * Math.sin(Math.abs(leanAngle)) * 0.5, -strutH / 2, 0);
     gearGroup.add(strut);
 
-    // Thick Carbon Skids
-    const skidL = bodyL * 1.5;
-    const skidGeo = new THREE.CylinderGeometry(strutThick, strutThick, skidL, 12);
+    // Skid tube (fore-aft, ~1.5× body length)
+    const skidLength = bodyL * 1.55;
+    const skidGeo = new THREE.CylinderGeometry(strutR, strutR, skidLength, 10);
     skidGeo.rotateX(Math.PI / 2);
     const skid = new THREE.Mesh(skidGeo, Materials.darkGraphite);
-    skid.position.set(isLeft ? -strutH*0.15 : strutH*0.15, -strutH, 0);
+    skid.position.set(side * strutH * Math.sin(Math.abs(leanAngle)), -strutH, 0);
     gearGroup.add(skid);
 
-    // Rubber Feet
-    [-skidL*0.4, skidL*0.4].forEach(z => {
-      const foot = new THREE.Mesh(new THREE.CylinderGeometry(strutThick*1.2, strutThick*1.2, 0.02*scale, 12), Materials.rubberPad);
-      foot.rotation.x = Math.PI/2;
-      foot.position.set(isLeft ? -strutH*0.15 : strutH*0.15, -strutH, z);
+    // Rubber contact feet (front + rear of skid)
+    [-skidLength * 0.42, skidLength * 0.42].forEach((zOffset) => {
+      const foot = new THREE.Mesh(
+        new THREE.CylinderGeometry(strutR * 1.35, strutR * 1.35, 0.018 * sc, 10),
+        Materials.rubberPad
+      );
+      foot.rotation.x = Math.PI / 2;
+      foot.position.set(side * strutH * Math.sin(Math.abs(leanAngle)), -strutH, zOffset);
       gearGroup.add(foot);
     });
 
@@ -292,127 +407,167 @@ function buildUnifiedFuselage(type: "quadcopter" | "hexacopter" | "octacopter", 
 // ARMS, MOTORS & PROPELLERS
 // ------------------------------------------------------------------
 function buildArmsAndMotors(
-  root: THREE.Group, 
-  motorsDef: MotorDef[], 
+  root: THREE.Group,
+  motorsDef: MotorDef[],
   type: "quadcopter" | "hexacopter" | "octacopter",
   parts: AircraftModelParts
 ) {
-  const scale = type === "quadcopter" ? 1.0 : type === "hexacopter" ? 1.4 : 1.8;
-  // Significantly thinner, structural arms
-  const armW = 0.02 * scale;
-  const armH = 0.025 * scale;
-  const motorRadius = 0.045 * scale;
+  const sc = type === "quadcopter" ? 1.0 : type === "hexacopter" ? 1.35 : 1.70;
 
-  // 1. Calculate minimum distance between any two motors to ensure props NEVER overlap
-  let minDistance = Infinity;
+  // Arm cross-section — flat rectangular tubes (aerodynamic / structural)
+  const armW  = 0.018 * sc;  // width (narrow edge)
+  const armH  = 0.022 * sc;  // height (tall edge — stiffer in bending)
+  const motorR = 0.042 * sc; // motor bell radius
+
+  // Compute propeller radius = half inter-motor distance minus 5% safety gap
+  let minMotorDistance = Infinity;
   for (let i = 0; i < motorsDef.length; i++) {
     for (let j = i + 1; j < motorsDef.length; j++) {
       const dx = motorsDef[i].position.x - motorsDef[j].position.x;
       const dz = motorsDef[i].position.z - motorsDef[j].position.z;
-      const dist = Math.sqrt(dx*dx + dz*dz);
-      if (dist < minDistance) minDistance = dist;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+      if (dist < minMotorDistance) minMotorDistance = dist;
     }
   }
-  // Max prop radius is half the distance, minus a larger 5% safety gap for visual separation
-  const propRadius = minDistance * 0.47; 
+  const propRadius = minMotorDistance * 0.46;  // 4% clearance on each side
 
-  // 2. Identify the TWO front-most motors for the orange safety stripes
-  const sortedMotors = [...motorsDef].sort((a, b) => b.position.z - a.position.z);
-  const frontMotorIndices = new Set([sortedMotors[0].index, sortedMotors[1].index]);
+  // Identify the two front-most motors for orange safety stripes
+  const sortedByZ = [...motorsDef].sort((a, b) => b.position.z - a.position.z);
+  const frontIndices = new Set([sortedByZ[0].index, sortedByZ[1 < motorsDef.length ? 1 : 0].index]);
 
-  motorsDef.forEach(motor => {
+  motorsDef.forEach((motor) => {
     const armGroup = new THREE.Group();
-    const vec = new THREE.Vector3(motor.position.x, motor.position.y, motor.position.z);
-    
-    armGroup.position.y = vec.y;
-    vec.y = 0; 
-    const length = vec.length();
+
+    const vec = new THREE.Vector3(motor.position.x, 0, motor.position.z);
+    const armLength = vec.length();
     const angle = Math.atan2(vec.x, vec.z);
+
+    armGroup.position.y = motor.position.y || 0;
     armGroup.rotation.y = angle;
 
-    // Body Mount Point (Thick reinforced knuckle)
-    const knuckleRadius = 0.06 * scale; // How far from center the arm starts visually
-    const knuckle = new THREE.Mesh(new THREE.BoxGeometry(armW*1.4, armH*1.2, 0.04*scale), Materials.machinedAlloy);
-    knuckle.position.z = knuckleRadius;
+    // ── Arm root reinforcement knuckle ───────────────────────────
+    // Visual start of arm: slight distance from body centre
+    const knuckleZ = 0.055 * sc;
+    const knuckle = new THREE.Mesh(
+      new THREE.BoxGeometry(armW * 1.6, armH * 1.5, 0.038 * sc),
+      Materials.machinedAlloy
+    );
+    knuckle.position.z = knuckleZ;
     armGroup.add(knuckle);
 
-    // Carbon Fiber Arm (Rectangular / Aerodynamic)
-    const armLen = length - knuckleRadius;
-    const armGeo = new THREE.BoxGeometry(armW, armH, armLen);
-    const arm = new THREE.Mesh(armGeo, Materials.carbonFiber);
-    arm.position.z = knuckleRadius + armLen / 2;
-    arm.castShadow = true;
-    armGroup.add(arm);
+    // ── Main arm tube ─────────────────────────────────────────────
+    const usableLength = armLength - knuckleZ - motorR * 1.1;
+    const armMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(armW, armH, usableLength),
+      Materials.carbonFiber
+    );
+    armMesh.position.z = knuckleZ + usableLength / 2;
+    armMesh.castShadow = true;
+    armGroup.add(armMesh);
 
-    // Fasteners / Details on arm
-    const stripe = new THREE.Mesh(new THREE.BoxGeometry(armW*1.05, armH*1.05, 0.02*scale), Materials.darkGraphite);
-    stripe.position.z = knuckleRadius + armLen * 0.8;
-    armGroup.add(stripe);
+    // Arm mid-section reinforcement band (dark detail ring)
+    const band = new THREE.Mesh(
+      new THREE.BoxGeometry(armW * 1.08, armH * 1.08, 0.018 * sc),
+      Materials.darkGraphite
+    );
+    band.position.z = knuckleZ + usableLength * 0.78;
+    armGroup.add(band);
 
-    if (frontMotorIndices.has(motor.index)) { // Strictly the front two arms
-      const orangeStripe = new THREE.Mesh(new THREE.BoxGeometry(armW*1.06, armH*1.06, 0.015*scale), Materials.accentOrange);
-      orangeStripe.position.z = knuckleRadius + armLen * 0.84;
-      armGroup.add(orangeStripe);
+    // Front arms: safety orange stripe near tip
+    if (frontIndices.has(motor.index)) {
+      const orange = new THREE.Mesh(
+        new THREE.BoxGeometry(armW * 1.10, armH * 1.10, 0.013 * sc),
+        Materials.accentOrange
+      );
+      orange.position.z = knuckleZ + usableLength * 0.83;
+      armGroup.add(orange);
     }
 
-    // Motor Mount / Base
-    const motorMount = new THREE.Mesh(new THREE.CylinderGeometry(motorRadius * 1.1, motorRadius * 0.9, 0.02*scale, 16), Materials.machinedAlloy);
-    motorMount.position.set(0, armH/2, length);
-    armGroup.add(motorMount);
+    // ── Motor mount plate ─────────────────────────────────────────
+    const motorMountPlate = new THREE.Mesh(
+      new THREE.CylinderGeometry(motorR * 1.15, motorR * 0.92, 0.018 * sc, 18),
+      Materials.machinedAlloy
+    );
+    motorMountPlate.position.set(0, armH / 2 + 0.009 * sc, armLength);
+    armGroup.add(motorMountPlate);
 
-    // Professional Brushless Motor
-    const stator = new THREE.Mesh(new THREE.CylinderGeometry(motorRadius * 0.8, motorRadius * 0.8, 0.02*scale, 24), Materials.darkGraphite);
-    stator.position.set(0, armH/2 + 0.02*scale, length);
+    // Stator (lower fixed part of brushless motor)
+    const stator = new THREE.Mesh(
+      new THREE.CylinderGeometry(motorR * 0.75, motorR * 0.75, 0.018 * sc, 22),
+      Materials.darkGraphite
+    );
+    stator.position.set(0, armH / 2 + 0.022 * sc, armLength);
     armGroup.add(stator);
 
-    const bell = new THREE.Mesh(new THREE.CylinderGeometry(motorRadius, motorRadius, 0.025*scale, 24), Materials.silverAlloy);
-    bell.position.set(0, armH/2 + 0.04*scale, length);
+    // Motor bell (rotating outer can — silver)
+    const bell = new THREE.Mesh(
+      new THREE.CylinderGeometry(motorR, motorR, 0.024 * sc, 22),
+      Materials.silverAlloy
+    );
+    bell.position.set(0, armH / 2 + 0.038 * sc, armLength);
     armGroup.add(bell);
 
-    // Motor Shaft
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.005*scale, 0.005*scale, 0.02*scale, 8), Materials.machinedAlloy);
-    shaft.position.set(0, armH/2 + 0.06*scale, length);
+    // Motor shaft stub
+    const shaft = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.004 * sc, 0.004 * sc, 0.018 * sc, 8),
+      Materials.machinedAlloy
+    );
+    shaft.position.set(0, armH / 2 + 0.056 * sc, armLength);
     armGroup.add(shaft);
 
-    // Propeller Assembly
+    // ── Propeller assembly ────────────────────────────────────────
     const propGroup = new THREE.Group();
-    propGroup.position.set(0, armH/2 + 0.065*scale, length);
+    propGroup.position.set(0, armH / 2 + 0.062 * sc, armLength);
 
-    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.012*scale, 0.012*scale, 0.01*scale, 16), Materials.darkGraphite);
+    // Prop hub
+    const hub = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.010 * sc, 0.010 * sc, 0.009 * sc, 14),
+      Materials.darkGraphite
+    );
     propGroup.add(hub);
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.006*scale, 0.006*scale, 0.005*scale, 12), Materials.accentOrange);
-    cap.position.y = 0.006*scale;
+
+    // Prop spinner cap (orange accent)
+    const cap = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.005 * sc, 0.005 * sc, 0.005 * sc, 10),
+      Materials.accentOrange
+    );
+    cap.position.y = 0.007 * sc;
     propGroup.add(cap);
 
-    // Aerodynamic Blades (Realistic two-blade)
+    // Aerodynamic two-blade propeller
+    // Blade: tapers from thick root to thin tip, slight twist
     const bladeShape = new THREE.Shape();
-    bladeShape.moveTo(0, 0.008*scale);
-    bladeShape.quadraticCurveTo(propRadius * 0.4, 0.025*scale, propRadius, 0.005*scale);
-    bladeShape.lineTo(propRadius, -0.005*scale);
-    bladeShape.quadraticCurveTo(propRadius * 0.4, -0.015*scale, 0, -0.008*scale);
+    bladeShape.moveTo(0, 0.009 * sc);
+    bladeShape.quadraticCurveTo(propRadius * 0.35, 0.028 * sc, propRadius, 0.006 * sc);
+    bladeShape.lineTo(propRadius, -0.006 * sc);
+    bladeShape.quadraticCurveTo(propRadius * 0.35, -0.018 * sc, 0, -0.009 * sc);
 
-    const bladeGeo = new THREE.ExtrudeGeometry(bladeShape, { depth: 0.002*scale, bevelEnabled: true, bevelSize: 0.001*scale, bevelThickness: 0.001*scale, bevelSegments: 2, steps: 1 });
+    const bladeGeo = new THREE.ExtrudeGeometry(bladeShape, {
+      depth: 0.003 * sc, bevelEnabled: true,
+      bevelSize: 0.001 * sc, bevelThickness: 0.001 * sc,
+      bevelSegments: 2, steps: 1,
+    });
     bladeGeo.center();
 
     const blade1 = new THREE.Mesh(bladeGeo, Materials.propeller);
     blade1.position.x = propRadius / 2;
-    blade1.rotation.x = 0.15; // pitch
+    blade1.rotation.x = 0.16;  // aerodynamic pitch angle
     blade1.castShadow = true;
     propGroup.add(blade1);
 
     const blade2 = new THREE.Mesh(bladeGeo, Materials.propeller);
     blade2.position.x = -propRadius / 2;
     blade2.rotation.z = Math.PI;
-    blade2.rotation.x = 0.15;
+    blade2.rotation.x = 0.16;
     blade2.castShadow = true;
     propGroup.add(blade2);
 
     armGroup.add(propGroup);
-    
+
     parts.propellers.push({
       bladeGroup: propGroup,
-      direction: motor.direction,
-      motorIndex: motor.index
+      direction:  motor.direction,
+      motorIndex: motor.index,
     });
 
     root.add(armGroup);
@@ -420,30 +575,32 @@ function buildArmsAndMotors(
 }
 
 // ------------------------------------------------------------------
-// MAIN BUILDER FUNCTION
+// MAIN BUILDER ENTRY POINT
 // ------------------------------------------------------------------
 export function buildProfessionalUAV(
-  type: "quadcopter" | "hexacopter" | "octacopter", 
+  type: "quadcopter" | "hexacopter" | "octacopter",
   customMotors?: MotorDef[]
 ): AircraftModelParts {
   const rootGroup = new THREE.Group();
-  
+
   const parts = buildUnifiedFuselage(type, rootGroup);
 
+  // Use provided motor positions (from Digital Twin) or sensible defaults
   let motors = customMotors;
-  if (!motors) {
+  if (!motors || motors.length === 0) {
+    const count  = type === "quadcopter" ? 4 : type === "hexacopter" ? 6 : 8;
+    // Motor radius matches drone-definitions.ts: Quad=0.48, Hexa=0.55, Octa=0.65
+    const radius = type === "quadcopter" ? 0.48 : type === "hexacopter" ? 0.55 : 0.65;
+    // Angular offset for X-configuration (Quad: 45°, Hexa: 30°, Octa: 22.5°)
+    const offset = type === "quadcopter" ? Math.PI / 4 : type === "hexacopter" ? Math.PI / 6 : Math.PI / 8;
+
     motors = [];
-    const count = type === "quadcopter" ? 4 : type === "hexacopter" ? 6 : 8;
-    // Set realistic arm length to ensure a massive industrial footprint
-    const radius = type === "quadcopter" ? 0.45 : type === "hexacopter" ? 0.75 : 1.10;
-    const offset = type === "quadcopter" ? Math.PI/4 : type === "hexacopter" ? Math.PI/6 : Math.PI/8;
-    
     for (let i = 0; i < count; i++) {
       const angle = (i * Math.PI * 2) / count + offset;
       motors.push({
-        index: i,
-        position: { x: Math.sin(angle) * radius, y: 0, z: Math.cos(angle) * radius },
-        direction: i % 2 === 0 ? 1 : -1
+        index:     i,
+        position:  { x: Math.sin(angle) * radius, y: 0.12, z: Math.cos(angle) * radius },
+        direction: i % 2 === 0 ? 1 : -1,
       });
     }
   }
@@ -452,4 +609,3 @@ export function buildProfessionalUAV(
 
   return parts;
 }
-
