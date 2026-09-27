@@ -215,16 +215,10 @@ export class ModularDrone {
   }
 
   private buildDrone() {
-    // Pass motor positions from the Digital Twin so the simulator drone
-    // exactly matches the Hanger 3D viewer (same builder, same positions).
-    const motorDefs = this.def.motors.map((m, i) => ({
-      index: i,
-      position: { x: m.position.x, y: m.position.y ?? 0.12, z: m.position.z },
-      direction: m.direction as 1 | -1,
-    }));
+    // Use default motor layout from aircraft-model-builder (same as Hanger viewer)
     const parts = buildProfessionalUAV(
       this.def.type as any,
-      motorDefs
+      undefined  // use builder's own default X-config motor layout
     );
 
     this.group.add(parts.rootGroup);

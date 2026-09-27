@@ -256,9 +256,11 @@ export function Drone3DViewer({
     currentDroneGroup = buildDrone(targetTypeRef.current);
     masterGroup.add(currentDroneGroup);
     
-    // Initial framing
-    // Need to trigger a layout calculation
-    setTimeout(() => handleResize(), 0);
+    // Initial framing — delay to allow flex layout to settle
+    setTimeout(() => handleResize(), 100);
+    // Second pass in case of slow paint
+    setTimeout(() => handleResize(), 400);
+
 
     let transitionProgress = 1.0;
     let oldDroneGroup: THREE.Group | null = null;

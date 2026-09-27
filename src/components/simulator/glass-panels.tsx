@@ -171,7 +171,7 @@ export function RightGlassPanel({
         />
       )}
 
-      <div className={`fixed top-0 right-0 bottom-0 md:relative md:w-full md:h-full md:top-auto md:right-auto md:bottom-auto w-80 md:rounded-none bg-neutral-900/95 md:bg-transparent backdrop-blur-xl border-l md:border-l border-white/10 p-5 flex flex-col gap-5 shadow-2xl z-40 text-white font-mono pointer-events-auto transition-transform duration-300 ease-in-out safe-area-padding custom-scrollbar overflow-y-auto ${
+      <div className={`fixed top-0 right-0 bottom-0 md:relative md:w-full md:h-full md:top-auto md:right-auto md:bottom-auto w-80 md:rounded-none bg-neutral-900/95 md:bg-transparent backdrop-blur-xl border-l md:border-l border-white/10 p-4 flex flex-col gap-3 shadow-2xl z-40 text-white font-mono pointer-events-auto transition-transform duration-300 ease-in-out safe-area-padding custom-scrollbar overflow-y-auto ${
         isOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"
       }`}>
         

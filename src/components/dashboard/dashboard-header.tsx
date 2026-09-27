@@ -34,15 +34,15 @@ export function DashboardHeader() {
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#FF5500]/60 to-transparent" />
 
       {/* Brand */}
-      <Link href="/dashboard" className="flex items-center gap-3 group shrink-0">
+    <Link href="/dashboard" className="flex items-center gap-3 group shrink-0 min-w-0">
         <DroneIcon invert={true} className="h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:scale-105 shrink-0" />
-        <span className="font-machinic text-sm sm:text-lg font-bold tracking-[0.2em] text-white uppercase flex items-center gap-2 whitespace-nowrap">
+        <span className="font-machinic text-sm sm:text-lg font-bold tracking-[0.2em] text-white uppercase flex items-center gap-2 whitespace-nowrap truncate">
           DRONE <span className="text-[#FF5500]">PILOT</span>
         </span>
       </Link>
 
       {/* Nav — only HANGAR; active gets orange underline */}
-      <nav className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
+      <nav className="hidden md:flex items-center gap-8 flex-1 justify-center whitespace-nowrap">
         {NAV_LINKS.map(({ href, label }) => {
           const isActive = pathname.startsWith(href);
           return (

@@ -421,7 +421,7 @@ export function TelemetryHUD({
   const relWindAngle = windDir - telemetry.heading;
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-20 select-none flex flex-col justify-between p-3 sm:p-5 font-mono text-neutral-900">
+    <div className="absolute inset-0 pointer-events-none z-20 select-none flex flex-col p-3 sm:p-5 font-mono text-neutral-900">
       {/* Top Bar removed in favor of Left/Right Glass Panels */}
 
       {/* ---------------------------------------------------- */}
@@ -451,9 +451,9 @@ export function TelemetryHUD({
       {/* ---------------------------------------------------- */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
         <div className="relative w-16 h-16 flex items-center justify-center">
-          <div className="w-2.5 h-0.5 bg-black" />
-          <div className="w-0.5 h-2.5 bg-black absolute" />
-          <div className="w-6 h-6 rounded-full border border-black/70 absolute" />
+          <div className="w-2.5 h-0.5 bg-white/60" />
+          <div className="w-0.5 h-2.5 bg-white/60 absolute" />
+          <div className="w-6 h-6 rounded-full border border-white/50 absolute" />
         </div>
       </div>
 
@@ -462,7 +462,7 @@ export function TelemetryHUD({
       {/* Left: Direction Pad + Altitude Controls              */}
       {/* Right: Compact Utility Dock + Tactical Map Circle    */}
       {/* ---------------------------------------------------- */}
-      <footer className="w-full flex items-end justify-between pointer-events-none z-20 gap-2 pb-3 sm:pb-4 px-3 sm:px-4 safe-area-padding">
+      <footer className="mt-auto w-full flex items-end justify-between pointer-events-none z-20 gap-2 pb-3 sm:pb-4 px-3 sm:px-4 safe-area-padding">
         {/* ==================================================== */}
         {/* BOTTOM-LEFT: DIRECTION PAD (WASD) + ALTITUDE BUTTONS */}
         {/* ==================================================== */}
