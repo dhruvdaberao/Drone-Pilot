@@ -1,5 +1,5 @@
-// ==========================================================
-// DRONE PILOT — DYNAMIC ROTOR DOWNWASH & CONTACT FX (PUBG-GRADE)
+﻿// ==========================================================
+// DRONE PILOT â€” DYNAMIC ROTOR DOWNWASH & CONTACT FX (PUBG-GRADE)
 // Downward rotor wash: Water ripples & spray over water, dust & grass vortex over land
 // ==========================================================
 
@@ -27,7 +27,28 @@ export class RotorWashFX {
   private sprayVelocities: Float32Array;
   private sprayCount = 180;
 
+  private createParticleTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement("canvas");
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grad.addColorStop(0, "rgba(255,255,255,1.0)");
+      grad.addColorStop(0.3, "rgba(255,255,255,0.7)");
+      grad.addColorStop(1, "rgba(255,255,255,0.0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 64, 64);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.format = THREE.RGBAFormat;
+    tex.premultiplyAlpha = false;
+    return tex;
+  }
+
   constructor() {
+    const particleTex = this.createParticleTexture();
+
     // 1. Water Ripple Disc
     const rippleGeo = new THREE.RingGeometry(0.3, 4.5, 32);
     rippleGeo.rotateX(-Math.PI / 2);
@@ -37,6 +58,7 @@ export class RotorWashFX {
       opacity: 0.0,
       side: THREE.DoubleSide,
       depthWrite: false,
+      alphaTest: 0.05,
     });
     this.waterRippleMesh = new THREE.Mesh(rippleGeo, this.waterRippleMat);
     this.waterRippleMesh.position.set(0, 0.08, 0);
@@ -57,9 +79,11 @@ export class RotorWashFX {
     const dustMat = new THREE.PointsMaterial({
       color: 0xa8a29e, // Warm dust brown
       size: 0.45,
+      map: particleTex,
       transparent: true,
       opacity: 0.35,
       depthWrite: false,
+      alphaTest: 0.05,
     });
     this.dustParticles = new THREE.Points(this.dustGeo, dustMat);
     this.group.add(this.dustParticles);
@@ -79,9 +103,11 @@ export class RotorWashFX {
     const sprayMat = new THREE.PointsMaterial({
       color: 0xe0f2fe, // Crisp white-water spray
       size: 0.32,
+      map: particleTex,
       transparent: true,
       opacity: 0.5,
       depthWrite: false,
+      alphaTest: 0.05,
     });
     this.sprayParticles = new THREE.Points(this.sprayGeo, sprayMat);
     this.group.add(this.sprayParticles);
@@ -169,3 +195,9 @@ export class RotorWashFX {
     }
   }
 }
+
+
+
+
+
+

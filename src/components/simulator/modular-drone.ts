@@ -203,6 +203,8 @@ export class ModularDrone {
     ctx.fill();
 
     const tex = new THREE.CanvasTexture(canvas);
+    tex.format = THREE.RGBAFormat;
+    tex.premultiplyAlpha = false;
     tex.wrapS = THREE.ClampToEdgeWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
     return tex;
@@ -241,14 +243,15 @@ export class ModularDrone {
 
     parts.propellers.forEach((p) => {
       // High-RPM motion-blur disc â€” sized to match actual propeller sweep area
-      const blurDiscGeo = new THREE.PlaneGeometry(blurDiscDiameter, blurDiscDiameter);
+            const blurDiscGeo = new THREE.CircleGeometry(blurDiscDiameter / 2, 32);
       const blurDiscMat = new THREE.MeshBasicMaterial({
         map: propBlurTex,
+        alphaMap: propBlurTex,
         transparent: true,
         opacity: 0.0,
         depthWrite: false,
         side: THREE.DoubleSide,
-        alphaTest: 0.02,
+        blending: THREE.AdditiveBlending,
       });
       const blurMesh = new THREE.Mesh(blurDiscGeo, blurDiscMat);
       blurMesh.rotation.x = -Math.PI / 2;
@@ -309,7 +312,7 @@ export class ModularDrone {
     const shadowSize = Math.max(1.8, minMotorDist * 4.2);
     this.groundShadowMesh = new THREE.Mesh(
       new THREE.PlaneGeometry(shadowSize, shadowSize),
-      new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false })
+      new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false, alphaTest: 0.02 })
     );
     this.groundShadowMesh.rotation.x = -Math.PI / 2;
     this.groundShadowMesh.position.y = -0.12;
@@ -598,7 +601,7 @@ export class ModularDrone {
     // 8. Dedicated Ground Contact Shadow Decal
     if (this.groundShadowMesh) {
       const surfaceY = Math.max(0.01, telemetry.position.y - telemetry.altitude - 0.245 + 0.005);
-      this.groundShadowMesh.position.set(telemetry.position.x, surfaceY, telemetry.position.z);
+      this.groundShadowMesh.position.set(0, surfaceY - this.visualPos.y, 0);
       this.groundShadowMesh.rotation.z = -telemetry.rotation.yaw;
 
       const alt = Math.max(0, telemetry.altitude);
@@ -611,6 +614,12 @@ export class ModularDrone {
     }
   }
 }
+
+
+
+
+
+
 
 
 
