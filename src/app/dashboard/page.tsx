@@ -83,40 +83,11 @@ export default function AircraftHangarPage() {
           <DashboardHeader />
         </div>
 
-        {/* Body: 3 columns */}
-        <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Body: Stacked layers */}
+        <div className="flex flex-1 min-h-0 overflow-hidden relative">
 
-          {/* LEFT — Drone selector */}
-          <div className="w-52 shrink-0 flex flex-col justify-center gap-1 px-6 border-r border-white/[0.05]">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-neutral-600 mb-4">
-              Select Drone
-            </p>
-            {showcaseDrones.map((drone) => {
-              const active = drone.id === selectedId;
-              return (
-                <button
-                  key={drone.id}
-                  onClick={() => handleSelect(drone.id)}
-                  className={`relative flex items-center text-left py-3 px-4 rounded-lg transition-all duration-200 ${
-                    active
-                      ? "text-white"
-                      : "text-neutral-500 hover:text-neutral-300 hover:bg-white/[0.03]"
-                  }`}
-                >
-                  {/* Active orange bar */}
-                  {active && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[#FF5500]" />
-                  )}
-                  <span className="text-[13px] font-bold tracking-[0.12em] uppercase pl-2">
-                    {drone.platformId}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* CENTER — 3D Viewer (explicit flex-1 with height) */}
-          <div className="flex-1 min-w-0 relative">
+          {/* BACKGROUND LAYER — 3D Viewer */}
+          <div className="absolute inset-0 z-0">
             {activeDrone && (
               <Drone3DViewer
                 key={activeDrone.platformId}
@@ -129,8 +100,40 @@ export default function AircraftHangarPage() {
             )}
           </div>
 
+          {/* FOREGROUND LAYER — UI (Flex columns) */}
+          <div className="relative z-10 w-full h-full flex justify-between pointer-events-none">
+            
+            {/* LEFT — Drone selector */}
+            <div className="w-52 shrink-0 flex flex-col justify-center gap-1 px-6 border-r border-white/[0.05] pointer-events-auto">
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-neutral-600 mb-4">
+                Select Drone
+              </p>
+              {showcaseDrones.map((drone) => {
+                const active = drone.id === selectedId;
+                return (
+                  <button
+                    key={drone.id}
+                    onClick={() => handleSelect(drone.id)}
+                    className={`relative flex items-center text-left py-3 px-4 rounded-lg transition-all duration-200 ${
+                      active
+                        ? "text-white"
+                        : "text-neutral-500 hover:text-neutral-300 hover:bg-white/[0.03]"
+                    }`}
+                  >
+                    {/* Active orange bar */}
+                    {active && (
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[#FF5500]" />
+                    )}
+                    <span className="text-[13px] font-bold tracking-[0.12em] uppercase pl-2">
+                      {drone.platformId}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
           {/* RIGHT — Specs + actions */}
-          <div className="w-72 shrink-0 flex flex-col justify-center gap-6 px-8 border-l border-white/[0.05]">
+          <div className="w-72 shrink-0 flex flex-col justify-center gap-6 px-8 border-l border-white/[0.05] pointer-events-auto">
             {/* Name */}
             <div>
               <h1 className="text-3xl font-extrabold tracking-tight uppercase leading-none">
@@ -191,19 +194,9 @@ export default function AircraftHangarPage() {
               >
                 Configure Aircraft
               </Button>
-              <Button
-                onClick={() =>
-                  router.push(
-                    `/simulator?drone=${activeDrone?.platformId}`
-                  )
-                }
-                variant="outline"
-                className="w-full h-12 text-[13px] font-bold flex items-center justify-center gap-2.5 border-white/10 hover:border-white/20 text-neutral-300 hover:text-white"
-                leftIcon={<Play className="w-4 h-4" />}
-              >
-                Enter Flight
-              </Button>
+
             </div>
+          </div>
           </div>
         </div>
       </div>

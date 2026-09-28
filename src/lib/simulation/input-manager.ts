@@ -190,8 +190,8 @@ export class InputManager {
     if (this.keys["KeyS"] || this.keys["ArrowDown"]) kbPitch -= 1;
 
     let kbRoll = 0;
-    if (this.keys["KeyD"] || this.keys["ArrowRight"]) kbRoll += 1;
-    if (this.keys["KeyA"] || this.keys["ArrowLeft"]) kbRoll -= 1;
+    if (this.keys["KeyD"] || this.keys["ArrowRight"]) kbRoll -= 1;
+    if (this.keys["KeyA"] || this.keys["ArrowLeft"]) kbRoll += 1;
 
     let kbYaw = 0;
     if (this.keys["KeyE"]) kbYaw += 1;

@@ -172,7 +172,7 @@ export class TrafficManager {
       v.progress += (v.speed * dt) / segmentDist;
 
       if (v.progress >= 1.0) {
-        v.progress = 0.0;
+        v.progress -= 1.0;
         v.pathIndex = nextIdx;
       }
 
@@ -182,8 +182,11 @@ export class TrafficManager {
       v.mesh.position.lerpVectors(p1, p2, v.progress);
 
       // Steer heading towards next waypoint
-      const heading = Math.atan2(p2.x - p1.x, p2.z - p1.z);
-      v.mesh.rotation.y = heading;
+      const targetHeading = Math.atan2(p2.x - p1.x, p2.z - p1.z);
+      let diff = targetHeading - v.mesh.rotation.y;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      v.mesh.rotation.y += diff * Math.min(1.0, dt * 15.0);
 
       // Spin wheels
       const wheelSpin = (v.speed * dt) / 0.35; // r ~ 0.35m

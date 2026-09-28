@@ -252,7 +252,7 @@ export class ModularDrone {
       const blurMesh = new THREE.Mesh(blurDiscGeo, blurDiscMat);
       blurMesh.rotation.x = -Math.PI / 2;
       blurMesh.position.y = 0.005;
-      p.bladeGroup.parent?.add(blurMesh);
+      p.bladeGroup.add(blurMesh);
 
       // Override blade material with transparent-capable version for blur cross-fade
       const bladeMaterial = new THREE.MeshStandardMaterial({

@@ -52,7 +52,7 @@ export function EnvironmentControlPanel({
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm lg:hidden" onClick={onClose} />
-      <aside className={`fixed inset-y-0 right-0 z-50 w-80 max-w-[86vw] bg-neutral-950/95 border-l border-white/10 p-4 text-white font-mono overflow-y-auto shadow-2xl transition-transform ${isOpen ? "translate-x-0" : "translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 right-0 z-50 w-80 max-w-[86vw] bg-neutral-950/95 p-4 text-white font-mono overflow-y-auto shadow-2xl transition-transform ${isOpen ? "translate-x-0" : "translate-x-full"}`}>
         
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div>
