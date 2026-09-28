@@ -547,7 +547,7 @@ export class ModularDrone {
       }
 
       // Rotation angular velocity (rad/s)
-      const spinSpeed = (motorThrottle * 300.0) * p.direction;
+      const spinSpeed = (motorThrottle * 1500.0) * p.direction;
       p.bladeGroup.rotation.y += spinSpeed * dt;
 
       // Blur disc blending logic:
@@ -610,6 +610,7 @@ export class ModularDrone {
     }
   }
 }
+
 
 
 

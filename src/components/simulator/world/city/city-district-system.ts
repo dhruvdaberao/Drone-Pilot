@@ -1,5 +1,5 @@
-// ==========================================================
-// DRONE PILOT — CITY DISTRICT SYSTEM (PHASE 3)
+﻿// ==========================================================
+// DRONE PILOT â€” CITY DISTRICT SYSTEM (PHASE 3)
 // Multi-district urban center with building variety, sidewalks,
 // street furniture, parking, parks, and civic buildings
 // ==========================================================
@@ -12,12 +12,12 @@ import { CityPark } from "./city-park";
 import { ParkingSystem } from "./parking-system";
 import { evaluateIslandElevation } from "@/lib/world/terrain-math";
 
-// ──────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // District Definitions
-// ──────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type DistrictType =
-  | "cbd"           // Central Business District — tall glass towers
+  | "cbd"           // Central Business District â€” tall glass towers
   | "commercial"    // Mid-rise offices, shops, hotels
   | "residential_high" // Apartment blocks
   | "residential_low"  // Houses, townhouses
@@ -121,9 +121,9 @@ const DISTRICTS: DistrictDef[] = [
   },
 ];
 
-// ──────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Seeded PRNG for deterministic city generation
-// ──────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class CityPRNG {
   private s: number;
@@ -145,9 +145,9 @@ class CityPRNG {
   }
 }
 
-// ──────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Main City District System
-// ──────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export class CityDistrictSystem {
   public group = new THREE.Group();
@@ -188,7 +188,7 @@ export class CityDistrictSystem {
    */
   private populateDistrict(dist: DistrictDef) {
     // Grid spacing tuned for architectural density and abundant residential homes
-    const baseSpacing = dist.id === "cbd" ? 18 : dist.id === "residential_low" ? 14 : 16;
+    const baseSpacing = dist.id === "cbd" ? 38 : dist.id === "residential_low" ? 24 : 32;
     const jitter = baseSpacing * 0.15;
 
     const minX = dist.center.x - dist.halfW;
@@ -212,7 +212,7 @@ export class CityDistrictSystem {
         for (const sz of streetsZ) if (Math.abs(pz - sz) < 11) { onRoad = true; break; }
         if (onRoad) continue;
 
-        // Protect Apex Tower zone (760, 360) ± 20m
+        // Protect Apex Tower zone (760, 360) Â± 20m
         if (Math.abs(px - 760) < 22 && Math.abs(pz - 360) < 22) continue;
 
         // Protect helipads
@@ -350,3 +350,4 @@ export class CityDistrictSystem {
     // Future: animated signs, traffic light cycling
   }
 }
+
