@@ -134,8 +134,8 @@ export class ChaseCameraController {
       const horizDist = this.followDistance * Math.cos(clampedPitch);
       const vertDist  = this.followDistance * Math.sin(clampedPitch);
 
-      const targetX = dronePos.x + Math.sin(droneYaw) * horizDist;
-      const targetZ = dronePos.z + Math.cos(droneYaw) * horizDist;
+      const targetX = dronePos.x - Math.sin(droneYaw) * horizDist;
+      const targetZ = dronePos.z - Math.cos(droneYaw) * horizDist;
       // Ensure camera stays safely above terrain (at least 0.8m)
       const targetY = Math.max(0.8, dronePos.y + vertDist + 0.6);
 

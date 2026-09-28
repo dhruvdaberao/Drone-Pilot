@@ -10,7 +10,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { TelemetryState, EnvironmentState } from "@/lib/simulation/types";
 import { CameraMode } from "./chase-camera";
-import { MinimapWidget, NavigationWaypoint } from "./minimap-widget";
+import { NavigationWaypoint } from "./minimap-widget";
 import {
   Compass,
   Battery,
@@ -650,14 +650,13 @@ export function TelemetryHUD({
 
           {/* 3. Circular Minimap Radar (Bottom-Right) */}
           <div className="flex flex-col items-center select-none">
-            <MinimapWidget
-              telemetry={telemetry}
-              onClick={onToggleMap}
-              activeWaypoint={activeWaypoint}
-            />
+            
           </div>
         </div>
       </footer>
     </div>
   );
 }
+
+
+

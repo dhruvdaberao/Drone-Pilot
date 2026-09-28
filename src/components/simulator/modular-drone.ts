@@ -130,8 +130,8 @@ export class ModularDrone {
       depthWrite: false,
     });
     this.nameTagSprite = new THREE.Sprite(spriteMat);
-    this.nameTagSprite.position.set(0, 0.55, 0);
-    this.nameTagSprite.scale.set(1.3, 0.26, 1);
+    this.nameTagSprite.position.set(0, 0.9, 0);
+    this.nameTagSprite.scale.set(0.8, 0.16, 1);
     this.group.add(this.nameTagSprite);
   }
 
@@ -505,7 +505,7 @@ export class ModularDrone {
       // Individual motor throttle level [0.0 - 1.0]
       const motorThrottle = outputs[p.motorIndex] !== undefined ? outputs[p.motorIndex] : baseRpmPercent / 100;
       // Rotation angular velocity (rad/s)
-      const spinSpeed = (12.0 + motorThrottle * 68.0) * p.direction;
+      const spinSpeed = (30.0 + motorThrottle * 250.0) * p.direction;
       p.bladeGroup.rotation.y += spinSpeed * dt;
 
       // Blur disc blending logic:
@@ -571,3 +571,5 @@ export class ModularDrone {
     }
   }
 }
+
+
