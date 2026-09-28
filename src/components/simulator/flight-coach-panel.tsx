@@ -33,19 +33,19 @@ export function FlightCoachPanel({ insight, history, onDismiss, onClearHistory }
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-full max-w-2xl px-4 pointer-events-none">
+    <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1.5 w-full max-w-xl px-4 pointer-events-none">
       {insight && (
-        <div className={`pointer-events-auto bg-neutral-950/95 backdrop-blur-md border ${getBorderColor(insight.severity)} rounded-xl p-4 shadow-2xl flex flex-col gap-3 font-mono text-white animate-in slide-in-from-bottom-5 duration-300`}>
-          <div className="flex items-center justify-between border-b border-white/10 pb-2">
-            <div className="flex items-center gap-3">
+        <div className={`pointer-events-auto bg-[#0d0f11]/90 backdrop-blur-md border ${getBorderColor(insight.severity)} rounded-xl p-3 shadow-2xl flex flex-col gap-2 font-mono text-white animate-in slide-in-from-top-3 duration-200`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
               {getIcon(insight.severity)}
               <div>
-                <p className="text-[10px] text-white/50 tracking-widest font-bold uppercase">{insight.severity} • FLIGHT COACH</p>
-                <h3 className="text-sm font-bold tracking-wide uppercase">{insight.title}</h3>
+                <p className="text-[9px] text-white/40 tracking-widest font-bold uppercase">{insight.severity} · FLIGHT COACH</p>
+                <h3 className="text-[11px] font-bold tracking-wide uppercase">{insight.title}</h3>
               </div>
             </div>
-            <button onClick={onDismiss} className="p-1 hover:bg-white/10 rounded">
-              <X className="w-4 h-4 text-white/50" />
+            <button onClick={onDismiss} className="p-1 hover:bg-white/10 rounded shrink-0">
+              <X className="w-3.5 h-3.5 text-white/40" />
             </button>
           </div>
           

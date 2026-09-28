@@ -189,7 +189,7 @@ export function RightGlassPanel({
         {/* ------------------------------------------------ */}
         {/* WIND */}
         <div className="bg-black/20 rounded-2xl p-4 space-y-4 shrink-0">
-          <h3 className="text-[10px] font-bold text-white/50 tracking-widest uppercase flex items-center gap-2 border-b border-white/10 pb-2">
+          <h3 className="text-[10px] font-bold text-white/50 tracking-widest uppercase flex items-center gap-2 ">
             <Wind className="w-3 h-3" /> WIND
           </h3>
           <div className="space-y-3">
@@ -226,7 +226,7 @@ export function RightGlassPanel({
         {/* ------------------------------------------------ */}
         {/* ATMOSPHERE & PRECIPITATION */}
         <div className="bg-black/20 rounded-2xl p-4 space-y-4 shrink-0">
-          <h3 className="text-[10px] font-bold text-white/50 tracking-widest uppercase flex items-center gap-2 border-b border-white/10 pb-2">
+          <h3 className="text-[10px] font-bold text-white/50 tracking-widest uppercase flex items-center gap-2 ">
             <Thermometer className="w-3 h-3" /> ATMOSPHERE
           </h3>
           <div className="space-y-3">
@@ -269,7 +269,7 @@ export function RightGlassPanel({
         {/* ------------------------------------------------ */}
         {/* EFFECTS STATUS */}
         <div className="bg-black/20 rounded-2xl p-4 space-y-2 shrink-0">
-          <h3 className="text-[10px] font-bold text-white/50 tracking-widest uppercase flex items-center gap-2 border-b border-white/10 pb-2 mb-3">
+          <h3 className="text-[10px] font-bold text-white/50 tracking-widest uppercase flex items-center gap-2  mb-3">
             <AlertTriangle className="w-3 h-3" /> EFFECTS STATUS
           </h3>
           <div className="grid grid-cols-2 gap-y-2 text-[9px] tracking-widest uppercase">
@@ -287,7 +287,7 @@ export function RightGlassPanel({
         {/* ------------------------------------------------ */}
         {/* WHAT'S HAPPENING */}
         <div className="bg-black/20 rounded-2xl p-4 space-y-2 shrink-0">
-          <h3 className="text-[10px] font-bold text-[#FF5500] tracking-widest uppercase flex items-center gap-2 border-b border-white/10 pb-2 mb-2">
+          <h3 className="text-[10px] font-bold text-[#FF5500] tracking-widest uppercase flex items-center gap-2  mb-2">
             <Info className="w-3 h-3" /> WHAT'S HAPPENING
           </h3>
           <p className="text-[10px] text-white/80 leading-relaxed">
@@ -325,3 +325,4 @@ export function RightGlassPanel({
     </>
   );
 }
+
