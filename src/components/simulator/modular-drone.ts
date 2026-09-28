@@ -248,6 +248,7 @@ export class ModularDrone {
         opacity: 0.0,
         depthWrite: false,
         side: THREE.DoubleSide,
+        alphaTest: 0.02,
       });
       const blurMesh = new THREE.Mesh(blurDiscGeo, blurDiscMat);
       blurMesh.rotation.x = -Math.PI / 2;
@@ -547,7 +548,7 @@ export class ModularDrone {
       }
 
       // Rotation angular velocity (rad/s)
-      const spinSpeed = (motorThrottle * 1500.0) * p.direction;
+      const spinSpeed = (motorThrottle * 850.0) * p.direction;
       p.bladeGroup.rotation.y += spinSpeed * dt;
 
       // Blur disc blending logic:
@@ -610,6 +611,8 @@ export class ModularDrone {
     }
   }
 }
+
+
 
 
 
