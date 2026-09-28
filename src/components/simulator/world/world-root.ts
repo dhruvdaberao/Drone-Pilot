@@ -72,7 +72,7 @@ export class WorldRoot {
     this.group.add(this.terrain.group);
 
     // 4. Dense 3D Instanced Grass with Wind Waves (14,000 instances)
-    this.grass = new InstancedGrass(14000);
+    this.grass = new InstancedGrass(35000);
     this.group.add(this.grass.group);
 
     // 5. Realistic Vegetation (Pines, Oaks, Palms, Boulders, Wildflowers)

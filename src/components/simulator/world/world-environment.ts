@@ -177,10 +177,23 @@ export class WorldEnvironment {
       cluster.position.set(coord.x, coord.y, coord.z);
 
       puffOffsets.forEach((p) => {
-        const puffGeo = new THREE.SphereGeometry(1, 14, 10);
-        puffGeo.scale(p.rx * coord.scale, p.ry * coord.scale, p.rz * coord.scale);
+        // Use a stylized low-poly Dodecahedron for natural looking aesthetic clouds
+        const puffGeo = new THREE.DodecahedronGeometry(1, 1);
+        // Flatten the bottom slightly for cumulus cloud look
+        const positions = puffGeo.attributes.position;
+        for(let i=0; i<positions.count; i++) {
+           let y = positions.getY(i);
+           if (y < -0.3) {
+               positions.setY(i, -0.3 + (y + 0.3) * 0.2); // Squash the bottom heavily
+           }
+        }
+        puffGeo.computeVertexNormals();
+        
+        // Scale wide and fluffy
+        puffGeo.scale(p.rx * coord.scale * 1.5, p.ry * coord.scale * 0.8, p.rz * coord.scale * 1.5);
         const puff = new THREE.Mesh(puffGeo, this.cloudMat);
-        puff.position.set(p.x * coord.scale, p.y * coord.scale, p.z * coord.scale);
+        puff.position.set(p.x * coord.scale * 1.2, p.y * coord.scale * 0.5, p.z * coord.scale * 1.2);
+        puff.rotation.y = Math.random() * Math.PI;
         cluster.add(puff);
       });
 

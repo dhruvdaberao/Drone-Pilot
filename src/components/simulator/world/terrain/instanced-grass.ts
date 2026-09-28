@@ -101,8 +101,8 @@ export class InstancedGrass {
       ctxA.fillRect(0, 0, size, size);
 
       // Draw dense multi-tone lush stylized grass blades
-      const bladeColors = ["#4d7c0f", "#65a30d", "#84cc16", "#3f6212", "#a3e635", "#558b1a"];
-      const bladeCount = 110;
+      const bladeColors = ["#264215", "#3f6212", "#558b1a", "#1f3b0e"];
+      const bladeCount = 450;
 
       for (let b = 0; b < bladeCount; b++) {
         const rootX = (size * 0.1) + Math.random() * (size * 0.8);
@@ -110,7 +110,7 @@ export class InstancedGrass {
         const curve = (Math.random() - 0.5) * (size * 0.35);
         const tipX = rootX + curve;
         const tipY = size - height;
-        const baseWidth = 3 + Math.random() * 5;
+        const baseWidth = 1.5 + Math.random() * 3;
 
         const color = bladeColors[Math.floor(Math.random() * bladeColors.length)];
 

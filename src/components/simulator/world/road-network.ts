@@ -100,11 +100,40 @@ export class RoadNetwork {
       hasBridge: false, // Marine viaduct causeway
     });
 
-    // 6. Terminus Loops & Cul-de-Sacs (Ensures roads never end abruptly into grass)
+    // 6. Intersection Blending Aprons (Fixes overlapping and abrupt endings)
+    const junctions = [
+      { x: -180, z: 140, r: 8 }, // West bridge abutment junction
+      { x: -100, z: 180, r: 8 }, // East bridge abutment junction
+      { x: -320, z: 340, r: 9 }, // Forest loop meets Pelican highway
+      { x: -300, z: 70, r: 8 },  // Mountain pass start
+      { x: 50, z: 0, r: 10 },    // Academy East Entrance
+      { x: -50, z: 60, r: 10 },  // Academy North Perimeter
+      { x: 60, z: 880, r: 12 },  // Harbor highway meets coastal highway
+      { x: 640, z: 240, r: 16 }, // City downtown grid entry
+      { x: 640, z: 120, r: 12 }, // Northern parkway meets city
+    ];
+    junctions.forEach((j) => this.buildIntersectionApron(j.x, j.z, j.r));
+
+    // 7. Terminus Loops & Cul-de-Sacs (Ensures roads never end abruptly into grass)
     this.buildTurnaroundApron(-620, -40, 18, "Forest Ranger Station Turnaround");
     this.buildTurnaroundApron(-720, 560, 22, "Pelican Cove Coastal Overlook");
     this.buildTurnaroundApron(-580, -560, 16, "Mount Apex Weather Station Overlook");
     this.buildTurnaroundApron(-50, 0, 16, "Academy Flightline Access Loop");
+  }
+
+  /**
+   * Paved circular intersection to seamlessly blend converging road ribbons
+   */
+  private buildIntersectionApron(cx: number, cz: number, radius: number) {
+    const sample = evaluateIslandElevation(cx, cz);
+    const y = Math.max(1.35, sample.elevation + 0.23); // Slightly above roads to cover z-fighting
+
+    const circleGeo = new THREE.CircleGeometry(radius, 32);
+    circleGeo.rotateX(-Math.PI / 2);
+    const circleMesh = new THREE.Mesh(circleGeo, this.roadMat);
+    circleMesh.position.set(cx, y, cz);
+    circleMesh.receiveShadow = true;
+    this.group.add(circleMesh);
   }
 
   /**
@@ -215,10 +244,10 @@ export class RoadNetwork {
       uvs.push(0, vProgress * 20);
       uvs.push(1, vProgress * 20);
 
-      // Yellow Centerline
+      // Single Centerline
       if (withCenterline) {
-        const cLeft = new THREE.Vector3().copy(curr).addScaledVector(perp, -0.18);
-        const cRight = new THREE.Vector3().copy(curr).addScaledVector(perp, 0.18);
+        const cLeft = new THREE.Vector3().copy(curr).addScaledVector(perp, -0.06);
+        const cRight = new THREE.Vector3().copy(curr).addScaledVector(perp, 0.06);
         lineVerts.push(cLeft.x, cLeft.y + 0.015, cLeft.z);
         lineVerts.push(cRight.x, cRight.y + 0.015, cRight.z);
       }
@@ -263,7 +292,7 @@ export class RoadNetwork {
       lineGeo.setIndex(lineIndices);
       lineGeo.computeVertexNormals();
 
-      const lineMesh = new THREE.Mesh(lineGeo, this.markingMat);
+      const lineMesh = new THREE.Mesh(lineGeo, this.whiteLineMat);
       lineMesh.receiveShadow = true;
       this.group.add(lineMesh);
     }
@@ -307,10 +336,10 @@ export class RoadNetwork {
     surface.position.y = 0.71;
     bridgeGroup.add(surface);
 
-    // Double Yellow Centerline
-    const yellowLineGeo = new THREE.PlaneGeometry(length, 0.35);
+    // Single White Centerline
+    const yellowLineGeo = new THREE.PlaneGeometry(length, 0.15);
     yellowLineGeo.rotateX(-Math.PI / 2);
-    const yellowLine = new THREE.Mesh(yellowLineGeo, this.markingMat);
+    const yellowLine = new THREE.Mesh(yellowLineGeo, this.whiteLineMat);
     yellowLine.position.y = 0.72;
     bridgeGroup.add(yellowLine);
 
@@ -584,9 +613,7 @@ export class RoadNetwork {
       this.group.add(dashMesh);
     });
 
-    // Autonomous traffic circuit waypoints connecting the entire island road network:
-    // City -> Harbor -> Estuary Bridge -> Pelican Coast -> Forest -> Academy -> City
-    this.waypoints = [
+    const rawWaypoints = [
       // 1. Downtown City Grid
       new THREE.Vector3(640, 2.53, 240),
       new THREE.Vector3(780, 2.53, 240),
@@ -635,6 +662,13 @@ export class RoadNetwork {
       new THREE.Vector3(540, 2.2, 240),
       new THREE.Vector3(640, 2.53, 240),
     ];
+    
+    // Create a smooth spline from these points so cars drive in buttery smooth arcs 
+    // that match the actual road geometry rather than cutting sharp corners.
+    const circuitCurve = new THREE.CatmullRomCurve3(rawWaypoints, true, "centripetal", 0.5);
+    
+    // Extract highly detailed points (300 points = ~10-15m apart)
+    this.waypoints = circuitCurve.getPoints(300);
   }
 
   /**

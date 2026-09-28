@@ -11,8 +11,8 @@ export const WorldMaterials = {
   // URBAN & INFRASTRUCTURE
   // --------------------------------------------------------
   asphalt: new THREE.MeshStandardMaterial({
-    color: 0x22262a,
-    roughness: 0.88,
+    color: 0x151618, // Very dark, fresh asphalt
+    roughness: 0.92,
     metalness: 0.05,
     polygonOffset: true,
     polygonOffsetFactor: -3,

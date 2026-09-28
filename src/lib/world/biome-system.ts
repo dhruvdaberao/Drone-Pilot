@@ -185,6 +185,8 @@ const TURNAROUND_APRONS = [
  */
 export function getDistanceToRoad(x: number, z: number): number {
   let minDist = 9999;
+  
+  // 1. Check primary defined polylines
   for (const corridor of ROAD_CORRIDORS) {
     for (let i = 0; i < corridor.length - 1; i++) {
       const p1 = corridor[i];
@@ -193,11 +195,31 @@ export function getDistanceToRoad(x: number, z: number): number {
       if (dist < minDist) minDist = dist;
     }
   }
+  
+  // 2. Check turnarounds
   for (const t of TURNAROUND_APRONS) {
     const distCenter = Math.hypot(x - t.x, z - t.z);
     const distEdge = Math.max(0, distCenter - t.radius);
     if (distEdge < minDist) minDist = distEdge;
   }
+  
+  // 3. Check City Downtown Grid (Avenues & Cross Streets)
+  // These are procedurally generated in city-district-system.ts but mathematically fixed
+  const avenuesX = [540, 640, 740, 840, 940];
+  const streetsZ = [120, 200, 280, 360, 440, 520];
+  
+  // If within the city bounds roughly
+  if (x > 450 && x < 1000 && z > 50 && z < 600) {
+     for (const ax of avenuesX) {
+       const dist = Math.abs(x - ax);
+       if (dist < minDist) minDist = dist;
+     }
+     for (const sz of streetsZ) {
+       const dist = Math.abs(z - sz);
+       if (dist < minDist) minDist = dist;
+     }
+  }
+  
   return minDist;
 }
 

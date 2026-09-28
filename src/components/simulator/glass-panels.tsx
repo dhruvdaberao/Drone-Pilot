@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { TelemetryState, EnvironmentState } from "@/lib/simulation/types";
@@ -32,7 +32,7 @@ export function LeftGlassPanel({
       {/* Mobile Toggle Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-40 bg-neutral-900/80 backdrop-blur border border-white/20 p-3 rounded-2xl text-white shadow-xl"
+        className="md:hidden fixed top-4 left-4 z-40 bg-neutral-900/80 backdrop-blur border border-white/5 p-3 rounded-2xl text-white shadow-xl"
       >
         <Settings2 className="w-6 h-6 text-[#FF5500]" />
       </button>
@@ -46,7 +46,7 @@ export function LeftGlassPanel({
       )}
 
       {/* Premium Glassmorphism Card */}
-      <div className={`fixed top-4 bottom-4 left-4 md:w-[380px] w-[calc(100vw-32px)] rounded-3xl bg-black/40 backdrop-blur-2xl border border-white/20 p-6 flex flex-col gap-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] z-40 text-white font-sans pointer-events-auto transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
+      <div className={`fixed top-4 bottom-4 left-4 md:w-[380px] w-[calc(100vw-32px)] rounded-3xl bg-black/40 backdrop-blur-2xl border border-white/5 p-6 flex flex-col gap-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] z-40 text-white font-sans pointer-events-auto transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
         isOpen ? "translate-x-0" : "-translate-x-[120%] md:translate-x-0"
       }`}>
         
@@ -57,7 +57,7 @@ export function LeftGlassPanel({
               <Plane className="w-6 h-6 text-[#FF5500]" />
               {drone.name}
             </h2>
-            <p className="text-xs text-white/60 tracking-widest uppercase">{motorCount} MOTORS • {drone.platformCategory}</p>
+            <p className="text-xs text-white/60 tracking-widest uppercase">{motorCount} MOTORS â€¢ {drone.platformCategory}</p>
           </div>
           <button onClick={() => setIsOpen(false)} className="md:hidden p-2 bg-white/10 rounded-full hover:bg-white/20"><Settings2 className="w-5 h-5 text-white" /></button>
         </div>
@@ -113,6 +113,29 @@ export function LeftGlassPanel({
               <div className="flex items-center gap-2 mb-2">
                 <ShieldAlert className="w-5 h-5 text-amber-400" />
                 <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase">Motor Diagnostics</h3>
+              </div>
+              <div className="flex flex-col items-center justify-center py-6">
+                <div className="relative w-48 h-48 mb-6">
+                  <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl">
+                    <rect x="40" y="35" width="20" height="30" rx="4" fill="#1f2937" stroke="#374151" strokeWidth="2" />
+                    <circle cx="50" cy="50" r="4" fill="#FF5500" className="animate-pulse" />
+                    {Array.from({ length: motorCount }).map((_, i) => {
+                      const angle = (i * (360 / motorCount) + (motorCount === 4 ? 45 : 0)) * (Math.PI / 180);
+                      const x = 50 + Math.cos(angle) * 35;
+                      const y = 50 + Math.sin(angle) * 35;
+                      const health = motorHealths[i] || 0;
+                      const color = health > 0.8 ? '#10b981' : health > 0.3 ? '#f59e0b' : '#ef4444';
+                      return (
+                        <g key={i}>
+                          <line x1="50" y1="50" x2={x} y2={y} stroke="#374151" strokeWidth="3" />
+                          <circle cx={x} cy={y} r="12" fill={color} fillOpacity="0.2" stroke={color} strokeWidth="1.5" />
+                          <circle cx={x} cy={y} r="4" fill={color} />
+                          <text x={x} y={y + 1} textAnchor="middle" alignmentBaseline="middle" fill="#fff" fontSize="5" fontWeight="bold" className="pointer-events-none">M{i+1}</text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 {Array.from({ length: motorCount }).map((_, i) => (
@@ -180,7 +203,7 @@ export function RightGlassPanel({
       {/* Mobile Toggle Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 right-4 z-40 bg-neutral-900/80 backdrop-blur border border-white/20 p-3 rounded-2xl text-white shadow-xl"
+        className="md:hidden fixed top-4 right-4 z-40 bg-neutral-900/80 backdrop-blur border border-white/5 p-3 rounded-2xl text-white shadow-xl"
       >
         <CloudSun className="w-6 h-6 text-[#38bdf8]" />
       </button>
@@ -194,7 +217,7 @@ export function RightGlassPanel({
       )}
 
       {/* Premium Glassmorphism Card */}
-      <div className={`fixed top-4 bottom-4 right-4 md:w-[380px] w-[calc(100vw-32px)] rounded-3xl bg-black/40 backdrop-blur-2xl border border-white/20 p-6 flex flex-col gap-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] z-40 text-white font-sans pointer-events-auto transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
+      <div className={`fixed top-4 bottom-4 right-4 md:w-[380px] w-[calc(100vw-32px)] rounded-3xl bg-black/40 backdrop-blur-2xl border border-white/5 p-6 flex flex-col gap-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] z-40 text-white font-sans pointer-events-auto transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
         isOpen ? "translate-x-0" : "translate-x-[120%] md:translate-x-0"
       }`}>
         
@@ -248,7 +271,7 @@ export function RightGlassPanel({
                   <div>
                     <div className="flex justify-between text-xs font-bold mb-2 uppercase">
                       <span className="text-white/60">Direction</span>
-                      <span className="text-[#38bdf8]">{environment.windDirection}°</span>
+                      <span className="text-[#38bdf8]">{environment.windDirection}Â°</span>
                     </div>
                     <input type="range" min="0" max="359" step="5" value={environment.windDirection}
                       onChange={(e) => onUpdateEnvironment({ windDirection: parseInt(e.target.value) })}
@@ -266,7 +289,7 @@ export function RightGlassPanel({
                   <div>
                     <div className="flex justify-between text-xs font-bold mb-2 uppercase">
                       <span className="text-white/60">Temperature</span>
-                      <span className={environment.temperature > 30 ? "text-rose-400" : "text-emerald-400"}>{environment.temperature.toFixed(0)}°C</span>
+                      <span className={environment.temperature > 30 ? "text-rose-400" : "text-emerald-400"}>{environment.temperature.toFixed(0)}Â°C</span>
                     </div>
                     <input type="range" min="-10" max="45" step="1" value={environment.temperature}
                       onChange={(e) => onUpdateEnvironment({ temperature: parseInt(e.target.value) })}
@@ -342,3 +365,4 @@ export function RightGlassPanel({
     </>
   );
 }
+

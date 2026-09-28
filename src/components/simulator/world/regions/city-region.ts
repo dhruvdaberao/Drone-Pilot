@@ -25,9 +25,6 @@ export class CityRegion {
     const padRooftop = createHelipadMesh(HELIPADS["city-apex-rooftop"]);
     this.group.add(padRooftop);
 
-    // 3. High-Rise Skyscraper Skyline & Commercial Blocks
-    this.buildSkyscraperSkyline();
-
     // 4. Communications Mast & Hazard Beacon
     this.buildCommunicationsTower();
   }

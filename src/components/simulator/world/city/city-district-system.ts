@@ -204,6 +204,14 @@ export class CityDistrictSystem {
         const px = gx + this.rng.range(-jitter, jitter);
         const pz = gz + this.rng.range(-jitter, jitter);
 
+        // --- CITY ROAD EXCLUSION ---
+        const avenuesX = [540, 640, 740, 840, 940];
+        const streetsZ = [120, 200, 280, 360, 440, 520];
+        let onRoad = false;
+        for (const ax of avenuesX) if (Math.abs(px - ax) < 11) { onRoad = true; break; }
+        for (const sz of streetsZ) if (Math.abs(pz - sz) < 11) { onRoad = true; break; }
+        if (onRoad) continue;
+
         // Protect Apex Tower zone (760, 360) ± 20m
         if (Math.abs(px - 760) < 22 && Math.abs(pz - 360) < 22) continue;
 

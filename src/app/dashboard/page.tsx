@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -77,33 +77,14 @@ export default function AircraftHangarPage() {
   return (
     <ProtectedRoute>
       {/* Full-screen dark background */}
-      <div className="h-screen w-full flex flex-col bg-[#08090a] text-white overflow-hidden">
+      <div className="relative h-screen w-full flex flex-col bg-[#08090a] text-white overflow-hidden">
         {/* Nav */}
-        <div className="h-14 shrink-0">
-          <DashboardHeader />
-        </div>
+        <div className="absolute inset-0 z-0"><Drone3DViewer key={activeDrone?.platformId} type={activeDrone?.platformId} interactive={true} autoRotate={true} isSelected={true} className="w-full h-full"/></div> <DashboardHeader /> <div className="flex flex-1 min-h-0 overflow-hidden relative pt-14">
 
-        {/* Body: Stacked layers */}
-        <div className="flex flex-1 min-h-0 overflow-hidden relative">
-
-          {/* BACKGROUND LAYER — 3D Viewer */}
-          <div className="absolute inset-0 z-0">
-            {activeDrone && (
-              <Drone3DViewer
-                key={activeDrone.platformId}
-                type={activeDrone.platformId}
-                interactive={true}
-                autoRotate={true}
-                isSelected={true}
-                className="w-full h-full"
-              />
-            )}
-          </div>
-
-          {/* FOREGROUND LAYER — UI (Flex columns) */}
+          {/* FOREGROUND LAYER â€” UI (Flex columns) */}
           <div className="relative z-10 w-full h-full flex justify-between pointer-events-none">
             
-            {/* LEFT — Drone selector */}
+            {/* LEFT â€” Drone selector */}
             <div className="w-52 shrink-0 flex flex-col justify-center gap-1 px-6 border-r border-white/[0.05] pointer-events-auto">
               <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-neutral-600 mb-4">
                 Select Drone
@@ -132,7 +113,7 @@ export default function AircraftHangarPage() {
               })}
             </div>
 
-          {/* RIGHT — Specs + actions */}
+          {/* RIGHT â€” Specs + actions */}
           <div className="w-72 shrink-0 flex flex-col justify-center gap-6 px-8 border-l border-white/[0.05] pointer-events-auto">
             {/* Name */}
             <div>
@@ -176,9 +157,9 @@ export default function AircraftHangarPage() {
             {/* Tags */}
             <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-[10px] font-bold tracking-widest text-neutral-500 uppercase">
               <span>GPS Hold</span>
-              <span className="text-neutral-700">·</span>
+              <span className="text-neutral-700">Â·</span>
               <span>RTK GNSS</span>
-              <span className="text-neutral-700">·</span>
+              <span className="text-neutral-700">Â·</span>
               <span>{activeDrone?.batteryCells}S</span>
             </div>
 
@@ -203,3 +184,5 @@ export default function AircraftHangarPage() {
     </ProtectedRoute>
   );
 }
+
+

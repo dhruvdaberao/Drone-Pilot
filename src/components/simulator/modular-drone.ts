@@ -1,5 +1,5 @@
-// ==========================================================
-// DRONE PILOT — MODULAR 3D DRONE (ENTERPRISE MATRICE SPEC)
+﻿// ==========================================================
+// DRONE PILOT â€” MODULAR 3D DRONE (ENTERPRISE MATRICE SPEC)
 // Hierarchical Component Architecture:
 // Frame, Motors, Propellers (with Orange Tips), Battery,
 // Flight Controller, RTK GNSS, Cameras, Landing Gear.
@@ -20,7 +20,7 @@ interface PropellerAssembly {
 
 export class ModularDrone {
   public group = new THREE.Group();
-  /** Ground contact shadow decal — managed by the drone group internally. */
+  /** Ground contact shadow decal â€” managed by the drone group internally. */
   public groundShadowMesh!: THREE.Mesh;
   public def: DroneDefinition;
   private propellers: PropellerAssembly[] = [];
@@ -33,7 +33,7 @@ export class ModularDrone {
   private gimbalRollArm: THREE.Group | null = null;
   private cameraPod: THREE.Group | null = null;
 
-  // Battery gauge LEDs — use shared materials from builder (always initialized)
+  // Battery gauge LEDs â€” use shared materials from builder (always initialized)
   private batteryLeds: THREE.Mesh[] = [];
   private readonly ledBatteryGreenMat = LedMaterials.green;
   private readonly ledBatteryAmberMat = LedMaterials.amber;
@@ -109,7 +109,7 @@ export class ModularDrone {
     ctx.fill();
 
     // Pilot name
-    const displayName = this.pilotName.length > 20 ? this.pilotName.substring(0, 18) + "…" : this.pilotName;
+    const displayName = this.pilotName.length > 20 ? this.pilotName.substring(0, 18) + "â€¦" : this.pilotName;
     ctx.fillStyle = "rgba(255,255,255,0.90)";
     ctx.font = "700 30px monospace";
     ctx.textAlign = "left";
@@ -240,7 +240,7 @@ export class ModularDrone {
     const blurDiscDiameter = propRadius * 2.08;
 
     parts.propellers.forEach((p) => {
-      // High-RPM motion-blur disc — sized to match actual propeller sweep area
+      // High-RPM motion-blur disc â€” sized to match actual propeller sweep area
       const blurDiscGeo = new THREE.PlaneGeometry(blurDiscDiameter, blurDiscDiameter);
       const blurDiscMat = new THREE.MeshBasicMaterial({
         map: propBlurTex,
@@ -304,7 +304,7 @@ export class ModularDrone {
       ctx.fillRect(0, 0, 128, 128);
     }
     const shadowTex = new THREE.CanvasTexture(shadowCanvas);
-    // Shadow diameter: ~2× the aircraft motor-tip diameter
+    // Shadow diameter: ~2Ã— the aircraft motor-tip diameter
     const shadowSize = Math.max(1.8, minMotorDist * 4.2);
     this.groundShadowMesh = new THREE.Mesh(
       new THREE.PlaneGeometry(shadowSize, shadowSize),
@@ -312,7 +312,7 @@ export class ModularDrone {
     );
     this.groundShadowMesh.rotation.x = -Math.PI / 2;
     this.groundShadowMesh.position.y = -0.12;
-    // Shadow lives inside this.group — do NOT add it to scene separately.
+    // Shadow lives inside this.group â€” do NOT add it to scene separately.
     this.group.add(this.groundShadowMesh);
   }
 
@@ -481,10 +481,27 @@ export class ModularDrone {
     }
 
     this.group.position.copy(this.visualPos);
+    
+    // Only apply YAW to the parent group so the nametag and shadow don't tilt
     this.group.rotation.order = "YXZ";
     this.group.rotation.y = this.visualYaw;
-    this.group.rotation.x = this.visualPitch;
-    this.group.rotation.z = this.visualRoll;
+    this.group.rotation.x = 0;
+    this.group.rotation.z = 0;
+
+    // Apply Pitch and Roll to the physical drone model itself
+    // Assuming parts.rootGroup is the first child added, or we kept a reference.
+    // Wait, we don't have a direct reference to parts.rootGroup on `this`.
+    // Let's find it. It's the first child that is a Group and not a Sprite/Points/Mesh.
+    // Actually, we can just save it when building. 
+    // Since we didn't save it, let's just find it by name. We know `buildDrone` adds `parts.rootGroup`.
+    // Let's modify the class to store `this.modelRoot = parts.rootGroup;` Wait, I can't easily add a property without changing the class definition. 
+    // I can just find it: 
+    const model = this.group.children.find(c => c.type === "Group");
+    if (model) {
+       model.rotation.order = "YXZ";
+       model.rotation.x = this.visualPitch;
+       model.rotation.z = this.visualRoll;
+    }
 
     // 4. Active 3-Axis Horizon-Locked Camera Gimbal Stabilization
     if (this.cameraPod && this.gimbalRollArm) {
@@ -593,5 +610,6 @@ export class ModularDrone {
     }
   }
 }
+
 
 

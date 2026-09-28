@@ -270,13 +270,23 @@ function applyFoliageWind(mat: THREE.MeshStandardMaterial, swayIntensity: number
   };
 }
 
-// Hook wind shader into foliage materials
+// Hook wind shader into foliage AND bark materials so the trunk doesn't detach from leaves
 applyFoliageWind(ENV_MATERIALS.foliagePine, 0.18);
+applyFoliageWind(ENV_MATERIALS.barkPine, 0.18);
+
 applyFoliageWind(ENV_MATERIALS.foliageSpruce, 0.16);
+// Spruce shares barkPine, so it's already hooked.
+
 applyFoliageWind(ENV_MATERIALS.foliageOak, 0.24);
+applyFoliageWind(ENV_MATERIALS.barkOak, 0.24);
+
 applyFoliageWind(ENV_MATERIALS.foliageBirch, 0.28);
+applyFoliageWind(ENV_MATERIALS.barkBirch, 0.28);
+
 applyFoliageWind(ENV_MATERIALS.foliageWillow, 0.32);
 applyFoliageWind(ENV_MATERIALS.foliagePalm, 0.25);
+applyFoliageWind(ENV_MATERIALS.barkPalm, 0.25);
+
 applyFoliageWind(ENV_MATERIALS.foliageShrub, 0.15);
 applyFoliageWind(ENV_MATERIALS.fernLeaf, 0.20);
 applyFoliageWind(ENV_MATERIALS.reedMarsh, 0.30);
