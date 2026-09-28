@@ -1060,7 +1060,8 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
         dt,
         elapsed,
         droneWorldPos,
-        curTelemetry.rotorRpmPercent ? curTelemetry.rotorRpmPercent / 100 : 0.8
+        curTelemetry.rotorRpmPercent ? curTelemetry.rotorRpmPercent / 100 : 0.8,
+        physics.environment.getState()
       );
 
       // Render 3D Frame
@@ -1182,136 +1183,81 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
         <DashboardHeader />
       </div>
 
-      <div className="flex flex-1 w-full relative overflow-hidden gap-2 p-2">
-        {/* Left Panel (Desktop) — floating glass card with gap from edges */}
-        <div className="w-[270px] shrink-0 hidden md:flex flex-col rounded-xl border border-white/[0.07] bg-neutral-900/60 backdrop-blur-xl relative z-20 overflow-y-auto shadow-2xl">
-          <AircraftControlPanel
-            droneName={activeDigitalTwin?.identity.name || selectedDrone.name}
-            telemetry={telemetry}
-            motorCount={physicsEngineRef.current?.def.motorCount || 4}
-            motorOverrides={motorOverrides}
-            motorHealths={motorHealths}
-            payloadKg={payloadMassKg}
-            maxPayloadKg={physicsEngineRef.current?.def.payloadCapacity || 4}
-            sensors={sensorHealth}
-            events={manipulationEvents}
-            onMotorOverride={handleSetMotorOverride}
-            onMotorFailure={handleMotorFailure}
-            onBattery={handleSetBatteryState}
-            onPayload={(kg) => { handleSetPayloadMass(kg); recordManipulation("PAYLOAD_CHANGED", `Payload set to ${kg.toFixed(1)} kg`); }}
-            onReset={handleResetExperiment}
-            onExit={onExit}
-          />
-        </div>
+      <div className="flex-1 w-full relative overflow-hidden bg-[#08090a]">
+        {/* Center 3D World */}
+        <div ref={containerRef} className="absolute inset-0 cursor-crosshair" />
 
-        {/* Center 3D World — rounded to match panels */}
-        <div className="flex-1 relative z-0 rounded-xl overflow-hidden min-w-0">
-          <div ref={containerRef} className="w-full h-full cursor-crosshair bg-sky-200" />
-          
-          {/* Loading Screen Overlay */}
-          {isLoading && <SimulationLoadingScreen onReady={handleLoadingReady} />}
+        <LeftGlassPanel
+          telemetry={telemetry}
+          drone={selectedDrone}
+          motorCount={physicsEngineRef.current?.def.motorCount || 4}
+          motorHealths={motorHealths}
+          onSetMotorHealth={handleSetMotorHealth}
+          onExit={onExit}
+        />
 
-          {/* Tactical Dropzone Deployment Briefing Banner */}
-          {!isLoading && showDropBriefing && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="bg-black/70 backdrop-blur-md text-white/80 border border-white/10 px-4 py-2 rounded-full shadow-lg flex items-center gap-3 font-mono select-none">
-                <div className="w-2 h-2 rounded-full bg-[#FF5500] animate-ping shrink-0" />
-                <div className="text-[11px] tracking-widest">
-                  <span className="text-[#FF5500] font-black uppercase">SPAWN: </span>
-                  <span className="font-bold text-white/80">
-                    {HELIPADS[initialSpawn.helipadId]?.name || "Island Helipad"}
-                  </span>
-                </div>
+        <RightGlassPanel
+          environment={envState}
+          onUpdateEnvironment={handleUpdateEnvironment}
+          telemetry={telemetry}
+          activeWaypoint={activeWaypoint}
+          onToggleMap={() => setIsMapModalOpen(true)}
+          onResetEnvironment={() => handleApplyWeatherPreset("normal")}
+          currentInsight={currentInsight}
+        />
+
+        {/* Loading Screen Overlay */}
+        {isLoading && <SimulationLoadingScreen onReady={handleLoadingReady} />}
+
+        {/* Tactical Dropzone Deployment Briefing Banner */}
+        {!isLoading && showDropBriefing && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="bg-black/70 backdrop-blur-md text-white/80 border border-white/10 px-4 py-2 rounded-full shadow-lg flex items-center gap-3 font-mono select-none">
+              <div className="w-2 h-2 rounded-full bg-[#FF5500] animate-ping shrink-0" />
+              <div className="text-[11px] tracking-widest">
+                <span className="text-[#FF5500] font-black uppercase">SPAWN: </span>
+                <span className="font-bold text-white/80">
+                  {HELIPADS[initialSpawn.helipadId]?.name || "Island Helipad"}
+                </span>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-
-          {/* Aircraft name — minimal top-right label, no card */}
-          {!isLoading && (
-            <div className="absolute top-4 right-4 z-30 pointer-events-none hidden md:flex flex-col items-end gap-0.5 animate-in fade-in duration-500">
-              <span className="text-[11px] font-bold tracking-[0.18em] text-white/90 uppercase font-mono">
-                {activeDigitalTwin?.identity.name || selectedDrone.name}
-              </span>
-              <span className="text-[9px] text-neutral-500 font-mono tracking-widest uppercase">
-                {physicsEngineRef.current?.def.motorCount || 4} MOTORS · {(activeDigitalTwin?.massProperties.totalMassKg || selectedDrone.baseMassKg).toFixed(2)} KG
-              </span>
-            </div>
-          )}
-
-
-          {/* Avionics Telemetry HUD */}
-          <TelemetryHUD
-            telemetry={telemetry}
-            droneName={selectedDrone.name}
-            cameraMode={cameraMode}
-            onSelectCameraMode={handleSelectCameraMode}
-            onReset={handleReset}
-            onExit={onExit}
-            isHoverMode={isHoverMode}
-            onToggleHover={handleToggleHover}
-            onToggleMap={() => setIsMapModalOpen((prev) => !prev)}
-            onMoveDirection={handleMoveDirection}
-            onYaw={handleYaw}
-            onThrottle={handleThrottle}
-            onAutoLand={handleAutoLand}
-            onOpenEnvironment={() => setIsEnvironmentOpen(true)}
-            onOpenReplay={handleOpenReplay}
-            onOpenAnalysis={handleManualDebrief}
-            onToggleDebug={() => setIsDebugOpen((prev) => !prev)}
-            onToggleTutorial={() => setIsTutorialOpen((prev) => !prev)}
-            environment={envState}
-            remotePlayers={remotePlayers}
-            callsign={callsign}
-            activeWaypoint={activeWaypoint}
-            onTeleportBase={handleTeleportBase}
-            autoMoveLocked={autoMoveLocked}
-            onCancelAutoMove={() => {
-              inputManagerRef.current?.cancelMovementLock();
-              setAutoMoveLocked("");
-            }}
-            isMuted={isMuted}
-            onToggleMute={toggleMute}
-          />
-        </div>
-
-        {/* Right Panel (Desktop) — floating glass card */}
-        <div className="w-[265px] shrink-0 hidden md:flex flex-col rounded-xl border border-white/[0.07] bg-neutral-900/60 backdrop-blur-xl relative z-20 overflow-y-auto shadow-2xl">
-          <RightGlassPanel
-            environment={envState}
-            onUpdateEnvironment={handleUpdateEnvironment}
-            telemetry={telemetry}
-            activeWaypoint={activeWaypoint}
-            onToggleMap={() => setIsMapModalOpen(true)}
-            onResetEnvironment={() => handleApplyWeatherPreset("normal")}
-            currentInsight={currentInsight}
-          />
-        </div>
-
-        {/* Mobile Hidden Panels (rendered but hidden by css on desktop) */}
-        <div className="md:hidden">
-          <AircraftControlPanel
-            droneName={activeDigitalTwin?.identity.name || selectedDrone.name}
-            telemetry={telemetry}
-            motorCount={physicsEngineRef.current?.def.motorCount || 4}
-            motorOverrides={motorOverrides}
-            motorHealths={motorHealths}
-            payloadKg={payloadMassKg}
-            maxPayloadKg={physicsEngineRef.current?.def.payloadCapacity || 4}
-            sensors={sensorHealth}
-            events={manipulationEvents}
-            onMotorOverride={handleSetMotorOverride}
-            onMotorFailure={handleMotorFailure}
-            onBattery={handleSetBatteryState}
-            onPayload={(kg) => { handleSetPayloadMass(kg); recordManipulation("PAYLOAD_CHANGED", `Payload set to ${kg.toFixed(1)} kg`); }}
-            onReset={handleResetExperiment}
-            onExit={onExit}
-          />
-          <RightGlassPanel
-            environment={envState}
-            onUpdateEnvironment={handleUpdateEnvironment}
-            telemetry={telemetry}
-            activeWaypoint={activeWaypoint}
+        {/* Avionics Telemetry HUD */}
+        <TelemetryHUD
+          telemetry={telemetry}
+          droneName={selectedDrone.name}
+          cameraMode={cameraMode}
+          onSelectCameraMode={handleSelectCameraMode}
+          onReset={handleReset}
+          onExit={onExit}
+          isHoverMode={isHoverMode}
+          onToggleHover={handleToggleHover}
+          onToggleMap={() => setIsMapModalOpen((prev) => !prev)}
+          onMoveDirection={handleMoveDirection}
+          onYaw={handleYaw}
+          onThrottle={handleThrottle}
+          onAutoLand={handleAutoLand}
+          onOpenEnvironment={() => setIsEnvironmentOpen(true)}
+          onOpenReplay={handleOpenReplay}
+          onOpenAnalysis={handleManualDebrief}
+          onToggleDebug={() => setIsDebugOpen((prev) => !prev)}
+          onToggleTutorial={() => setIsTutorialOpen((prev) => !prev)}
+          environment={envState}
+          remotePlayers={remotePlayers}
+          callsign={callsign}
+          activeWaypoint={activeWaypoint}
+          onTeleportBase={handleTeleportBase}
+          autoMoveLocked={autoMoveLocked}
+          onCancelAutoMove={() => {
+            inputManagerRef.current?.cancelMovementLock();
+            setAutoMoveLocked("");
+          }}
+          isMuted={isMuted}
+          onToggleMute={toggleMute}
+        />
+      </div>
             onToggleMap={() => setIsMapModalOpen(true)}
             onResetEnvironment={() => handleApplyWeatherPreset("normal")}
             currentInsight={currentInsight}

@@ -497,27 +497,49 @@ export class ModularDrone {
 
     // 5. Dual-State Propeller Spin & Motion-Blur Disc Cross-Fade
     const baseRpmPercent = telemetry.rotorRpmPercent || 0;
+    const isArmed = baseRpmPercent > 0;
     const outputs = telemetry.motorOutputs && telemetry.motorOutputs.length > 0 
       ? telemetry.motorOutputs 
-      : [baseRpmPercent / 100, baseRpmPercent / 100, baseRpmPercent / 100, baseRpmPercent / 100];
+      : [];
 
     this.propellers.forEach((p) => {
-      // Individual motor throttle level [0.0 - 1.0]
-      const motorThrottle = outputs[p.motorIndex] !== undefined ? outputs[p.motorIndex] : baseRpmPercent / 100;
+      // If armed, idle is ~15%. But we multiply by the actual motor output or health.
+      // We don't have direct access to motorHealth here, but outputs[i] tells us the thrust.
+      // If output is very low, it should spin slowly.
+      let motorThrottle = 0;
+      if (isArmed) {
+        // If we have individual outputs, use them. If they are 0 (ground idle), use a baseline 0.15,
+        // BUT only if the motor actually has output when throttling up. 
+        // We can just use the direct output if it's > 0, otherwise baseRpmPercent.
+        const output = outputs[p.motorIndex];
+        if (output !== undefined) {
+           // We want the visual to match the output. If output is capped by override, it will be low.
+           // To ensure it spins at idle on the ground, we add a small idle base IF output is 0.
+           // However, if output is 0 because of failure, we don't want it to spin.
+           // Since we can't tell failure from idle just from output=0, we rely on the fact that
+           // in the air, output is > 0.
+           motorThrottle = output > 0 ? output : (baseRpmPercent / 100);
+           
+           // If the output is explicitly lower than idle (e.g. override is 5%), show it!
+           if (output > 0 && output < 0.15) {
+               motorThrottle = output;
+           }
+        } else {
+           motorThrottle = baseRpmPercent / 100;
+        }
+      }
+
       // Rotation angular velocity (rad/s)
-      const spinSpeed = (30.0 + motorThrottle * 250.0) * p.direction;
+      const spinSpeed = (motorThrottle * 300.0) * p.direction;
       p.bladeGroup.rotation.y += spinSpeed * dt;
 
       // Blur disc blending logic:
-      // - Below 18% RPM: Individual blades are sharp; blur disc is invisible.
-      // - 18% to 55% RPM: Blades spin fast and begin blurring; blur disc fades in.
-      // - Above 55% RPM: Translucent high-speed disc dominates with realistic motion swirl!
-      if (motorThrottle < 0.18) {
+      if (motorThrottle < 0.20) {
         p.blurMaterial.opacity = 0.0;
         p.blurMesh.visible = false;
         p.bladeMaterial.opacity = 1.0;
-      } else if (motorThrottle < 0.55) {
-        const t = (motorThrottle - 0.18) / (0.55 - 0.18);
+      } else if (motorThrottle < 0.60) {
+        const t = (motorThrottle - 0.20) / (0.60 - 0.20);
         p.blurMesh.visible = true;
         p.blurMaterial.opacity = t * 0.70;
         p.bladeMaterial.opacity = 1.0 - t * 0.65; // Fade blade as motion blur increases

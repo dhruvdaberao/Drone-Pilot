@@ -27,6 +27,8 @@ import { RuralSystem } from "./regions/rural-system";
 import { CityDistrictSystem } from "./city/city-district-system";
 import { HELIPADS } from "@/lib/world/helipad-definitions";
 
+import { EnvironmentState } from "@/lib/simulation/types";
+
 export class WorldRoot {
   public group = new THREE.Group();
 
@@ -157,8 +159,8 @@ export class WorldRoot {
   /**
    * Master frame-by-frame simulation coordinator
    */
-  public update(dt: number, elapsed: number, dronePos?: THREE.Vector3, thrust = 1.0) {
-    this.environment.update(dt, elapsed, dronePos);
+  public update(dt: number, elapsed: number, dronePos?: THREE.Vector3, thrust = 1.0, envState?: EnvironmentState) {
+    this.environment.update(dt, elapsed, dronePos, envState);
     this.water.update(dt, elapsed);
     this.grass.update(dt, elapsed, dronePos);
     this.nature.update(dt, elapsed);
