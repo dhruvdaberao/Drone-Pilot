@@ -119,6 +119,33 @@ const DISTRICTS: DistrictDef[] = [
     minHeight: 8, maxHeight: 18,
     sidewalkWidth: 2.2,
   },
+  {
+    id: "commercial",
+    name: "South Metro Extension",
+    center: { x: 700, z: 620 },
+    halfW: 160, halfD: 140,
+    buildingDensity: 0.85,
+    minHeight: 25, maxHeight: 85,
+    sidewalkWidth: 3.0,
+  },
+  {
+    id: "residential_high",
+    name: "South Hills Apartments",
+    center: { x: 520, z: 620 },
+    halfW: 140, halfD: 140,
+    buildingDensity: 0.80,
+    minHeight: 15, maxHeight: 45,
+    sidewalkWidth: 2.5,
+  },
+  {
+    id: "residential_low",
+    name: "Ocean View Suburbs",
+    center: { x: 880, z: 620 },
+    halfW: 140, halfD: 140,
+    buildingDensity: 0.70,
+    minHeight: 8, maxHeight: 15,
+    sidewalkWidth: 2.0,
+  }
 ];
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -206,7 +233,7 @@ export class CityDistrictSystem {
 
         // --- CITY ROAD EXCLUSION ---
         const avenuesX = [540, 640, 740, 840, 940];
-        const streetsZ = [120, 200, 280, 360, 440, 520];
+        const streetsZ = [120, 200, 280, 360, 440, 520, 600, 680];
         let onRoad = false;
         for (const ax of avenuesX) if (Math.abs(px - ax) < 11) { onRoad = true; break; }
         for (const sz of streetsZ) if (Math.abs(pz - sz) < 11) { onRoad = true; break; }
@@ -350,4 +377,6 @@ export class CityDistrictSystem {
     // Future: animated signs, traffic light cycling
   }
 }
+
+
 

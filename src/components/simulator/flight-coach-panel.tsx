@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import { FlightCoachInsight } from "@/lib/simulation/flight-coach-types";
@@ -40,7 +40,7 @@ export function FlightCoachPanel({ insight, onDismiss }: FlightCoachPanelProps) 
   };
 
   return (
-    <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 w-auto max-w-lg transition-all duration-500 ease-out pointer-events-none ${visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}`}>
+    <div className={`fixed bottom-28 left-1/2 -translate-x-1/2 z-50 w-auto max-w-lg transition-all duration-500 ease-out pointer-events-none ${visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}`}>
       <div className="pointer-events-auto bg-black/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 shadow-2xl flex items-start gap-4">
         {/* Icon Badge */}
         <div className="mt-1 p-2 rounded-full bg-white/[0.04] shrink-0">
@@ -74,3 +74,4 @@ export function FlightCoachPanel({ insight, onDismiss }: FlightCoachPanelProps) 
     </div>
   );
 }
+

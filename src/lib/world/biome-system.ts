@@ -1,5 +1,5 @@
-// ==========================================================
-// DRONE PILOT — DETERMINISTIC BIOME ENGINE & PLACEMENT SYSTEM
+﻿// ==========================================================
+// DRONE PILOT â€” DETERMINISTIC BIOME ENGINE & PLACEMENT SYSTEM
 // Seeded PRNG, multi-factor ecological biome classifier,
 // terrain slope gradient calculations, and soft road clearance
 // ==========================================================
@@ -206,7 +206,7 @@ export function getDistanceToRoad(x: number, z: number): number {
   // 3. Check City Downtown Grid (Avenues & Cross Streets)
   // These are procedurally generated in city-district-system.ts but mathematically fixed
   const avenuesX = [540, 640, 740, 840, 940];
-  const streetsZ = [120, 200, 280, 360, 440, 520];
+  const streetsZ = [120, 200, 280, 360, 440, 520, 600, 680];
   
   // If within the city bounds roughly
   if (x > 450 && x < 1000 && z > 50 && z < 600) {
@@ -391,3 +391,4 @@ export function getBiomeAt(x: number, z: number): BiomeSample {
     canSupportFoliage,
   };
 }
+

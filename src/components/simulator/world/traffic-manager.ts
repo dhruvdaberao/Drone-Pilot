@@ -1,10 +1,11 @@
-// ==========================================================
-// DRONE PILOT — AUTONOMOUS TRAFFIC SIMULATION (LIVING WORLD)
+﻿// ==========================================================
+// DRONE PILOT â€” AUTONOMOUS TRAFFIC SIMULATION (LIVING WORLD)
 // Real GLB vehicles (sedans, SUVs, police, ambulances, taxis) navigating roads
 // ==========================================================
 
 import * as THREE from "three";
 import { AssetManager } from "./asset-manager";
+import { evaluateIslandElevation } from "@/lib/world/terrain-math";
 
 interface TrafficVehicle {
   mesh: THREE.Group;
@@ -180,6 +181,17 @@ export class TrafficManager {
       const p1 = this.waypoints[v.pathIndex];
       const p2 = this.waypoints[(v.pathIndex + 1) % totalPoints];
       v.mesh.position.lerpVectors(p1, p2, v.progress);
+      
+      const terrainY = evaluateIslandElevation(v.mesh.position.x, v.mesh.position.z).elevation;
+      const roadY = Math.max(terrainY + 0.22, 1.35); // Base road elevation logic
+      
+      // If the interpolated waypoint Y is vastly higher than the terrain, assume it's a bridge.
+      // Otherwise, snap tightly to the procedural road surface.
+      if (v.mesh.position.y > roadY + 2.5) {
+        // On a bridge, keep CatmullRom Y
+      } else {
+        v.mesh.position.y = roadY + 0.3; // Car suspension offset
+      }
 
       // Steer heading towards next waypoint
       const targetHeading = Math.atan2(p2.x - p1.x, p2.z - p1.z);
@@ -196,3 +208,6 @@ export class TrafficManager {
     }
   }
 }
+
+
+

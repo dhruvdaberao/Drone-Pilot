@@ -1,5 +1,5 @@
-// ==========================================================
-// DRONE PILOT — MASTER ROAD NETWORK & HIGHWAY SYSTEM (PHASE 1)
+﻿// ==========================================================
+// DRONE PILOT â€” MASTER ROAD NETWORK & HIGHWAY SYSTEM (PHASE 1)
 // Realistic asphalt highways, regional connectors, mountain switchbacks,
 // river canyon bridges, streetlights & traffic waypoints
 // ==========================================================
@@ -564,11 +564,11 @@ export class RoadNetwork {
 
     // North-South Multi-Lane Avenues spanning across CBD, commercial, and suburban districts
     const avenues = [
-      { x: 540, z: 320, length: 440, w: avenueWidth }, // West Suburban Parkway
-      { x: 640, z: 320, length: 440, w: avenueWidth }, // 1st Avenue Commercial
-      { x: 740, z: 320, length: 440, w: avenueWidth }, // Central Apex Boulevard
-      { x: 840, z: 320, length: 440, w: avenueWidth }, // 2nd Avenue Residential High
-      { x: 940, z: 300, length: 380, w: streetWidth }, // East Coastal Suburban Avenue
+      { x: 540, z: 420, length: 640, w: avenueWidth }, // West Suburban Parkway
+      { x: 640, z: 420, length: 640, w: avenueWidth }, // 1st Avenue Commercial
+      { x: 740, z: 420, length: 640, w: avenueWidth }, // Central Apex Boulevard
+      { x: 840, z: 420, length: 640, w: avenueWidth }, // 2nd Avenue Residential High
+      { x: 940, z: 400, length: 580, w: streetWidth }, // East Coastal Suburban Avenue
     ];
 
     // East-West Cross Streets connecting avenues and neighborhoods
@@ -579,6 +579,8 @@ export class RoadNetwork {
       { x: 740, z: 360, length: 460, w: avenueWidth }, // Apex Plaza Boulevard
       { x: 740, z: 440, length: 440, w: streetWidth }, // Civic Center Avenue
       { x: 740, z: 520, length: 420, w: streetWidth }, // South Industrial Transition Street
+      { x: 740, z: 600, length: 440, w: avenueWidth }, // South Metro Cross
+      { x: 740, z: 680, length: 420, w: streetWidth }, // Ocean View Boulevard
     ];
 
     avenues.forEach((ave) => {
@@ -975,3 +977,5 @@ export class RoadNetwork {
     this.group.add(guardrailGroup);
   }
 }
+
+
