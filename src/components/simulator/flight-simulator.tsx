@@ -63,6 +63,7 @@ import {
 import { DigitalTwinHUD } from "./debug/digital-twin-hud";
 import { FaultInjectionPanel } from "./fault-injection-panel";
 import { FlightCoachPanel } from "./flight-coach-panel";
+import { FlightControlsOverlay } from "./flight-controls-overlay";
 import { ScenarioSelectorModal } from "./scenario-selector-modal";
 import { SimulationClock, ClockSnapshot } from "@/lib/simulation/simulation-clock";
 import { SimulationAdapter, SimulationAdapterStatus } from "@/lib/simulation/adapters/simulation-adapter";
@@ -1359,6 +1360,9 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
         fps={fps}
       />
 
+      {/* Flight Controls Visual Guide */}
+      <FlightControlsOverlay />
+
       {/* Real-Time Flight Coach Instrumentation */}
       <FlightCoachPanel
         insight={currentInsight}
@@ -1402,5 +1406,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     </div>
   );
 }
+
+
 
 

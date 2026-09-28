@@ -1,5 +1,5 @@
-// ==========================================================
-// DRONE PILOT — FLIGHT PHYSICS ENGINE (MASTER SIMULATION PHASE)
+﻿// ==========================================================
+// DRONE PILOT â€” FLIGHT PHYSICS ENGINE (MASTER SIMULATION PHASE)
 // Deterministic 6-DoF Multirotor Aerodynamic & Dynamic Solver
 // Integrates Motor Mixing, LiPo Battery Sag, Environmental
 // Wind Forces, Payload Mass, and Ground/Obstacle Collision.
@@ -395,10 +395,11 @@ export class FlightPhysicsEngine {
       const imuNoiseRoll = Math.cos(this.flightTime * 6.8) * 0.06 + Math.sin(this.flightTime * 11.9) * 0.03;
       this.pitch += imuNoisePitch * clampedDt * 8.0;
       this.roll += imuNoiseRoll * clampedDt * 8.0;
-    }
-
-    // Phase 5: Atmospheric Turbulence Attitude Disturbance
-    const turb = (this.environment.getState().turbulence || 0) + this.turbulenceFactor;
+    }    // Phase 5: Atmospheric Turbulence Attitude Disturbance
+    const baseTurbulence = this.environment.getState().turbulence || 0;
+    // Map high wind speeds to severe physical turbulence
+    const windTurbulence = (this.environment.getState().windSpeed / 30.0) * 0.45; 
+    const turb = baseTurbulence + this.turbulenceFactor + windTurbulence;
     if (turb > 0.05 && !onGround) {
       const turbPitch = (Math.sin(this.flightTime * 9.3) + Math.cos(this.flightTime * 17.1) * 0.5) * (turb * 0.14);
       const turbRoll = (Math.cos(this.flightTime * 8.7) + Math.sin(this.flightTime * 15.4) * 0.5) * (turb * 0.14);
@@ -531,11 +532,11 @@ export class FlightPhysicsEngine {
       const impactSpeed = Math.sqrt(this.velX * this.velX + this.velY * this.velY + this.velZ * this.velZ);
       const tiltAngleDeg = Math.max(Math.abs(this.pitch), Math.abs(this.roll)) * (180 / Math.PI);
 
-      // Crash Criteria: Hard impact (> 6.2 m/s) or extreme tilt (> 42°)
+      // Crash Criteria: Hard impact (> 6.2 m/s) or extreme tilt (> 42Â°)
       if (impactSpeed > 6.2 || (impactSpeed > 3.0 && tiltAngleDeg > 42)) {
         const kineticEnergy = 0.5 * totalMass * impactSpeed * impactSpeed;
         let cause = "You have crashed into the ground! (Excessive vertical descent rate)";
-        if (tiltAngleDeg > 42) cause = `You have crashed into the terrain! (Loss of control at ${tiltAngleDeg.toFixed(0)}° bank angle)`;
+        if (tiltAngleDeg > 42) cause = `You have crashed into the terrain! (Loss of control at ${tiltAngleDeg.toFixed(0)}Â° bank angle)`;
         else if (Math.abs(this.velX) + Math.abs(this.velZ) > 5.0) cause = "You have crashed into the terrain! (High-speed horizontal impact)";
 
         this.crashState = {

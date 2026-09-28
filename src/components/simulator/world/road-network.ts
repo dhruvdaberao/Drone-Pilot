@@ -22,8 +22,15 @@ export class RoadNetwork {
   private whiteLineMat: THREE.MeshStandardMaterial;
   private bridgeMat: THREE.MeshStandardMaterial;
 
+  private dirtRoadMat: THREE.MeshStandardMaterial;
+
   constructor() {
     this.roadMat = WorldMaterials.asphalt;
+    this.dirtRoadMat = new THREE.MeshStandardMaterial({
+      color: 0x735c40, // Natural sandy brown dirt
+      roughness: 0.95,
+      metalness: 0.05,
+    });
     this.markingMat = WorldMaterials.markingYellow;
     this.whiteLineMat = WorldMaterials.markingWhite;
     this.bridgeMat = WorldMaterials.concrete;
@@ -40,12 +47,12 @@ export class RoadNetwork {
   private buildMasterNetwork() {
     // 1. Primary Highways (Metropolis -> Industrial -> Port)
     WORLD_DEFINITION.roads.primaryHighways.forEach((road) => {
-      this.buildRoadRibbon(road, true);
+      this.buildRoadRibbon(road, true, road.type === "rural" || road.type === "switchback");
     });
 
     // 2. Arterial Connectors (Academy -> City, Academy -> Forest, Pelican Spur)
     WORLD_DEFINITION.roads.connectors.forEach((road) => {
-      this.buildRoadRibbon(road, true);
+      this.buildRoadRibbon(road, true, road.type === "rural" || road.type === "switchback");
     });
 
     // 3. Southern Coastal Connector (Pelican Cove -> Estuary -> Harbor Port)
@@ -63,7 +70,7 @@ export class RoadNetwork {
         { x: -140, y: 3.2, z: 840 }, // West bridge abutment
       ],
     };
-    this.buildRoadRibbon(coastalConnectorWest, true);
+    this.buildRoadRibbon(coastalConnectorWest, true, false);
 
     const coastalConnectorEast: RoadPolyline = {
       id: "road-southern-coastal-east",
@@ -75,11 +82,11 @@ export class RoadNetwork {
         { x: 60, y: 1.3, z: 880 },   // Connect to harbor highway
       ],
     };
-    this.buildRoadRibbon(coastalConnectorEast, true);
+    this.buildRoadRibbon(coastalConnectorEast, true, false);
 
     // 4. Mountain Switchback Pass
     WORLD_DEFINITION.roads.mountainPasses.forEach((road) => {
-      this.buildRoadRibbon(road, false);
+      this.buildRoadRibbon(road, false, road.type === "rural" || road.type === "switchback");
     });
 
     // 5. Canyon & Estuary Bridges
@@ -171,7 +178,7 @@ export class RoadNetwork {
    * Generates a smooth, continuous asphalt ribbon conforming to terrain elevation
    * with strict water clearance guarantees (roads never plunge underwater)
    */
-  private buildRoadRibbon(road: RoadPolyline, withCenterline = true) {
+  private buildRoadRibbon(road: RoadPolyline, withCenterline = true, isDirt = false) {
     const rawPoints = road.points;
     if (rawPoints.length < 2) return;
 
@@ -977,5 +984,9 @@ export class RoadNetwork {
     this.group.add(guardrailGroup);
   }
 }
+
+
+
+
 
 
