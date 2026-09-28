@@ -129,11 +129,10 @@ function createRoundedRectShape(w: number, l: number, r: number): THREE.Shape {
 function buildGimbalAndCamera(sc: number): { gimbal: THREE.Group; pitch: THREE.Group } {
   const g = new THREE.Group();
 
-  // Gimbal yaw ring / base
-  g.add(Object.assign(
-    new THREE.Mesh(new THREE.CylinderGeometry(0.022 * sc, 0.028 * sc, 0.016 * sc, 16), Materials.machinedAlloy),
-    { position: new THREE.Vector3(0, 0, 0) }
-  ));
+  const yawRing = new THREE.Mesh(new THREE.CylinderGeometry(0.022 * sc, 0.028 * sc, 0.016 * sc, 16), Materials.machinedAlloy);
+  yawRing.position.set(0, 0, 0);
+  g.add(yawRing);
+
 
   // Roll arm
   const rollArm = new THREE.Mesh(new THREE.BoxGeometry(0.05 * sc, 0.009 * sc, 0.009 * sc), Materials.darkGraphite);

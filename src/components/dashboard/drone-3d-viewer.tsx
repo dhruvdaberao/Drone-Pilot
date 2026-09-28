@@ -218,9 +218,10 @@ export function Drone3DViewer({
       // Update Camera Position (keep current rotation angle but update distance/target)
       const direction = new THREE.Vector3().subVectors(camera.position, center).normalize();
       // If camera was exactly overlapping or uninitialized, give it a nice starting angle
-      if (direction.lengthSq() < 0.1 || direction.y === 0) {
+      if (direction.lengthSq() < 0.1 || direction.y <= 0.01) {
           direction.set(0.5, 0.6, 1).normalize();
       }
+
       camera.position.copy(direction.multiplyScalar(distance).add(center));
       
       // Set zoom limits to prevent getting lost
