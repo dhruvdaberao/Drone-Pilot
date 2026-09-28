@@ -83,10 +83,9 @@ export class ChaseCameraController {
    */
   public adjustZoom(delta: number) {
     const factor = 1.0 + Math.sign(delta) * Math.min(0.15, Math.abs(delta) * 0.002);
-    this.followDistance = Math.max(
-      this.minFollowDistance,
-      Math.min(this.maxFollowDistance, this.followDistance * factor)
-    );
+    // Adjust optical zoom (FOV) instead of physical distance to maintain perspective
+    this.camera.fov = Math.max(15, Math.min(100, this.camera.fov * factor));
+    this.camera.updateProjectionMatrix();
   }
 
   public getFollowDistance(): number {

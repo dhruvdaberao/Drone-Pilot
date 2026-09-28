@@ -44,7 +44,7 @@ export function AircraftControlPanel(props: Props) {
       {/* Mobile toggle */}
       <button
         onClick={() => setOpen(true)}
-        className="lg:hidden fixed top-16 left-3 z-40 bg-black/70 border border-white/10 p-2 rounded-lg text-[#FF5500] backdrop-blur-md"
+        className="md:hidden fixed top-16 left-3 z-40 bg-black/70 border border-white/10 p-2 rounded-lg text-[#FF5500] backdrop-blur-md"
         aria-label="Open aircraft controls"
       >
         <Plane className="w-4 h-4" />
@@ -53,14 +53,14 @@ export function AircraftControlPanel(props: Props) {
         <button
           aria-label="Close"
           onClick={() => setOpen(false)}
-          className="lg:hidden fixed inset-0 z-30 bg-black/40"
+          className="md:hidden fixed inset-0 z-30 bg-black/40"
         />
       )}
 
       {/* Panel */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-72 max-w-[86vw] bg-[#0a0b0d]/95 border-r border-white/[0.06] text-white font-mono overflow-y-auto transition-transform lg:relative lg:inset-auto lg:z-auto lg:w-full lg:max-w-none lg:bg-transparent lg:border-0 lg:overflow-y-auto ${
-          open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        className={`fixed top-20 bottom-24 left-2 z-40 w-72 max-w-[85vw] rounded-xl bg-[#0a0b0d]/70 backdrop-blur-xl border border-white/[0.08] text-white font-mono overflow-y-auto transition-transform shadow-2xl md:relative md:top-auto md:bottom-auto md:left-auto md:inset-auto md:z-auto md:w-full md:max-w-none md:bg-transparent md:backdrop-blur-none md:border-0 md:shadow-none md:rounded-none md:overflow-y-auto ${
+          open ? "translate-x-0" : "-translate-x-[110%] md:translate-x-0"
         }`}
       >
         <div className="p-4 flex flex-col gap-4 min-h-full">
@@ -213,3 +213,4 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </section>
   );
 }
+
