@@ -244,13 +244,13 @@ export function RightGlassPanel({
             }}
             defaultValue={typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("region") || "training" : "training"}
           >
-            <option value="training">Training Center</option>
-            <option value="city">Urban City</option>
-            <option value="mountain">Mountain Range</option>
-            <option value="forest">Forest Valley</option>
-            <option value="river">River & Lake</option>
-            <option value="coast">Coastal Area</option>
-            <option value="industrial">Industrial Harbor</option>
+            <option className="bg-neutral-900 text-white" value="training">Training Center</option>
+            <option className="bg-neutral-900 text-white" value="city">Urban City</option>
+            <option className="bg-neutral-900 text-white" value="mountain">Mountain Range</option>
+            <option className="bg-neutral-900 text-white" value="forest">Forest Valley</option>
+            <option className="bg-neutral-900 text-white" value="river">River & Lake</option>
+            <option className="bg-neutral-900 text-white" value="coast">Coastal Area</option>
+            <option className="bg-neutral-900 text-white" value="industrial">Industrial Harbor</option>
           </select>
         </div>
 
@@ -352,6 +352,7 @@ export function RightGlassPanel({
     </>
   );
 }
+
 
 
 

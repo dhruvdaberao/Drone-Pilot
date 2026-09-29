@@ -471,10 +471,13 @@ export class ModularDrone {
       // Direct positioning for instant responsive handling without visual lag
       this.visualPos.copy(targetPos);
       // Fast exponential smoothing on attitude to eliminate micro-stutter
-      const smoothFactor = Math.min(1.0, dt * 28.0);
+      const smoothFactor = Math.min(1.0, dt * 12.0);
       this.visualPitch += (targetPitch - this.visualPitch) * smoothFactor;
       this.visualRoll += (targetRoll - this.visualRoll) * smoothFactor;
-      this.visualYaw = targetYaw; // Yaw tracks 1:1 for crisp flight direction
+      let yawDiff = targetYaw - this.visualYaw;
+      while (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
+      while (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
+      this.visualYaw += yawDiff * smoothFactor;
     }
 
     this.group.position.copy(this.visualPos);
@@ -608,6 +611,7 @@ export class ModularDrone {
     }
   }
 }
+
 
 
 
