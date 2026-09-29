@@ -15,7 +15,7 @@ export class TerrainSystem {
 
   constructor() {
     this.buildIslandHeightfield();
-    this.buildAirfieldRunway();
+    // this.buildAirfieldRunway();
     this.buildShorelineDetails();
   }
 
@@ -335,3 +335,4 @@ export class TerrainSystem {
     return evaluateIslandElevation(x, z).elevation;
   }
 }
+

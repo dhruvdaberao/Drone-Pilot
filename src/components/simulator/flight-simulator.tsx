@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
@@ -383,7 +383,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     }
   }, []);
 
-  // Fast Travel Teleport to any Island Base â€” cleanly flies over helipad at current altitude
+  // Fast Travel Teleport to any Island Base — cleanly flies over helipad at current altitude
   const handleTeleportBase = useCallback((base: FastTravelBase) => {
     crashTriggeredRef.current = false;
     setIsAnalysisOpen(false);
@@ -491,7 +491,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       } else if (updates.windDirection !== undefined && updates.windDirection !== prevEnv.windDirection) {
         type = "WIND_DIRECTION_CHANGED";
         title = `WIND DIRECTION CHANGED`;
-        message = `Wind direction changed from ${prevEnv.windDirection}Â° to ${newEnv.windDirection}Â°. The direction of the environmental aerodynamic force acting on the aircraft has shifted.`;
+        message = `Wind direction changed from ${prevEnv.windDirection}° to ${newEnv.windDirection}°. The direction of the environmental aerodynamic force acting on the aircraft has shifted.`;
       } else if (updates.turbulence !== undefined && updates.turbulence !== prevEnv.turbulence) {
         type = "TURBULENCE_CHANGED";
         const dir = updates.turbulence > (prevEnv.turbulence || 0) ? "increased" : "decreased";
@@ -500,7 +500,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       } else if (updates.temperature !== undefined && updates.temperature !== prevEnv.temperature) {
         type = "TEMPERATURE_CHANGED";
         title = `TEMPERATURE CHANGED`;
-        message = `Air temperature changed to ${newEnv.temperature}Â°C. Air density changes inversely with temperature, affecting aerodynamic drag and motor thrust efficiency slightly.`;
+        message = `Air temperature changed to ${newEnv.temperature}°C. Air density changes inversely with temperature, affecting aerodynamic drag and motor thrust efficiency slightly.`;
       } else if (updates.rainIntensity !== undefined && updates.rainIntensity !== prevEnv.rainIntensity) {
         type = "RAIN_CHANGED";
         title = `RAIN INTENSITY CHANGED`;
@@ -1204,7 +1204,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
           activeWaypoint={activeWaypoint}
           onToggleMap={() => setIsMapModalOpen(true)}
           onResetEnvironment={() => handleApplyWeatherPreset("normal")}
-          currentInsight={currentInsight}
+          currentInsight={currentInsight} payloadMassKg={payloadMassKg} onUpdatePayload={setPayloadMassKg}
         />
 
         {/* Loading Screen Overlay */}
@@ -1361,7 +1361,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       />
 
       {/* Flight Controls Visual Guide */}
-      <FlightControlsOverlay />
+      <FlightControlsOverlay telemetry={telemetry} onToggleMap={() => setIsMapModalOpen(true)} />
 
       {/* Real-Time Flight Coach Instrumentation */}
       <FlightCoachPanel
@@ -1406,6 +1406,8 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     </div>
   );
 }
+
+
 
 
 

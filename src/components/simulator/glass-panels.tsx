@@ -123,7 +123,7 @@ export function LeftGlassPanel({
                       const angle = (i * (360 / motorCount) + (motorCount === 4 ? 45 : 0)) * (Math.PI / 180);
                       const x = 50 + Math.cos(angle) * 35;
                       const y = 50 + Math.sin(angle) * 35;
-                      const health = motorHealths[i] || 0;
+                      const health = telemetry.motorOutputs ? telemetry.motorOutputs[i] : (motorHealths[i] || 0);
                       const color = health > 0.8 ? '#10b981' : health > 0.3 ? '#f59e0b' : '#ef4444';
                       return (
                         <g key={i}>
@@ -143,7 +143,7 @@ export function LeftGlassPanel({
                     <div className="flex justify-between text-xs font-bold mb-3">
                       <span className="text-white/80 uppercase">M{i + 1}</span>
                       <span className={motorHealths[i] < 1 ? "text-rose-400" : "text-emerald-400"}>
-                        {Math.round(motorHealths[i] * 100)}%
+                        {Math.round((telemetry.motorOutputs ? telemetry.motorOutputs[i] : motorHealths[i]) * 100)}%
                       </span>
                     </div>
                     <input
@@ -151,9 +151,9 @@ export function LeftGlassPanel({
                       min="0"
                       max="1"
                       step="0.01"
-                      value={motorHealths[i]}
-                      onChange={(e) => onSetMotorHealth(i, parseFloat(e.target.value))}
-                      className="w-full h-1.5 bg-black/50 rounded-lg appearance-none cursor-pointer accent-[#FF5500]"
+                      value={telemetry.motorOutputs ? telemetry.motorOutputs[i] : motorHealths[i]}
+                      readOnly
+                      className="w-full h-1.5 bg-black/50 rounded-lg appearance-none accent-emerald-400 pointer-events-none"
                     />
                   </div>
                 ))}
@@ -185,6 +185,8 @@ interface RightGlassPanelProps {
   onToggleMap: () => void;
   onResetEnvironment: () => void;
   currentInsight: FlightCoachInsight | null;
+  payloadMassKg: number;
+  onUpdatePayload: (mass: number) => void;
 }
 
 export function RightGlassPanel({
@@ -194,8 +196,7 @@ export function RightGlassPanel({
   activeWaypoint,
   onToggleMap,
   onResetEnvironment,
-  currentInsight
-}: RightGlassPanelProps) {
+  currentInsight, payloadMassKg, onUpdatePayload }: RightGlassPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -293,6 +294,24 @@ export function RightGlassPanel({
             </div>
           </div>
 
+          {/* PAYLOAD CONFIG */}
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-5">
+            <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[#facc15]" /> Payload Mass
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-xs font-bold mb-2 uppercase">
+                  <span className="text-white/60">Additional Weight</span>
+                  <span className="text-[#facc15]">{payloadMassKg.toFixed(1)} kg</span>
+                </div>
+                <input type="range" min="0" max="25" step="0.5" value={payloadMassKg}
+                  onChange={(e) => onUpdatePayload(parseFloat(e.target.value))}
+                  className="w-full h-1.5 bg-black/50 rounded-lg appearance-none cursor-pointer accent-[#facc15]" />
+              </div>
+            </div>
+          </div>
+
           {/* ATMOSPHERE */}
           <div className="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-5">
             <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
@@ -333,4 +352,8 @@ export function RightGlassPanel({
     </>
   );
 }
+
+
+
+
 
