@@ -22,10 +22,11 @@ export function FlightControlsOverlay({ telemetry, onToggleMap }: { telemetry?: 
         {/* Right Stick (Map) */}
         <div className="flex flex-col items-center gap-1 pointer-events-auto">
           <span className="text-[10px] font-bold text-[#38bdf8] tracking-widest uppercase mb-1">Radar Map</span>
-          {telemetry && <MinimapWidget telemetry={telemetry} onClick={onToggleMap} />}
+          {telemetry && <MinimapWidget telemetry={telemetry} onClick={onToggleMap || (() => {})} />}
         </div>
 
       </div>
     </div>
   );
 }
+
