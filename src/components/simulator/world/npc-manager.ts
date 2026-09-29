@@ -1,5 +1,5 @@
 // ==========================================================
-// DRONE PILOT — NPC & HUMAN CREW SIMULATION (LIVING WORLD)
+// DRONE PILOT ?" NPC & HUMAN CREW SIMULATION (LIVING WORLD)
 // Animated flightline ground crew, marshals with wands & pedestrians
 // ==========================================================
 
@@ -22,9 +22,19 @@ interface NPCCharacter {
   isMarshal?: boolean;
 }
 
+interface NPCDrone {
+  root: THREE.Group;
+  props: THREE.Object3D[];
+  t: number;
+  speed: number;
+  p1: THREE.Vector3;
+  p2: THREE.Vector3;
+}
+
 export class NPCManager {
   public group = new THREE.Group();
   private npcs: NPCCharacter[] = [];
+  private drones: NPCDrone[] = [];
 
   constructor() {
     this.spawnFlightlineGroundCrew();
@@ -33,6 +43,40 @@ export class NPCManager {
     this.spawnBeachNPCs();
     this.spawnIndustrialWorkers();
     this.spawnScatteredNPCs();
+    this.spawnAutonomousDrones();
+  }
+
+  private spawnAutonomousDrones() {
+    const droneMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3 });
+    const propMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
+    
+    // Forest and general area drone paths
+    const paths = [
+      { p1: new THREE.Vector3(-100, 35, 100), p2: new THREE.Vector3(-250, 45, -50), speed: 0.05 },
+      { p1: new THREE.Vector3(-300, 60, -200), p2: new THREE.Vector3(100, 65, -300), speed: 0.04 },
+      { p1: new THREE.Vector3(200, 40, 200), p2: new THREE.Vector3(250, 50, -50), speed: 0.06 },
+      { p1: new THREE.Vector3(50, 80, 50), p2: new THREE.Vector3(-150, 90, 150), speed: 0.045 },
+    ];
+
+    paths.forEach(path => {
+      const droneGroup = new THREE.Group();
+      
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.4), droneMat);
+      droneGroup.add(body);
+      
+      const props: THREE.Object3D[] = [];
+      const offsets = [{x: 0.25, z: 0.25}, {x: -0.25, z: 0.25}, {x: 0.25, z: -0.25}, {x: -0.25, z: -0.25}];
+      
+      offsets.forEach(off => {
+        const prop = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.02, 16), propMat);
+        prop.position.set(off.x, 0.1, off.z);
+        droneGroup.add(prop);
+        props.push(prop);
+      });
+
+      this.group.add(droneGroup);
+      this.drones.push({ root: droneGroup, props, t: Math.random(), speed: path.speed, p1: path.p1, p2: path.p2 });
+    });
   }
 
   /**
@@ -481,6 +525,21 @@ export class NPCManager {
    * Frame-by-frame walk cycle animation, patrol waypoint tracking, and drone reactive tracking
    */
   public update(dt: number, elapsed: number, dronePos?: THREE.Vector3) {
+
+      for (const d of this.drones) {
+        d.t += d.speed * dt;
+        if (d.t > 1) { d.t = 1; d.speed *= -1; }
+        if (d.t < 0) { d.t = 0; d.speed *= -1; }
+        
+        // Smooth ease in-out
+        const ease = d.t * d.t * (3 - 2 * d.t);
+        d.root.position.lerpVectors(d.p1, d.p2, ease);
+        
+        const lookHeading = Math.atan2(d.p2.x - d.p1.x, d.p2.z - d.p1.z);
+        d.root.rotation.y = d.speed > 0 ? lookHeading : lookHeading + Math.PI;
+        
+        d.props.forEach(p => p.rotation.y += 20 * dt);
+      }
     for (const npc of this.npcs) {
       const curPos = npc.root.position;
       let dist3d = 999;
@@ -583,3 +642,5 @@ export class NPCManager {
     }
   }
 }
+
+

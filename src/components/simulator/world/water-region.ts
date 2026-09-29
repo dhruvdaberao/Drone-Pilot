@@ -11,7 +11,7 @@ export class WaterRegion {
   constructor() {
     this.buildMountainLake();
     this.buildWindingRiver();
-    this.buildStoneBridge();
+    // this.buildStoneBridge();
     this.buildCoastalMarina();
   }
 
@@ -156,3 +156,4 @@ export class WaterRegion {
     });
   }
 }
+

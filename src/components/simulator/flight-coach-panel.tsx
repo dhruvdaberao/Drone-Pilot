@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState } from "react";
 import { FlightCoachInsight } from "@/lib/simulation/flight-coach-types";
@@ -21,7 +21,7 @@ export function FlightCoachPanel({ insight, onDismiss }: FlightCoachPanelProps) 
       const timer = setTimeout(() => {
         setVisible(false);
         setTimeout(onDismiss, 300); // Wait for fade out
-      }, 8000);
+      }, 4000);
       return () => clearTimeout(timer);
     } else {
       setVisible(false);
@@ -50,7 +50,7 @@ export function FlightCoachPanel({ insight, onDismiss }: FlightCoachPanelProps) 
         {/* Content */}
         <div className="flex flex-col gap-1.5 pt-1 min-w-[280px]">
           <div className="flex items-center justify-between gap-4">
-            <h3 className="text-[11px] font-bold text-white tracking-widest uppercase font-mono">
+            <h3 className="text-sm font-bold text-white tracking-widest uppercase font-mono">
               {insight.title}
             </h3>
             <button onClick={() => setVisible(false)} className="text-white/40 hover:text-white/80 transition-colors">
@@ -58,14 +58,14 @@ export function FlightCoachPanel({ insight, onDismiss }: FlightCoachPanelProps) 
             </button>
           </div>
           
-          <p className="text-[10px] text-white/60 font-mono leading-relaxed pr-2">
+          <p className="text-xs text-white/80 font-mono leading-relaxed pr-2">
             {insight.explanation.what} {insight.explanation.why}
           </p>
           
           {/* Subtle Objective */}
           <div className="mt-1 pt-2 border-t border-white/[0.06] flex items-center gap-2 text-[#FF5500]">
             <Zap className="w-3 h-3" />
-            <span className="text-[9px] font-bold uppercase tracking-widest font-mono">
+            <span className="text-xs font-bold uppercase tracking-widest font-mono">
               Objective: {insight.explanation.learn}
             </span>
           </div>
@@ -74,5 +74,6 @@ export function FlightCoachPanel({ insight, onDismiss }: FlightCoachPanelProps) 
     </div>
   );
 }
+
 
 

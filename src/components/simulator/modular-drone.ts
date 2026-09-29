@@ -1,5 +1,5 @@
-﻿// ==========================================================
-// DRONE PILOT â€” MODULAR 3D DRONE (ENTERPRISE MATRICE SPEC)
+// ==========================================================
+// DRONE PILOT — MODULAR 3D DRONE (ENTERPRISE MATRICE SPEC)
 // Hierarchical Component Architecture:
 // Frame, Motors, Propellers (with Orange Tips), Battery,
 // Flight Controller, RTK GNSS, Cameras, Landing Gear.
@@ -20,7 +20,7 @@ interface PropellerAssembly {
 
 export class ModularDrone {
   public group = new THREE.Group();
-  /** Ground contact shadow decal â€” managed by the drone group internally. */
+  /** Ground contact shadow decal — managed by the drone group internally. */
   public groundShadowMesh!: THREE.Mesh;
   public def: DroneDefinition;
   private propellers: PropellerAssembly[] = [];
@@ -33,7 +33,7 @@ export class ModularDrone {
   private gimbalRollArm: THREE.Group | null = null;
   private cameraPod: THREE.Group | null = null;
 
-  // Battery gauge LEDs â€” use shared materials from builder (always initialized)
+  // Battery gauge LEDs — use shared materials from builder (always initialized)
   private batteryLeds: THREE.Mesh[] = [];
   private readonly ledBatteryGreenMat = LedMaterials.green;
   private readonly ledBatteryAmberMat = LedMaterials.amber;
@@ -109,7 +109,7 @@ export class ModularDrone {
     ctx.fill();
 
     // Pilot name
-    const displayName = this.pilotName.length > 20 ? this.pilotName.substring(0, 18) + "â€¦" : this.pilotName;
+    const displayName = this.pilotName.length > 20 ? this.pilotName.substring(0, 18) + "…" : this.pilotName;
     ctx.fillStyle = "rgba(255,255,255,0.90)";
     ctx.font = "700 30px monospace";
     ctx.textAlign = "left";
@@ -212,10 +212,8 @@ export class ModularDrone {
 
   private buildDrone() {
     // Use default motor layout from aircraft-model-builder (same as Hanger viewer)
-    const parts = buildProfessionalUAV(
-      this.def.type as any,
-      undefined  // use builder's own default X-config motor layout
-    );
+    const visualMotors = this.def.motors.map(m => ({ index: m.id, position: { x: m.position.x, y: m.position.y, z: m.position.z }, direction: m.direction as 1 | -1 }));
+    const parts = buildProfessionalUAV(this.def.type as any, visualMotors);
 
     this.group.add(parts.rootGroup);
 
@@ -242,16 +240,11 @@ export class ModularDrone {
     const blurDiscDiameter = propRadius * 2.08;
 
     parts.propellers.forEach((p) => {
-      // High-RPM motion-blur disc â€” sized to match actual propeller sweep area
+      // High-RPM motion-blur disc — sized to match actual propeller sweep area
             const blurDiscGeo = new THREE.CircleGeometry(blurDiscDiameter / 2, 32);
       const blurDiscMat = new THREE.MeshBasicMaterial({
         map: propBlurTex,
-        alphaMap: propBlurTex,
-        transparent: true,
-        opacity: 0.0,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending,
+        transparent: true, opacity: 0.0, depthWrite: false, side: THREE.DoubleSide,
       });
       const blurMesh = new THREE.Mesh(blurDiscGeo, blurDiscMat);
       blurMesh.rotation.x = -Math.PI / 2;
@@ -308,7 +301,7 @@ export class ModularDrone {
       ctx.fillRect(0, 0, 128, 128);
     }
     const shadowTex = new THREE.CanvasTexture(shadowCanvas);
-    // Shadow diameter: ~2Ã— the aircraft motor-tip diameter
+    // Shadow diameter: ~2× the aircraft motor-tip diameter
     const shadowSize = Math.max(1.8, minMotorDist * 4.2);
     this.groundShadowMesh = new THREE.Mesh(
       new THREE.PlaneGeometry(shadowSize, shadowSize),
@@ -316,7 +309,7 @@ export class ModularDrone {
     );
     this.groundShadowMesh.rotation.x = -Math.PI / 2;
     this.groundShadowMesh.position.y = -0.12;
-    // Shadow lives inside this.group â€” do NOT add it to scene separately.
+    // Shadow lives inside this.group — do NOT add it to scene separately.
     this.group.add(this.groundShadowMesh);
   }
 
@@ -605,7 +598,8 @@ export class ModularDrone {
       this.groundShadowMesh.rotation.z = -telemetry.rotation.yaw;
 
       const alt = Math.max(0, telemetry.altitude);
-      const opacity = Math.max(0, 0.50 * Math.exp(-alt / 5.2));
+      const isOverWater = surfaceY <= 0.02;
+        const opacity = isOverWater ? 0 : Math.max(0, 0.50 * Math.exp(-alt / 5.2));
       (this.groundShadowMesh.material as THREE.MeshBasicMaterial).opacity = opacity;
 
       const scale = 1.0 + alt * 0.09;
@@ -614,6 +608,8 @@ export class ModularDrone {
     }
   }
 }
+
+
 
 
 

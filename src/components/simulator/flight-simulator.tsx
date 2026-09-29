@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
@@ -1361,7 +1361,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       />
 
       {/* Flight Controls Visual Guide */}
-      <FlightControlsOverlay />
+      <FlightControlsOverlay telemetry={telemetry} onToggleMap={() => setIsMapModalOpen(true)} />
 
       {/* Real-Time Flight Coach Instrumentation */}
       <FlightCoachPanel

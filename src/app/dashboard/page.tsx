@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -79,7 +79,7 @@ export default function AircraftHangarPage() {
       {/* Full-screen dark background */}
       <div className="relative h-screen w-full flex flex-col bg-[#08090a] text-white overflow-hidden">
         {/* Nav */}
-        <div className="absolute inset-0 z-0">{activeDrone && <Drone3DViewer key={activeDrone.platformId} type={activeDrone.platformId} interactive={true} autoRotate={true} isSelected={true} className="w-full h-full" />}</div> <DashboardHeader /> <div className="flex flex-1 min-h-0 overflow-hidden relative pt-14">
+        <div className="absolute inset-0 z-0">{activeDrone && <Drone3DViewer key={activeDrone.platformId} type={activeDrone.platformId} interactive={true} autoRotate={true} isSelected={true} className="w-full h-full" />}</div> <DashboardHeader /> <div className="flex flex-1 min-h-0 overflow-hidden relative pt-14 pointer-events-none">
 
           {/* FOREGROUND LAYER â€” UI (Flex columns) */}
           <div className="relative z-10 w-full h-full flex justify-between pointer-events-none">

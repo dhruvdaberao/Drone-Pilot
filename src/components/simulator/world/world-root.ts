@@ -180,3 +180,4 @@ export class WorldRoot {
     this.forestRegion.update(dt, elapsed);
   }
 }
+

@@ -1,5 +1,5 @@
-ï»¿// ==========================================================
-// DRONE PILOT â€” TYPED DRONE CONFIGURATIONS
+// ==========================================================
+// DRONE PILOT — TYPED DRONE CONFIGURATIONS
 // Modular definitions for Quadcopter, Hexacopter, Octacopter
 // All values clearly marked as SIMULATION / PROTOTYPE PARAMETERS
 // ==========================================================
@@ -7,7 +7,7 @@
 import { DroneDefinition } from "./types";
 
 // ==========================================================
-// 1. QUADCOPTER â€” CLASS 4A TACTICAL ENTERPRISE (PRIMARY)
+// 1. QUADCOPTER — CLASS 4A TACTICAL ENTERPRISE (PRIMARY)
 // ==========================================================
 export const QUADCOPTER_DEFINITION: DroneDefinition = {
   id: "quadcopter",
@@ -18,10 +18,10 @@ export const QUADCOPTER_DEFINITION: DroneDefinition = {
   mass: 1.85, // kg
   motorCount: 4,
   motors: [
-    { id: 0, position: { x: 0.48, y: 0.12, z: 0.48 }, direction: 1, thrustFactor: 1.0 },   // Front-Right (CW)
-    { id: 1, position: { x: 0.48, y: 0.12, z: -0.48 }, direction: -1, thrustFactor: 1.0 },  // Rear-Right (CCW)
-    { id: 2, position: { x: -0.48, y: 0.12, z: -0.48 }, direction: 1, thrustFactor: 1.0 }, // Rear-Left (CW)
-    { id: 3, position: { x: -0.48, y: 0.12, z: 0.48 }, direction: -1, thrustFactor: 1.0 },  // Front-Left (CCW)
+    { id: 0, position: { x: 0.48, y: 0, z: 0.48 }, direction: 1, thrustFactor: 1.0 },   // Front-Right (CW)
+    { id: 1, position: { x: 0.48, y: 0, z: -0.48 }, direction: -1, thrustFactor: 1.0 },  // Rear-Right (CCW)
+    { id: 2, position: { x: -0.48, y: 0, z: -0.48 }, direction: 1, thrustFactor: 1.0 }, // Rear-Left (CW)
+    { id: 3, position: { x: -0.48, y: 0, z: 0.48 }, direction: -1, thrustFactor: 1.0 },  // Front-Left (CCW)
   ],
   maximumThrust: 38.0, // Newtons total collective (~2.1 Thrust-to-Weight ratio)
   batteryCapacity: 5000, // mAh
@@ -48,7 +48,7 @@ export const QUADCOPTER_DEFINITION: DroneDefinition = {
 };
 
 // ==========================================================
-// 2. HEXACOPTER â€” CLASS 6B MEDIUM-DUTY RADIAL (EXTENSIBLE)
+// 2. HEXACOPTER — CLASS 6B MEDIUM-DUTY RADIAL (EXTENSIBLE)
 // ==========================================================
 export const HEXACOPTER_DEFINITION: DroneDefinition = {
   id: "hexacopter",
@@ -63,7 +63,7 @@ export const HEXACOPTER_DEFINITION: DroneDefinition = {
     const r = 0.55;
     return {
       id: idx,
-      position: { x: Math.cos(angle) * r, y: 0.12, z: Math.sin(angle) * r },
+      position: { x: Math.cos(angle) * r, y: 0, z: Math.sin(angle) * r },
       direction: idx % 2 === 0 ? 1 : -1,
       thrustFactor: 1.0,
     };
@@ -93,7 +93,7 @@ export const HEXACOPTER_DEFINITION: DroneDefinition = {
 };
 
 // ==========================================================
-// 3. OCTACOPTER â€” CLASS 8C HEAVY INDUSTRIAL (EXTENSIBLE)
+// 3. OCTACOPTER — CLASS 8C HEAVY INDUSTRIAL (EXTENSIBLE)
 // ==========================================================
 export const OCTACOPTER_DEFINITION: DroneDefinition = {
   id: "octacopter",
@@ -108,7 +108,7 @@ export const OCTACOPTER_DEFINITION: DroneDefinition = {
     const r = 0.65;
     return {
       id: idx,
-      position: { x: Math.cos(angle) * r, y: 0.14, z: Math.sin(angle) * r },
+      position: { x: Math.cos(angle) * r, y: 0, z: Math.sin(angle) * r },
       direction: idx % 2 === 0 ? 1 : -1,
       thrustFactor: 1.0,
     };

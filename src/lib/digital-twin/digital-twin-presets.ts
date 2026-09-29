@@ -30,7 +30,7 @@ function generateRadialMotors(
       index: i,
       position: {
         x: Math.round(Math.cos(angle) * armRadius * 1000) / 1000,
-        y: 0.12,
+        y: 0,
         z: Math.round(Math.sin(angle) * armRadius * 1000) / 1000,
       },
       direction: i % 2 === 0 ? 1 : -1,

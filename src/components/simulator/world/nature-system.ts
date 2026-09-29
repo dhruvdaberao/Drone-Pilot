@@ -1229,8 +1229,8 @@ export class NatureSystem {
   private buildMeadowFlowers(prng: SeededPRNG) {
     const count = 3200;
     // Slender flower blossom geometry (visible from low and medium flight altitudes)
-    const flowerGeo = new THREE.CylinderGeometry(0.28, 0.08, 0.42, 6);
-    flowerGeo.translate(0, 0.21, 0);
+    const flowerGeo = new THREE.ConeGeometry(0.3, 1.8, 4);
+      flowerGeo.translate(0, 0.9, 0);
 
     const flowerMat = new THREE.MeshStandardMaterial({
       roughness: 0.65,
@@ -1243,10 +1243,10 @@ export class NatureSystem {
     // Scenic natural wildflower palette
     const colors = [
       new THREE.Color(0xe11d48), // Scarlet Red Poppy
-      new THREE.Color(0x9333ea), // French Lavender Purple
-      new THREE.Color(0xfacc15), // Golden Buttercup Yellow
+      new THREE.Color(0xfde047), // Sunflower Yellow
+      new THREE.Color(0xa3e635), // Tall Green Grass
       new THREE.Color(0xf8fafc), // Alpine White Daisy
-      new THREE.Color(0x38bdf8), // Sky-Blue Forget-Me-Not
+      new THREE.Color(0x22c55e), // Emerald Grass
       new THREE.Color(0xf97316), // Warm Orange Marigold
     ];
 
@@ -1390,4 +1390,6 @@ export class NatureSystem {
     FOLIAGE_WIND_UNIFORM.value = elapsed;
   }
 }
+
+
 

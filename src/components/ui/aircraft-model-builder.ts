@@ -598,7 +598,7 @@ export function buildProfessionalUAV(
       const angle = (i * Math.PI * 2) / count + offset;
       motors.push({
         index:     i,
-        position:  { x: Math.sin(angle) * radius, y: 0.12, z: Math.cos(angle) * radius },
+        position:  { x: Math.sin(angle) * radius, y: 0, z: Math.cos(angle) * radius },
         direction: i % 2 === 0 ? 1 : -1,
       });
     }

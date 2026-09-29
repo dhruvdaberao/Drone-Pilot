@@ -117,9 +117,10 @@ export function evaluateIslandElevation(x: number, z: number): TerrainSample {
   // Southeast Agricultural Terraces (X: 200 to 600, Z: 0 to 500)
   const distPlains = Math.hypot(x - 400, z - 250);
   const plainsWeight = Math.max(0, 1 - distPlains / 350);
-  const plainsElev =
-    Math.pow(plainsWeight, 1.4) * 8.5 +
-    Math.sin(x * 0.012 - z * 0.014) * 3.0 * plainsWeight;
+  const rawPlains = Math.pow(plainsWeight, 1.4) * 35.0 + Math.sin(x * 0.02) * Math.cos(z * 0.02) * 12.0 * plainsWeight;
+    const terraceHeight = 4.0;
+    const terracedPlains = Math.floor(rawPlains / terraceHeight) * terraceHeight;
+    const plainsElev = terracedPlains * plainsWeight;
 
   // Background Natural Undulation (Macro + Meso + Micro) - non-negative normalized harmonics
   const macroHills =
@@ -501,3 +502,4 @@ function distanceToSegment(
   t = Math.max(0, Math.min(1, t));
   return Math.hypot(px - (x1 + t * (x2 - x1)), pz - (z1 + t * (z2 - z1)));
 }
+

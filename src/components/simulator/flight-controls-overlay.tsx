@@ -1,9 +1,9 @@
-﻿import React from "react";
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from "lucide-react";
+import React from "react";
+import { MinimapWidget } from "./minimap-widget";
 
-export function FlightControlsOverlay() {
+export function FlightControlsOverlay({ telemetry, onToggleMap }: { telemetry?: any, onToggleMap?: () => void }) {
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex flex-col items-center gap-3 opacity-70">
+    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex flex-col items-center gap-3 opacity-70 hover:opacity-100 transition-opacity">
       <div className="flex items-center justify-center gap-12 bg-black/40 backdrop-blur-md border border-white/10 px-8 py-4 rounded-3xl shadow-2xl">
         
         {/* Left Stick (WASD) */}
@@ -19,17 +19,10 @@ export function FlightControlsOverlay() {
           </div>
         </div>
 
-        {/* Right Stick (Arrows) */}
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-[10px] font-bold text-[#38bdf8] tracking-widest uppercase mb-1">Pitch / Roll</span>
-          <div className="flex flex-col items-center gap-1">
-            <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 shadow-inner"><ArrowUp className="w-4 h-4" /></div>
-            <div className="flex gap-1">
-              <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 shadow-inner"><ArrowLeft className="w-4 h-4" /></div>
-              <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 shadow-inner"><ArrowDown className="w-4 h-4" /></div>
-              <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 shadow-inner"><ArrowRight className="w-4 h-4" /></div>
-            </div>
-          </div>
+        {/* Right Stick (Map) */}
+        <div className="flex flex-col items-center gap-1 pointer-events-auto">
+          <span className="text-[10px] font-bold text-[#38bdf8] tracking-widest uppercase mb-1">Radar Map</span>
+          {telemetry && <MinimapWidget telemetry={telemetry} onClick={onToggleMap} />}
         </div>
 
       </div>
