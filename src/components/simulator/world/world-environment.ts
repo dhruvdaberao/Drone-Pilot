@@ -18,6 +18,8 @@ export class WorldEnvironment {
 
   // Weather Particles
   private rainParticles?: THREE.Points;
+  private windParticles?: THREE.Points;
+  private windPositions?: Float32Array;
   private rainPositions?: Float32Array;
   private rainVelocities?: Float32Array;
   private fogDensityTarget = 0.0001;
@@ -250,6 +252,44 @@ export class WorldEnvironment {
     this.lightningLight = new THREE.PointLight(0xdbeafe, 0, 2000);
     this.lightningLight.position.set(0, 400, 0);
     this.group.add(this.lightningLight);
+
+    // Wind Dust Particles
+    const windCount = 3000;
+    this.windPositions = new Float32Array(windCount * 3);
+    for (let i = 0; i < windCount; i++) {
+      this.windPositions[i * 3] = (Math.random() - 0.5) * 200;
+      this.windPositions[i * 3 + 1] = Math.random() * 50; // lower to the ground
+      this.windPositions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+    }
+    const windGeo = new THREE.BufferGeometry();
+    windGeo.setAttribute("position", new THREE.BufferAttribute(this.windPositions, 3));
+    
+    const windCanvas = document.createElement("canvas");
+    windCanvas.width = 32; windCanvas.height = 4;
+    const wctx = windCanvas.getContext("2d");
+    if (wctx) {
+      const grad = wctx.createLinearGradient(0, 0, 32, 0);
+      grad.addColorStop(0, "rgba(255,255,255,0)");
+      grad.addColorStop(0.5, "rgba(255,255,255,0.4)");
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      wctx.fillStyle = grad;
+      wctx.fillRect(0, 0, 32, 4);
+    }
+    const windTex = new THREE.CanvasTexture(windCanvas);
+    
+    const windMat = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 4.0,
+      map: windTex,
+      transparent: true,
+      opacity: 0, // dynamic
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    
+    this.windParticles = new THREE.Points(windGeo, windMat);
+    this.windParticles.renderOrder = 2;
+    this.group.add(this.windParticles);
   }
 
   public update(dt: number, elapsed: number, dronePos?: THREE.Vector3, envState?: EnvironmentState) {
@@ -281,7 +321,36 @@ export class WorldEnvironment {
 
     if (envState) {
       // Heat Haze
-      if (envState.temperature > 30) {
+      if (this.windParticles && dronePos) {
+        this.windParticles.position.x = dronePos.x;
+        this.windParticles.position.z = dronePos.z;
+        const windSpeed = envState.windSpeed || 0;
+        
+        // Show wind if speed > 2 m/s
+        const targetOpacity = Math.min(0.8, Math.max(0, (windSpeed - 2) * 0.05));
+        (this.windParticles.material as THREE.PointsMaterial).opacity = targetOpacity;
+
+        if (targetOpacity > 0 && this.windPositions) {
+          const windDirRad = ((envState.windDirection || 0) * Math.PI) / 180;
+          const vx = Math.cos(windDirRad) * windSpeed * dt * 2.0;
+          const vz = Math.sin(windDirRad) * windSpeed * dt * 2.0;
+          
+          for (let i = 0; i < this.windPositions.length / 3; i++) {
+            this.windPositions[i * 3] += vx;
+            this.windPositions[i * 3 + 2] += vz;
+            
+            // Loop boundaries relative to drone
+            if (this.windPositions[i * 3] > 100) this.windPositions[i * 3] -= 200;
+            if (this.windPositions[i * 3] < -100) this.windPositions[i * 3] += 200;
+            if (this.windPositions[i * 3 + 2] > 100) this.windPositions[i * 3 + 2] -= 200;
+            if (this.windPositions[i * 3 + 2] < -100) this.windPositions[i * 3 + 2] += 200;
+          }
+          this.windParticles.geometry.attributes.position.needsUpdate = true;
+          this.windParticles.rotation.y = -windDirRad; // align texture streak
+        }
+      }
+
+        if (envState.temperature > 30) {
         const heatIntensity = Math.min(1.0, (envState.temperature - 30) / 15.0);
         this.skyMat.uniforms.heatTint.value.setRGB(0.8 * heatIntensity, 0.4 * heatIntensity, 0.0);
       } else {
@@ -351,3 +420,5 @@ export class WorldEnvironment {
     }
   }
 }
+
+

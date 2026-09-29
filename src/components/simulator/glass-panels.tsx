@@ -269,7 +269,11 @@ export function RightGlassPanel({
                   <span className="text-[#38bdf8]">{environment.windSpeed.toFixed(1)} m/s</span>
                 </div>
                 <input type="range" min="0" max="25" step="0.5" value={environment.windSpeed}
-                  onChange={(e) => onUpdateEnvironment({ windSpeed: parseFloat(e.target.value) })}
+                  onChange={(e) => {
+                  const speed = parseFloat(e.target.value);
+                  const autoTurbulence = Math.min(1.0, speed * 0.04);
+                  onUpdateEnvironment({ windSpeed: speed, turbulence: autoTurbulence });
+                }}
                   className="w-full h-1.5 bg-black/50 rounded-lg appearance-none cursor-pointer accent-[#38bdf8]" />
               </div>
               <div>
@@ -352,6 +356,7 @@ export function RightGlassPanel({
     </>
   );
 }
+
 
 
 
