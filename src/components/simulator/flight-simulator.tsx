@@ -1361,7 +1361,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       />
 
       {/* Flight Controls Visual Guide */}
-      <FlightControlsOverlay telemetry={telemetry} onToggleMap={() => setIsMapModalOpen(true)} />
+      <FlightControlsOverlay telemetry={telemetry} autoMoveLocked={autoMoveLocked} onToggleMap={() => setIsMapModalOpen(true)} />
 
       {/* Real-Time Flight Coach Instrumentation */}
       <FlightCoachPanel
@@ -1406,6 +1406,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     </div>
   );
 }
+
 
 
 
