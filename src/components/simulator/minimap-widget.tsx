@@ -151,16 +151,16 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
 
             {/* Vision Cone Gradient */}
             <radialGradient id="fov-cone" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#ff5500" stopOpacity="0.40" />
-              <stop offset="70%" stopColor="#ff5500" stopOpacity="0.12" />
-              <stop offset="100%" stopColor="#ff5500" stopOpacity="0" />
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.40" />
+              <stop offset="70%" stopColor="#ffffff" stopOpacity="0.12" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
             </radialGradient>
           </defs>
 
           {/* Group clipped to circular radar bezel */}
           <g clipPath="url(#radar-clip)">
             {/* 1. Base Ocean Background (Deep Maritime Blue) */}
-            <rect width="200" height="200" fill="#081726" />
+            <rect width="200" height="200" fill="#030712" />
 
             {/* 2. Shallow Turquoise Coral Shelf */}
             <path
@@ -175,17 +175,17 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
             {/* 3. Scrolling Island Coastline (Natural Golden Sand Beach) */}
             <path
               d={localCoastlinePath}
-              fill="#dfc086"
-              stroke="#c29d5b"
-              strokeWidth="6"
+              fill="#0a0a0a"
+              stroke="#ffffff"
+              strokeWidth="1.5"
               strokeLinejoin="round"
             />
 
             {/* 4. Scrolling Island Turf Landmass (Solid Natural Green) */}
             <path
               d={localCoastlinePath}
-              fill="#1b3d2b"
-              stroke="#2d5e3f"
+              fill="#0a0a0a"
+              stroke="#ffffff"
               strokeWidth="2"
               strokeLinejoin="round"
             />
@@ -234,13 +234,13 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
             </g>
 
             {/* 5. Concentric Tactical Range Rings (50m, 100m, 150m) */}
-            <circle cx="100" cy="100" r={50 * SCALE} fill="none" stroke="#22d3ee" strokeWidth="0.8" strokeDasharray="2 3" opacity="0.40" />
-            <circle cx="100" cy="100" r={100 * SCALE} fill="none" stroke="#22d3ee" strokeWidth="0.8" strokeDasharray="3 3" opacity="0.35" />
-            <circle cx="100" cy="100" r={150 * SCALE} fill="none" stroke="#22d3ee" strokeWidth="0.8" strokeDasharray="4 4" opacity="0.30" />
+            <circle cx="100" cy="100" r={50 * SCALE} fill="none" stroke="#ffffff" strokeWidth="0.8" strokeDasharray="2 3" opacity="0.40" />
+            <circle cx="100" cy="100" r={100 * SCALE} fill="none" stroke="#ffffff" strokeWidth="0.8" strokeDasharray="3 3" opacity="0.35" />
+            <circle cx="100" cy="100" r={150 * SCALE} fill="none" stroke="#ffffff" strokeWidth="0.8" strokeDasharray="4 4" opacity="0.30" />
 
             {/* Crosshair Axes */}
-            <line x1="100" y1="4" x2="100" y2="196" stroke="#22d3ee" strokeWidth="0.6" opacity="0.25" />
-            <line x1="4" y1="100" x2="196" y2="100" stroke="#22d3ee" strokeWidth="0.6" opacity="0.25" />
+            <line x1="100" y1="4" x2="100" y2="196" stroke="#ffffff" strokeWidth="0.6" opacity="0.25" />
+            <line x1="4" y1="100" x2="196" y2="100" stroke="#ffffff" strokeWidth="0.6" opacity="0.25" />
 
             {/* 6. Nearby Helipads Beacons */}
             {nearbyHelipads.map((pad) => (
@@ -261,18 +261,18 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
                   y1={-(targetRel.ry - CENTER)}
                   x2="0"
                   y2="0"
-                  stroke="#ff5500"
+                  stroke="#ffffff"
                   strokeWidth="1.5"
                   strokeDasharray="3 2"
                   opacity="0.75"
                 />
-                <circle cx="0" cy="0" r="8" fill="none" stroke="#ff5500" strokeWidth="1.5" className="animate-ping" opacity="0.7" />
-                <circle cx="0" cy="0" r="5" fill="#ff5500" stroke="#ffffff" strokeWidth="1.2" />
+                <circle cx="0" cy="0" r="8" fill="none" stroke="#ffffff" strokeWidth="1.5" className="animate-ping" opacity="0.7" />
+                <circle cx="0" cy="0" r="5" fill="#ffffff" stroke="#ffffff" strokeWidth="1.2" />
               </g>
             ) : (
               // Navigation Edge Arrow pointing toward off-screen waypoint
               <g transform={`translate(${targetRel.edgeX}, ${targetRel.edgeY}) rotate(${targetRel.angleDeg})`}>
-                <polygon points="6,0 -4,-5 -1,0 -4,5" fill="#ff5500" stroke="#ffffff" strokeWidth="0.8" />
+                <polygon points="6,0 -4,-5 -1,0 -4,5" fill="#ffffff" stroke="#ffffff" strokeWidth="0.8" />
               </g>
             )}
 
@@ -282,17 +282,17 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
                 d="M 0 0 L -25 -70 A 70 70 0 0 1 25 -70 Z"
                 fill="url(#fov-cone)"
               />
-              <line x1="0" y1="0" x2="0" y2="-70" stroke="#ff5500" strokeWidth="1.2" strokeDasharray="3 2" opacity="0.85" />
+              <line x1="0" y1="0" x2="0" y2="-70" stroke="#ffffff" strokeWidth="1.2" strokeDasharray="3 2" opacity="0.85" />
             </g>
 
             {/* 9. Center Aircraft Marker */}
             <g transform="translate(100, 100)">
               {/* Drone Center Pulse */}
-              <circle cx="0" cy="0" r="8" fill="none" stroke="#ff5500" strokeWidth="1.2" opacity="0.6" />
+              <circle cx="0" cy="0" r="8" fill="none" stroke="#ffffff" strokeWidth="1.2" opacity="0.6" />
               <circle cx="0" cy="0" r="3.5" fill="#000000" stroke="#ffffff" strokeWidth="1.2" />
               {/* Rotating Heading Chevron */}
               <g transform={`rotate(${heading})`}>
-                <polygon points="0,-8 -4,-2 0,-4 4,-2" fill="#ff5500" stroke="#000000" strokeWidth="0.8" />
+                <polygon points="0,-8 -4,-2 0,-4 4,-2" fill="#ffffff" stroke="#000000" strokeWidth="0.8" />
               </g>
             </g>
           </g>
@@ -300,8 +300,8 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
           {/* 10. Outer Cardinal Compass Indicators */}
           <g>
             {/* North Indicator */}
-            <polygon points="100,4 103,10 97,10" fill="#ff5500" />
-            <text x="100" y="18" fill="#ff5500" fontSize="7" fontWeight="900" textAnchor="middle" fontFamily="monospace">
+            <polygon points="100,4 103,10 97,10" fill="#ffffff" />
+            <text x="100" y="18" fill="#ffffff" fontSize="7" fontWeight="900" textAnchor="middle" fontFamily="monospace">
               N
             </text>
             <text x="190" y="102" fill="#94a3b8" fontSize="6.5" fontWeight="bold" textAnchor="middle" fontFamily="monospace">
@@ -323,14 +323,14 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
         </div>
 
         {/* Bottom Distance to Target Pill ("Where we want to go") */}
-        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-white/95 border border-[#ff5500]/60 text-[8px] font-mono font-bold text-neutral-800 tracking-tight flex items-center gap-1 shadow-sm whitespace-nowrap">
-          <Target className="h-2.5 w-2.5 text-[#ff5500]" />
+        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-white/95 border border-[#ffffff]/60 text-[8px] font-mono font-bold text-neutral-800 tracking-tight flex items-center gap-1 shadow-sm whitespace-nowrap">
+          <Target className="h-2.5 w-2.5 text-[#ffffff]" />
           <span>{targetWaypoint.name}: {targetRel.dist.toFixed(0)}m</span>
         </div>
 
         {/* Hover Expand Prompt */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-neutral-900/90 text-white border border-[#ff5500] text-[9px] font-bold px-2 py-1 rounded shadow-lg font-mono tracking-wider">
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-neutral-900/90 text-white border border-[#ffffff] text-[9px] font-bold px-2 py-1 rounded shadow-lg font-mono tracking-wider">
             EXPAND (M)
           </span>
         </div>

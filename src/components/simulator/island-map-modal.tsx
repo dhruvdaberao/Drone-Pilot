@@ -256,20 +256,20 @@ export function IslandMapModal({
         {/* Header Bar */}
         <header className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-white/10 bg-neutral-900 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-200 flex items-center justify-center text-[#ff5500] shadow-xs">
-              <Compass className="h-4 w-4 text-[#ff5500]" />
+            <div className="w-8 h-8 rounded-lg bg-blue-900/40 border border-blue-500/30 flex items-center justify-center text-[#38bdf8] shadow-xs">
+              <Compass className="h-4 w-4 text-[#38bdf8]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-heading font-extrabold text-sm sm:text-base tracking-wider uppercase text-white">
+                <h2 className="font-heading font-extrabold text-xl sm:text-xl tracking-wider uppercase text-white">
                   Tactical Island Map
                 </h2>
-                <span className="bg-orange-50 border border-orange-200 text-[#ff5500] text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ff5500] animate-ping" />
+                <span className="bg-blue-900/40 border border-blue-500/30 text-[#38bdf8] text-xl font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] animate-ping" />
                   Live GPS
                 </span>
               </div>
-              <p className="text-[10px] text-white/50 hidden sm:block">
+              <p className="text-xl text-white/50 hidden sm:block">
                 Island Grid 2.4km × 2.2km • Topographical Architecture & Waypoints
               </p>
             </div>
@@ -277,16 +277,16 @@ export function IslandMapModal({
 
           <div className="flex items-center gap-3">
             {/* Telemetry Coordinate Pill */}
-            <div className="hidden md:flex items-center gap-2.5 bg-neutral-50 px-3 py-1.5 rounded-lg border border-white/10 text-xs text-white/80">
-              <span className="text-white/40 text-[10px]">POS:</span>
+            <div className="hidden md:flex items-center gap-2.5 bg-neutral-50 px-3 py-1.5 rounded-lg border border-white/10 text-xl text-white/80">
+              <span className="text-white/40 text-xl">POS:</span>
               <strong className="text-white font-mono">
                 X:{telemetry.position.x.toFixed(0)}m Z:{telemetry.position.z.toFixed(0)}m
               </strong>
               <span className="text-white/20">|</span>
-              <span className="text-white/40 text-[10px]">ALT:</span>
-              <strong className="text-[#ff5500] font-mono">{telemetry.altitude.toFixed(1)}m</strong>
+              <span className="text-white/40 text-xl">ALT:</span>
+              <strong className="text-[#38bdf8] font-mono">{telemetry.altitude.toFixed(1)}m</strong>
               <span className="text-white/20">|</span>
-              <span className="text-white/40 text-[10px]">HDG:</span>
+              <span className="text-white/40 text-xl">HDG:</span>
               <strong className="text-white font-mono">{telemetry.heading}°</strong>
             </div>
 
@@ -294,7 +294,7 @@ export function IslandMapModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900/10 hover:bg-neutral-900/20 active:scale-95 text-white/90 text-xs font-bold border border-white/10 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900/10 hover:bg-neutral-900/20 active:scale-95 text-white/90 text-xl font-bold border border-white/10 transition-all cursor-pointer"
               title="Close Map (Esc)"
             >
               <X className="h-4 w-4 text-white/60" />
@@ -323,9 +323,9 @@ export function IslandMapModal({
 
               <button
                 onClick={() => setZoomLevel(1.0)}
-                className={`px-2 py-1 rounded-lg text-[10px] font-bold font-mono transition-all cursor-pointer ${
+                className={`px-2 py-1 rounded-lg text-xl font-bold font-mono transition-all cursor-pointer ${
                   zoomLevel === 1.0
-                    ? "bg-[#ff5500] text-white shadow-xs"
+                    ? "bg-[#38bdf8] text-white shadow-xs"
                     : "text-white/80 hover:bg-white/10"
                 }`}
                 title="Full Island Overview (100%)"
@@ -334,9 +334,9 @@ export function IslandMapModal({
               </button>
               <button
                 onClick={() => setZoomLevel(1.6)}
-                className={`px-2 py-1 rounded-lg text-[10px] font-bold font-mono transition-all cursor-pointer ${
+                className={`px-2 py-1 rounded-lg text-xl font-bold font-mono transition-all cursor-pointer ${
                   zoomLevel === 1.6
-                    ? "bg-[#ff5500] text-white shadow-xs"
+                    ? "bg-[#38bdf8] text-white shadow-xs"
                     : "text-white/80 hover:bg-white/10"
                 }`}
                 title="Regional Sector View (160%)"
@@ -345,9 +345,9 @@ export function IslandMapModal({
               </button>
               <button
                 onClick={() => setZoomLevel(2.4)}
-                className={`px-2 py-1 rounded-lg text-[10px] font-bold font-mono transition-all cursor-pointer ${
+                className={`px-2 py-1 rounded-lg text-xl font-bold font-mono transition-all cursor-pointer ${
                   zoomLevel === 2.4
-                    ? "bg-[#ff5500] text-white shadow-xs"
+                    ? "bg-[#38bdf8] text-white shadow-xs"
                     : "text-white/80 hover:bg-white/10"
                 }`}
                 title="Tactical Focus View (240%)"
@@ -368,344 +368,230 @@ export function IslandMapModal({
 
             {/* Topographical SVG Map Canvas */}
             <svg
-              viewBox={`0 0 ${SVG_CANVAS_SIZE} ${SVG_CANVAS_SIZE}`}
-              className="w-full h-full max-w-[720px] max-h-[720px] rounded-xl border border-white/10/90 shadow-lg bg-[#081726] transition-transform duration-300 ease-out"
-              style={{
-                transform: `scale(${zoomLevel})`,
-                transformOrigin: zoomLevel <= 1.05 ? "center center" : `${droneSvg.x}px ${droneSvg.y}px`,
-              }}
-            >
-              <defs>
-                <pattern id="modal-recon-grid" width="60" height="60" patternUnits="userSpaceOnUse">
-                  <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#132a45" strokeWidth="0.8" opacity="0.6" />
-                </pattern>
+                viewBox={`0 0 ${SVG_CANVAS_SIZE} ${SVG_CANVAS_SIZE}`}
+                className="w-full h-full max-w-[720px] max-h-[720px] rounded-xl border border-white/10 shadow-lg bg-[#030712] transition-transform duration-300 ease-out"
+                style={{
+                  transform: `scale(${zoomLevel})`,
+                  transformOrigin: zoomLevel <= 1.05 ? "center center" : `${droneSvg.x}px ${droneSvg.y}px`,
+                }}
+              >
+                <defs>
+                  <pattern id="modal-recon-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" strokeWidth="1" opacity="0.05" />
+                  </pattern>
 
-                <radialGradient id="modal-recon-cone" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#ff5500" stopOpacity="0.45" />
-                  <stop offset="70%" stopColor="#ff5500" stopOpacity="0.10" />
-                  <stop offset="100%" stopColor="#ff5500" stopOpacity="0" />
-                </radialGradient>
-              </defs>
+                  <radialGradient id="modal-recon-cone" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.45" />
+                    <stop offset="70%" stopColor="#38bdf8" stopOpacity="0.10" />
+                    <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
 
-              {/* 1. Deep Maritime Ocean Water */}
-              <rect width={SVG_CANVAS_SIZE} height={SVG_CANVAS_SIZE} fill="#081726" />
-              <rect width={SVG_CANVAS_SIZE} height={SVG_CANVAS_SIZE} fill="url(#modal-recon-grid)" />
+                <rect width={SVG_CANVAS_SIZE} height={SVG_CANVAS_SIZE} fill="#030712" />
+                <rect width={SVG_CANVAS_SIZE} height={SVG_CANVAS_SIZE} fill="url(#modal-recon-grid)" />
 
-              {/* 2. Shallow Coral Reef Turquoise Water Shelf */}
-              <path
-                d={mapData.coastlinePath}
-                fill="none"
-                stroke="#0d4a6e"
-                strokeWidth="24"
-                strokeLinejoin="round"
-                opacity="0.85"
-              />
-
-              {/* 3. Natural Golden Sand Beach Coastline */}
-              <path
-                d={mapData.coastlinePath}
-                fill="#020617"
-                stroke="#0f172a"
-                strokeWidth="8"
-                strokeLinejoin="round"
-              />
-
-              {/* 4. Natural Island Landmass */}
-              <path
-                d={mapData.coastlinePath}
-                fill="#0f172a"
-                stroke="#1e293b"
-                strokeWidth="2"
-                strokeLinejoin="round"
-              />
-
-              {/* Central Plains Meadow Zone around Airfield */}
-              <ellipse cx="450" cy="450" rx="170" ry="120" fill="#254d37" opacity="0.8" />
-
-              {/* 5. Natural Regional Biomes & Elevation Relief */}
-              {/* NW MOUNT APEX MASSIF */}
-              <g transform="translate(285, 265)">
-                <ellipse cx="0" cy="0" rx="130" ry="100" fill="#2e3b4e" stroke="#475569" strokeWidth="1.5" />
-                <ellipse cx="-15" cy="-12" rx="90" ry="70" fill="#3b4b5e" stroke="#64748b" strokeWidth="1.2" />
-                <ellipse cx="-25" cy="-20" rx="55" ry="40" fill="#4d5f75" stroke="#94a3b8" strokeWidth="1" />
-                <circle cx="-30" cy="-25" r="18" fill="#e2e8f0" opacity="0.9" />
-                <text x="-30" y="-21" fill="#0f172a" fontSize="9" fontWeight="900" textAnchor="middle">
-                  145m
-                </text>
-                <text x="-10" y="24" fill="#cbd5e1" fontSize="8" fontWeight="bold" textAnchor="middle">
-                  MT APEX MASSIF
-                </text>
-              </g>
-
-              {/* WEST WHISPERING PINES FOREST */}
-              <g transform="translate(275, 460)">
-                <ellipse cx="0" cy="0" rx="120" ry="90" fill="#133621" opacity="0.95" stroke="#164e2a" strokeWidth="1.2" />
-                <circle cx="-35" cy="-25" r="24" fill="#0e2919" opacity="0.8" />
-                <circle cx="30" cy="-30" r="28" fill="#0e2919" opacity="0.8" />
-                <circle cx="-20" cy="25" r="30" fill="#0e2919" opacity="0.8" />
-                <circle cx="35" cy="25" r="24" fill="#0e2919" opacity="0.8" />
-                <text x="0" y="-55" fill="#86efac" fontSize="8" fontWeight="bold" textAnchor="middle" opacity="0.9">
-                  WHISPERING PINES
-                </text>
-              </g>
-
-              {/* ALPINE LAKE & CARVED RIVER CANYON */}
-              <circle
-                cx={mapData.waterways.lake.cx}
-                cy={mapData.waterways.lake.cy}
-                r={mapData.waterways.lake.r}
-                fill="#0284c7"
-                stroke="#38bdf8"
-                strokeWidth="2"
-              />
-              <text x={mapData.waterways.lake.cx} y={mapData.waterways.lake.cy + 3} fill="#ffffff" fontSize="7.5" fontWeight="bold" textAnchor="middle">
-                LAKE
-              </text>
-
-              {/* River Channel */}
-              <path
-                d={mapData.waterways.riverPath}
-                fill="none"
-                stroke="#0c4a6e"
-                strokeWidth="16"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d={mapData.waterways.riverPath}
-                fill="none"
-                stroke="#0284c7"
-                strokeWidth="11"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-
-              {/* 6. Master Road & Highway Network */}
-              <g fill="none" stroke="#0f172a" strokeLinecap="round" strokeLinejoin="round">
-                {mapData.roads.highways.map((h) => (
-                  <path key={h.id} d={h.path} strokeWidth={h.width + 4} />
-                ))}
-                {mapData.roads.connectors.map((c) => (
-                  <path key={c.id} d={c.path} strokeWidth={c.width + 3} />
-                ))}
-                {mapData.roads.mountainPasses.map((m) => (
-                  <path key={m.id} d={m.path} strokeWidth={m.width + 2} />
-                ))}
-              </g>
-              <g fill="none" stroke="#f59e0b" strokeLinecap="round" strokeLinejoin="round">
-                {mapData.roads.highways.map((h) => (
-                  <path key={h.id} d={h.path} strokeWidth={h.width + 1} />
-                ))}
-                {mapData.roads.connectors.map((c) => (
-                  <path key={c.id} d={c.path} strokeWidth={c.width} />
-                ))}
-                {mapData.roads.mountainPasses.map((m) => (
-                  <path key={m.id} d={m.path} strokeWidth={m.width} strokeDasharray="5 4" />
-                ))}
-              </g>
-
-              {/* Highway River Canyon Bridge */}
-              {mapData.roads.bridges.map((b) => (
+                {/* Coastline */}
                 <path
-                  key={b.id}
-                  d={b.path}
-                  fill="none"
-                  stroke="#cbd5e1"
-                  strokeWidth={b.width + 2}
-                  strokeLinecap="butt"
+                  d={mapData.coastlinePath}
+                  fill="#0a0a0a"
+                  stroke="#ffffff"
+                  strokeWidth="1.5"
+                  strokeOpacity="0.15"
+                  strokeLinejoin="round"
                 />
-              ))}
 
-              {/* 7. Central Airfield & Runway Complex */}
-              <g transform="translate(450, 450)">
-                <polygon points="-70,-20 70,-20 80,20 -80,20" fill="#1e293b" stroke="#475569" strokeWidth="1" />
-                <rect x="-80" y="-12" width="160" height="24" rx="2" fill="#0f172a" stroke="#cbd5e1" strokeWidth="1.5" />
-                <line x1="-70" y1="0" x2="70" y2="0" stroke="#ffffff" strokeWidth="1.8" strokeDasharray="6 5" />
-                <line x1="-76" y1="-8" x2="-76" y2="8" stroke="#ffffff" strokeWidth="2.5" />
-                <line x1="76" y1="-8" x2="76" y2="8" stroke="#ffffff" strokeWidth="2.5" />
-                <text x="0" y="-16" fill="#94a3b8" fontSize="7" fontWeight="bold" textAnchor="middle">
-                  RUNWAY 09/27
-                </text>
-              </g>
-
-              {/* 8. Downtown Metropolis & Harbor Marina */}
-              <g transform="translate(680, 550)">
-                <rect x="-85" y="-75" width="170" height="150" rx="8" fill="#1e293b" stroke="#475569" strokeWidth="1.5" />
-                <line x1="-85" y1="-20" x2="85" y2="-20" stroke="#334155" strokeWidth="6" />
-                <line x1="-85" y1="35" x2="85" y2="35" stroke="#334155" strokeWidth="6" />
-                <line x1="-20" y1="-75" x2="-20" y2="75" stroke="#334155" strokeWidth="6" />
-                <line x1="35" y1="-75" x2="35" y2="75" stroke="#334155" strokeWidth="6" />
-                {/* Skyscraper Blocks */}
-                <rect x="-70" y="-60" width="38" height="32" rx="2" fill="#0f172a" stroke="#64748b" strokeWidth="1.5" />
-                <rect x="45" y="-60" width="32" height="32" rx="2" fill="#0f172a" stroke="#64748b" strokeWidth="1.5" />
-                {/* Apex High-Rise Tower */}
-                <rect x="15" y="10" width="40" height="40" rx="2" fill="#020617" stroke="#38bdf8" strokeWidth="2" />
-                <text x="35" y="34" fill="#38bdf8" fontSize="8" fontWeight="900" textAnchor="middle">
-                  APEX
-                </text>
-                <text x="0" y="-66" fill="#93c5fd" fontSize="8" fontWeight="bold" textAnchor="middle">
-                  METROPOLIS
-                </text>
-              </g>
-
-              {/* Harbor Industrial Wharves & Piers */}
-              <g transform="translate(560, 700)">
-                <rect x="-35" y="-20" width="70" height="40" rx="4" fill="#334155" stroke="#64748b" strokeWidth="1" />
-                <rect x="-10" y="20" width="10" height="45" fill="#78350f" stroke="#451a03" strokeWidth="1" />
-                <rect x="12" y="20" width="10" height="55" fill="#78350f" stroke="#451a03" strokeWidth="1" />
-                <text x="0" y="-25" fill="#fcd34d" fontSize="7.5" fontWeight="bold" textAnchor="middle">
-                  HARBOR PORT
-                </text>
-              </g>
-
-              {/* 9. Live Flight Trail */}
-              {flightPathPoints && (
-                <polyline
-                  points={flightPathPoints}
+                {/* Lake */}
+                <circle
+                  cx={mapData.waterways.lake.cx}
+                  cy={mapData.waterways.lake.cy}
+                  r={mapData.waterways.lake.r}
+                  fill="#ffffff"
+                  fillOpacity="0.03"
+                  stroke="#ffffff"
+                  strokeWidth="1"
+                  strokeOpacity="0.1"
+                />
+                
+                {/* River Channel */}
+                <path
+                  d={mapData.waterways.riverPath}
                   fill="none"
-                  stroke="#ff5500"
-                  strokeWidth="2.5"
-                  strokeDasharray="4 3"
+                  stroke="#ffffff"
+                  strokeWidth="4"
+                  strokeOpacity="0.05"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                />
+
+                {/* Master Road & Highway Network */}
+                <g fill="none" stroke="#ffffff" strokeOpacity="0.2" strokeLinecap="round" strokeLinejoin="round">
+                  {mapData.roads.highways.map((h) => (
+                    <path key={h.id} d={h.path} strokeWidth={h.width} />
+                  ))}
+                  {mapData.roads.connectors.map((c) => (
+                    <path key={c.id} d={c.path} strokeWidth={c.width} />
+                  ))}
+                  {mapData.roads.mountainPasses.map((m) => (
+                    <path key={m.id} d={m.path} strokeWidth={m.width} strokeDasharray="5 4" />
+                  ))}
+                </g>
+
+                {/* Central Airfield & Runway Complex */}
+                <g transform="translate(450, 450)">
+                  <rect x="-80" y="-12" width="160" height="24" rx="2" fill="none" stroke="#ffffff" strokeOpacity="0.3" strokeWidth="1.5" />
+                  <line x1="-70" y1="0" x2="70" y2="0" stroke="#ffffff" strokeOpacity="0.2" strokeWidth="1.8" strokeDasharray="6 5" />
+                  <text x="0" y="-18" fill="#ffffff" fillOpacity="0.4" fontSize="12" fontWeight="bold" textAnchor="middle">
+                    RUNWAY 09/27
+                  </text>
+                </g>
+
+                {/* Live Flight Trail */}
+                {flightPathPoints && (
+                  <polyline
+                    points={flightPathPoints}
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="2.5"
+                    strokeDasharray="4 3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity="0.65"
+                  />
+                )}
+
+                {/* Active Waypoint Line */}
+                <line
+                  x1={droneSvg.x}
+                  y1={droneSvg.y}
+                  x2={targetSvg.x}
+                  y2={targetSvg.y}
+                  stroke="#ffffff"
+                  strokeWidth="2.2"
+                  strokeDasharray="6 4"
                   opacity="0.85"
                 />
-              )}
 
-              {/* 10. Active Waypoint Line */}
-              <line
-                x1={droneSvg.x}
-                y1={droneSvg.y}
-                x2={targetSvg.x}
-                y2={targetSvg.y}
-                stroke="#ff5500"
-                strokeWidth="2.2"
-                strokeDasharray="6 4"
-                opacity="0.95"
-              />
+                {/* Midpoint Distance Tag */}
+                <g transform={`translate(${(droneSvg.x + targetSvg.x) / 2}, ${(droneSvg.y + targetSvg.y) / 2})`}>
+                  <rect x="-40" y="-14" width="80" height="28" rx="4" fill="#000000" stroke="#ffffff" strokeWidth="1.2" />
+                  <text x="0" y="5" fill="#ffffff" fontSize="13" fontWeight="900" textAnchor="middle">
+                    {navStats.dist.toFixed(0)}m
+                  </text>
+                </g>
 
-              {/* Midpoint Distance Tag */}
-              <g transform={`translate(${(droneSvg.x + targetSvg.x) / 2}, ${(droneSvg.y + targetSvg.y) / 2})`}>
-                <rect x="-35" y="-10" width="70" height="20" rx="4" fill="#020617" stroke="#ff5500" strokeWidth="1.2" />
-                <text x="0" y="3" fill="#ff5500" fontSize="9" fontWeight="900" textAnchor="middle">
-                  {navStats.dist.toFixed(0)}m
-                </text>
-              </g>
+                {/* Helipads & Landmarks with Anti-Collision Labels */}
+                {TACTICAL_POIS.map((poi) => {
+                  const pt = worldToSvg(poi.x, poi.z);
+                  const isSelected = poi.id === selectedPoiId;
+                  const ox = poi.labelOffsetX;
+                  const oy = poi.labelOffsetY;
 
-              {/* 11. Helipads & Landmarks with Anti-Collision Labels */}
-              {TACTICAL_POIS.map((poi) => {
-                const pt = worldToSvg(poi.x, poi.z);
-                const isSelected = poi.id === selectedPoiId;
-                const ox = poi.labelOffsetX;
-                const oy = poi.labelOffsetY;
-
-                return (
-                  <g
-                    key={poi.id}
-                    className="cursor-pointer group"
-                    onClick={() => handleSelectTarget(poi)}
-                  >
-                    {isSelected && (
-                      <circle cx={pt.x} cy={pt.y} r="18" fill="none" stroke="#ff5500" strokeWidth="2" className="animate-ping" opacity="0.75" />
-                    )}
-
-                    <circle
-                      cx={pt.x}
-                      cy={pt.y}
-                      r="10"
-                      fill={isSelected ? "#ff5500" : "#0f172a"}
-                      stroke={isSelected ? "#ffffff" : "#22c55e"}
-                      strokeWidth={isSelected ? "2.5" : "2"}
-                      className="transition-transform duration-150 group-hover:scale-125 shadow-lg"
-                    />
-
-                    <text
-                      x={pt.x}
-                      y={pt.y + 3.5}
-                      fill={isSelected ? "#000000" : "#22c55e"}
-                      fontSize="10"
-                      fontWeight="900"
-                      textAnchor="middle"
+                  return (
+                    <g
+                      key={poi.id}
+                      className="cursor-pointer group"
+                      onClick={() => handleSelectTarget(poi)}
                     >
-                      H
-                    </text>
+                      {isSelected && (
+                        <circle cx={pt.x} cy={pt.y} r="18" fill="none" stroke="#ffffff" strokeWidth="2" className="animate-ping" opacity="0.75" />
+                      )}
 
-                    {/* Offset Callout Badge */}
-                    <g transform={`translate(${pt.x + ox}, ${pt.y + oy})`}>
-                      <rect
-                        x="-46"
-                        y="-10"
-                        width="92"
-                        height="18"
-                        rx="4"
-                        fill="#020617"
-                        stroke={isSelected ? "#ff5500" : "#475569"}
-                        strokeWidth={isSelected ? "1.8" : "1"}
-                        opacity="0.96"
-                        className="shadow-xl"
+                      <circle
+                        cx={pt.x}
+                        cy={pt.y}
+                        r="12"
+                        fill={isSelected ? "#ffffff" : "#000000"}
+                        stroke="#ffffff"
+                        strokeWidth={isSelected ? "2.5" : "1.5"}
+                        strokeOpacity={isSelected ? "1" : "0.5"}
+                        className="transition-transform duration-150 group-hover:scale-125 shadow-lg"
                       />
                       <text
-                        x="0"
-                        y="2"
-                        fill={isSelected ? "#ff5500" : "#f8fafc"}
-                        fontSize="8"
-                        fontWeight="bold"
+                        x={pt.x}
+                        y={pt.y + 4}
+                        fill={isSelected ? "#000000" : "#ffffff"}
+                        fontSize="11"
+                        fontWeight="900"
                         textAnchor="middle"
+                        className="pointer-events-none"
                       >
-                        {poi.callsign} • {poi.elevation}
+                        H
                       </text>
+
+                      {/* Premium Label */}
+                      <g transform={`translate(${pt.x + ox}, ${pt.y + oy})`}>
+                        <rect
+                          x="-70"
+                          y="-16"
+                          width="140"
+                          height="28"
+                          rx="4"
+                          fill="#000000"
+                          fillOpacity="0.8"
+                          stroke="#ffffff"
+                          strokeOpacity={isSelected ? "1" : "0.3"}
+                          strokeWidth="1.5"
+                        />
+                        <text
+                          x="0"
+                          y="4"
+                          fill="#ffffff"
+                          fontSize="13"
+                          fontWeight="bold"
+                          textAnchor="middle"
+                          className="pointer-events-none shadow-black drop-shadow-md"
+                        >
+                          {poi.name}
+                        </text>
+                      </g>
                     </g>
+                  );
+                })}
+
+                {/* Drone Tracker Reticle */}
+                <g transform={`translate(${droneSvg.x}, ${droneSvg.y})`}>
+                  <g transform={`rotate(${telemetry.heading})`}>
+                    <path d="M 0 0 L -45 -120 A 120 120 0 0 1 45 -120 Z" fill="url(#modal-recon-cone)" />
                   </g>
-                );
-              })}
-
-              {/* 12. Live Drone Marker & Radar Sweep Vision Cone */}
-              <g transform={`translate(${droneSvg.x}, ${droneSvg.y})`}>
-                <g transform={`rotate(${telemetry.heading})`}>
-                  <path d="M 0 0 L -35 -100 A 100 100 0 0 1 35 -100 Z" fill="url(#modal-recon-cone)" />
-                  <line x1="0" y1="0" x2="0" y2="-100" stroke="#ff5500" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.9" />
+                  <circle cx="0" cy="0" r="16" fill="none" stroke="#ffffff" strokeWidth="2" className="animate-ping" opacity="0.6" />
+                  <circle cx="0" cy="0" r="12" fill="#ffffff" stroke="#000000" strokeWidth="2" />
+                  <g transform={`rotate(${telemetry.heading})`}>
+                    <path d="M 0 -14 L -7 7 L 0 3 L 7 7 Z" fill="#000000" />
+                  </g>
                 </g>
-
-                <circle cx="0" cy="0" r="14" fill="none" stroke="#ff5500" strokeWidth="2" className="animate-ping" opacity="0.6" />
-                <circle cx="0" cy="0" r="10" fill="#0f172a" stroke="#ffffff" strokeWidth="2" />
-                
-                <g transform={`rotate(${telemetry.heading})`}>
-                  <polygon points="0,-8 5,5 0,2 -5,5" fill="#ff5500" stroke="#000000" strokeWidth="0.8" />
-                </g>
-              </g>
-            </svg>
+              </svg>
           </div>
 
           {/* Tactical Info & Waypoint Selector Sidebar — White Theme */}
-          <div className="w-full landscape:w-72 lg:w-84 bg-neutral-50/90 border-t landscape:border-t-0 landscape:border-l lg:border-t-0 lg:border-l border-white/10 flex flex-col justify-between p-4 overflow-y-auto max-h-[40vh] landscape:max-h-none lg:max-h-none text-xs custom-scrollbar">
+          <div className="w-full landscape:w-72 lg:w-84 bg-neutral-50/90 border-t landscape:border-t-0 landscape:border-l lg:border-t-0 lg:border-l border-white/10 flex flex-col justify-between p-4 overflow-y-auto max-h-[40vh] landscape:max-h-none lg:max-h-none text-xl custom-scrollbar">
             
             <div className="space-y-4">
               {/* Active Target Banner */}
               <div className="p-3.5 rounded-xl bg-neutral-900 border border-white/10 shadow-xs space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/50 uppercase tracking-wider">
-                    <Target className="h-3.5 w-3.5 text-[#ff5500]" />
+                  <div className="flex items-center gap-1.5 text-xl font-bold text-white/50 uppercase tracking-wider">
+                    <Target className="h-3.5 w-3.5 text-[#38bdf8]" />
                     <span>WAYPOINT TARGET</span>
                   </div>
-                  <span className="text-[10px] font-bold text-[#ff5500] font-mono bg-orange-50 px-2 py-0.5 rounded border border-orange-200">
+                  <span className="text-xl font-bold text-[#38bdf8] font-mono bg-blue-900/40 px-2 py-0.5 rounded border border-blue-500/30">
                     BEARING {navStats.bearing}°
                   </span>
                 </div>
 
                 <div className="flex justify-between items-baseline">
-                  <h3 className="font-heading font-extrabold text-sm text-white uppercase">
+                  <h3 className="font-heading font-extrabold text-xl text-white uppercase">
                     {activeTarget.name}
                   </h3>
-                  <strong className="text-base text-[#ff5500] font-mono">
+                  <strong className="text-xl text-[#38bdf8] font-mono">
                     {navStats.dist.toFixed(0)}m
                   </strong>
                 </div>
 
-                <p className="text-[11px] text-white/60 leading-relaxed">
+                <p className="text-xl text-white/60 leading-relaxed">
                   {activeTarget.description}
                 </p>
 
-                <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-[10px]">
+                <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-xl">
                   <div className="p-2 rounded-lg bg-neutral-50 border border-white/10">
                     <span className="text-white/50 block">EST FLIGHT TIME</span>
                     <strong className="text-white">~{navStats.etaSec}s @ cruise</strong>
@@ -719,7 +605,7 @@ export function IslandMapModal({
 
               {/* Waypoints & Helipads List */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-[10px] font-bold text-white/50 uppercase tracking-wider">
+                <div className="flex items-center justify-between text-xl font-bold text-white/50 uppercase tracking-wider">
                   <span>DESIGNATED STATIONS ({TACTICAL_POIS.length})</span>
                   <span className="text-white/40">CLICK TO TRACK</span>
                 </div>
@@ -735,31 +621,31 @@ export function IslandMapModal({
                         onClick={() => handleSelectTarget(poi)}
                         className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all border cursor-pointer ${
                           isSelected
-                            ? "bg-[#ff5500]/20 border-[#ff5500] text-white shadow-xs"
+                            ? "bg-[#38bdf8]/20 border-[#38bdf8] text-white shadow-xs"
                             : "bg-neutral-900 border-white/10 hover:border-neutral-300 hover:bg-white/10 text-white/90"
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <span
-                            className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] font-mono border ${
+                            className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-xl font-mono border ${
                               isSelected
-                                ? "bg-[#ff5500] text-white border-[#ff5500]"
+                                ? "bg-[#38bdf8] text-white border-[#38bdf8]"
                                 : "bg-neutral-900/10 text-blue-400 border-white/10"
                             }`}
                           >
                             H
                           </span>
                           <div>
-                            <span className="font-bold block text-xs leading-tight text-white">
+                            <span className="font-bold block text-xl leading-tight text-white">
                               {poi.name}
                             </span>
-                            <span className="text-[10px] text-white/50">
+                            <span className="text-xl text-white/50">
                               {poi.callsign} • {poi.elevation}
                             </span>
                           </div>
                         </div>
 
-                        <span className={`text-xs font-mono font-bold ${isSelected ? "text-[#ff5500]" : "text-white/60"}`}>
+                        <span className={`text-xl font-mono font-bold ${isSelected ? "text-[#38bdf8]" : "text-white/60"}`}>
                           {d.toFixed(0)}m
                         </span>
                       </button>
@@ -774,16 +660,16 @@ export function IslandMapModal({
               <button
                 type="button"
                 onClick={() => handleSelectTarget(TACTICAL_POIS[0])}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-neutral-900 hover:bg-white/10 text-white/90 border border-white/10 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-neutral-900 hover:bg-white/10 text-white/90 border border-white/10 text-xl font-bold transition-all cursor-pointer shadow-xs"
               >
-                <Crosshair className="h-3.5 w-3.5 text-[#ff5500]" />
+                <Crosshair className="h-3.5 w-3.5 text-[#38bdf8]" />
                 <span>Return Home (Alpha)</span>
               </button>
 
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-[#ff5500] hover:bg-[#e04b00] active:scale-95 text-white text-xs font-extrabold transition-all cursor-pointer shadow-md"
+                className="px-4 py-2 rounded-lg bg-[#38bdf8] hover:bg-[#e04b00] active:scale-95 text-white text-xl font-extrabold transition-all cursor-pointer shadow-md"
               >
                 Resume Flight
               </button>
