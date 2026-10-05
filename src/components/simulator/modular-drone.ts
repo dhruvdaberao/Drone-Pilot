@@ -169,34 +169,40 @@ export class ModularDrone {
     // Transparent background
     ctx.clearRect(0, 0, size, size);
 
-    // Concentric aerodynamic path rings
-    for (let r = 18; r < outerRadius; r += 1.5) {
+    // 1. Solid translucent base disc so the circle is actually visible against the ground!
+    ctx.beginPath();
+    ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(15, 15, 18, 0.45)"; // Translucent dark grey base
+    ctx.fill();
+
+    // 2. Concentric aerodynamic path rings (darker)
+    for (let r = 18; r < outerRadius; r += 2.0) {
       const normR = (r - 18) / (outerRadius - 18);
-      const density = Math.sin(normR * Math.PI) * 0.42 + 0.12;
+      const density = Math.sin(normR * Math.PI) * 0.3 + 0.1;
       ctx.beginPath();
       ctx.arc(center, center, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(10, 10, 10, ${density.toFixed(3)})`;
-      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = `rgba(5, 5, 5, ${density.toFixed(3)})`;
+      ctx.lineWidth = 1.0;
       ctx.stroke();
     }
 
-    // Outer safety orange safety tip ring streak (outer 18% radius)
-    const tipInner = outerRadius - 24;
-    for (let r = tipInner; r < outerRadius; r += 2) {
-      const tipAlpha = ((r - tipInner) / 24) * 0.85;
+    // 3. Outer safety orange tip streak
+    const tipInner = outerRadius - 16;
+    for (let r = tipInner; r < outerRadius; r += 1.5) {
+      const tipAlpha = ((r - tipInner) / 16) * 0.9;
       ctx.beginPath();
       ctx.arc(center, center, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(255, 68, 0, ${tipAlpha.toFixed(3)})`;
-      ctx.lineWidth = 2.0;
+      ctx.strokeStyle = `rgba(255, 85, 0, ${tipAlpha.toFixed(3)})`;
+      ctx.lineWidth = 1.5;
       ctx.stroke();
     }
 
-    // Subtle specular radial streak sheen
+    // 4. Specular radial streak sheen (bright highlight crossing the disc)
     const grad = ctx.createLinearGradient(0, 0, size, size);
     grad.addColorStop(0, "rgba(255, 255, 255, 0.0)");
-    grad.addColorStop(0.45, "rgba(255, 255, 255, 0.08)");
-    grad.addColorStop(0.55, "rgba(255, 255, 255, 0.18)");
-    grad.addColorStop(0.65, "rgba(255, 255, 255, 0.08)");
+    grad.addColorStop(0.45, "rgba(255, 255, 255, 0.0)");
+    grad.addColorStop(0.5, "rgba(255, 255, 255, 0.25)"); // Bright white slash
+    grad.addColorStop(0.55, "rgba(255, 255, 255, 0.0)");
     grad.addColorStop(1, "rgba(255, 255, 255, 0.0)");
     ctx.fillStyle = grad;
     ctx.beginPath();
