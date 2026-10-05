@@ -257,14 +257,14 @@ export class ModularDrone {
     // Label: "PAYLOAD"
     const canvas = document.createElement("canvas");
     canvas.width = 256; canvas.height = 64;
-    const ctx = canvas.getContext("2d")!;
-    ctx.fillStyle = "#cc5500";
-    ctx.fillRect(0, 0, 256, 64);
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 36px 'Inter', sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("PAYLOAD", 128, 34);
+    const labelCtx = canvas.getContext("2d")!;
+    labelCtx.fillStyle = "#cc5500";
+    labelCtx.fillRect(0, 0, 256, 64);
+    labelCtx.fillStyle = "#ffffff";
+    labelCtx.font = "bold 36px 'Inter', sans-serif";
+    labelCtx.textAlign = "center";
+    labelCtx.textBaseline = "middle";
+    labelCtx.fillText("PAYLOAD", 128, 34);
     
     const labelTex = new THREE.CanvasTexture(canvas);
     const labelMat = new THREE.MeshBasicMaterial({ map: labelTex });
