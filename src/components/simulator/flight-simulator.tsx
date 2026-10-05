@@ -1194,6 +1194,10 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
           motorCount={physicsEngineRef.current?.def.motorCount || 4}
           motorHealths={motorHealths}
           onSetMotorHealth={handleSetMotorHealth}
+          payloadMassKg={payloadMassKg}
+          onUpdatePayload={setPayloadMassKg}
+          sensorHealth={sensorHealth}
+          onToggleSensor={(sensor) => setSensorHealth(prev => ({ ...prev, [sensor]: !prev[sensor as keyof typeof prev] }))}
           onExit={onExit}
         />
 
@@ -1204,7 +1208,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
           activeWaypoint={activeWaypoint}
           onToggleMap={() => setIsMapModalOpen(true)}
           onResetEnvironment={() => handleApplyWeatherPreset("normal")}
-          currentInsight={currentInsight} payloadMassKg={payloadMassKg} onUpdatePayload={setPayloadMassKg}
+          currentInsight={currentInsight}
         />
 
         {/* Loading Screen Overlay */}

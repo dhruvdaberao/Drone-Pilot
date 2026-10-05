@@ -102,5 +102,5 @@ export const DRONES: DroneModel[] = [
 export const DEFAULT_DRONE_STORAGE_KEY = "drone_pilot_selected_drone";
 
 export function getDroneById(id: string): DroneModel | undefined {
-  return DRONES.find((d) => d.id === id);
+  return DRONES.find((d) => d.id === id || d.platformId === id);
 }

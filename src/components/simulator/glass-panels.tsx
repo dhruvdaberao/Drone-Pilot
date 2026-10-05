@@ -13,6 +13,10 @@ interface LeftGlassPanelProps {
   motorCount: number;
   motorHealths: number[];
   onSetMotorHealth: (idx: number, health: number) => void;
+  payloadMassKg: number;
+  onUpdatePayload: (mass: number) => void;
+  sensorHealth: Record<string, boolean>;
+  onToggleSensor: (sensor: string) => void;
   onExit: () => void;
 }
 
@@ -22,6 +26,10 @@ export function LeftGlassPanel({
   motorCount,
   motorHealths,
   onSetMotorHealth,
+  payloadMassKg,
+  onUpdatePayload,
+  sensorHealth,
+  onToggleSensor,
   onExit,
 }: LeftGlassPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -105,6 +113,43 @@ export function LeftGlassPanel({
                   <span className="text-2xl font-bold">{telemetry.groundSpeed.toFixed(1)}<span className="text-sm text-white/50 ml-1">km/h</span></span>
                 </div>
               </div>
+
+              {/* PAYLOAD CONFIG */}
+              <div className="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-4">
+                <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-[#facc15]" /> Payload Mass
+                </h3>
+                <div>
+                  <div className="flex justify-between text-xs font-bold mb-2 uppercase">
+                    <span className="text-white/60">Additional Weight</span>
+                    <span className="text-[#facc15]">{payloadMassKg.toFixed(1)} kg</span>
+                  </div>
+                  <input type="range" min="0" max="25" step="0.5" value={payloadMassKg}
+                    onChange={(e) => onUpdatePayload(parseFloat(e.target.value))}
+                    className="w-full h-1.5 bg-black/50 rounded-lg appearance-none cursor-pointer accent-[#facc15]" />
+                </div>
+              </div>
+
+              {/* SENSOR DIAGNOSTICS */}
+              <div className="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-4">
+                <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-[#38bdf8]" /> Sensor Diagnostics
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.entries(sensorHealth).map(([key, isHealthy]) => (
+                    <button
+                      key={key}
+                      onClick={() => onToggleSensor(key)}
+                      className={`flex flex-col items-start p-3 rounded-xl border transition-all ${isHealthy ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}
+                    >
+                      <span className="text-[10px] uppercase tracking-widest text-white/60 mb-1">{key}</span>
+                      <span className={`text-xs font-bold tracking-widest uppercase ${isHealthy ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {isHealthy ? 'ONLINE' : 'OFFLINE'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -128,7 +173,13 @@ export function LeftGlassPanel({
                       const output = (telemetry.motorOutputs && telemetry.motorOutputs[i] !== undefined)
                         ? telemetry.motorOutputs[i]
                         : 0;
-                      const color = output > 0.6 ? '#10b981' : output > 0.25 ? '#f59e0b' : '#ef4444';
+                      
+                      let color = '#6b7280'; // Disarmed / Idle (Grey)
+                      if (telemetry.isArmed && output > 0.05) {
+                        if (output > 0.8) color = '#f59e0b'; // High stress (Yellow/Amber)
+                        else if (output < 0.25) color = '#ef4444'; // Dropping / Low (Red)
+                        else color = '#10b981'; // Normal Hover Range (Green)
+                      }
                       return (
                         <g key={i}>
                           <line x1="50" y1="50" x2={x} y2={y} stroke="#374151" strokeWidth="3" />
@@ -149,8 +200,21 @@ export function LeftGlassPanel({
                     ? telemetry.motorOutputs[i]
                     : 0;
                   const outputPct = Math.round(liveOutput * 100);
-                  const outputColorClass = liveOutput > 0.6 ? 'text-emerald-400' : liveOutput > 0.25 ? 'text-amber-400' : 'text-rose-400';
-                  const barColorClass = liveOutput > 0.6 ? 'bg-emerald-400' : liveOutput > 0.25 ? 'bg-amber-400' : 'bg-rose-500';
+                  
+                  let outputColorClass = 'text-neutral-500';
+                  let barColorClass = 'bg-neutral-600';
+                  if (telemetry.isArmed && liveOutput > 0.05) {
+                    if (liveOutput > 0.8) {
+                      outputColorClass = 'text-amber-400';
+                      barColorClass = 'bg-amber-500';
+                    } else if (liveOutput < 0.25) {
+                      outputColorClass = 'text-rose-400';
+                      barColorClass = 'bg-rose-500';
+                    } else {
+                      outputColorClass = 'text-emerald-400';
+                      barColorClass = 'bg-emerald-500';
+                    }
+                  }
                   return (
                     <div key={i} className="bg-white/5 rounded-2xl p-4 border border-white/10">
                       {/* M label + live output % */}
@@ -211,8 +275,6 @@ interface RightGlassPanelProps {
   onToggleMap: () => void;
   onResetEnvironment: () => void;
   currentInsight: FlightCoachInsight | null;
-  payloadMassKg: number;
-  onUpdatePayload: (mass: number) => void;
 }
 
 export function RightGlassPanel({
@@ -222,7 +284,8 @@ export function RightGlassPanel({
   activeWaypoint,
   onToggleMap,
   onResetEnvironment,
-  currentInsight, payloadMassKg, onUpdatePayload }: RightGlassPanelProps) {
+  currentInsight
+}: RightGlassPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -362,24 +425,6 @@ export function RightGlassPanel({
                   <option className="bg-neutral-900" value="hazy">Hazy</option>
                   <option className="bg-neutral-900" value="foggy">Foggy</option>
                 </select>
-              </div>
-            </div>
-          </div>
-
-          {/* PAYLOAD CONFIG */}
-          <div className="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-5">
-            <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
-              <Activity className="w-4 h-4 text-[#facc15]" /> Payload Mass
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-xs font-bold mb-2 uppercase">
-                  <span className="text-white/60">Additional Weight</span>
-                  <span className="text-[#facc15]">{payloadMassKg.toFixed(1)} kg</span>
-                </div>
-                <input type="range" min="0" max="25" step="0.5" value={payloadMassKg}
-                  onChange={(e) => onUpdatePayload(parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-black/50 rounded-lg appearance-none cursor-pointer accent-[#facc15]" />
               </div>
             </div>
           </div>
