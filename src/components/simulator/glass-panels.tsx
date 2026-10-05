@@ -104,13 +104,24 @@ export function LeftGlassPanel({
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
-                  <span className="text-xs text-white/50 block uppercase tracking-widest mb-1">Altitude</span>
-                  <span className="text-2xl font-bold">{telemetry.altitude.toFixed(1)}<span className="text-sm text-white/50 ml-1">m</span></span>
+                <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                  <span className="text-[10px] text-white/50 block uppercase tracking-widest mb-1">Altitude</span>
+                  <span className="text-xl font-bold">{telemetry.altitude.toFixed(1)}<span className="text-xs text-white/50 ml-1">m</span></span>
                 </div>
-                <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
-                  <span className="text-xs text-white/50 block uppercase tracking-widest mb-1">Speed</span>
-                  <span className="text-2xl font-bold">{telemetry.groundSpeed.toFixed(1)}<span className="text-sm text-white/50 ml-1">km/h</span></span>
+                <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                  <span className="text-[10px] text-white/50 block uppercase tracking-widest mb-1">Speed</span>
+                  <span className="text-xl font-bold">{telemetry.groundSpeed.toFixed(1)}<span className="text-xs text-white/50 ml-1">km/h</span></span>
+                </div>
+                <div className="bg-white/5 rounded-2xl p-4 border border-white/10 col-span-2 flex flex-col justify-center">
+                  <span className="text-[10px] text-white/50 block uppercase tracking-widest mb-1">Attitude (Pitch / Roll)</span>
+                  {sensorHealth['imu'] !== false ? (
+                    <div className="flex items-center gap-4">
+                      <span className="text-lg font-bold">{((telemetry.rotation?.pitch || 0) * (180/Math.PI)).toFixed(1)}° <span className="text-xs font-normal text-white/50">P</span></span>
+                      <span className="text-lg font-bold">{((telemetry.rotation?.roll || 0) * (180/Math.PI)).toFixed(1)}° <span className="text-xs font-normal text-white/50">R</span></span>
+                    </div>
+                  ) : (
+                    <div className="text-rose-500 font-bold text-sm tracking-widest uppercase animate-pulse">IMU SENSOR OFFLINE</div>
+                  )}
                 </div>
               </div>
 
@@ -140,12 +151,17 @@ export function LeftGlassPanel({
                     <button
                       key={key}
                       onClick={() => onToggleSensor(key)}
-                      className={`flex flex-col items-start p-3 rounded-xl border transition-all ${isHealthy ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}
+                      className={`flex items-center justify-between p-3 rounded-xl border transition-all ${isHealthy ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}
                     >
-                      <span className="text-[10px] uppercase tracking-widest text-white/60 mb-1">{key}</span>
-                      <span className={`text-xs font-bold tracking-widest uppercase ${isHealthy ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {isHealthy ? 'ONLINE' : 'OFFLINE'}
-                      </span>
+                      <div className="flex flex-col items-start">
+                        <span className="text-[10px] uppercase tracking-widest text-white/60 mb-1">{key}</span>
+                        <span className={`text-[11px] font-bold tracking-widest uppercase ${isHealthy ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {isHealthy ? 'ONLINE' : 'OFFLINE'}
+                        </span>
+                      </div>
+                      <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${isHealthy ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+                        <div className={`w-3 h-3 rounded-full bg-white transition-transform ${isHealthy ? 'translate-x-4' : 'translate-x-0'}`} />
+                      </div>
                     </button>
                   ))}
                 </div>

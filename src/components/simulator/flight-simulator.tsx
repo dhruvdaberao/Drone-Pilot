@@ -471,6 +471,13 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
   const handleUpdateEnvironment = useCallback((updates: Partial<EnvironmentState>) => {
     if (physicsEngineRef.current) {
       const prevEnv = physicsEngineRef.current.environment.getState();
+      
+      // Auto-scale turbulence based on wind speed if not explicitly set
+      if (updates.windSpeed !== undefined && updates.turbulence === undefined) {
+        // Base turbulence + scale with wind (e.g. 15m/s wind = ~0.8 turbulence)
+        updates.turbulence = Math.min(1.0, 0.1 + (updates.windSpeed / 20.0));
+      }
+
       physicsEngineRef.current.environment.setState(updates);
       const newEnv = physicsEngineRef.current.environment.getState();
       setEnvState({ ...newEnv });
@@ -1365,7 +1372,12 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       />
 
       {/* Flight Controls Visual Guide */}
-      <FlightControlsOverlay telemetry={telemetry} autoMoveLocked={autoMoveLocked} onToggleMap={() => setIsMapModalOpen(true)} />
+      <FlightControlsOverlay 
+        telemetry={telemetry} 
+        autoMoveLocked={autoMoveLocked} 
+        onToggleMap={() => setIsMapModalOpen(true)} 
+        sensorHealth={sensorHealth}
+      />
 
       {/* Real-Time Flight Coach Instrumentation */}
       <FlightCoachPanel

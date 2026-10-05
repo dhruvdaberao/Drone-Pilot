@@ -50,17 +50,17 @@ const Materials = {
     roughness: 0.60,
     metalness: 0.50,
   }),
-  // Premium metallic alloy (used for shell/canopy) - Sleek dark gunmetal instead of bright silver
+  // Premium metallic alloy (used for shell/canopy) - Bright Silver as requested
   silverAlloy: new THREE.MeshStandardMaterial({
-    color: 0x2a2c31,
-    roughness: 0.15,
-    metalness: 0.85,
+    color: 0xbfc4cc,
+    roughness: 0.30,
+    metalness: 0.75,
   }),
   // Mid-grey machined alloy (motor stators, knuckles)
   machinedAlloy: new THREE.MeshStandardMaterial({
-    color: 0x4a4d54,
-    roughness: 0.35,
-    metalness: 0.80,
+    color: 0x8a919e,
+    roughness: 0.40,
+    metalness: 0.85,
   }),
   // Accent neon glow
   neonCyan: new THREE.MeshStandardMaterial({
@@ -473,8 +473,8 @@ function buildArmsAndMotors(
 
     // ── Main arm tube — tapered, visible carbon tube ─────────────
     const usableLength = armLength - knuckleZ - motorR * 1.2;
-    // Sleek cylindrical carbon fiber tube
-    const armGeo = new THREE.CylinderGeometry(armW * 0.45, armW * 0.45, usableLength, 16);
+    // Sleek slim cylindrical carbon fiber tube
+    const armGeo = new THREE.CylinderGeometry(armW * 0.25, armW * 0.25, usableLength, 16);
     armGeo.rotateX(Math.PI / 2);
     const armMesh = new THREE.Mesh(armGeo, Materials.carbonFiber);
     armMesh.position.z = knuckleZ + usableLength / 2;
@@ -482,7 +482,7 @@ function buildArmsAndMotors(
     armGroup.add(armMesh);
 
     // Glowing neon accent band (futuristic)
-    const neonBandGeo = new THREE.CylinderGeometry(armW * 0.48, armW * 0.48, 0.015, 16);
+    const neonBandGeo = new THREE.CylinderGeometry(armW * 0.28, armW * 0.28, 0.015, 16);
     neonBandGeo.rotateX(Math.PI / 2);
     const band = new THREE.Mesh(neonBandGeo, Materials.neonCyan);
     band.position.z = knuckleZ + usableLength * 0.70;
@@ -490,7 +490,7 @@ function buildArmsAndMotors(
 
     // Front arms: safety orange stripe near tip
     if (frontIndices.has(motor.index)) {
-      const orangeGeo = new THREE.CylinderGeometry(armW * 0.49, armW * 0.49, 0.025, 16);
+      const orangeGeo = new THREE.CylinderGeometry(armW * 0.29, armW * 0.29, 0.025, 16);
       orangeGeo.rotateX(Math.PI / 2);
       const orange = new THREE.Mesh(orangeGeo, Materials.accentOrange);
       orange.position.z = knuckleZ + usableLength * 0.85;

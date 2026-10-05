@@ -565,23 +565,19 @@ export class ModularDrone {
       }
 
       // Rotation angular velocity (rad/s)
-      const spinSpeed = (motorThrottle * 850.0) * p.direction;
+      const spinSpeed = (motorThrottle * 3000.0) * p.direction;
       p.bladeGroup.rotation.y += spinSpeed * dt;
 
       // Blur disc blending logic:
-      if (motorThrottle < 0.20) {
+      if (motorThrottle < 0.10) {
         p.blurMaterial.opacity = 0.0;
         p.blurMesh.visible = false;
-        p.bladeMaterial.opacity = 1.0; // Full visibility on ground
-      } else if (motorThrottle < 0.60) {
-        const t = (motorThrottle - 0.20) / (0.60 - 0.20);
-        p.blurMesh.visible = true;
-        p.blurMaterial.opacity = t * 0.70;
-        p.bladeMaterial.opacity = 1.0 - t * 0.65; // Fade blade as motion blur increases
+        p.bladeMaterial.opacity = 1.0; 
       } else {
         p.blurMesh.visible = true;
-        p.blurMaterial.opacity = 0.82;
-        p.bladeMaterial.opacity = 0.22; // Faint blade ghosting under the motion disc
+        const blurFade = (motorThrottle - 0.10) / 0.30; 
+        p.blurMaterial.opacity = Math.max(0, Math.min(0.9, blurFade * 0.9));
+        p.bladeMaterial.opacity = Math.max(0.1, 1.0 - (blurFade * 2.0));
       }
     });
 
