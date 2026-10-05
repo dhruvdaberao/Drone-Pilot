@@ -188,8 +188,8 @@ function buildUnifiedFuselage(
     rootGroup: root,
   };
 
-  // Scale factor: Quad = 1.0, Hexa = 1.35, Octa = 1.70
-  const sc = type === "quadcopter" ? 1.0 : type === "hexacopter" ? 1.35 : 1.70;
+  // All bodies same compact size — only arms/prop positions differ by type
+  const sc = 1.0;
 
   const fuselage = new THREE.Group();
 
@@ -411,12 +411,13 @@ function buildArmsAndMotors(
   type: "quadcopter" | "hexacopter" | "octacopter",
   parts: AircraftModelParts
 ) {
-  const sc = type === "quadcopter" ? 1.0 : type === "hexacopter" ? 1.35 : 1.70;
+  // Arms are same visual style for all types — thickness fixed for visibility
+  const sc = 1.0;
 
-  // Arm cross-section — flat rectangular tubes (aerodynamic / structural)
-  const armW  = 0.018 * sc;  // width (narrow edge)
-  const armH  = 0.022 * sc;  // height (tall edge — stiffer in bending)
-  const motorR = 0.042 * sc; // motor bell radius
+  // Arm cross-section — wide flat tubes, thick enough to see in 3D
+  const armW  = 0.055;  // width (X axis) — thick for visibility
+  const armH  = 0.028;  // height (Y axis)
+  const motorR = 0.048; // motor bell radius
 
   // Compute propeller radius = half inter-motor distance minus 5% safety gap
   let minMotorDistance = Infinity;
@@ -428,7 +429,7 @@ function buildArmsAndMotors(
       if (dist < minMotorDistance) minMotorDistance = dist;
     }
   }
-  const propRadius = minMotorDistance * 0.46;  // 4% clearance on each side
+  const propRadius = minMotorDistance * 0.38;  // 24% clearance gap each side — no collision
 
   // Identify the two front-most motors for orange safety stripes
   const sortedByZ = [...motorsDef].sort((a, b) => b.position.z - a.position.z);
@@ -445,17 +446,17 @@ function buildArmsAndMotors(
     armGroup.rotation.y = angle;
 
     // ── Arm root reinforcement knuckle ───────────────────────────
-    // Visual start of arm: slight distance from body centre
-    const knuckleZ = 0.055 * sc;
+    const knuckleZ = 0.085;  // arm starts 8.5cm from center
     const knuckle = new THREE.Mesh(
-      new THREE.BoxGeometry(armW * 1.6, armH * 1.5, 0.038 * sc),
+      new THREE.BoxGeometry(armW * 1.5, armH * 1.8, 0.045),
       Materials.machinedAlloy
     );
     knuckle.position.z = knuckleZ;
     armGroup.add(knuckle);
 
-    // ── Main arm tube ─────────────────────────────────────────────
-    const usableLength = armLength - knuckleZ - motorR * 1.1;
+    // ── Main arm tube — tapered, visible carbon tube ─────────────
+    const usableLength = armLength - knuckleZ - motorR * 1.2;
+    // Arm tapers toward tip for aerodynamic look
     const armMesh = new THREE.Mesh(
       new THREE.BoxGeometry(armW, armH, usableLength),
       Materials.carbonFiber
@@ -464,100 +465,102 @@ function buildArmsAndMotors(
     armMesh.castShadow = true;
     armGroup.add(armMesh);
 
-    // Arm mid-section reinforcement band (dark detail ring)
+    // Arm mid-section reinforcement band
     const band = new THREE.Mesh(
-      new THREE.BoxGeometry(armW * 1.08, armH * 1.08, 0.018 * sc),
+      new THREE.BoxGeometry(armW * 1.12, armH * 1.15, 0.022),
       Materials.darkGraphite
     );
-    band.position.z = knuckleZ + usableLength * 0.78;
+    band.position.z = knuckleZ + usableLength * 0.75;
     armGroup.add(band);
 
     // Front arms: safety orange stripe near tip
     if (frontIndices.has(motor.index)) {
       const orange = new THREE.Mesh(
-        new THREE.BoxGeometry(armW * 1.10, armH * 1.10, 0.013 * sc),
+        new THREE.BoxGeometry(armW * 1.15, armH * 1.18, 0.018),
         Materials.accentOrange
       );
-      orange.position.z = knuckleZ + usableLength * 0.83;
+      orange.position.z = knuckleZ + usableLength * 0.82;
       armGroup.add(orange);
     }
 
-    // ── Motor mount plate ─────────────────────────────────────────
+    // ── Motor assembly ─────────────────────────────────────────────
+    const motorY = armH / 2 + 0.010;  // raise slightly above arm surface
+
+    // Motor mount plate
     const motorMountPlate = new THREE.Mesh(
-      new THREE.CylinderGeometry(motorR * 1.15, motorR * 0.92, 0.018 * sc, 18),
+      new THREE.CylinderGeometry(motorR * 1.18, motorR * 0.95, 0.016, 18),
       Materials.machinedAlloy
     );
-    motorMountPlate.position.set(0, armH / 2 + 0.009 * sc, armLength);
+    motorMountPlate.position.set(0, motorY, armLength);
     armGroup.add(motorMountPlate);
 
     // Stator (lower fixed part of brushless motor)
     const stator = new THREE.Mesh(
-      new THREE.CylinderGeometry(motorR * 0.75, motorR * 0.75, 0.018 * sc, 22),
+      new THREE.CylinderGeometry(motorR * 0.78, motorR * 0.78, 0.020, 22),
       Materials.darkGraphite
     );
-    stator.position.set(0, armH / 2 + 0.022 * sc, armLength);
+    stator.position.set(0, motorY + 0.018, armLength);
     armGroup.add(stator);
 
-    // Motor bell (rotating outer can — silver)
+    // Motor bell (rotating outer can — silver alloy)
     const bell = new THREE.Mesh(
-      new THREE.CylinderGeometry(motorR, motorR, 0.024 * sc, 22),
+      new THREE.CylinderGeometry(motorR, motorR, 0.026, 22),
       Materials.silverAlloy
     );
-    bell.position.set(0, armH / 2 + 0.038 * sc, armLength);
+    bell.position.set(0, motorY + 0.034, armLength);
     armGroup.add(bell);
 
     // Motor shaft stub
     const shaft = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.004 * sc, 0.004 * sc, 0.018 * sc, 8),
+      new THREE.CylinderGeometry(0.005, 0.005, 0.020, 8),
       Materials.machinedAlloy
     );
-    shaft.position.set(0, armH / 2 + 0.056 * sc, armLength);
+    shaft.position.set(0, motorY + 0.055, armLength);
     armGroup.add(shaft);
 
     // ── Propeller assembly ────────────────────────────────────────
     const propGroup = new THREE.Group();
-    propGroup.position.set(0, armH / 2 + 0.062 * sc, armLength);
+    propGroup.position.set(0, motorY + 0.064, armLength);
 
     // Prop hub
     const hub = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.010 * sc, 0.010 * sc, 0.009 * sc, 14),
+      new THREE.CylinderGeometry(0.011, 0.011, 0.010, 14),
       Materials.darkGraphite
     );
     propGroup.add(hub);
 
     // Prop spinner cap (orange accent)
     const cap = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.005 * sc, 0.005 * sc, 0.005 * sc, 10),
+      new THREE.CylinderGeometry(0.006, 0.006, 0.007, 10),
       Materials.accentOrange
     );
-    cap.position.y = 0.007 * sc;
+    cap.position.y = 0.008;
     propGroup.add(cap);
 
-    // Aerodynamic two-blade propeller
-    // Blade: tapers from thick root to thin tip, slight twist
+    // Realistic two-blade propeller shape — tapers from hub to tip
     const bladeShape = new THREE.Shape();
-    bladeShape.moveTo(0, 0.009 * sc);
-    bladeShape.quadraticCurveTo(propRadius * 0.35, 0.028 * sc, propRadius, 0.006 * sc);
-    bladeShape.lineTo(propRadius, -0.006 * sc);
-    bladeShape.quadraticCurveTo(propRadius * 0.35, -0.018 * sc, 0, -0.009 * sc);
+    bladeShape.moveTo(0.012, 0.010);
+    bladeShape.quadraticCurveTo(propRadius * 0.40, 0.030, propRadius, 0.007);
+    bladeShape.lineTo(propRadius, -0.007);
+    bladeShape.quadraticCurveTo(propRadius * 0.40, -0.016, 0.012, -0.010);
 
     const bladeGeo = new THREE.ExtrudeGeometry(bladeShape, {
-      depth: 0.003 * sc, bevelEnabled: true,
-      bevelSize: 0.001 * sc, bevelThickness: 0.001 * sc,
+      depth: 0.004, bevelEnabled: true,
+      bevelSize: 0.001, bevelThickness: 0.001,
       bevelSegments: 2, steps: 1,
     });
     bladeGeo.center();
 
     const blade1 = new THREE.Mesh(bladeGeo, Materials.propeller);
     blade1.position.x = propRadius / 2;
-    blade1.rotation.x = 0.16;  // aerodynamic pitch angle
+    blade1.rotation.x = 0.18;  // aerodynamic pitch angle
     blade1.castShadow = true;
     propGroup.add(blade1);
 
     const blade2 = new THREE.Mesh(bladeGeo, Materials.propeller);
     blade2.position.x = -propRadius / 2;
     blade2.rotation.z = Math.PI;
-    blade2.rotation.x = 0.16;
+    blade2.rotation.x = 0.18;
     blade2.castShadow = true;
     propGroup.add(blade2);
 
@@ -588,10 +591,10 @@ export function buildProfessionalUAV(
   let motors = customMotors;
   if (!motors || motors.length === 0) {
     const count  = type === "quadcopter" ? 4 : type === "hexacopter" ? 6 : 8;
-    // Motor radius matches drone-definitions.ts: Quad=0.48, Hexa=0.55, Octa=0.65
-    const radius = type === "quadcopter" ? 0.48 : type === "hexacopter" ? 0.55 : 0.65;
-    // Angular offset for X-configuration (Quad: 45°, Hexa: 30°, Octa: 22.5°)
-    const offset = type === "quadcopter" ? Math.PI / 4 : type === "hexacopter" ? Math.PI / 6 : Math.PI / 8;
+    // All types get similar arm reach — Quad diagonal = 0.679m, Hexa/Octa match that reach
+    const radius = type === "quadcopter" ? 0.48 : type === "hexacopter" ? 0.68 : 0.78;
+    // Angular offset for standard X/Y configurations
+    const offset = type === "quadcopter" ? Math.PI / 4 : type === "hexacopter" ? 0 : Math.PI / 8;
 
     motors = [];
     for (let i = 0; i < count; i++) {
