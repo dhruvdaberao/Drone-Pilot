@@ -44,6 +44,7 @@ export class ModularDrone {
   private tailStrobeMesh: THREE.Mesh | null = null;
   private strobeMaterial!: THREE.MeshBasicMaterial;
   private strobeTimer = 0;
+  private payloadBox: THREE.Mesh | null = null;
 
   // Smoothing & visual attitude state
   private visualPos = new THREE.Vector3();
@@ -221,8 +222,20 @@ export class ModularDrone {
     this.gimbalRollArm = parts.gimbalGroup; // Fallback mapping
     this.cameraPod = parts.cameraPitchGroup;
 
-    this.batteryLeds = parts.batteryLeds;
+        this.batteryLeds = parts.batteryLeds;
     this.tailStrobeMesh = parts.tailStrobe;
+
+    // Create visual payload box attached underneath
+    const payloadGeo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+    const payloadMat = new THREE.MeshStandardMaterial({
+      color: 0xcc5500, // safety orange
+      metalness: 0.3,
+      roughness: 0.8,
+    });
+    this.payloadBox = new THREE.Mesh(payloadGeo, payloadMat);
+    this.payloadBox.position.set(0, -0.4, 0);
+    this.payloadBox.visible = false;
+    this.group.add(this.payloadBox);
 
     const propBlurTex = this.createPropBlurTexture();
 
@@ -236,8 +249,8 @@ export class ModularDrone {
         if (d < minMotorDist) minMotorDist = d;
       }
     }
-    const propRadius = minMotorDist * 0.46;
-    const blurDiscDiameter = propRadius * 2.08;
+    const propRadius = minMotorDist * 0.38;
+    const blurDiscDiameter = propRadius * 2.0;
 
     parts.propellers.forEach((p) => {
       // High-RPM motion-blur disc — sized to match actual propeller sweep area
@@ -509,7 +522,21 @@ export class ModularDrone {
       const counterPitch = -this.visualPitch * 0.92;
       const counterRoll = -this.visualRoll * 0.88;
       this.cameraPod.rotation.x = counterPitch;
-      this.gimbalRollArm.rotation.z = counterRoll;
+            this.gimbalRollArm.rotation.z = counterRoll;
+    }
+
+    // 6. Visual Payload Mass
+    if (this.payloadBox) {
+      const pm = telemetry.payloadMassKg || 0;
+      if (pm > 0.1) {
+        this.payloadBox.visible = true;
+        // Scale box based on mass (e.g., 0.2m to 0.6m)
+        const s = (0.2 + (pm * 0.05)) / 0.1; // Scale relative to 0.1m base geometry
+        this.payloadBox.scale.set(s, s, s);
+        this.payloadBox.position.y = -((0.1 * s) / 2) - 0.25; // hang below
+      } else {
+        this.payloadBox.visible = false;
+      }
     }
 
     // 5. Dual-State Propeller Spin & Motion-Blur Disc Cross-Fade
@@ -611,6 +638,8 @@ export class ModularDrone {
     }
   }
 }
+
+
 
 
 

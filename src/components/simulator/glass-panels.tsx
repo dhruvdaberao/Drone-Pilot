@@ -123,7 +123,7 @@ export function LeftGlassPanel({
                       const angle = (i * (360 / motorCount) + (motorCount === 4 ? 45 : 0)) * (Math.PI / 180);
                       const x = 50 + Math.cos(angle) * 35;
                       const y = 50 + Math.sin(angle) * 35;
-                      const health = telemetry.motorOutputs ? telemetry.motorOutputs[i] : (motorHealths[i] || 0);
+                      const health = motorHealths[i] || 0;
                       const color = health > 0.8 ? '#10b981' : health > 0.3 ? '#f59e0b' : '#ef4444';
                       return (
                         <g key={i}>
@@ -143,7 +143,7 @@ export function LeftGlassPanel({
                     <div className="flex justify-between text-xs font-bold mb-3">
                       <span className="text-white/80 uppercase">M{i + 1}</span>
                       <span className={motorHealths[i] < 1 ? "text-rose-400" : "text-emerald-400"}>
-                        {Math.round((telemetry.motorOutputs ? telemetry.motorOutputs[i] : motorHealths[i]) * 100)}%
+                        {Math.round(motorHealths[i] * 100)}%
                       </span>
                     </div>
                     <input
@@ -151,9 +151,9 @@ export function LeftGlassPanel({
                       min="0"
                       max="1"
                       step="0.01"
-                      value={telemetry.motorOutputs ? telemetry.motorOutputs[i] : motorHealths[i]}
-                      readOnly
-                      className="w-full h-1.5 bg-black/50 rounded-lg appearance-none accent-emerald-400 pointer-events-none"
+                      value={motorHealths[i]}
+                      onChange={(e) => onSetMotorHealth(i, parseFloat(e.target.value))}
+                      className="w-full h-1.5 bg-black/50 rounded-lg appearance-none cursor-pointer accent-[#FF5500]"
                     />
                   </div>
                 ))}
@@ -356,6 +356,8 @@ export function RightGlassPanel({
     </>
   );
 }
+
+
 
 
 
