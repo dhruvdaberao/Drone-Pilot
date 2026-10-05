@@ -1,9 +1,7 @@
 import React from "react";
 import { MinimapWidget } from "./minimap-widget";
 
-import { Lock } from "lucide-react";
-
-export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap }: { telemetry?: any, autoMoveLocked?: string, onToggleMap?: () => void }) {
+export function FlightControlsOverlay({ telemetry, onToggleMap }: { telemetry?: any, onToggleMap?: () => void }) {
   return (
     <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex flex-col items-center gap-3 opacity-70 hover:opacity-100 transition-opacity">
       <div className="flex items-center justify-center gap-12 bg-black/40 backdrop-blur-md border border-white/10 px-8 py-4 rounded-3xl shadow-2xl">
@@ -31,5 +29,4 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap }
     </div>
   );
 }
-
 

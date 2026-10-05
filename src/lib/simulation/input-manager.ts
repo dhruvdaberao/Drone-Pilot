@@ -76,11 +76,19 @@ export class InputManager {
           this.lockedPitch = 0;
         }
       } else {
-          // Single tap - clear all locks immediately
-          this.lockedPitch = 0;
+        // Single tap — clear opposing or perpendicular lock immediately
+        if (code === "KeyW" && this.lockedPitch === -1) this.lockedPitch = 0;
+        if (code === "KeyS" && this.lockedPitch === 1) this.lockedPitch = 0;
+        if (code === "KeyA" && this.lockedRoll === 1) this.lockedRoll = 0;
+        if (code === "KeyD" && this.lockedRoll === -1) this.lockedRoll = 0;
+        if ((code === "KeyW" || code === "KeyS") && this.lockedRoll !== 0) {
           this.lockedRoll = 0;
         }
-        this.lastKeyTime[code] = now;
+        if ((code === "KeyA" || code === "KeyD") && this.lockedPitch !== 0) {
+          this.lockedPitch = 0;
+        }
+      }
+      this.lastKeyTime[code] = now;
     }
 
     this.keys[code] = true;
