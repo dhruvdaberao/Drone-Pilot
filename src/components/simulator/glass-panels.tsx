@@ -87,10 +87,10 @@ export function LeftGlassPanel({
         </div>
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto pr-2 space-y-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
+        <div className="flex-1 overflow-y-auto pr-2 space-y-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-black/40 [&::-webkit-scrollbar-thumb]:bg-white/30 hover:[&::-webkit-scrollbar-thumb]:bg-white/50 [&::-webkit-scrollbar-thumb]:rounded-full">
           {activeTab === "status" && (
             <div className="space-y-6">
-              <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+              <div className="bg-[#080808]/90 backdrop-blur-md shadow-xl rounded-2xl p-5 border border-white/10">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Battery className="w-5 h-5 text-white/80" />
@@ -104,15 +104,15 @@ export function LeftGlassPanel({
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                <div className="bg-[#080808]/90 backdrop-blur-md shadow-xl rounded-2xl p-4 border border-white/10">
                   <span className="text-[10px] text-white/50 block uppercase tracking-widest mb-1">Altitude</span>
                   <span className="text-xl font-bold">{telemetry.altitude.toFixed(1)}<span className="text-xs text-white/50 ml-1">m</span></span>
                 </div>
-                <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                <div className="bg-[#080808]/90 backdrop-blur-md shadow-xl rounded-2xl p-4 border border-white/10">
                   <span className="text-[10px] text-white/50 block uppercase tracking-widest mb-1">Speed</span>
                   <span className="text-xl font-bold">{telemetry.groundSpeed.toFixed(1)}<span className="text-xs text-white/50 ml-1">km/h</span></span>
                 </div>
-                <div className="bg-white/5 rounded-2xl p-4 border border-white/10 col-span-2 flex flex-col justify-center">
+                <div className="bg-[#080808]/90 backdrop-blur-md shadow-xl rounded-2xl p-4 border border-white/10 col-span-2 flex flex-col justify-center">
                   <span className="text-[10px] text-white/50 block uppercase tracking-widest mb-1">Attitude (Pitch / Roll)</span>
                   {sensorHealth['imu'] !== false ? (
                     <div className="flex items-center gap-4">
@@ -126,7 +126,7 @@ export function LeftGlassPanel({
               </div>
 
               {/* PAYLOAD CONFIG */}
-              <div className="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-4">
+              <div className="bg-[#080808]/90 backdrop-blur-md shadow-xl rounded-2xl p-5 border border-white/10 space-y-4">
                 <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
                   <Activity className="w-4 h-4 text-white/80" /> Payload Mass
                 </h3>
@@ -142,7 +142,7 @@ export function LeftGlassPanel({
               </div>
 
               {/* SENSOR DIAGNOSTICS */}
-              <div className="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-4">
+              <div className="bg-[#080808]/90 backdrop-blur-md shadow-xl rounded-2xl p-5 border border-white/10 space-y-4">
                 <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
                   <Eye className="w-4 h-4 text-white/80" /> Sensor Diagnostics
                 </h3>
@@ -151,7 +151,7 @@ export function LeftGlassPanel({
                     <button
                       key={key}
                       onClick={() => onToggleSensor(key)}
-                      className={`flex items-center justify-between p-3 rounded-xl border transition-all ${isHealthy ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-black/40 border-rose-900/50 hover:bg-black/60'}`}
+                      className={`flex items-center justify-between p-3 rounded-xl border transition-all ${isHealthy ? 'bg-[#080808]/90 backdrop-blur-md shadow-xl border-white/10 hover:bg-white/10' : 'bg-neutral-900 border-rose-900/50 hover:bg-neutral-800'}`}
                     >
                       <div className="flex flex-col items-start">
                         <span className="text-[10px] uppercase tracking-widest text-white/50 mb-1">{key}</span>
@@ -160,7 +160,7 @@ export function LeftGlassPanel({
                         </span>
                       </div>
                       <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${isHealthy ? 'bg-white/80' : 'bg-white/10 border border-white/10'}`}>
-                        <div className={`w-3 h-3 rounded-full transition-transform ${isHealthy ? 'bg-black translate-x-4' : 'bg-white/50 translate-x-0'}`} />
+                        <div className={`w-3 h-3 rounded-full transition-transform ${isHealthy ? 'bg-black translate-x-4' : 'bg-[#080808]/90 backdrop-blur-md shadow-xl0 translate-x-0'}`} />
                       </div>
                     </button>
                   ))}
@@ -232,7 +232,7 @@ export function LeftGlassPanel({
                     }
                   }
                   return (
-                    <div key={i} className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                    <div key={i} className="bg-[#080808]/90 backdrop-blur-md shadow-xl rounded-2xl p-4 border border-white/10">
                       {/* M label + live output % */}
                       <div className="flex justify-between text-xs font-bold mb-2">
                         <span className="text-white/80 uppercase">M{i + 1}</span>
@@ -346,7 +346,7 @@ export function RightGlassPanel({
         <div className="bg-black/30 p-3 rounded-2xl shrink-0">
           <h3 className="text-[10px] font-bold text-white/60 tracking-widest uppercase mb-2">Location / Region</h3>
           <select
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-bold outline-none uppercase tracking-widest"
+            className="w-full bg-[#080808]/90 backdrop-blur-md shadow-xl border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-bold outline-none uppercase tracking-widest"
             onChange={(e) => {
               const url = new URL(window.location.href);
               url.searchParams.set("region", e.target.value);
@@ -365,10 +365,10 @@ export function RightGlassPanel({
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto pr-2 space-y-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
+        <div className="flex-1 overflow-y-auto pr-2 space-y-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-black/40 [&::-webkit-scrollbar-thumb]:bg-white/30 hover:[&::-webkit-scrollbar-thumb]:bg-white/50 [&::-webkit-scrollbar-thumb]:rounded-full">
             
           {/* WIND */}
-          <div className="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-5">
+          <div className="bg-[#080808]/90 backdrop-blur-md shadow-xl rounded-2xl p-5 border border-white/10 space-y-5">
             <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
               <Wind className="w-4 h-4 text-white/80" /> Wind Physics
             </h3>
@@ -409,7 +409,7 @@ export function RightGlassPanel({
           </div>
 
           {/* PRECIPITATION & VISIBILITY */}
-          <div className="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-5">
+          <div className="bg-[#080808]/90 backdrop-blur-md shadow-xl rounded-2xl p-5 border border-white/10 space-y-5">
             <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
               <CloudRain className="w-4 h-4 text-blue-400" /> Precipitation &amp; Visibility
             </h3>
@@ -444,7 +444,7 @@ export function RightGlassPanel({
           </div>
 
           {/* ATMOSPHERE */}
-          <div className="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-5">
+          <div className="bg-[#080808]/90 backdrop-blur-md shadow-xl rounded-2xl p-5 border border-white/10 space-y-5">
             <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
               <Thermometer className="w-4 h-4 text-rose-400" /> Atmosphere
             </h3>

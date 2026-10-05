@@ -16,19 +16,6 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex flex-col items-center gap-3 opacity-80 hover:opacity-100 transition-opacity">
       <div className="flex items-end justify-center gap-10 px-6 py-3">
         
-        {/* Throttle Up / Down */}
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-[9px] font-bold text-white/50 tracking-widest uppercase mb-1">Altitude</span>
-          <div className="flex flex-col gap-1 items-center">
-            <div className="w-16 h-9 rounded-lg bg-white/90 border border-white/80 flex items-center justify-center text-black font-mono text-[10px] font-bold shadow-lg gap-1">
-              <ArrowUp className="w-3 h-3" />SPACE
-            </div>
-            <div className="w-16 h-9 rounded-lg bg-white/90 border border-white/80 flex items-center justify-center text-black font-mono text-[10px] font-bold shadow-lg gap-1">
-              <ArrowDown className="w-3 h-3" />SHIFT
-            </div>
-          </div>
-        </div>
-
         {/* WASD Direction */}
         <div className="flex flex-col items-center gap-1 relative">
           <span className="text-[9px] font-bold text-white/50 tracking-widest uppercase mb-1">Direction</span>
@@ -45,6 +32,19 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
               {keyBtn("A", autoMoveLocked === 'LEFT')}
               {keyBtn("S", autoMoveLocked === 'BWD')}
               {keyBtn("D", autoMoveLocked === 'RIGHT')}
+            </div>
+          </div>
+        </div>
+
+        {/* Throttle Up / Down */}
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-[9px] font-bold text-white/50 tracking-widest uppercase mb-1">Altitude</span>
+          <div className="flex flex-col gap-1 items-center">
+            <div className="w-16 h-12 rounded-lg bg-white/90 border border-white/80 flex items-center justify-center text-black font-mono text-[10px] font-bold shadow-lg gap-1">
+              <ArrowUp className="w-3 h-3" />SPACE
+            </div>
+            <div className="w-16 h-12 rounded-lg bg-white/90 border border-white/80 flex items-center justify-center text-black font-mono text-[10px] font-bold shadow-lg gap-1">
+              <ArrowDown className="w-3 h-3" />SHIFT
             </div>
           </div>
         </div>
