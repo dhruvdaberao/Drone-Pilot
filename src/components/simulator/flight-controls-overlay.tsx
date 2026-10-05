@@ -20,11 +20,23 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
           )}
 
           <div className={`flex flex-col items-center gap-1 ${telemetry && telemetry.maxThrustToWeightRatio < 1.0 ? 'opacity-30' : ''}`}>
-            <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 font-mono text-sm font-bold shadow-inner">W</div>
+            <div className={`w-8 h-8 rounded-lg ${autoMoveLocked === 'NORTH' ? 'bg-emerald-500/40 border-emerald-400' : 'bg-white/10 border-white/20'} border flex items-center justify-center text-white/90 font-mono text-sm font-bold shadow-inner relative`}>
+              W
+              {autoMoveLocked === 'NORTH' && <Lock className="absolute -top-3 -right-3 w-4 h-4 text-emerald-400" />}
+            </div>
             <div className="flex gap-1">
-              <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 font-mono text-sm font-bold shadow-inner">A</div>
-              <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 font-mono text-sm font-bold shadow-inner">S</div>
-              <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 font-mono text-sm font-bold shadow-inner">D</div>
+              <div className={`w-8 h-8 rounded-lg ${autoMoveLocked === 'WEST' ? 'bg-emerald-500/40 border-emerald-400' : 'bg-white/10 border-white/20'} border flex items-center justify-center text-white/90 font-mono text-sm font-bold shadow-inner relative`}>
+                A
+                {autoMoveLocked === 'WEST' && <Lock className="absolute -bottom-3 -left-3 w-4 h-4 text-emerald-400" />}
+              </div>
+              <div className={`w-8 h-8 rounded-lg ${autoMoveLocked === 'SOUTH' ? 'bg-emerald-500/40 border-emerald-400' : 'bg-white/10 border-white/20'} border flex items-center justify-center text-white/90 font-mono text-sm font-bold shadow-inner relative`}>
+                S
+                {autoMoveLocked === 'SOUTH' && <Lock className="absolute -bottom-3 right-2 w-4 h-4 text-emerald-400" />}
+              </div>
+              <div className={`w-8 h-8 rounded-lg ${autoMoveLocked === 'EAST' ? 'bg-emerald-500/40 border-emerald-400' : 'bg-white/10 border-white/20'} border flex items-center justify-center text-white/90 font-mono text-sm font-bold shadow-inner relative`}>
+                D
+                {autoMoveLocked === 'EAST' && <Lock className="absolute -bottom-3 -right-3 w-4 h-4 text-emerald-400" />}
+              </div>
             </div>
           </div>
         </div>

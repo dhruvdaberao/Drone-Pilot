@@ -302,12 +302,31 @@ export class FlightPhysicsEngine {
     const thrustAuth = this.battery.getThrustAuthority();
     commandedThrottle *= thrustAuth;
 
+    const forwardX = -Math.sin(this.yaw);
+    const forwardZ = -Math.cos(this.yaw);
+    const rightX = Math.cos(this.yaw);
+    const rightZ = -Math.sin(this.yaw);
+
+    let effPitch = this.isAutoLanding ? 0 : input.pitch;
+    let effRoll = this.isAutoLanding ? 0 : input.roll;
+
+    // GPS Position Hold (Active Aerodynamic Braking & Wind Fighting)
+    if (this.isHoverMode && !onGround && this.sensorHealth.gps) {
+      const isStickNeutral = Math.abs(input.pitch) < 0.04 && Math.abs(input.roll) < 0.04;
+      if (isStickNeutral) {
+        const localVelForward = this.velX * forwardX + this.velZ * forwardZ;
+        const localVelRight = this.velX * rightX + this.velZ * rightZ;
+        effPitch = Math.max(-1.0, Math.min(1.0, -localVelForward * 0.16));
+        effRoll = Math.max(-1.0, Math.min(1.0, -localVelRight * 0.16));
+      }
+    }
+
     // Mix commands into individual motors
     this.motorOutputs = MotorMixer.mix(
       {
         throttle: commandedThrottle,
-        pitch: this.isAutoLanding ? 0 : input.pitch,
-        roll: this.isAutoLanding ? 0 : input.roll,
+        pitch: effPitch,
+        roll: effRoll,
         yaw: input.yaw,
       },
       this.def.type,
@@ -379,28 +398,6 @@ export class FlightPhysicsEngine {
 
     if (this.yaw > Math.PI * 2) this.yaw -= Math.PI * 2;
     if (this.yaw < 0) this.yaw += Math.PI * 2;
-
-    let effPitch = this.isAutoLanding ? 0 : input.pitch;
-    let effRoll = this.isAutoLanding ? 0 : input.roll;
-
-    const forwardX = -Math.sin(this.yaw);
-    const forwardZ = -Math.cos(this.yaw);
-    const rightX = Math.cos(this.yaw);
-    const rightZ = -Math.sin(this.yaw);
-
-    // GPS Position Hold (Active Aerodynamic Braking & Wind Fighting)
-    if (this.isHoverMode && !onGround && this.sensorHealth.gps) {
-      const isStickNeutral = Math.abs(input.pitch) < 0.04 && Math.abs(input.roll) < 0.04;
-      if (isStickNeutral) {
-        // Transform world velocity to local velocity for orientation-aware braking
-        const localVelForward = this.velX * forwardX + this.velZ * forwardZ;
-        const localVelRight = this.velX * rightX + this.velZ * rightZ;
-        
-        // Pitch/Roll actively against the current velocity vector to brake aerodynamically
-        effPitch = Math.max(-1.0, Math.min(1.0, -localVelForward * 0.16));
-        effRoll = Math.max(-1.0, Math.min(1.0, -localVelRight * 0.16));
-      }
-    }
 
     // Dynamic tilt authority: Reduced for cinematic professional smoothness
     const tiltMultiplier = this.isHoverMode ? 1.0 : 1.15;

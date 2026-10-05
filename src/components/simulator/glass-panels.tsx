@@ -179,13 +179,13 @@ export function LeftGlassPanel({
               {/* SVG Diagram — colors driven by live motor outputs */}
               <div className="flex flex-col items-center justify-center py-4">
                 <div className="relative w-48 h-48 mb-4">
-                  <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl">
-                    <rect x="40" y="35" width="20" height="30" rx="4" fill="#1f2937" stroke="#374151" strokeWidth="2" />
-                    <circle cx="50" cy="50" r="4" fill="#FF5500" className="animate-pulse" />
+                  <svg viewBox="0 0 120 120" className="w-full h-full drop-shadow-2xl">
+                    <rect x="50" y="45" width="20" height="30" rx="4" fill="#1f2937" stroke="#374151" strokeWidth="2" />
+                    <circle cx="60" cy="60" r="4" fill="#f59e0b" className="animate-pulse" />
                     {Array.from({ length: motorCount }).map((_, i) => {
                       const angle = (i * (360 / motorCount) + (motorCount === 4 ? 45 : 0)) * (Math.PI / 180);
-                      const x = 50 + Math.cos(angle) * 35;
-                      const y = 50 + Math.sin(angle) * 35;
+                      const x = 60 + Math.cos(angle) * 45;
+                      const y = 60 + Math.sin(angle) * 45;
                       const output = (telemetry.motorOutputs && telemetry.motorOutputs[i] !== undefined)
                         ? telemetry.motorOutputs[i]
                         : 0;
@@ -198,10 +198,10 @@ export function LeftGlassPanel({
                       }
                       return (
                         <g key={i}>
-                          <line x1="50" y1="50" x2={x} y2={y} stroke="#374151" strokeWidth="3" />
-                          <circle cx={x} cy={y} r="12" fill={color} fillOpacity="0.2" stroke={color} strokeWidth="1.5" />
+                          <line x1="60" y1="60" x2={x} y2={y} stroke="#374151" strokeWidth="3" />
+                          <circle cx={x} cy={y} r={motorCount > 4 ? "8" : "12"} fill={color} fillOpacity="0.2" stroke={color} strokeWidth="1.5" />
                           <circle cx={x} cy={y} r="4" fill={color} />
-                          <text x={x} y={y + 1} textAnchor="middle" alignmentBaseline="middle" fill="#fff" fontSize="5" fontWeight="bold" className="pointer-events-none">M{i+1}</text>
+                          <text x={x} y={y + 1} textAnchor="middle" alignmentBaseline="middle" fill="#fff" fontSize={motorCount > 4 ? "4" : "5"} fontWeight="bold" className="pointer-events-none">M{i+1}</text>
                         </g>
                       );
                     })}
