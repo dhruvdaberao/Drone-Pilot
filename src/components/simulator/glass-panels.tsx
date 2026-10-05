@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { TelemetryState, EnvironmentState } from "@/lib/simulation/types";
 import { DroneModel } from "@/types/drone";
-import { Battery, ShieldAlert, Wind, CloudSun, Map as MapIcon, Settings2, Plane, Thermometer, Droplets, RotateCcw, Info, CloudRain, AlertTriangle, Activity } from "lucide-react";
+import { Battery, ShieldAlert, Wind, CloudSun, Map as MapIcon, Settings2, Plane, Thermometer, Droplets, RotateCcw, Info, CloudRain, AlertTriangle, Activity, Eye } from "lucide-react";
 import { MinimapWidget, NavigationWaypoint } from "./minimap-widget";
 import { FlightCoachInsight } from "@/lib/simulation/flight-coach-types";
 
@@ -114,8 +114,10 @@ export function LeftGlassPanel({
                 <ShieldAlert className="w-5 h-5 text-amber-400" />
                 <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase">Motor Diagnostics</h3>
               </div>
-              <div className="flex flex-col items-center justify-center py-6">
-                <div className="relative w-48 h-48 mb-6">
+
+              {/* SVG Diagram — colors driven by live motor outputs */}
+              <div className="flex flex-col items-center justify-center py-4">
+                <div className="relative w-48 h-48 mb-4">
                   <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl">
                     <rect x="40" y="35" width="20" height="30" rx="4" fill="#1f2937" stroke="#374151" strokeWidth="2" />
                     <circle cx="50" cy="50" r="4" fill="#FF5500" className="animate-pulse" />
@@ -123,8 +125,10 @@ export function LeftGlassPanel({
                       const angle = (i * (360 / motorCount) + (motorCount === 4 ? 45 : 0)) * (Math.PI / 180);
                       const x = 50 + Math.cos(angle) * 35;
                       const y = 50 + Math.sin(angle) * 35;
-                      const health = motorHealths[i] || 0;
-                      const color = health > 0.8 ? '#10b981' : health > 0.3 ? '#f59e0b' : '#ef4444';
+                      const output = (telemetry.motorOutputs && telemetry.motorOutputs[i] !== undefined)
+                        ? telemetry.motorOutputs[i]
+                        : 0;
+                      const color = output > 0.6 ? '#10b981' : output > 0.25 ? '#f59e0b' : '#ef4444';
                       return (
                         <g key={i}>
                           <line x1="50" y1="50" x2={x} y2={y} stroke="#374151" strokeWidth="3" />
@@ -137,26 +141,48 @@ export function LeftGlassPanel({
                   </svg>
                 </div>
               </div>
+
+              {/* Motor Cards */}
               <div className="grid grid-cols-2 gap-4">
-                {Array.from({ length: motorCount }).map((_, i) => (
-                  <div key={i} className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                    <div className="flex justify-between text-xs font-bold mb-3">
-                      <span className="text-white/80 uppercase">M{i + 1}</span>
-                      <span className={motorHealths[i] < 1 ? "text-rose-400" : "text-emerald-400"}>
-                        {Math.round(motorHealths[i] * 100)}%
-                      </span>
+                {Array.from({ length: motorCount }).map((_, i) => {
+                  const liveOutput = (telemetry.motorOutputs && telemetry.motorOutputs[i] !== undefined)
+                    ? telemetry.motorOutputs[i]
+                    : 0;
+                  const outputPct = Math.round(liveOutput * 100);
+                  const outputColorClass = liveOutput > 0.6 ? 'text-emerald-400' : liveOutput > 0.25 ? 'text-amber-400' : 'text-rose-400';
+                  const barColorClass = liveOutput > 0.6 ? 'bg-emerald-400' : liveOutput > 0.25 ? 'bg-amber-400' : 'bg-rose-500';
+                  return (
+                    <div key={i} className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                      {/* M label + live output % */}
+                      <div className="flex justify-between text-xs font-bold mb-2">
+                        <span className="text-white/80 uppercase">M{i + 1}</span>
+                        <span className={outputColorClass}>{outputPct}%</span>
+                      </div>
+                      {/* Live output progress bar (read-only) */}
+                      <div className="w-full h-1.5 bg-black/50 rounded-full overflow-hidden mb-3">
+                        <div
+                          className={`h-full rounded-full transition-all duration-100 ${barColorClass}`}
+                          style={{ width: `${outputPct}%` }}
+                        />
+                      </div>
+                      {/* HEALTH setter slider */}
+                      <div className="border-t border-white/10 pt-2">
+                        <span className="text-[10px] text-white/40 uppercase tracking-widest block mb-1">
+                          Health {Math.round(motorHealths[i] * 100)}%
+                        </span>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          value={motorHealths[i]}
+                          onChange={(e) => onSetMotorHealth(i, parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-black/50 rounded-lg appearance-none cursor-pointer accent-[#FF5500]"
+                        />
+                      </div>
                     </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={motorHealths[i]}
-                      onChange={(e) => onSetMotorHealth(i, parseFloat(e.target.value))}
-                      className="w-full h-1.5 bg-black/50 rounded-lg appearance-none cursor-pointer accent-[#FF5500]"
-                    />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -248,7 +274,7 @@ export function RightGlassPanel({
             <option className="bg-neutral-900 text-white" value="city">Urban City</option>
             <option className="bg-neutral-900 text-white" value="mountain">Mountain Range</option>
             <option className="bg-neutral-900 text-white" value="forest">Forest Valley</option>
-            <option className="bg-neutral-900 text-white" value="river">River & Lake</option>
+            <option className="bg-neutral-900 text-white" value="river">River &amp; Lake</option>
             <option className="bg-neutral-900 text-white" value="coast">Coastal Area</option>
             <option className="bg-neutral-900 text-white" value="industrial">Industrial Harbor</option>
           </select>
@@ -294,6 +320,48 @@ export function RightGlassPanel({
                   onChange={(e) => onUpdateEnvironment({ turbulence: parseFloat(e.target.value) })}
                   className="w-full h-1.5 bg-white/20 rounded-full appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#38bdf8] [&::-webkit-slider-thumb]:rounded-full"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* PRECIPITATION & VISIBILITY */}
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-5">
+            <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
+              <CloudRain className="w-4 h-4 text-blue-400" /> Precipitation &amp; Visibility
+            </h3>
+            <div className="space-y-4">
+              {/* Rain intensity */}
+              <div>
+                <div className="flex justify-between text-xs font-bold mb-2 uppercase">
+                  <span className="text-white/60">Rain Intensity</span>
+                  <span className="text-blue-400 capitalize">{environment.rainIntensity}</span>
+                </div>
+                <select
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-bold outline-none"
+                  value={environment.rainIntensity}
+                  onChange={(e) => onUpdateEnvironment({ rainIntensity: e.target.value as EnvironmentState["rainIntensity"] })}
+                >
+                  <option className="bg-neutral-900" value="off">Off</option>
+                  <option className="bg-neutral-900" value="light">Light</option>
+                  <option className="bg-neutral-900" value="moderate">Moderate</option>
+                  <option className="bg-neutral-900" value="heavy">Heavy</option>
+                </select>
+              </div>
+              {/* Fog / visibility */}
+              <div>
+                <div className="flex justify-between text-xs font-bold mb-2 uppercase">
+                  <span className="text-white/60 flex items-center gap-1"><Eye className="w-3 h-3" /> Visibility</span>
+                  <span className="text-blue-400 capitalize">{environment.visibility}</span>
+                </div>
+                <select
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-bold outline-none"
+                  value={environment.visibility}
+                  onChange={(e) => onUpdateEnvironment({ visibility: e.target.value as EnvironmentState["visibility"] })}
+                >
+                  <option className="bg-neutral-900" value="clear">Clear</option>
+                  <option className="bg-neutral-900" value="hazy">Hazy</option>
+                  <option className="bg-neutral-900" value="foggy">Foggy</option>
+                </select>
               </div>
             </div>
           </div>
@@ -356,12 +424,3 @@ export function RightGlassPanel({
     </>
   );
 }
-
-
-
-
-
-
-
-
-
