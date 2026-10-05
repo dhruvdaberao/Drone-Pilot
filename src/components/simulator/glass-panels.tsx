@@ -276,10 +276,10 @@ export function LeftGlassPanel({
               window.location.href = url.toString();
             }
           }}
-          className="w-full shrink-0 flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 border border-amber-500/30 text-sm font-bold transition-all text-white mt-auto"
+          className="w-full shrink-0 flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 border border-amber-500 text-base font-black text-white shadow-lg shadow-amber-600/20 transition-all mt-auto"
         >
-          <RotateCcw className="w-4 h-4 text-amber-500" />
-          <span className="uppercase tracking-widest text-amber-500">Reset Drone</span>
+          <RotateCcw className="w-5 h-5 text-white" />
+          <span className="uppercase tracking-widest text-white">Reset Drone</span>
         </button>
       </div>
     </>
@@ -465,7 +465,7 @@ export function RightGlassPanel({
           {/* WHAT'S HAPPENING */}
           <div className="bg-[#38bdf8]/10 rounded-2xl p-5 border border-[#38bdf8]/30 space-y-2">
             <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2 mb-2">
-              <Info className="w-4 h-4" /> Environmental Impact
+              <Info className="w-5 h-5 text-black" /> Environmental Impact
             </h3>
             <p className="text-sm text-white/90 leading-relaxed font-medium">
               {currentInsight ? currentInsight.explanation.what : "Adjust environment sliders to observe real-time aerodynamic and visual effects on the simulation. High winds will induce lateral drift, while temperature affects air density."}
@@ -474,8 +474,8 @@ export function RightGlassPanel({
         </div>
 
         {/* Reset Environment */}
-        <button onClick={onResetEnvironment} className="w-full mt-auto shrink-0 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-sm font-bold uppercase transition-all text-white">
-          <RotateCcw className="w-4 h-4" />
+        <button onClick={onResetEnvironment} className="w-full mt-auto shrink-0 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/90 hover:bg-white border border-white text-base font-black text-black shadow-lg shadow-white/20 uppercase transition-all">
+          <RotateCcw className="w-5 h-5 text-black" />
           <span>Reset Environment</span>
         </button>
 

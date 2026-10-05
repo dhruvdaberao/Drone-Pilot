@@ -131,8 +131,8 @@ export class ModularDrone {
       depthWrite: false,
     });
     this.nameTagSprite = new THREE.Sprite(spriteMat);
-    this.nameTagSprite.position.set(0, 0.9, 0);
-    this.nameTagSprite.scale.set(0.8, 0.16, 1);
+    this.nameTagSprite.position.set(0, 1.4, 0);
+    this.nameTagSprite.scale.set(2.0, 0.40, 1);
     this.group.add(this.nameTagSprite);
   }
 

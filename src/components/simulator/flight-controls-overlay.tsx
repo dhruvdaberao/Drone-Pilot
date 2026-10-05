@@ -20,20 +20,20 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
           )}
 
           <div className={`flex flex-col items-center gap-1 ${telemetry && telemetry.maxThrustToWeightRatio < 1.0 ? 'opacity-30' : ''}`}>
-            <div className={`w-8 h-8 rounded-lg ${autoMoveLocked === 'NORTH' ? 'bg-emerald-500/40 border-emerald-400' : 'bg-white/10 border-white/20'} border flex items-center justify-center text-white/90 font-mono text-sm font-bold shadow-inner relative`}>
+            <div className={`w-12 h-12 rounded-lg ${autoMoveLocked === 'NORTH' ? 'bg-emerald-500/40 border-emerald-400' : 'bg-white/90 border-white text-black hover:bg-white transition-colors shadow-lg'} border flex items-center justify-center text-black font-mono text-xl font-bold shadow-inner relative`}>
               W
               {autoMoveLocked === 'NORTH' && <Lock className="absolute -top-3 -right-3 w-4 h-4 text-emerald-400" />}
             </div>
             <div className="flex gap-1">
-              <div className={`w-8 h-8 rounded-lg ${autoMoveLocked === 'WEST' ? 'bg-emerald-500/40 border-emerald-400' : 'bg-white/10 border-white/20'} border flex items-center justify-center text-white/90 font-mono text-sm font-bold shadow-inner relative`}>
+              <div className={`w-12 h-12 rounded-lg ${autoMoveLocked === 'WEST' ? 'bg-emerald-500/40 border-emerald-400' : 'bg-white/90 border-white text-black hover:bg-white transition-colors shadow-lg'} border flex items-center justify-center text-black font-mono text-xl font-bold shadow-inner relative`}>
                 A
                 {autoMoveLocked === 'WEST' && <Lock className="absolute -bottom-3 -left-3 w-4 h-4 text-emerald-400" />}
               </div>
-              <div className={`w-8 h-8 rounded-lg ${autoMoveLocked === 'SOUTH' ? 'bg-emerald-500/40 border-emerald-400' : 'bg-white/10 border-white/20'} border flex items-center justify-center text-white/90 font-mono text-sm font-bold shadow-inner relative`}>
+              <div className={`w-12 h-12 rounded-lg ${autoMoveLocked === 'SOUTH' ? 'bg-emerald-500/40 border-emerald-400' : 'bg-white/90 border-white text-black hover:bg-white transition-colors shadow-lg'} border flex items-center justify-center text-black font-mono text-xl font-bold shadow-inner relative`}>
                 S
                 {autoMoveLocked === 'SOUTH' && <Lock className="absolute -bottom-3 right-2 w-4 h-4 text-emerald-400" />}
               </div>
-              <div className={`w-8 h-8 rounded-lg ${autoMoveLocked === 'EAST' ? 'bg-emerald-500/40 border-emerald-400' : 'bg-white/10 border-white/20'} border flex items-center justify-center text-white/90 font-mono text-sm font-bold shadow-inner relative`}>
+              <div className={`w-12 h-12 rounded-lg ${autoMoveLocked === 'EAST' ? 'bg-emerald-500/40 border-emerald-400' : 'bg-white/90 border-white text-black hover:bg-white transition-colors shadow-lg'} border flex items-center justify-center text-black font-mono text-xl font-bold shadow-inner relative`}>
                 D
                 {autoMoveLocked === 'EAST' && <Lock className="absolute -bottom-3 -right-3 w-4 h-4 text-emerald-400" />}
               </div>
@@ -67,7 +67,7 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
             window.location.href = "/fly";
           }
         }}
-        className="mt-2 pointer-events-auto flex items-center justify-center gap-2 px-6 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg"
+        className="mt-2 pointer-events-auto flex items-center justify-center gap-2 px-8 py-3 rounded-xl bg-white/80 hover:bg-white text-black backdrop-blur-md border border-white/10 text-xs font-black uppercase tracking-widest transition-all shadow-lg"
       >
         Exit to Dashboard
       </button>
