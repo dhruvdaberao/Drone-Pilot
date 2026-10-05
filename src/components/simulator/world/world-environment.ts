@@ -222,21 +222,21 @@ export class WorldEnvironment {
     
     // Create a simple vertical streak texture for rain
     const canvas = document.createElement("canvas");
-    canvas.width = 4; canvas.height = 32;
+    canvas.width = 4; canvas.height = 128;
     const ctx = canvas.getContext("2d");
     if (ctx) {
-      const grad = ctx.createLinearGradient(0, 0, 0, 32);
-      grad.addColorStop(0, "rgba(255,255,255,0)");
-      grad.addColorStop(0.5, "rgba(255,255,255,0.6)");
-      grad.addColorStop(1, "rgba(255,255,255,0)");
+      const grad = ctx.createLinearGradient(0, 0, 0, 128);
+      grad.addColorStop(0, "rgba(200,220,255,0)");
+      grad.addColorStop(0.5, "rgba(200,220,255,0.8)");
+      grad.addColorStop(1, "rgba(200,220,255,0)");
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 4, 32);
+      ctx.fillRect(0, 0, 4, 128);
     }
     const rainTex = new THREE.CanvasTexture(canvas);
     
     const rainMat = new THREE.PointsMaterial({
-      color: 0xaaaaaa,
-      size: 1.5,
+      color: 0xcccccc,
+      size: 25.0, // Large enough to show the long 4x128 streak
       map: rainTex,
       transparent: true,
       opacity: 0.6,
@@ -358,14 +358,10 @@ export class WorldEnvironment {
       }
 
       // Rain & Storm visuals
-      let stormFactor = 0;
-      let rainOpacity = 0;
-      let rainSpeedMult = 1.0;
+      let stormFactor = envState.rainIntensity || 0;
+      let rainOpacity = (envState.rainIntensity || 0) * 0.8;
+      let rainSpeedMult = 1.0 + (envState.rainIntensity || 0) * 3.0; // Heavy rain falls much faster!
       
-      if (envState.rainIntensity === "light") { stormFactor = 0.4; rainOpacity = 0.2; rainSpeedMult = 1.0; }
-      else if (envState.rainIntensity === "moderate") { stormFactor = 0.7; rainOpacity = 0.5; rainSpeedMult = 1.4; }
-      else if (envState.rainIntensity === "heavy") { stormFactor = 1.0; rainOpacity = 0.8; rainSpeedMult = 1.8; }
-
       this.skyMat.uniforms.stormBlend.value += (stormFactor - this.skyMat.uniforms.stormBlend.value) * dt * 0.5;
       
       const currentStormBlend = this.skyMat.uniforms.stormBlend.value;
@@ -373,6 +369,11 @@ export class WorldEnvironment {
       this.cloudMat.color.copy(cloudColor);
       this.cloudMat.emissiveIntensity = 0.06 * (1.0 - currentStormBlend);
       
+      // Hide clouds completely if rain is significant
+      for (let i = 0; i < this.cloudClusters.length; i++) {
+        this.cloudClusters[i].visible = (envState.rainIntensity || 0) < 0.2;
+      }
+
       this.sunLight.intensity = 2.5 * (1.0 - currentStormBlend * 0.8);
       this.ambientLight.intensity = 0.42 * (1.0 - currentStormBlend * 0.5);
 
@@ -398,8 +399,8 @@ export class WorldEnvironment {
         }
       }
 
-      // Lightning
-      if (envState.rainIntensity === "heavy") {
+      // Lightning (happens randomly if rain > 0.4)
+      if ((envState.rainIntensity || 0) > 0.4) {
         if (elapsed > this.nextLightningTime) {
           this.lightningLight.intensity = 15000 + Math.random() * 10000;
           this.nextLightningTime = elapsed + 2.0 + Math.random() * 8.0;
@@ -410,10 +411,10 @@ export class WorldEnvironment {
         this.lightningLight.intensity = 0;
       }
 
-      // Fog (Visibility)
-      if (envState.visibility === "foggy") this.fogDensityTarget = 0.015;
-      else if (envState.visibility === "hazy") this.fogDensityTarget = 0.003;
-      else this.fogDensityTarget = 0.0001;
+      // Fog (Visibility) mapping: 1.0 = clear, 0.0 = zero visibility
+      // Density 0.0001 is clear, 0.02 is dense fog
+      const vis = envState.visibility !== undefined ? envState.visibility : 1.0;
+      this.fogDensityTarget = 0.0001 + (1.0 - vis) * 0.015;
 
       const currentFog = (this.scene.fog as THREE.FogExp2).density;
       (this.scene.fog as THREE.FogExp2).density += (this.fogDensityTarget - currentFog) * dt * 0.2;

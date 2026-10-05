@@ -418,34 +418,27 @@ export function RightGlassPanel({
               <div>
                 <div className="flex justify-between text-xs font-bold mb-2 uppercase">
                   <span className="text-white/60">Rain Intensity</span>
-                  <span className="text-blue-400 capitalize">{environment.rainIntensity}</span>
+                  <span className="text-blue-400">{Math.round((environment.rainIntensity || 0) * 100)}%</span>
                 </div>
-                <select
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-bold outline-none"
-                  value={environment.rainIntensity}
-                  onChange={(e) => onUpdateEnvironment({ rainIntensity: e.target.value as EnvironmentState["rainIntensity"] })}
-                >
-                  <option className="bg-neutral-900" value="off">Off</option>
-                  <option className="bg-neutral-900" value="light">Light</option>
-                  <option className="bg-neutral-900" value="moderate">Moderate</option>
-                  <option className="bg-neutral-900" value="heavy">Heavy</option>
-                </select>
+                <input
+                  type="range" min="0" max="1" step="0.05"
+                  value={environment.rainIntensity || 0}
+                  onChange={(e) => onUpdateEnvironment({ rainIntensity: parseFloat(e.target.value) })}
+                  className="w-full accent-blue-400"
+                />
               </div>
               {/* Fog / visibility */}
               <div>
                 <div className="flex justify-between text-xs font-bold mb-2 uppercase">
-                  <span className="text-white/60 flex items-center gap-1"><Eye className="w-3 h-3" /> Visibility</span>
-                  <span className="text-blue-400 capitalize">{environment.visibility}</span>
+                  <span className="text-white/60 flex items-center gap-1"><Eye className="w-3 h-3" /> Clearness</span>
+                  <span className="text-white font-bold">{Math.round((environment.visibility || 0) * 100)}%</span>
                 </div>
-                <select
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-bold outline-none"
-                  value={environment.visibility}
-                  onChange={(e) => onUpdateEnvironment({ visibility: e.target.value as EnvironmentState["visibility"] })}
-                >
-                  <option className="bg-neutral-900" value="clear">Clear</option>
-                  <option className="bg-neutral-900" value="hazy">Hazy</option>
-                  <option className="bg-neutral-900" value="foggy">Foggy</option>
-                </select>
+                <input
+                  type="range" min="0" max="1" step="0.05"
+                  value={environment.visibility || 0}
+                  onChange={(e) => onUpdateEnvironment({ visibility: parseFloat(e.target.value) })}
+                  className="w-full accent-white"
+                />
               </div>
             </div>
           </div>

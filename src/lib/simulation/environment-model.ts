@@ -14,8 +14,8 @@ export class EnvironmentModel {
     windDirection: 45, // blowing from Northeast
     windGust: 1.2,
     temperature: 20.0,
-    rainIntensity: "off",
-    visibility: "clear",
+    rainIntensity: 0.0,
+    visibility: 1.0,
     timeOfDay: "noon",
   };
 
@@ -46,8 +46,8 @@ export class EnvironmentModel {
           windDirection: 70,
           windGust: 4.8,
           temperature: 16,
-          rainIntensity: "off",
-          visibility: "clear",
+          rainIntensity: 0.0,
+          visibility: 1.0,
         };
         break;
       case "hot":
@@ -59,8 +59,8 @@ export class EnvironmentModel {
           windDirection: 180,
           windGust: 0.8,
           temperature: 38,
-          rainIntensity: "off",
-          visibility: "hazy",
+          rainIntensity: 0.0,
+          visibility: 0.5,
         };
         break;
       case "rain":
@@ -72,8 +72,8 @@ export class EnvironmentModel {
           windDirection: 210,
           windGust: 3.5,
           temperature: 14,
-          rainIntensity: "moderate",
-          visibility: "hazy",
+          rainIntensity: 0.6,
+          visibility: 0.5,
         };
         break;
       case "fog":
@@ -85,8 +85,8 @@ export class EnvironmentModel {
           windDirection: 0,
           windGust: 0.4,
           temperature: 9,
-          rainIntensity: "off",
-          visibility: "foggy",
+          rainIntensity: 0.0,
+          visibility: 0.1,
         };
         break;
       case "storm":
@@ -98,8 +98,8 @@ export class EnvironmentModel {
           windDirection: 285,
           windGust: 7.2,
           temperature: 12,
-          rainIntensity: "heavy",
-          visibility: "foggy",
+          rainIntensity: 1.0,
+          visibility: 0.1,
         };
         break;
       case "normal":
@@ -112,8 +112,8 @@ export class EnvironmentModel {
           windDirection: 45,
           windGust: 1.0,
           temperature: 20,
-          rainIntensity: "off",
-          visibility: "clear",
+          rainIntensity: 0.0,
+          visibility: 1.0,
         };
         break;
     }

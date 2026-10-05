@@ -237,8 +237,8 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     windDirection: 45,
     windGust: 0.8,
     temperature: 20,
-    rainIntensity: "off",
-    visibility: "clear",
+    rainIntensity: 0.0,
+    visibility: 1.0,
     timeOfDay: "noon",
   });
 
@@ -474,8 +474,19 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       
       // Auto-scale turbulence based on wind speed if not explicitly set
       if (updates.windSpeed !== undefined && updates.turbulence === undefined) {
-        // Base turbulence + scale with wind (e.g. 15m/s wind = ~0.8 turbulence)
         updates.turbulence = Math.min(1.0, 0.1 + (updates.windSpeed / 20.0));
+      }
+
+      // Realistic interconnected weather: Rain increases turbulence and drops visibility
+      if (updates.rainIntensity !== undefined) {
+        // If rain intensity goes up, visibility goes down!
+        if (updates.visibility === undefined) {
+           updates.visibility = Math.max(0.1, 1.0 - (updates.rainIntensity * 0.8));
+        }
+        // Rain also adds some baseline turbulence
+        if (updates.turbulence === undefined) {
+           updates.turbulence = Math.max(prevEnv.turbulence || 0, updates.rainIntensity * 0.4);
+        }
       }
 
       physicsEngineRef.current.environment.setState(updates);
@@ -511,11 +522,11 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       } else if (updates.rainIntensity !== undefined && updates.rainIntensity !== prevEnv.rainIntensity) {
         type = "RAIN_CHANGED";
         title = `RAIN INTENSITY CHANGED`;
-        message = `Rain intensity changed to ${newEnv.rainIntensity.toUpperCase()}. Rain is currently affecting the environment visually. No aerodynamic rain effect is modeled by the current physics engine.`;
+        message = `Rain intensity changed to ${Math.round(newEnv.rainIntensity * 100)}%. Rain is currently affecting the environment visually. No aerodynamic rain effect is modeled by the current physics engine.`;
       } else if (updates.visibility !== undefined && updates.visibility !== prevEnv.visibility) {
         type = "VISIBILITY_CHANGED";
         title = `VISIBILITY CHANGED`;
-        message = `Visibility changed to ${newEnv.visibility.toUpperCase()}. Visual environment perception is reduced. No navigation or sensor degradation is currently modeled by the physics engine for this condition.`;
+        message = `Visibility changed to ${Math.round(newEnv.visibility * 100)}%. Visual environment perception is reduced. No navigation or sensor degradation is currently modeled by the physics engine for this condition.`;
       }
 
       if (type && title && message) {

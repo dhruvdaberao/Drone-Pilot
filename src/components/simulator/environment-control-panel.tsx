@@ -140,34 +140,32 @@ export function EnvironmentControlPanel({
         </Section>
 
         <Section title="PRECIPITATION">
-          <div className="rounded-lg bg-black/20 p-2 flex gap-1">
-            {(["off", "light", "moderate", "heavy"] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => onUpdateEnvironment({ rainIntensity: r })}
-                className={`flex-1 py-1 text-[9px] font-bold rounded uppercase ${
-                  environment.rainIntensity === r ? "bg-[#38bdf8] text-white" : "bg-white/10 text-white/60 hover:bg-white/20"
-                }`}
-              >
-                {r}
-              </button>
-            ))}
+          <div className="rounded-lg bg-black/20 p-2">
+            <div className="flex justify-between text-[10px] mb-1 text-white/70">
+              <span className="flex items-center gap-1">RAIN INTENSITY</span>
+              <span className="text-[#38bdf8] font-bold">{Math.round((environment.rainIntensity || 0) * 100)}%</span>
+            </div>
+            <input
+              type="range" min="0" max="1" step="0.05"
+              value={environment.rainIntensity || 0}
+              onChange={(e) => onUpdateEnvironment({ rainIntensity: parseFloat(e.target.value) })}
+              className="w-full accent-[#38bdf8]"
+            />
           </div>
         </Section>
 
         <Section title="VISIBILITY">
-          <div className="rounded-lg bg-black/20 p-2 flex gap-1">
-            {(["clear", "hazy", "foggy"] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => onUpdateEnvironment({ visibility: v })}
-                className={`flex-1 py-1 text-[9px] font-bold rounded uppercase ${
-                  environment.visibility === v ? "bg-white/40 text-white" : "bg-white/10 text-white/60 hover:bg-white/20"
-                }`}
-              >
-                {v}
-              </button>
-            ))}
+          <div className="rounded-lg bg-black/20 p-2">
+            <div className="flex justify-between text-[10px] mb-1 text-white/70">
+              <span className="flex items-center gap-1">CLEARNESS</span>
+              <span className="text-white font-bold">{Math.round((environment.visibility || 0) * 100)}%</span>
+            </div>
+            <input
+              type="range" min="0" max="1" step="0.05"
+              value={environment.visibility || 0}
+              onChange={(e) => onUpdateEnvironment({ visibility: parseFloat(e.target.value) })}
+              className="w-full accent-white"
+            />
           </div>
         </Section>
 

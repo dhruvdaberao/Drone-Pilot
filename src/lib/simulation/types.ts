@@ -104,8 +104,8 @@ export interface EnvironmentState {
   windDirection: number; // degrees (0 - 360°, North=0)
   windGust: number; // gust amplitude m/s
   temperature: number; // Celsius (-10 to 45°C)
-  rainIntensity: "off" | "light" | "moderate" | "heavy";
-  visibility: "clear" | "hazy" | "foggy";
+  rainIntensity: number; // 0.0 to 1.0
+  visibility: number; // 0.0 to 1.0
   timeOfDay: TimeOfDay;
   turbulence?: number; // 0.0 to 1.0 (calm to severe atmospheric turbulence)
 }
