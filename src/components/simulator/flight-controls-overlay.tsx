@@ -10,9 +10,16 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
       <div className="flex items-center justify-center gap-12 bg-black/40 backdrop-blur-md border border-white/10 px-8 py-4 rounded-3xl shadow-2xl">
         
         {/* Left Stick (WASD) */}
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-[10px] font-bold text-[#FF5500] tracking-widest uppercase mb-1">Throttle / Yaw</span>
-          <div className="flex flex-col items-center gap-1">
+        <div className="flex flex-col items-center gap-1 relative">
+          <span className="text-[10px] font-bold text-white/60 tracking-widest uppercase mb-1">Throttle / Yaw</span>
+          
+          {telemetry && telemetry.maxThrustToWeightRatio < 1.0 && (
+            <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-rose-500/90 text-white px-3 py-1.5 rounded-lg border border-rose-400 font-bold text-[10px] uppercase tracking-widest whitespace-nowrap animate-bounce shadow-[0_0_15px_rgba(244,63,94,0.5)]">
+              ⚠️ OVERLOADED - CANNOT FLY
+            </div>
+          )}
+
+          <div className={`flex flex-col items-center gap-1 ${telemetry && telemetry.maxThrustToWeightRatio < 1.0 ? 'opacity-30' : ''}`}>
             <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 font-mono text-sm font-bold shadow-inner">W</div>
             <div className="flex gap-1">
               <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white/90 font-mono text-sm font-bold shadow-inner">A</div>
@@ -24,7 +31,7 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
 
         {/* Right Stick (Map) */}
         <div className="flex flex-col items-center gap-1 pointer-events-auto">
-          <span className={`text-[10px] font-bold ${isGpsHealthy ? 'text-[#38bdf8]' : 'text-rose-500'} tracking-widest uppercase mb-1`}>
+          <span className={`text-[10px] font-bold ${isGpsHealthy ? 'text-white/60' : 'text-rose-500'} tracking-widest uppercase mb-1`}>
             {isGpsHealthy ? 'Radar Map' : 'GPS OFFLINE'}
           </span>
           {telemetry && isGpsHealthy ? (
@@ -41,8 +48,20 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
         </div>
 
       </div>
+
+      <button
+        onClick={() => {
+          if (typeof window !== "undefined") {
+            window.location.href = "/fly";
+          }
+        }}
+        className="mt-2 pointer-events-auto flex items-center justify-center gap-2 px-6 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg"
+      >
+        Exit to Dashboard
+      </button>
+
       {autoMoveLocked && (
-        <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-400 px-4 py-1.5 rounded-full border border-emerald-500/30 text-[10px] font-bold tracking-widest uppercase animate-pulse">
+        <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-400 px-4 py-1.5 rounded-full border border-emerald-500/30 text-[10px] font-bold tracking-widest uppercase animate-pulse mt-2">
           <Lock className="w-3 h-3" />
           Auto-Navigating to {autoMoveLocked}
         </div>

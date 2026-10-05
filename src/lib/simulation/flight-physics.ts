@@ -678,7 +678,7 @@ export class FlightPhysicsEngine {
       totalMass: Math.round(totalMass * 100) / 100,
       weightNewtons: Math.round(weightNewtons * 10) / 10,
       totalThrustNewtons: Math.round(this.totalThrust * 10) / 10,
-      thrustToWeightRatio: weightNewtons > 0 ? Math.round((this.totalThrust / weightNewtons) * 100) / 100 : 0,
+      thrustToWeightRatio: weightNewtons > 0 ? Math.round((this.totalThrust / weightNewtons) * 100) / 100 : 0, maxThrustToWeightRatio: weightNewtons > 0 ? (this.def.maximumThrust / weightNewtons) : 0,
       motorOutputs: this.motorOutputs.map((o) => Math.round(o * 100) / 100),
       accel: {
         x: Math.round(this.accelX * 100) / 100,

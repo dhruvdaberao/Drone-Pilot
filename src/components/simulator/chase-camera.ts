@@ -41,18 +41,18 @@ export class ChaseCameraController {
     // at the default FOV=55°, which feels like professional simulation framing.
     switch (type) {
       case "octacopter":
-        this.followDistance    = 6.5;
+        this.followDistance    = 3.8;
         this.minFollowDistance = 2.0;
         this.maxFollowDistance = 45.0;
         break;
       case "hexacopter":
-        this.followDistance    = 5.5;
+        this.followDistance    = 3.2;
         this.minFollowDistance = 1.8;
         this.maxFollowDistance = 42.0;
         break;
       case "quadcopter":
       default:
-        this.followDistance    = 4.5;
+        this.followDistance    = 2.6;
         this.minFollowDistance = 1.5;
         this.maxFollowDistance = 38.0;
         break;

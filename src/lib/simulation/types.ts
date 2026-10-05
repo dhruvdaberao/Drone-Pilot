@@ -158,6 +158,7 @@ export interface PhysicsDebugTelemetry {
   weightNewtons: number;
   totalThrustNewtons: number;
   thrustToWeightRatio: number;
+  maxThrustToWeightRatio: number; // For overload detection
   motorOutputs: number[];
   accel: { x: number; y: number; z: number };
   vel: { x: number; y: number; z: number };

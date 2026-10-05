@@ -1202,9 +1202,9 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
           motorHealths={motorHealths}
           onSetMotorHealth={handleSetMotorHealth}
           payloadMassKg={payloadMassKg}
-          onUpdatePayload={setPayloadMassKg}
+          onUpdatePayload={handleSetPayloadMass}
           sensorHealth={sensorHealth}
-          onToggleSensor={(sensor) => setSensorHealth(prev => ({ ...prev, [sensor]: !prev[sensor as keyof typeof prev] }))}
+          onToggleSensor={handleToggleSensor as any}
           onExit={onExit}
         />
 

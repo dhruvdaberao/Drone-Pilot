@@ -42,7 +42,7 @@ export function LeftGlassPanel({
         onClick={() => setIsOpen(!isOpen)}
         className="md:hidden fixed top-20 left-4 z-40 bg-neutral-900/80 backdrop-blur border border-white/5 p-3 rounded-2xl text-white shadow-xl"
       >
-        <Settings2 className="w-6 h-6 text-[#FF5500]" />
+        <Settings2 className="w-6 h-6 text-white/80" />
       </button>
 
       {/* Backdrop for mobile */}
@@ -62,7 +62,7 @@ export function LeftGlassPanel({
         <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
           <div className="space-y-1">
             <h2 className="font-bold text-xl uppercase tracking-wider flex items-center gap-2">
-              <Plane className="w-6 h-6 text-[#FF5500]" />
+              <Plane className="w-6 h-6 text-white/80" />
               {drone.name}
             </h2>
             <p className="text-xs text-white/60 tracking-widest uppercase">{motorCount} MOTORS • {drone.platformCategory}</p>
@@ -93,13 +93,13 @@ export function LeftGlassPanel({
               <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <Battery className="w-5 h-5 text-emerald-400" />
+                    <Battery className="w-5 h-5 text-white/80" />
                     <span className="text-xs font-bold tracking-widest uppercase text-white/80">Battery Level</span>
                   </div>
                   <span className="text-xl font-bold">{telemetry.batteryLevel.toFixed(0)}%</span>
                 </div>
                 <div className="w-full h-2.5 bg-black/50 rounded-full overflow-hidden shadow-inner">
-                  <div className={`h-full transition-all duration-500 rounded-full ${telemetry.batteryLevel > 20 ? 'bg-emerald-400' : 'bg-rose-500'}`} style={{ width: `${telemetry.batteryLevel}%` }} />
+                  <div className={`h-full transition-all duration-500 rounded-full ${telemetry.batteryLevel > 20 ? 'bg-white' : 'bg-rose-500'}`} style={{ width: `${telemetry.batteryLevel}%` }} />
                 </div>
               </div>
 
@@ -128,12 +128,12 @@ export function LeftGlassPanel({
               {/* PAYLOAD CONFIG */}
               <div className="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-4">
                 <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-[#facc15]" /> Payload Mass
+                  <Activity className="w-4 h-4 text-white/80" /> Payload Mass
                 </h3>
                 <div>
                   <div className="flex justify-between text-xs font-bold mb-2 uppercase">
                     <span className="text-white/60">Additional Weight</span>
-                    <span className="text-[#facc15]">{payloadMassKg.toFixed(1)} kg</span>
+                    <span className="text-white/80">{payloadMassKg.toFixed(1)} kg</span>
                   </div>
                   <input type="range" min="0" max="25" step="0.5" value={payloadMassKg}
                     onChange={(e) => onUpdatePayload(parseFloat(e.target.value))}
@@ -144,23 +144,23 @@ export function LeftGlassPanel({
               {/* SENSOR DIAGNOSTICS */}
               <div className="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-4">
                 <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-[#38bdf8]" /> Sensor Diagnostics
+                  <Eye className="w-4 h-4 text-white/80" /> Sensor Diagnostics
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   {Object.entries(sensorHealth).map(([key, isHealthy]) => (
                     <button
                       key={key}
                       onClick={() => onToggleSensor(key)}
-                      className={`flex items-center justify-between p-3 rounded-xl border transition-all ${isHealthy ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}
+                      className={`flex items-center justify-between p-3 rounded-xl border transition-all ${isHealthy ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-black/40 border-rose-900/50 hover:bg-black/60'}`}
                     >
                       <div className="flex flex-col items-start">
-                        <span className="text-[10px] uppercase tracking-widest text-white/60 mb-1">{key}</span>
-                        <span className={`text-[11px] font-bold tracking-widest uppercase ${isHealthy ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <span className="text-[10px] uppercase tracking-widest text-white/50 mb-1">{key}</span>
+                        <span className={`text-[10px] font-bold tracking-widest uppercase ${isHealthy ? 'text-white' : 'text-rose-500'}`}>
                           {isHealthy ? 'ONLINE' : 'OFFLINE'}
                         </span>
                       </div>
-                      <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${isHealthy ? 'bg-emerald-500' : 'bg-rose-500'}`}>
-                        <div className={`w-3 h-3 rounded-full bg-white transition-transform ${isHealthy ? 'translate-x-4' : 'translate-x-0'}`} />
+                      <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${isHealthy ? 'bg-white/80' : 'bg-white/10 border border-white/10'}`}>
+                        <div className={`w-3 h-3 rounded-full transition-transform ${isHealthy ? 'bg-black translate-x-4' : 'bg-white/50 translate-x-0'}`} />
                       </div>
                     </button>
                   ))}
@@ -227,8 +227,8 @@ export function LeftGlassPanel({
                       outputColorClass = 'text-rose-400';
                       barColorClass = 'bg-rose-500';
                     } else {
-                      outputColorClass = 'text-emerald-400';
-                      barColorClass = 'bg-emerald-500';
+                      outputColorClass = 'text-white/80';
+                      barColorClass = 'bg-white/80';
                     }
                   }
                   return (
@@ -268,13 +268,18 @@ export function LeftGlassPanel({
           )}
         </div>
 
-        {/* Dashboard Exit Button */}
+        {/* Reset Drone Button */}
         <button
-          onClick={onExit}
-          className="w-full shrink-0 flex items-center justify-center gap-2 py-3 rounded-xl bg-rose-500/20 hover:bg-rose-500/40 border border-rose-500/30 text-sm font-bold transition-all text-white mt-auto"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              const url = new URL(window.location.href);
+              window.location.href = url.toString();
+            }
+          }}
+          className="w-full shrink-0 flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 border border-amber-500/30 text-sm font-bold transition-all text-white mt-auto"
         >
-          <RotateCcw className="w-4 h-4" />
-          <span>Exit to Dashboard</span>
+          <RotateCcw className="w-4 h-4 text-amber-500" />
+          <span className="uppercase tracking-widest text-amber-500">Reset Drone</span>
         </button>
       </div>
     </>
@@ -311,7 +316,7 @@ export function RightGlassPanel({
         onClick={() => setIsOpen(!isOpen)}
         className="md:hidden fixed top-20 right-4 z-40 bg-neutral-900/80 backdrop-blur border border-white/5 p-3 rounded-2xl text-white shadow-xl"
       >
-        <CloudSun className="w-6 h-6 text-[#38bdf8]" />
+        <CloudSun className="w-6 h-6 text-white/80" />
       </button>
 
       {/* Backdrop for mobile */}
@@ -329,7 +334,7 @@ export function RightGlassPanel({
         <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
           <div className="space-y-1">
             <h2 className="font-bold text-xl uppercase tracking-wider flex items-center gap-2">
-              <CloudSun className="w-6 h-6 text-[#38bdf8]" />
+              <CloudSun className="w-6 h-6 text-white/80" />
               Environment
             </h2>
             <p className="text-xs text-white/60 tracking-widest uppercase">Atmospheric Digital Twin</p>
@@ -365,13 +370,13 @@ export function RightGlassPanel({
           {/* WIND */}
           <div className="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-5">
             <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
-              <Wind className="w-4 h-4 text-[#38bdf8]" /> Wind Physics
+              <Wind className="w-4 h-4 text-white/80" /> Wind Physics
             </h3>
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between text-xs font-bold mb-2 uppercase">
                   <span className="text-white/60">Speed</span>
-                  <span className="text-[#38bdf8]">{environment.windSpeed.toFixed(1)} m/s</span>
+                  <span className="text-white/80">{environment.windSpeed.toFixed(1)} m/s</span>
                 </div>
                 <input type="range" min="0" max="25" step="0.5" value={environment.windSpeed}
                   onChange={(e) => {
@@ -384,7 +389,7 @@ export function RightGlassPanel({
               <div>
                 <div className="flex justify-between text-xs font-bold mb-2 uppercase">
                   <span className="text-white/60">Direction</span>
-                  <span className="text-[#38bdf8]">{environment.windDirection}</span>
+                  <span className="text-white/80">{environment.windDirection}</span>
                 </div>
                 <input type="range" min="0" max="359" step="5" value={environment.windDirection}
                   onChange={(e) => onUpdateEnvironment({ windDirection: parseInt(e.target.value) })}
@@ -393,7 +398,7 @@ export function RightGlassPanel({
               <div>
                 <div className="flex justify-between text-xs font-bold mb-2 uppercase mt-4">
                   <span className="text-white/60">Turbulence Intensity</span>
-                  <span className="text-[#38bdf8]">{(environment.turbulence || 0).toFixed(1)}</span>
+                  <span className="text-white/80">{(environment.turbulence || 0).toFixed(1)}</span>
                 </div>
                 <input type="range" min="0" max="1" step="0.05" value={environment.turbulence || 0}
                   onChange={(e) => onUpdateEnvironment({ turbulence: parseFloat(e.target.value) })}
@@ -466,7 +471,7 @@ export function RightGlassPanel({
 
           {/* WHAT'S HAPPENING */}
           <div className="bg-[#38bdf8]/10 rounded-2xl p-5 border border-[#38bdf8]/30 space-y-2">
-            <h3 className="text-xs font-bold text-[#38bdf8] tracking-widest uppercase flex items-center gap-2 mb-2">
+            <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2 mb-2">
               <Info className="w-4 h-4" /> Environmental Impact
             </h3>
             <p className="text-sm text-white/90 leading-relaxed font-medium">

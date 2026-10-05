@@ -34,14 +34,14 @@ export function DashboardHeader() {
           invert={true}
           className="h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:scale-105 shrink-0"
         />
-        <span className="text-sm sm:text-base font-bold tracking-[0.18em] text-white uppercase whitespace-nowrap">
+        <span className="text-base sm:text-lg font-bold tracking-[0.18em] text-white uppercase whitespace-nowrap">
           DRONE <span className="text-[#FF5500]">PILOT</span>
         </span>
       </Link>
 
       {/* Right: callsign + sign out */}
       <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.07] text-[11px] text-neutral-400 font-mono tracking-wider">
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.07] text-xs sm:text-sm text-neutral-400 font-mono tracking-wider">
           <User className="h-3.5 w-3.5 text-[#FF5500] shrink-0" />
           <span>
             <span className="text-neutral-600">CALL SIGN </span>
@@ -51,7 +51,7 @@ export function DashboardHeader() {
 
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold tracking-wider text-neutral-500 hover:text-white transition-colors rounded-lg hover:bg-white/[0.05] cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold tracking-wider text-neutral-500 hover:text-white transition-colors rounded-lg hover:bg-white/[0.05] cursor-pointer"
         >
           <LogOut className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">SIGN OUT</span>
