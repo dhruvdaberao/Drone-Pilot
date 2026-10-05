@@ -175,7 +175,7 @@ export class ModularDrone {
       const density = Math.sin(normR * Math.PI) * 0.42 + 0.12;
       ctx.beginPath();
       ctx.arc(center, center, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(32, 36, 42, ${density.toFixed(3)})`;
+      ctx.strokeStyle = `rgba(10, 10, 10, ${density.toFixed(3)})`;
       ctx.lineWidth = 1.6;
       ctx.stroke();
     }
@@ -183,10 +183,10 @@ export class ModularDrone {
     // Outer safety orange safety tip ring streak (outer 18% radius)
     const tipInner = outerRadius - 24;
     for (let r = tipInner; r < outerRadius; r += 2) {
-      const tipAlpha = ((r - tipInner) / 24) * 0.65;
+      const tipAlpha = ((r - tipInner) / 24) * 0.85;
       ctx.beginPath();
       ctx.arc(center, center, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(255, 85, 0, ${tipAlpha.toFixed(3)})`;
+      ctx.strokeStyle = `rgba(255, 68, 0, ${tipAlpha.toFixed(3)})`;
       ctx.lineWidth = 2.0;
       ctx.stroke();
     }
@@ -263,6 +263,7 @@ export class ModularDrone {
         metalness: 0.22,
         transparent: true,
         opacity: 1.0,
+        depthWrite: false, // CRITICAL: prevents invisible blades from occluding the blur disc!
       });
 
       p.bladeGroup.children.forEach((c) => {
@@ -564,20 +565,21 @@ export class ModularDrone {
         }
       }
 
-      // Rotation angular velocity (rad/s)
-      const spinSpeed = (motorThrottle * 3000.0) * p.direction;
+      // Rotation angular velocity (rad/s) - carefully chosen to avoid perfect 60fps aliasing
+      const spinSpeed = (motorThrottle * 120.0 + 15.0) * p.direction;
       p.bladeGroup.rotation.y += spinSpeed * dt;
 
-      // Blur disc blending logic:
-      if (motorThrottle < 0.10) {
+      // Blur disc blending logic: make it look exactly like a real fan circle!
+      if (motorThrottle < 0.05) {
         p.blurMaterial.opacity = 0.0;
         p.blurMesh.visible = false;
         p.bladeMaterial.opacity = 1.0; 
       } else {
         p.blurMesh.visible = true;
-        const blurFade = (motorThrottle - 0.10) / 0.30; 
-        p.blurMaterial.opacity = Math.max(0, Math.min(0.9, blurFade * 0.9));
-        p.bladeMaterial.opacity = Math.max(0.1, 1.0 - (blurFade * 2.0));
+        // Fade to fully blurred circle extremely quickly as throttle goes up
+        const blurFade = Math.min(1.0, (motorThrottle - 0.05) / 0.15); 
+        p.blurMaterial.opacity = blurFade * 0.95; // Strong solid blur disc
+        p.bladeMaterial.opacity = 1.0 - blurFade; // Completely vanish the solid blades
       }
     });
 
