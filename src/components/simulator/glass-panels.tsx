@@ -192,8 +192,8 @@ export function LeftGlassPanel({
                       
                       let color = '#6b7280'; // Disarmed / Idle (Grey)
                       if (telemetry.isArmed && output > 0.05) {
-                        if (output > avgMotorOutput + 0.05) color = '#f59e0b';
-                        else if (output < avgMotorOutput - 0.05) color = '#ef4444';
+                        if (output > avgMotorOutput + 0.01) color = '#f59e0b';
+                        else if (output < avgMotorOutput - 0.01) color = '#ef4444';
                         else color = '#10b981'; // Normal Hover Range (Green)
                       }
                       return (
@@ -220,10 +220,10 @@ export function LeftGlassPanel({
                   let outputColorClass = 'text-neutral-500';
                   let barColorClass = 'bg-neutral-600';
                   if (telemetry.isArmed && liveOutput > 0.05) {
-                    if (liveOutput > avgMotorOutput + 0.05) {
+                    if (liveOutput > avgMotorOutput + 0.01) {
                       outputColorClass = 'text-amber-400';
                       barColorClass = 'bg-amber-500';
-                    } else if (liveOutput < avgMotorOutput - 0.05) {
+                    } else if (liveOutput < avgMotorOutput - 0.01) {
                       outputColorClass = 'text-rose-400';
                       barColorClass = 'bg-rose-500';
                     } else {

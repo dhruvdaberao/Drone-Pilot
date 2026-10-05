@@ -63,10 +63,10 @@ export class InputManager {
       if (now - lastTime < this.DOUBLE_TAP_MS) {
         // Double-tap detected — toggle lock for this direction
         if (code === "KeyW") {
-          this.lockedPitch = this.lockedPitch === 1 ? 0 : 1;
+          this.lockedPitch = this.lockedPitch === -1 ? 0 : -1;
           this.lockedRoll = 0;
         } else if (code === "KeyS") {
-          this.lockedPitch = this.lockedPitch === -1 ? 0 : -1;
+          this.lockedPitch = this.lockedPitch === 1 ? 0 : 1;
           this.lockedRoll = 0;
         } else if (code === "KeyD") {
           this.lockedRoll = this.lockedRoll === 1 ? 0 : 1;
@@ -77,8 +77,8 @@ export class InputManager {
         }
       } else {
         // Single tap — clear opposing or perpendicular lock immediately
-        if (code === "KeyW" && this.lockedPitch === -1) this.lockedPitch = 0;
-        if (code === "KeyS" && this.lockedPitch === 1) this.lockedPitch = 0;
+        if (code === "KeyW" && this.lockedPitch === 1) this.lockedPitch = 0;
+        if (code === "KeyS" && this.lockedPitch === -1) this.lockedPitch = 0;
         if (code === "KeyA" && this.lockedRoll === 1) this.lockedRoll = 0;
         if (code === "KeyD" && this.lockedRoll === -1) this.lockedRoll = 0;
         if ((code === "KeyW" || code === "KeyS") && this.lockedRoll !== 0) {
@@ -163,8 +163,8 @@ export class InputManager {
 
   /** Returns locked direction label for HUD indicator */
   public getLockedDirection(): string {
-    if (this.lockedPitch === 1) return "FWD";
-    if (this.lockedPitch === -1) return "BWD";
+    if (this.lockedPitch === -1) return "FWD";
+    if (this.lockedPitch === 1) return "BWD";
     if (this.lockedRoll === 1) return "RIGHT";
     if (this.lockedRoll === -1) return "LEFT";
     return "";
@@ -186,8 +186,8 @@ export class InputManager {
     if (this.keys["ShiftLeft"] || this.keys["ShiftRight"] || this.keys["KeyC"]) kbThrottle -= 1;
 
     let kbPitch = 0;
-    if (this.keys["KeyW"] || this.keys["ArrowUp"]) kbPitch += 1;
-    if (this.keys["KeyS"] || this.keys["ArrowDown"]) kbPitch -= 1;
+    if (this.keys["KeyW"] || this.keys["ArrowUp"]) kbPitch -= 1;
+    if (this.keys["KeyS"] || this.keys["ArrowDown"]) kbPitch += 1;
 
     let kbRoll = 0;
     if (this.keys["KeyD"] || this.keys["ArrowRight"]) kbRoll -= 1;
