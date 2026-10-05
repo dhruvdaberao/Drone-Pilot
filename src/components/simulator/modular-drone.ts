@@ -212,9 +212,8 @@ export class ModularDrone {
   }
 
   private buildDrone() {
-    // Use default motor layout from aircraft-model-builder (same as Hanger viewer)
-    const visualMotors = this.def.motors.map(m => ({ index: m.id, position: { x: m.position.x, y: m.position.y, z: m.position.z }, direction: m.direction as 1 | -1 }));
-    const parts = buildProfessionalUAV(this.def.type as any, visualMotors);
+    // Generate the canonical visual drone matching the Hangar perfectly
+    const parts = buildProfessionalUAV(this.def.type as any);
 
     this.group.add(parts.rootGroup);
 
@@ -222,56 +221,11 @@ export class ModularDrone {
     this.gimbalRollArm = parts.gimbalGroup; // Fallback mapping
     this.cameraPod = parts.cameraPitchGroup;
 
-        this.batteryLeds = parts.batteryLeds;
+    this.batteryLeds = parts.batteryLeds;
     this.tailStrobeMesh = parts.tailStrobe;
 
-    // Create visual payload group attached underneath
+    // Create a dummy empty payload group so the update loop doesn't crash
     this.payloadGroup = new THREE.Group();
-    
-    // Delivery Box (Dark grey with orange stripe)
-    const boxW = 0.22, boxH = 0.18, boxL = 0.22;
-    const boxGeo = new THREE.BoxGeometry(boxW, boxH, boxL);
-    const boxMat = new THREE.MeshStandardMaterial({
-      color: 0x22252b, roughness: 0.9, metalness: 0.1,
-    });
-    const boxMesh = new THREE.Mesh(boxGeo, boxMat);
-    boxMesh.position.y = -boxH / 2 - 0.15; // Hang below chain
-    this.payloadGroup.add(boxMesh);
-
-    // Orange safety stripe
-    const stripeGeo = new THREE.BoxGeometry(boxW * 1.02, boxH * 0.2, boxL * 1.02);
-    const stripeMat = new THREE.MeshStandardMaterial({
-      color: 0xcc5500, roughness: 0.6, metalness: 0.1,
-    });
-    const stripeMesh = new THREE.Mesh(stripeGeo, stripeMat);
-    stripeMesh.position.y = -boxH / 2 - 0.15;
-    this.payloadGroup.add(stripeMesh);
-
-    // Hanging chain / cable
-    const chainGeo = new THREE.CylinderGeometry(0.003, 0.003, 0.15, 8);
-    const chainMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-    const chainMesh = new THREE.Mesh(chainGeo, chainMat);
-    chainMesh.position.y = -0.15 / 2;
-    this.payloadGroup.add(chainMesh);
-
-    // Label: "PAYLOAD"
-    const canvas = document.createElement("canvas");
-    canvas.width = 256; canvas.height = 64;
-    const labelCtx = canvas.getContext("2d")!;
-    labelCtx.fillStyle = "#cc5500";
-    labelCtx.fillRect(0, 0, 256, 64);
-    labelCtx.fillStyle = "#ffffff";
-    labelCtx.font = "bold 36px 'Inter', sans-serif";
-    labelCtx.textAlign = "center";
-    labelCtx.textBaseline = "middle";
-    labelCtx.fillText("PAYLOAD", 128, 34);
-    
-    const labelTex = new THREE.CanvasTexture(canvas);
-    const labelMat = new THREE.MeshBasicMaterial({ map: labelTex });
-    const labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.045), labelMat);
-    labelMesh.position.set(0, -boxH / 2 - 0.15, boxL / 2 + 0.012);
-    this.payloadGroup.add(labelMesh);
-
     this.payloadGroup.visible = false;
     this.group.add(this.payloadGroup);
 

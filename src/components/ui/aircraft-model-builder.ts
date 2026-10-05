@@ -40,27 +40,34 @@ export function getAircraftBoundingRadius(type: "quadcopter" | "hexacopter" | "o
 const Materials = {
   // Dark structural carbon fibre chassis
   carbonFiber: new THREE.MeshStandardMaterial({
-    color: 0x16181d,
-    roughness: 0.45,
-    metalness: 0.30,
+    color: 0x08090a,
+    roughness: 0.25,
+    metalness: 0.70,
   }),
   // Satin anodized dark alloy (arms, structural tubes)
   darkGraphite: new THREE.MeshStandardMaterial({
-    color: 0x22252b,
-    roughness: 0.50,
-    metalness: 0.40,
+    color: 0x111215,
+    roughness: 0.60,
+    metalness: 0.50,
   }),
-  // Machined / CNC silver alloy (motor bells, connectors, shell)
+  // Premium metallic alloy (used for shell/canopy) - Sleek dark gunmetal instead of bright silver
   silverAlloy: new THREE.MeshStandardMaterial({
-    color: 0xbfc4cc,
-    roughness: 0.30,
-    metalness: 0.75,
+    color: 0x2a2c31,
+    roughness: 0.15,
+    metalness: 0.85,
   }),
   // Mid-grey machined alloy (motor stators, knuckles)
   machinedAlloy: new THREE.MeshStandardMaterial({
-    color: 0x5a6070,
-    roughness: 0.28,
-    metalness: 0.72,
+    color: 0x4a4d54,
+    roughness: 0.35,
+    metalness: 0.80,
+  }),
+  // Accent neon glow
+  neonCyan: new THREE.MeshStandardMaterial({
+    color: 0x00f0ff,
+    emissive: 0x00f0ff,
+    emissiveIntensity: 0.6,
+    roughness: 0.2,
   }),
   // Optical glass / sensor lens
   opticalGlass: new THREE.MeshPhysicalMaterial({
@@ -73,9 +80,11 @@ const Materials = {
   }),
   // Safety orange accents (front arm stripe, battery latch, prop cap)
   accentOrange: new THREE.MeshStandardMaterial({
-    color: 0xff5500,
-    roughness: 0.28,
-    metalness: 0.18,
+    color: 0xff4400,
+    emissive: 0xff3300,
+    emissiveIntensity: 0.3,
+    roughness: 0.40,
+    metalness: 0.20,
   }),
   // Rubber vibration dampeners / feet
   rubberPad: new THREE.MeshStandardMaterial({
@@ -211,15 +220,15 @@ function buildUnifiedFuselage(
   const chassis = new THREE.Mesh(chassisGeo, Materials.carbonFiber);
   fuselage.add(chassis);
 
-  // 2. TOP EQUIPMENT SHELL (silver alloy canopy)
-  const shellW = bodyW * 0.88;
-  const shellL = bodyL * 0.82;
-  const shellH = 0.032 * sc;
-  const shellShape = createRoundedRectShape(shellW, shellL, cR);
+  // 2. TOP EQUIPMENT SHELL (sleek dark metallic canopy)
+  const shellW = bodyW * 0.90;
+  const shellL = bodyL * 0.92;
+  const shellH = 0.040 * sc;
+  const shellShape = createRoundedRectShape(shellW, shellL, cR * 1.5);
   const shellGeo = new THREE.ExtrudeGeometry(shellShape, {
     depth: shellH, bevelEnabled: true,
-    bevelSegments: 3, steps: 1,
-    bevelSize: 0.009 * sc, bevelThickness: 0.009 * sc,
+    bevelSegments: 4, steps: 1,
+    bevelSize: 0.015 * sc, bevelThickness: 0.015 * sc,
   });
   shellGeo.center();
   shellGeo.rotateX(Math.PI / 2);
@@ -227,6 +236,14 @@ function buildUnifiedFuselage(
   shell.position.y = bodyH / 2 + shellH / 2 - 0.002;
   shell.castShadow = true;
   fuselage.add(shell);
+
+  // Futuristic neon racing stripes on the canopy
+  const stripeGeo = new THREE.BoxGeometry(0.005 * sc, shellH + 0.002, shellL * 0.7);
+  const leftStripe = new THREE.Mesh(stripeGeo, Materials.neonCyan);
+  leftStripe.position.set(-shellW / 4, shell.position.y + 0.005, 0);
+  const rightStripe = new THREE.Mesh(stripeGeo, Materials.neonCyan);
+  rightStripe.position.set(shellW / 4, shell.position.y + 0.005, 0);
+  fuselage.add(leftStripe, rightStripe);
 
   // Heat sink vents in silver shell
   for (let i = -1; i <= 1; i++) {
@@ -456,30 +473,27 @@ function buildArmsAndMotors(
 
     // ── Main arm tube — tapered, visible carbon tube ─────────────
     const usableLength = armLength - knuckleZ - motorR * 1.2;
-    // Arm tapers toward tip for aerodynamic look
-    const armMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(armW, armH, usableLength),
-      Materials.carbonFiber
-    );
+    // Sleek cylindrical carbon fiber tube
+    const armGeo = new THREE.CylinderGeometry(armW * 0.45, armW * 0.45, usableLength, 16);
+    armGeo.rotateX(Math.PI / 2);
+    const armMesh = new THREE.Mesh(armGeo, Materials.carbonFiber);
     armMesh.position.z = knuckleZ + usableLength / 2;
     armMesh.castShadow = true;
     armGroup.add(armMesh);
 
-    // Arm mid-section reinforcement band
-    const band = new THREE.Mesh(
-      new THREE.BoxGeometry(armW * 1.12, armH * 1.15, 0.022),
-      Materials.darkGraphite
-    );
-    band.position.z = knuckleZ + usableLength * 0.75;
+    // Glowing neon accent band (futuristic)
+    const neonBandGeo = new THREE.CylinderGeometry(armW * 0.48, armW * 0.48, 0.015, 16);
+    neonBandGeo.rotateX(Math.PI / 2);
+    const band = new THREE.Mesh(neonBandGeo, Materials.neonCyan);
+    band.position.z = knuckleZ + usableLength * 0.70;
     armGroup.add(band);
 
     // Front arms: safety orange stripe near tip
     if (frontIndices.has(motor.index)) {
-      const orange = new THREE.Mesh(
-        new THREE.BoxGeometry(armW * 1.15, armH * 1.18, 0.018),
-        Materials.accentOrange
-      );
-      orange.position.z = knuckleZ + usableLength * 0.82;
+      const orangeGeo = new THREE.CylinderGeometry(armW * 0.49, armW * 0.49, 0.025, 16);
+      orangeGeo.rotateX(Math.PI / 2);
+      const orange = new THREE.Mesh(orangeGeo, Materials.accentOrange);
+      orange.position.z = knuckleZ + usableLength * 0.85;
       armGroup.add(orange);
     }
 
