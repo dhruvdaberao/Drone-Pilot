@@ -44,7 +44,7 @@ export class ModularDrone {
   private tailStrobeMesh: THREE.Mesh | null = null;
   private strobeMaterial!: THREE.MeshBasicMaterial;
   private strobeTimer = 0;
-  private payloadBox: THREE.Mesh | null = null;
+  private payloadGroup: THREE.Group | null = null;
 
   // Smoothing & visual attitude state
   private visualPos = new THREE.Vector3();
@@ -225,17 +225,55 @@ export class ModularDrone {
         this.batteryLeds = parts.batteryLeds;
     this.tailStrobeMesh = parts.tailStrobe;
 
-    // Create visual payload box attached underneath
-    const payloadGeo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-    const payloadMat = new THREE.MeshStandardMaterial({
-      color: 0xcc5500, // safety orange
-      metalness: 0.3,
-      roughness: 0.8,
+    // Create visual payload group attached underneath
+    this.payloadGroup = new THREE.Group();
+    
+    // Delivery Box (Dark grey with orange stripe)
+    const boxW = 0.22, boxH = 0.18, boxL = 0.22;
+    const boxGeo = new THREE.BoxGeometry(boxW, boxH, boxL);
+    const boxMat = new THREE.MeshStandardMaterial({
+      color: 0x22252b, roughness: 0.9, metalness: 0.1,
     });
-    this.payloadBox = new THREE.Mesh(payloadGeo, payloadMat);
-    this.payloadBox.position.set(0, -0.4, 0);
-    this.payloadBox.visible = false;
-    this.group.add(this.payloadBox);
+    const boxMesh = new THREE.Mesh(boxGeo, boxMat);
+    boxMesh.position.y = -boxH / 2 - 0.15; // Hang below chain
+    this.payloadGroup.add(boxMesh);
+
+    // Orange safety stripe
+    const stripeGeo = new THREE.BoxGeometry(boxW * 1.02, boxH * 0.2, boxL * 1.02);
+    const stripeMat = new THREE.MeshStandardMaterial({
+      color: 0xcc5500, roughness: 0.6, metalness: 0.1,
+    });
+    const stripeMesh = new THREE.Mesh(stripeGeo, stripeMat);
+    stripeMesh.position.y = -boxH / 2 - 0.15;
+    this.payloadGroup.add(stripeMesh);
+
+    // Hanging chain / cable
+    const chainGeo = new THREE.CylinderGeometry(0.003, 0.003, 0.15, 8);
+    const chainMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+    const chainMesh = new THREE.Mesh(chainGeo, chainMat);
+    chainMesh.position.y = -0.15 / 2;
+    this.payloadGroup.add(chainMesh);
+
+    // Label: "PAYLOAD"
+    const canvas = document.createElement("canvas");
+    canvas.width = 256; canvas.height = 64;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#cc5500";
+    ctx.fillRect(0, 0, 256, 64);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 36px 'Inter', sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("PAYLOAD", 128, 34);
+    
+    const labelTex = new THREE.CanvasTexture(canvas);
+    const labelMat = new THREE.MeshBasicMaterial({ map: labelTex });
+    const labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.045), labelMat);
+    labelMesh.position.set(0, -boxH / 2 - 0.15, boxL / 2 + 0.012);
+    this.payloadGroup.add(labelMesh);
+
+    this.payloadGroup.visible = false;
+    this.group.add(this.payloadGroup);
 
     const propBlurTex = this.createPropBlurTexture();
 
@@ -526,16 +564,15 @@ export class ModularDrone {
     }
 
     // 6. Visual Payload Mass
-    if (this.payloadBox) {
+    if (this.payloadGroup) {
       const pm = telemetry.payloadMassKg || 0;
       if (pm > 0.1) {
-        this.payloadBox.visible = true;
-        // Scale box based on mass (e.g., 0.2m to 0.6m)
-        const s = (0.2 + (pm * 0.05)) / 0.1; // Scale relative to 0.1m base geometry
-        this.payloadBox.scale.set(s, s, s);
-        this.payloadBox.position.y = -((0.1 * s) / 2) - 0.25; // hang below
+        this.payloadGroup.visible = true;
+        // Scale box based on mass (e.g., 1.0x to 2.5x)
+        const s = 0.8 + (pm * 0.05); 
+        this.payloadGroup.scale.set(s, s, s);
       } else {
-        this.payloadBox.visible = false;
+        this.payloadGroup.visible = false;
       }
     }
 
@@ -581,7 +618,7 @@ export class ModularDrone {
       if (motorThrottle < 0.20) {
         p.blurMaterial.opacity = 0.0;
         p.blurMesh.visible = false;
-        p.bladeMaterial.opacity = 1.0;
+        p.bladeMaterial.opacity = 1.0; // Full visibility on ground
       } else if (motorThrottle < 0.60) {
         const t = (motorThrottle - 0.20) / (0.60 - 0.20);
         p.blurMesh.visible = true;
