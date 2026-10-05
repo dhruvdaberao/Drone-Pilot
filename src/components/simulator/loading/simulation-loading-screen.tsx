@@ -38,40 +38,41 @@ export function SimulationLoadingScreen({ onReady }: SimulationLoadingScreenProp
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#08090a] font-mono select-none">
-      <div className="w-full max-w-md p-8 bg-[#0c0d0e] border border-white/10 rounded-2xl shadow-2xl space-y-6 text-center">
-        <div className="flex items-center justify-center">
-          <div className="h-16 w-16 rounded-full bg-[#FF5500]/5 border border-[#FF5500]/20 flex items-center justify-center text-[#FF5500]">
-            <Loader2 className="h-8 w-8 animate-spin" />
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#030712] font-mono select-none p-12">
+      <div className="w-full max-w-2xl space-y-12 text-center">
+        <div className="flex flex-col items-center justify-center gap-8">
+          <div className="h-24 w-24 rounded-full bg-white/5 flex items-center justify-center text-white/90">
+            <Loader2 className="h-12 w-12 animate-spin" />
+          </div>
+          <div>
+            <h2 className="font-sans text-4xl md:text-5xl font-black text-white uppercase tracking-[0.2em]">
+              DRONE PILOT SIMULATOR
+            </h2>
+            <p className="text-sm md:text-base text-white/60 font-bold tracking-[0.3em] mt-4 uppercase">
+              Aeronautical Environment Initialization
+            </p>
           </div>
         </div>
 
-        <div>
-          <h2 className="font-sans text-xl font-black text-white uppercase tracking-widest">
-            DRONE PILOT SIMULATOR
-          </h2>
-          <p className="text-[10px] text-[#FF5500] font-bold tracking-[0.2em] mt-2 uppercase">Aeronautical Environment Initialization</p>
-        </div>
-
-        <div className="space-y-3 text-left bg-black/50 p-5 rounded-xl border border-white/5">
+        <div className="space-y-4 text-left max-w-lg mx-auto pt-8">
           {PHASES.map((phase, idx) => {
             const isDone = idx < currentPhase;
             const isCurrent = idx === currentPhase;
             return (
               <div
                 key={idx}
-                className={"flex items-center gap-3 text-[10px] md:text-[11px] font-bold tracking-wider uppercase " + (
+                className={"flex items-center gap-4 text-xs md:text-sm font-bold tracking-[0.15em] uppercase transition-colors duration-300 " + (
                   isDone
-                    ? "text-emerald-500"
+                    ? "text-emerald-400"
                     : isCurrent
-                    ? "text-white"
+                    ? "text-white scale-105 transform origin-left"
                     : "text-neutral-700"
                 )}
               >
                 {isDone ? (
-                  <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                  <Check className="h-5 w-5 text-emerald-400 shrink-0" />
                 ) : (
-                  <span className={`h-1.5 w-1.5 rounded-full shrink-0 ml-1.5 ${isCurrent ? "bg-[#FF5500]" : "bg-neutral-800"}`} />
+                  <span className={`h-2 w-2 rounded-full shrink-0 ml-1.5 ${isCurrent ? "bg-white animate-pulse" : "bg-neutral-800"}`} />
                 )}
                 <span className="truncate">{phase}</span>
               </div>

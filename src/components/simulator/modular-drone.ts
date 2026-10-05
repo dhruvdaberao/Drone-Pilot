@@ -112,14 +112,14 @@ export class ModularDrone {
     // Pilot name
     const displayName = this.pilotName.length > 20 ? this.pilotName.substring(0, 18) + "…" : this.pilotName;
     ctx.fillStyle = "rgba(255,255,255,0.90)";
-    ctx.font = "700 30px monospace";
+    ctx.font = "700 24px monospace";
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillText(displayName, 68, 48);
 
     // YOU badge
     ctx.fillStyle = "rgba(255,255,255,0.28)";
-    ctx.font = "600 20px monospace";
+    ctx.font = "600 16px monospace";
     ctx.textAlign = "right";
     ctx.fillText("YOU", 480, 48);
 
@@ -132,7 +132,7 @@ export class ModularDrone {
     });
     this.nameTagSprite = new THREE.Sprite(spriteMat);
     this.nameTagSprite.position.set(0, 1.4, 0);
-    this.nameTagSprite.scale.set(2.0, 0.40, 1);
+    this.nameTagSprite.scale.set(1.1, 0.22, 1);
     this.group.add(this.nameTagSprite);
   }
 

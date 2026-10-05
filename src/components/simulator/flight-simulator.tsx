@@ -1391,12 +1391,12 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       />
 
       {/* Real-Time Flight Coach Instrumentation */}
-      <FlightCoachPanel
+      {!isLoading && <FlightCoachPanel
         insight={currentInsight}
         history={insightHistory}
         onDismiss={() => setCurrentInsight(null)}
         onClearHistory={() => setInsightHistory([])}
-      />
+      />}
 
       {/* Fault Injection Benchmark Panel */}
       <FaultInjectionPanel

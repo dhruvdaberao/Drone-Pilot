@@ -7,7 +7,7 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
 
   return (
     <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex flex-col items-center gap-3 opacity-70 hover:opacity-100 transition-opacity">
-      <div className="flex items-center justify-center gap-12 bg-black/40 backdrop-blur-md border border-white/10 px-8 py-4 rounded-3xl shadow-2xl">
+      <div className="flex items-center justify-center gap-12 px-8 py-4">
         
         {/* Left Stick (WASD) */}
         <div className="flex flex-col items-center gap-1 relative">
