@@ -153,10 +153,12 @@ export class ModularDrone {
   }
 
   /**
-   * Generates a realistic procedural radial motion-blur texture for high-RPM propellers
+   * Generates a realistic procedural radial motion-blur texture for high-RPM propellers.
+   * Uses a bright white/light-grey semi-transparent disc so it is visible over ANY
+   * background colour (green grass, dark runway, water, etc.).
    */
   private createPropBlurTexture(): THREE.CanvasTexture {
-    const size = 256;
+    const size = 512;
     const canvas = document.createElement("canvas");
     canvas.width = size;
     canvas.height = size;
@@ -165,46 +167,61 @@ export class ModularDrone {
 
     const center = size / 2;
     const outerRadius = size / 2 - 4;
+    const innerHub   = outerRadius * 0.08;
 
-    // Transparent background
     ctx.clearRect(0, 0, size, size);
 
-    // 1. Solid translucent base disc so the circle is actually visible against the ground!
+    // 1. Frosted-glass disc: semi-transparent light grey/white visible on any bg
+    const baseGrad = ctx.createRadialGradient(center, center, innerHub, center, center, outerRadius);
+    baseGrad.addColorStop(0.0,  "rgba(220,220,220,0.0)");
+    baseGrad.addColorStop(0.12, "rgba(210,215,220,0.50)");
+    baseGrad.addColorStop(0.55, "rgba(190,195,200,0.60)");
+    baseGrad.addColorStop(0.82, "rgba(170,175,180,0.65)");
+    baseGrad.addColorStop(1.0,  "rgba(150,155,160,0.0)");
     ctx.beginPath();
     ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(15, 15, 18, 0.45)"; // Translucent dark grey base
+    ctx.fillStyle = baseGrad;
     ctx.fill();
 
-    // 2. Concentric aerodynamic path rings (darker)
-    for (let r = 18; r < outerRadius; r += 2.0) {
-      const normR = (r - 18) / (outerRadius - 18);
-      const density = Math.sin(normR * Math.PI) * 0.3 + 0.1;
+    // 2. Concentric motion-streak rings in darker grey
+    for (let r = innerHub + 4; r < outerRadius - 6; r += 3.5) {
+      const normR = (r - innerHub) / (outerRadius - innerHub);
+      const alpha = Math.sin(normR * Math.PI) * 0.18 + 0.06;
       ctx.beginPath();
       ctx.arc(center, center, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(5, 5, 5, ${density.toFixed(3)})`;
-      ctx.lineWidth = 1.0;
+      ctx.strokeStyle = `rgba(60, 60, 60, ${alpha.toFixed(3)})`;
+      ctx.lineWidth = 1.2;
       ctx.stroke();
     }
 
-    // 3. Outer safety orange tip streak
-    const tipInner = outerRadius - 16;
-    for (let r = tipInner; r < outerRadius; r += 1.5) {
-      const tipAlpha = ((r - tipInner) / 16) * 0.9;
+    // 3. Blade tip safety-orange outer ring
+    for (let r = outerRadius - 22; r < outerRadius - 2; r += 1.8) {
+      const t = (r - (outerRadius - 22)) / 20;
+      const alpha = Math.sin(t * Math.PI) * 0.85;
       ctx.beginPath();
       ctx.arc(center, center, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(255, 85, 0, ${tipAlpha.toFixed(3)})`;
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = `rgba(255, 100, 0, ${alpha.toFixed(3)})`;
+      ctx.lineWidth = 1.8;
       ctx.stroke();
     }
 
-    // 4. Specular radial streak sheen (bright highlight crossing the disc)
-    const grad = ctx.createLinearGradient(0, 0, size, size);
-    grad.addColorStop(0, "rgba(255, 255, 255, 0.0)");
-    grad.addColorStop(0.45, "rgba(255, 255, 255, 0.0)");
-    grad.addColorStop(0.5, "rgba(255, 255, 255, 0.25)"); // Bright white slash
-    grad.addColorStop(0.55, "rgba(255, 255, 255, 0.0)");
-    grad.addColorStop(1, "rgba(255, 255, 255, 0.0)");
+    // 4. Specular sheen slash
+    const grad = ctx.createLinearGradient(center - outerRadius, center - outerRadius, center + outerRadius, center + outerRadius);
+    grad.addColorStop(0.0,  "rgba(255,255,255,0.0)");
+    grad.addColorStop(0.42, "rgba(255,255,255,0.0)");
+    grad.addColorStop(0.50, "rgba(255,255,255,0.30)");
+    grad.addColorStop(0.58, "rgba(255,255,255,0.0)");
+    grad.addColorStop(1.0,  "rgba(255,255,255,0.0)");
     ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 5. Soft feathered edge
+    const edgeGrad = ctx.createRadialGradient(center, center, outerRadius - 18, center, center, outerRadius);
+    edgeGrad.addColorStop(0, "rgba(0,0,0,0.0)");
+    edgeGrad.addColorStop(1, "rgba(0,0,0,0.35)");
+    ctx.fillStyle = edgeGrad;
     ctx.beginPath();
     ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
     ctx.fill();
