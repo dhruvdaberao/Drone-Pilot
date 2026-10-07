@@ -171,13 +171,13 @@ export class ModularDrone {
 
     ctx.clearRect(0, 0, size, size);
 
-    // 1. Frosted-glass disc: semi-transparent light grey/white visible on any bg
+    // 1. Frosted-glass disc: semi-transparent grey visible on any bg
     const baseGrad = ctx.createRadialGradient(center, center, innerHub, center, center, outerRadius);
-    baseGrad.addColorStop(0.0,  "rgba(220,220,220,0.0)");
-    baseGrad.addColorStop(0.12, "rgba(210,215,220,0.50)");
-    baseGrad.addColorStop(0.55, "rgba(190,195,200,0.60)");
-    baseGrad.addColorStop(0.82, "rgba(170,175,180,0.65)");
-    baseGrad.addColorStop(1.0,  "rgba(150,155,160,0.0)");
+    baseGrad.addColorStop(0.0,  "rgba(120,120,120,0.0)");
+    baseGrad.addColorStop(0.12, "rgba(80,85,90,0.40)");
+    baseGrad.addColorStop(0.55, "rgba(60,65,70,0.45)");
+    baseGrad.addColorStop(0.82, "rgba(40,45,50,0.55)");
+    baseGrad.addColorStop(1.0,  "rgba(20,25,30,0.0)");
     ctx.beginPath();
     ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
     ctx.fillStyle = baseGrad;
@@ -189,7 +189,7 @@ export class ModularDrone {
       const alpha = Math.sin(normR * Math.PI) * 0.18 + 0.06;
       ctx.beginPath();
       ctx.arc(center, center, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(60, 60, 60, ${alpha.toFixed(3)})`;
+      ctx.strokeStyle = `rgba(30, 30, 30, ${alpha.toFixed(3)})`;
       ctx.lineWidth = 1.2;
       ctx.stroke();
     }
@@ -209,7 +209,7 @@ export class ModularDrone {
     const grad = ctx.createLinearGradient(center - outerRadius, center - outerRadius, center + outerRadius, center + outerRadius);
     grad.addColorStop(0.0,  "rgba(255,255,255,0.0)");
     grad.addColorStop(0.42, "rgba(255,255,255,0.0)");
-    grad.addColorStop(0.50, "rgba(255,255,255,0.30)");
+    grad.addColorStop(0.50, "rgba(255,255,255,0.15)");
     grad.addColorStop(0.58, "rgba(255,255,255,0.0)");
     grad.addColorStop(1.0,  "rgba(255,255,255,0.0)");
     ctx.fillStyle = grad;
@@ -220,7 +220,7 @@ export class ModularDrone {
     // 5. Soft feathered edge
     const edgeGrad = ctx.createRadialGradient(center, center, outerRadius - 18, center, center, outerRadius);
     edgeGrad.addColorStop(0, "rgba(0,0,0,0.0)");
-    edgeGrad.addColorStop(1, "rgba(0,0,0,0.35)");
+    edgeGrad.addColorStop(1, "rgba(0,0,0,0.45)");
     ctx.fillStyle = edgeGrad;
     ctx.beginPath();
     ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
@@ -228,7 +228,6 @@ export class ModularDrone {
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.format = THREE.RGBAFormat;
-    tex.premultiplyAlpha = false;
     tex.wrapS = THREE.ClampToEdgeWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
     return tex;

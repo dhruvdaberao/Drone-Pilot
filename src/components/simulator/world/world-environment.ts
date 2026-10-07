@@ -222,7 +222,7 @@ export class WorldEnvironment {
     
     // Create a simple vertical streak texture for rain
     const canvas = document.createElement("canvas");
-    canvas.width = 4; canvas.height = 128;
+    canvas.width = 128; canvas.height = 128;
     const ctx = canvas.getContext("2d");
     if (ctx) {
       const grad = ctx.createLinearGradient(0, 0, 0, 128);
@@ -230,18 +230,19 @@ export class WorldEnvironment {
       grad.addColorStop(0.5, "rgba(200,220,255,0.8)");
       grad.addColorStop(1, "rgba(200,220,255,0)");
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 4, 128);
+      // Draw a thin line in the center of the square canvas
+      ctx.fillRect(62, 0, 4, 128);
     }
     const rainTex = new THREE.CanvasTexture(canvas);
     
     const rainMat = new THREE.PointsMaterial({
       color: 0xcccccc,
-      size: 25.0, // Large enough to show the long 4x128 streak
+      size: 15.0, // Size of the square quad (the streak will be 4/128th of this)
       map: rainTex,
       transparent: true,
       opacity: 0.6,
       depthWrite: false,
-      blending: THREE.AdditiveBlending
+      blending: THREE.NormalBlending // Normal blending looks better for rain than additive
     });
     
     this.rainParticles = new THREE.Points(rainGeo, rainMat);
@@ -368,6 +369,12 @@ export class WorldEnvironment {
       const cloudColor = new THREE.Color(0xffffff).lerp(new THREE.Color(0x444850), currentStormBlend);
       this.cloudMat.color.copy(cloudColor);
       this.cloudMat.emissiveIntensity = 0.06 * (1.0 - currentStormBlend);
+      
+      const fogColor = new THREE.Color(0xc5dff7).lerp(new THREE.Color(0x555c66), currentStormBlend);
+      (this.scene.fog as THREE.FogExp2).color.copy(fogColor);
+      if (this.scene.background) {
+         (this.scene.background as THREE.Color).copy(fogColor);
+      }
       
       // Hide clouds completely if rain is significant
       for (let i = 0; i < this.cloudClusters.length; i++) {
