@@ -15,6 +15,8 @@ interface LeftGlassPanelProps {
   onSetMotorHealth: (idx: number, health: number) => void;
   payloadMassKg: number;
   onUpdatePayload: (mass: number) => void;
+  droneQuantity?: number;
+  onUpdateDroneQuantity?: (qty: number) => void;
   sensorHealth: Record<string, boolean>;
   onToggleSensor: (sensor: string) => void;
   onExit: () => void;
@@ -28,6 +30,8 @@ export function LeftGlassPanel({
   onSetMotorHealth,
   payloadMassKg,
   onUpdatePayload,
+  droneQuantity = 1,
+  onUpdateDroneQuantity,
   sensorHealth,
   onToggleSensor,
   onExit,
@@ -139,6 +143,18 @@ export function LeftGlassPanel({
                     onChange={(e) => onUpdatePayload(parseFloat(e.target.value))}
                     className="w-full h-1.5 bg-black/50 rounded-lg appearance-none cursor-pointer accent-[#facc15]" />
                 </div>
+                
+                {onUpdateDroneQuantity && (
+                <div>
+                  <div className="flex justify-between text-xs font-bold mb-2 uppercase mt-4">
+                    <span className="text-white/60">Drone Quantity (Swarm)</span>
+                    <span className="text-orange-400">{droneQuantity} Units</span>
+                  </div>
+                  <input type="range" min="1" max="10" step="1" value={droneQuantity}
+                    onChange={(e) => onUpdateDroneQuantity(parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-white/20 rounded-full appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#FF5500] [&::-webkit-slider-thumb]:rounded-full" />
+                </div>
+                )}
               </div>
 
               {/* SENSOR DIAGNOSTICS */}

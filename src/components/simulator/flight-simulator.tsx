@@ -354,6 +354,8 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     compass: true,
   });
   const [payloadMassKg, setPayloadMassKg] = useState(0.0);
+  const [droneQuantity, setDroneQuantity] = useState(1);
+  const droneQuantityRef = useRef(1);
   const [motorOverrides, setMotorOverrides] = useState<number[]>([1, 1, 1, 1, 1, 1, 1, 1]);
   const [manipulationEvents, setManipulationEvents] = useState<ManipulationEvent[]>([]);
   const baselineExperimentRef = useRef({ payloadKg: 0, batteryPercent: 100 });
@@ -691,6 +693,11 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     physicsEngineRef.current?.setPayloadMass(massKg);
   }, []);
 
+  const handleSetDroneQuantity = useCallback((qty: number) => {
+    setDroneQuantity(qty);
+    droneQuantityRef.current = qty;
+  }, []);
+
   const handleResetAllFaults = useCallback(() => {
     const nominal = [1, 1, 1, 1, 1, 1, 1, 1];
     setMotorHealths(nominal);
@@ -879,6 +886,14 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     const droneMesh = new ModularDrone(droneDef, pilotName);
     scene.add(droneMesh.group);
     droneMeshRef.current = droneMesh;
+    
+    // SWARM CLONES
+    const cloneMeshes: any[] = [];
+    for (let i = 1; i < 10; i++) {
+        const clone = new ModularDrone(droneDef, `CLONE-${i}`);
+        scene.add(clone.group);
+        cloneMeshes.push(clone);
+    }
 
     // 6. MULTIPLAYER REMOTE DRONES LAYER
     const remoteDroneMgr = new RemoteDroneManager();
@@ -928,10 +943,10 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
 
     // Phase 2.1 Digital Twin Fidelity: Map sensors & GPS assist mode
     const initSensors = {
-      gps: dtConfig.flightController.gpsAssistedMode && !!dtConfig.sensors.find((s) => s.type === "GPS" && s.enabled && s.health === "HEALTHY"),
-      imu: !!dtConfig.sensors.find((s) => s.type === "IMU" && s.enabled && s.health === "HEALTHY"),
-      baro: !!dtConfig.sensors.find((s) => s.type === "BAROMETER" && s.enabled && s.health === "HEALTHY"),
-      compass: !!dtConfig.sensors.find((s) => s.type === "COMPASS" && s.enabled && s.health === "HEALTHY"),
+      gps: true,
+      imu: true,
+      baro: true,
+      compass: true,
     };
     physics.setSensorHealth(initSensors);
     setSensorHealth(initSensors);
@@ -1095,6 +1110,38 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       // Update 3D Drone Transform & Props
       droneMesh.update(curTelemetry, dt);
       droneMesh.setNameTagVisible(chaseCam.mode !== "fpv");
+      
+      // Update Swarm Clones
+      for (let i = 0; i < cloneMeshes.length; i++) {
+          const clone = cloneMeshes[i];
+          if (i < droneQuantityRef.current - 1) {
+              clone.group.visible = true;
+              if (clone.groundShadowMesh) clone.groundShadowMesh.visible = true;
+              
+              // Deep copy telemetry to offset position safely
+              const cloneTelem = JSON.parse(JSON.stringify(curTelemetry));
+              
+              // Offset clone position to fly in a V-formation or staggered line
+              // i=0 -> left 2.5m, i=1 -> right 2.5m, i=2 -> left 5m, etc.
+              const offsetIndex = Math.ceil((i + 1) / 2);
+              const sign = (i % 2 === 0) ? -1 : 1;
+              const spacing = 3.5;
+              
+              // Calculate formation offsets based on yaw to fly behind and to the sides
+              const yawRad = curTelemetry.rotation.yaw;
+              const dx = Math.cos(yawRad) * (offsetIndex * spacing * sign) - Math.sin(yawRad) * (offsetIndex * spacing);
+              const dz = Math.sin(yawRad) * (offsetIndex * spacing * sign) + Math.cos(yawRad) * (offsetIndex * spacing);
+              
+              cloneTelem.position.x += dx;
+              cloneTelem.position.z += dz;
+              
+              clone.update(cloneTelem, dt);
+              clone.setNameTagVisible(chaseCam.mode !== "fpv");
+          } else {
+              clone.group.visible = false;
+              if (clone.groundShadowMesh) clone.groundShadowMesh.visible = false;
+          }
+      }
 
       // Update Remote Drones in Airspace (with Dead Reckoning)
       remoteDroneMgr.update(remotePlayersRef.current, dt);
@@ -1242,6 +1289,10 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
 
       scene.remove(droneMesh.group);
       scene.remove(droneMesh.groundShadowMesh);
+      cloneMeshes.forEach(c => {
+          scene.remove(c.group);
+          scene.remove(c.groundShadowMesh);
+      });
       scene.remove(remoteDroneMgr.group);
       renderer.dispose();
       
