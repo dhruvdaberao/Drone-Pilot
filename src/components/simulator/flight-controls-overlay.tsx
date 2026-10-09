@@ -2,7 +2,9 @@ import React from "react";
 import { MinimapWidget } from "./minimap-widget";
 import { Lock, NavigationOff, ArrowUp, ArrowDown, Target } from "lucide-react";
 
-export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, onToggleScenarios, sensorHealth, onExit }: { telemetry?: any, autoMoveLocked?: string, onToggleMap?: () => void, onToggleScenarios?: () => void, onExit?: () => void, sensorHealth?: Record<string, boolean> }) {
+import { Copy, Plus, Minus } from "lucide-react";
+
+export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, onToggleScenarios, sensorHealth, onExit, droneQuantity, onUpdateDroneQuantity }: { telemetry?: any, autoMoveLocked?: string, onToggleMap?: () => void, onToggleScenarios?: () => void, onExit?: () => void, sensorHealth?: Record<string, boolean>, droneQuantity?: number, onUpdateDroneQuantity?: (qty: number) => void }) {
   const isGpsHealthy = sensorHealth ? sensorHealth['gps'] : true;
 
   const keyBtn = (label: string, isLocked: boolean, size: string = "w-12 h-12", textSize: string = "text-lg") => (

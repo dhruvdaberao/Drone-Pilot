@@ -778,7 +778,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       );
     }
     
-    setIsAnalysisOpen(true);
+    setIsReportOpen(true);
   }, [selectedDrone.name]);
 
   // Demonstration Mode Trigger (Requirement 39: CDAC / Live Demo)
@@ -1504,13 +1504,15 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
 
       {/* Flight Controls Visual Guide */}
       <FlightControlsOverlay 
-          telemetry={telemetry} 
-          autoMoveLocked={autoMoveLocked} 
-          onToggleMap={() => setIsMapModalOpen(true)} 
-          sensorHealth={sensorHealth}
-          onToggleScenarios={() => setIsScenarioModalOpen(true)}
-          onExit={handleManualDebrief}
-        />
+            telemetry={telemetry} 
+            autoMoveLocked={autoMoveLocked} 
+            onToggleMap={() => setIsMapModalOpen(true)} 
+            sensorHealth={sensorHealth}
+            onToggleScenarios={() => setIsScenarioModalOpen(true)}
+            onExit={handleManualDebrief}
+            droneQuantity={droneQuantity}
+            onUpdateDroneQuantity={handleSetDroneQuantity}
+          />
 
       {/* Real-Time Flight Coach Instrumentation */}
       {!isLoading && <FlightCoachPanel
