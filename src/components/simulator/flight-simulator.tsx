@@ -1332,6 +1332,8 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
           onSetMotorHealth={handleSetMotorHealth}
           payloadMassKg={payloadMassKg}
           onUpdatePayload={handleSetPayloadMass}
+          droneQuantity={droneQuantity}
+          onUpdateDroneQuantity={handleSetDroneQuantity}
           sensorHealth={sensorHealth}
           onToggleSensor={handleToggleSensor as any}
           onExit={onExit}
@@ -1502,11 +1504,13 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
 
       {/* Flight Controls Visual Guide */}
       <FlightControlsOverlay 
-        telemetry={telemetry} 
-        autoMoveLocked={autoMoveLocked} 
-        onToggleMap={() => setIsMapModalOpen(true)} 
-        sensorHealth={sensorHealth}
-      />
+          telemetry={telemetry} 
+          autoMoveLocked={autoMoveLocked} 
+          onToggleMap={() => setIsMapModalOpen(true)} 
+          sensorHealth={sensorHealth}
+          onToggleScenarios={() => setIsScenarioModalOpen(true)}
+          onExit={handleManualDebrief}
+        />
 
       {/* Real-Time Flight Coach Instrumentation */}
       {!isLoading && <FlightCoachPanel
