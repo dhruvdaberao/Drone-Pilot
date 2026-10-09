@@ -6,9 +6,8 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
   const isGpsHealthy = sensorHealth ? sensorHealth['gps'] : true;
 
   const keyBtn = (label: string, isLocked: boolean, size: string = "w-12 h-12", textSize: string = "text-lg") => (
-    <div className={`${size} rounded-lg ${isLocked ? 'bg-emerald-500/30 border-emerald-400/80' : 'bg-white/90 border-white/80'} border flex items-center justify-center font-mono ${textSize} font-bold shadow-lg relative ${isLocked ? 'text-emerald-300' : 'text-black'}`}>
-      {label}
-      {isLocked && <Lock className="absolute -top-2 -right-2 w-3.5 h-3.5 text-emerald-400" />}
+    <div className={`${size} rounded-lg ${isLocked ? 'bg-emerald-500/30 border-emerald-400/80' : 'bg-white/90 border-white/80'} border flex items-center justify-center font-mono ${textSize} font-bold shadow-lg relative transition-colors ${isLocked ? 'text-emerald-300' : 'text-black'}`}>
+      {isLocked ? <Lock className="w-5 h-5 text-emerald-400 animate-pulse" /> : label}
     </div>
   );
 

@@ -22,9 +22,11 @@ function generateRadialMotors(
 ): IndividualMotorConfig[] {
   const motors: IndividualMotorConfig[] = [];
   const step = (Math.PI * 2) / count;
+  // Offset by 45 degrees for X configurations (4 or 8 motors), otherwise 0 or half-step for hexa
+  const offset = count === 4 || count === 8 ? Math.PI / 4 : (count === 6 ? Math.PI / 6 : 0);
 
   for (let i = 0; i < count; i++) {
-    const angle = i * step;
+    const angle = (i * step) + offset;
     motors.push({
       motorId: `M${i + 1}`,
       index: i,
