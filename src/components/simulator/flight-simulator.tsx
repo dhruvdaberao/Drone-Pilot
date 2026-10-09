@@ -1465,20 +1465,19 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
         />
       )}
 
-      {/* Post-Flight Debrief & Incident Analysis Modal */}
-      {analysisReport && (
-        <FlightAnalysisModal
-          isOpen={isAnalysisOpen}
-          report={analysisReport}
-          coachSummary={coachSessionSummary}
-          onFlyAgain={handleFlyAgain}
-          onOpenReplay={() => {
-            setIsAnalysisOpen(false);
-            handleOpenReplay();
-          }}
-          onExitToDashboard={onExit}
-        />
-      )}
+              {/* Post-Flight Reporting Modal (White PDF) */}
+        {isReportOpen && (
+          <PostFlightReportModal
+            drone={selectedDrone}
+            telemetry={telemetry}
+            envState={envState}
+            stats={flightStatsRef.current}
+            insights={insightHistory}
+            onClose={() => {
+              setIsReportOpen(false);
+            }}
+          />
+        )}
 
       {/* Telemetry Stream Replay Modal */}
       <FlightReplayModal

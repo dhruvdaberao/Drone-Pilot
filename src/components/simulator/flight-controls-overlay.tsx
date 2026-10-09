@@ -50,6 +50,29 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
           </div>
         </div>
 
+        {/* Swarm Quantity */}
+        <div className="flex flex-col items-center gap-1 pointer-events-auto">
+          <span className="text-[9px] font-bold text-white/50 tracking-widest uppercase mb-1">Fleet</span>
+          <div className="flex items-center gap-2 bg-neutral-900/80 backdrop-blur border border-white/20 p-2 rounded-xl h-24">
+            <button 
+              onClick={() => onUpdateDroneQuantity && onUpdateDroneQuantity(Math.max(1, (droneQuantity || 1) - 1))}
+              className="p-1 rounded bg-white/10 hover:bg-white/20 text-white"
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+            <div className="flex flex-col items-center min-w-[40px]">
+              <Copy className="w-4 h-4 text-orange-400 mb-1" />
+              <span className="font-mono font-bold text-lg text-white">{droneQuantity || 1}</span>
+            </div>
+            <button 
+              onClick={() => onUpdateDroneQuantity && onUpdateDroneQuantity(Math.min(10, (droneQuantity || 1) + 1))}
+              className="p-1 rounded bg-white/10 hover:bg-white/20 text-white"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
         {/* Radar Map */}
         <div className="flex flex-col items-center gap-1 pointer-events-auto">
           <span className={`text-[9px] font-bold ${isGpsHealthy ? 'text-white/50' : 'text-rose-500'} tracking-widest uppercase mb-1`}>
