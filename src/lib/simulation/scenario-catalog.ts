@@ -208,5 +208,94 @@ export const SCENARIO_CATALOG: TrainingScenarioDef[] = [
       "Descent rate must be carefully managed.",
       "Ground effect causes floating near the surface."
     ]
+  },
+  {
+    id: "scen-bridge-inspect",
+    title: "Mission: Bridge Inspection",
+    description: "Navigate to a structural target in high winds while carrying a heavy payload.",
+    learningObjective: "Mastering aggressive counter-pitch and momentum management when heavily loaded in turbulence.",
+    briefing: {
+      initialConditions: "Winds are severe (18m/s). Payload is heavily biased (+3.5kg).",
+      whatToObserve: "The drone will aggressively drift. Observe how the heavy mass makes stopping difficult (inertia).",
+      availableControls: "Full controls. Autopilot is available but may struggle with wind."
+    },
+    environmentSetup: {
+      preset: "storm",
+      windSpeed: 18.0,
+      turbulence: 0.8
+    },
+    aircraftSetup: {
+      payloadKg: 3.5
+    },
+    objectives: [
+      {
+        id: "obj-bi-nav",
+        title: "Displace 150 meters",
+        description: "Fly 150 meters away from the launch pad to reach the inspection zone.",
+        type: "NAVIGATION",
+        condition: {
+          targetDistance: 150.0,
+          minDuration: 5.0
+        }
+      },
+      {
+        id: "obj-bi-hover",
+        title: "Station Keep",
+        description: "Hold your position against the wind for 10 seconds.",
+        type: "STABILITY",
+        condition: {
+          maxDriftVelocity: 2.0,
+          maxTiltDeg: 45.0,
+          minDuration: 10.0
+        }
+      }
+    ],
+    debriefTopics: [
+      "Inertia Management with Heavy Payloads",
+      "Using aggressive pitch to fight high-speed winds",
+      "Autopilot limitations in chaotic turbulence"
+    ]
+  },
+  {
+    id: "scen-emergency-rth",
+    title: "Mission: Emergency Motor Failure",
+    description: "A bird strike has destroyed Motor 4. Recover the aircraft and land safely.",
+    learningObjective: "Learning asymmetric thrust handling and emergency controlled descent.",
+    briefing: {
+      initialConditions: "Hovering at 50m. Motor 4 instantly fails (0% health).",
+      whatToObserve: "The drone will violently pitch/roll toward the dead motor. The flight controller will attempt to compensate but lose altitude.",
+      availableControls: "Full controls. Expect severe control lag and yaw spinning."
+    },
+    environmentSetup: {
+      preset: "normal"
+    },
+    aircraftSetup: {
+      motorHealth: { 3: 0.0 }
+    },
+    objectives: [
+      {
+        id: "obj-em-survive",
+        title: "Survive the failure",
+        description: "Maintain control for 5 seconds without crashing.",
+        type: "OBSERVATION",
+        condition: {
+          minDuration: 5.0
+        }
+      },
+      {
+        id: "obj-em-land",
+        title: "Emergency Landing",
+        description: "Bring the drone down to the ground in one piece.",
+        type: "LANDING",
+        condition: {
+          minDuration: 2.0
+        }
+      }
+    ],
+    debriefTopics: [
+      "Vortex Ring State and uncontrolled descent",
+      "Asymmetric thrust physics",
+      "Trading altitude for stability"
+    ]
   }
 ];
