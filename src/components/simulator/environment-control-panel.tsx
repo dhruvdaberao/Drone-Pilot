@@ -143,13 +143,13 @@ export function EnvironmentControlPanel({
           <div className="rounded-lg bg-black/20 p-2">
             <div className="flex justify-between text-[10px] mb-1 text-white/70">
               <span className="flex items-center gap-1">RAIN INTENSITY</span>
-              <span className="text-[#38bdf8] font-bold">{Math.round((environment.rainIntensity || 0) * 100)}%</span>
+              <span className="text-[#FF5500] font-bold">{Math.round((environment.rainIntensity || 0) * 100)}%</span>
             </div>
             <input
               type="range" min="0" max="1" step="0.05"
               value={environment.rainIntensity || 0}
               onChange={(e) => onUpdateEnvironment({ rainIntensity: parseFloat(e.target.value) })}
-              className="w-full accent-[#38bdf8]"
+              className="w-full accent-[#FF5500]"
             />
           </div>
         </Section>

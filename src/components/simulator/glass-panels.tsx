@@ -384,7 +384,7 @@ export function RightGlassPanel({
                   const autoTurbulence = Math.min(1.0, speed * 0.04);
                   onUpdateEnvironment({ windSpeed: speed, turbulence: autoTurbulence });
                 }}
-                  className="w-full h-1.5 bg-black/50 rounded-lg appearance-none cursor-pointer accent-[#38bdf8]" />
+                  className="w-full h-1.5 bg-black/50 rounded-lg appearance-none cursor-pointer accent-[#FF5500]" />
               </div>
               <div>
                 <div className="flex justify-between text-xs font-bold mb-2 uppercase">
@@ -393,7 +393,7 @@ export function RightGlassPanel({
                 </div>
                 <input type="range" min="0" max="359" step="5" value={environment.windDirection}
                   onChange={(e) => onUpdateEnvironment({ windDirection: parseInt(e.target.value) })}
-                  className="w-full h-1.5 bg-black/50 rounded-lg appearance-none cursor-pointer accent-[#38bdf8]" />
+                  className="w-full h-1.5 bg-black/50 rounded-lg appearance-none cursor-pointer accent-[#FF5500]" />
               </div>
               <div>
                 <div className="flex justify-between text-xs font-bold mb-2 uppercase mt-4">
@@ -402,7 +402,7 @@ export function RightGlassPanel({
                 </div>
                 <input type="range" min="0" max="1" step="0.05" value={environment.turbulence || 0}
                   onChange={(e) => onUpdateEnvironment({ turbulence: parseFloat(e.target.value) })}
-                  className="w-full h-1.5 bg-white/20 rounded-full appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#38bdf8] [&::-webkit-slider-thumb]:rounded-full"
+                  className="w-full h-1.5 bg-white/20 rounded-full appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#FF5500] [&::-webkit-slider-thumb]:rounded-full"
                 />
               </div>
             </div>
@@ -411,20 +411,20 @@ export function RightGlassPanel({
           {/* PRECIPITATION & VISIBILITY */}
           <div className="bg-[#080808]/90 backdrop-blur-md shadow-xl rounded-2xl p-5 border border-white/10 space-y-5">
             <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2">
-              <CloudRain className="w-4 h-4 text-blue-400" /> Precipitation &amp; Visibility
+              <CloudRain className="w-4 h-4 text-orange-400" /> Precipitation &amp; Visibility
             </h3>
             <div className="space-y-4">
               {/* Rain intensity */}
               <div>
                 <div className="flex justify-between text-xs font-bold mb-2 uppercase">
                   <span className="text-white/60">Rain Intensity</span>
-                  <span className="text-blue-400">{Math.round((environment.rainIntensity || 0) * 100)}%</span>
+                  <span className="text-orange-400">{Math.round((environment.rainIntensity || 0) * 100)}%</span>
                 </div>
                 <input
                   type="range" min="0" max="1" step="0.05"
                   value={environment.rainIntensity || 0}
                   onChange={(e) => onUpdateEnvironment({ rainIntensity: parseFloat(e.target.value) })}
-                  className="w-full accent-blue-400"
+                  className="w-full accent-orange-500"
                 />
               </div>
               {/* Fog / visibility */}
@@ -463,7 +463,7 @@ export function RightGlassPanel({
           </div>
 
           {/* WHAT'S HAPPENING */}
-          <div className="bg-[#38bdf8]/10 rounded-2xl p-5 border border-[#38bdf8]/30 space-y-2">
+          <div className="bg-[#FF5500]/10 rounded-2xl p-5 border border-[#FF5500]/30 space-y-2">
             <h3 className="text-xs font-bold text-white/80 tracking-widest uppercase flex items-center gap-2 mb-2">
               <Info className="w-5 h-5 text-black" /> Environmental Impact
             </h3>

@@ -280,12 +280,12 @@ export class ModularDrone {
 
       // Override blade material with transparent-capable version for blur cross-fade
       const bladeMaterial = new THREE.MeshStandardMaterial({
-        color: 0x14161a,
+        color: 0x4f545e,
         roughness: 0.32,
         metalness: 0.22,
         transparent: true,
         opacity: 1.0,
-        depthWrite: false, // CRITICAL: prevents invisible blades from occluding the blur disc!
+        depthWrite: true, // Fixed occlusion
       });
 
       p.bladeGroup.traverse((c) => {

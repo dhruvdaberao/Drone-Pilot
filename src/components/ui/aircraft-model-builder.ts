@@ -40,13 +40,13 @@ export function getAircraftBoundingRadius(type: "quadcopter" | "hexacopter" | "o
 const Materials = {
   // Dark structural carbon fibre chassis
   carbonFiber: new THREE.MeshStandardMaterial({
-    color: 0x08090a,
+    color: 0x2a2c33,
     roughness: 0.25,
     metalness: 0.70,
   }),
   // Satin anodized dark alloy (arms, structural tubes)
   darkGraphite: new THREE.MeshStandardMaterial({
-    color: 0x111215,
+    color: 0x3d4149,
     roughness: 0.60,
     metalness: 0.50,
   }),

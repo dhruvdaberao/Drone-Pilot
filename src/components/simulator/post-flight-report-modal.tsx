@@ -35,7 +35,7 @@ export function PostFlightReportModal({ drone, telemetry, envState, stats, insig
           <div className="flex gap-3">
             <button
               onClick={() => window.print()}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm transition-colors"
             >
               <Download className="w-4 h-4" /> Download PDF
             </button>
@@ -113,7 +113,7 @@ export function PostFlightReportModal({ drone, telemetry, envState, stats, insig
             <h3 className="text-sm font-bold tracking-widest text-neutral-500 uppercase mb-4">Flight Performance Metrics</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 bg-white border-2 border-neutral-100 rounded-xl text-center">
-                <Clock className="w-6 h-6 text-blue-500 mx-auto mb-2" />
+                <Clock className="w-6 h-6 text-orange-500 mx-auto mb-2" />
                 <p className="text-xs text-neutral-500 uppercase font-bold">Time in Air</p>
                 <p className="text-xl font-black text-neutral-800">{flightTimeStr}</p>
               </div>
@@ -151,7 +151,7 @@ export function PostFlightReportModal({ drone, telemetry, envState, stats, insig
                     <div className="flex items-start gap-4">
                       <div className={`p-2 rounded-lg mt-1 ${
                         insight.severity === 'CRITICAL' ? 'bg-rose-100 text-rose-600' :
-                        insight.severity === 'ATTENTION' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'
+                        insight.severity === 'ATTENTION' ? 'bg-amber-100 text-amber-600' : 'bg-orange-100 text-orange-600'
                       }`}>
                         <AlertTriangle className="w-5 h-5" />
                       </div>
