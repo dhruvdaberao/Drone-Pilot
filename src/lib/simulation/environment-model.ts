@@ -128,13 +128,24 @@ export class EnvironmentModel {
     // Wind direction angle in radians
     const dirRad = (this.state.windDirection * Math.PI) / 180.0;
 
-    // Continuous turbulent gust harmonics
-    const gustFactor = Math.sin(this.elapsed * 0.7) * 0.6 + Math.cos(this.elapsed * 1.6) * 0.4;
+    // Phase 2: Chaotic Turbulent Gust Harmonics
+    // Multi-octave pseudo-random noise for unpredictable weather buffeting
+    const t = this.elapsed;
+    const gustFactor = 
+      (Math.sin(t * 0.43) * 0.4) + 
+      (Math.cos(t * 1.17) * 0.3) + 
+      (Math.sin(t * 3.42) * 0.2) + 
+      (Math.cos(t * 8.11) * 0.1);
+    
+    // Low-frequency wind direction shifting
+    const dirShiftRad = Math.sin(t * 0.2) * (this.state.windGust * 0.05);
+    const finalDirRad = dirRad + dirShiftRad;
+
     const currentSpeed = Math.max(0, this.state.windSpeed + this.state.windGust * gustFactor);
 
     // Wind vector points in the direction the air is flowing towards
-    const windVx = Math.sin(dirRad) * currentSpeed;
-    const windVz = Math.cos(dirRad) * currentSpeed;
+    const windVx = Math.sin(finalDirRad) * currentSpeed;
+    const windVz = Math.cos(finalDirRad) * currentSpeed;
     const windVy = Math.sin(this.elapsed * 1.2) * (this.state.windGust * 0.15);
 
     return { x: windVx, y: windVy, z: windVz };

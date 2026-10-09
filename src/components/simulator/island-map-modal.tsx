@@ -376,27 +376,35 @@ export function IslandMapModal({
                 }}
               >
                 <defs>
-                  <pattern id="modal-recon-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#38bdf8" strokeWidth="1" opacity="0.15" />
-                  </pattern>
-
                   <radialGradient id="modal-recon-cone" cx="50%" cy="50%" r="50%">
                     <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.45" />
                     <stop offset="70%" stopColor="#38bdf8" stopOpacity="0.10" />
                     <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
                   </radialGradient>
+                  
+                  <radialGradient id="island-topo" cx="45%" cy="45%" r="55%">
+                    <stop offset="0%" stopColor="#355e3b" />
+                    <stop offset="40%" stopColor="#2e4a29" />
+                    <stop offset="80%" stopColor="#4c6e3b" />
+                    <stop offset="95%" stopColor="#7c7353" />
+                    <stop offset="100%" stopColor="#b6a382" />
+                  </radialGradient>
+                  
+                  <radialGradient id="ocean-grad" cx="50%" cy="50%" r="75%">
+                    <stop offset="0%" stopColor="#08426b" />
+                    <stop offset="100%" stopColor="#021c33" />
+                  </radialGradient>
                 </defs>
 
-                <rect width={SVG_CANVAS_SIZE} height={SVG_CANVAS_SIZE} fill="#030712" />
-                <rect width={SVG_CANVAS_SIZE} height={SVG_CANVAS_SIZE} fill="url(#modal-recon-grid)" />
+                {/* Ocean Background */}
+                <rect width={SVG_CANVAS_SIZE} height={SVG_CANVAS_SIZE} fill="url(#ocean-grad)" />
 
-                {/* Coastline */}
+                {/* Coastline / Island Mass */}
                 <path
                   d={mapData.coastlinePath}
-                  fill="#0f141e"
-                  stroke="#ffffff"
-                  strokeWidth="1.5"
-                  strokeOpacity="0.3"
+                  fill="url(#island-topo)"
+                  stroke="#a38c64"
+                  strokeWidth="4"
                   strokeLinejoin="round"
                 />
 
@@ -405,42 +413,41 @@ export function IslandMapModal({
                   cx={mapData.waterways.lake.cx}
                   cy={mapData.waterways.lake.cy}
                   r={mapData.waterways.lake.r}
-                  fill="#ffffff"
-                  fillOpacity="0.03"
-                  stroke="#ffffff"
-                  strokeWidth="1"
-                  strokeOpacity="0.1"
+                  fill="#0ea5e9"
+                  fillOpacity="0.9"
+                  stroke="#38bdf8"
+                  strokeWidth="3"
                 />
                 
                 {/* River Channel */}
                 <path
                   d={mapData.waterways.riverPath}
                   fill="none"
-                  stroke="#ffffff"
-                  strokeWidth="4"
-                  strokeOpacity="0.05"
+                  stroke="#0ea5e9"
+                  strokeWidth="8"
+                  strokeOpacity="0.9"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
 
                 {/* Master Road & Highway Network */}
-                <g fill="none" stroke="#38bdf8" strokeOpacity="0.25" strokeLinecap="round" strokeLinejoin="round">
+                <g fill="none" strokeOpacity="1.0" strokeLinecap="round" strokeLinejoin="round">
                   {mapData.roads.highways.map((h) => (
-                    <path key={h.id} d={h.path} strokeWidth={h.width} />
+                    <path key={h.id} d={h.path} strokeWidth={h.width + 1.5} stroke="#222222" />
                   ))}
                   {mapData.roads.connectors.map((c) => (
-                    <path key={c.id} d={c.path} strokeWidth={c.width} />
+                    <path key={c.id} d={c.path} strokeWidth={c.width + 1} stroke="#444444" />
                   ))}
                   {mapData.roads.mountainPasses.map((m) => (
-                    <path key={m.id} d={m.path} strokeWidth={m.width} strokeDasharray="5 4" />
+                    <path key={m.id} d={m.path} strokeWidth={m.width + 0.5} stroke="#594635" strokeDasharray="6 4" />
                   ))}
                 </g>
 
                 {/* Central Airfield & Runway Complex */}
                 <g transform="translate(450, 450)">
-                  <rect x="-80" y="-12" width="160" height="24" rx="2" fill="none" stroke="#ffffff" strokeOpacity="0.3" strokeWidth="1.5" />
-                  <line x1="-70" y1="0" x2="70" y2="0" stroke="#ffffff" strokeOpacity="0.2" strokeWidth="1.8" strokeDasharray="6 5" />
-                  <text x="0" y="-18" fill="#ffffff" fillOpacity="0.4" fontSize="12" fontWeight="bold" textAnchor="middle">
+                  <rect x="-80" y="-12" width="160" height="24" rx="2" fill="#222222" stroke="#ffffff" strokeOpacity="0.4" strokeWidth="1.5" />
+                  <line x1="-70" y1="0" x2="70" y2="0" stroke="#ffffff" strokeOpacity="0.6" strokeWidth="2" strokeDasharray="6 5" />
+                  <text x="0" y="-18" fill="#ffffff" fillOpacity="0.8" fontSize="14" fontWeight="bold" textAnchor="middle">
                     RUNWAY 09/27
                   </text>
                 </g>
@@ -451,40 +458,53 @@ export function IslandMapModal({
                     points={flightPathPoints}
                     fill="none"
                     stroke="#ffffff"
-                    strokeWidth="2.5"
+                    strokeWidth="3"
                     strokeDasharray="4 3"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    opacity="0.65"
+                    opacity="0.8"
                   />
                 )}
 
                 {/* Active Waypoint Line */}
-                <line
-                  x1={droneSvg.x}
-                  y1={droneSvg.y}
-                  x2={targetSvg.x}
-                  y2={targetSvg.y}
-                  stroke="#ffffff"
-                  strokeWidth="2.2"
-                  strokeDasharray="6 4"
-                  opacity="0.85"
-                />
+                {targetSvg && (
+                  <line
+                    x1={droneSvg.x}
+                    y1={droneSvg.y}
+                    x2={targetSvg.x}
+                    y2={targetSvg.y}
+                    stroke="#ffae00"
+                    strokeWidth="3.5"
+                    strokeDasharray="6 4"
+                    opacity="0.9"
+                  />
+                )}
 
                 {/* Midpoint Distance Tag */}
-                <g transform={`translate(${(droneSvg.x + targetSvg.x) / 2}, ${(droneSvg.y + targetSvg.y) / 2})`}>
-                  <rect x="-40" y="-14" width="80" height="28" rx="4" fill="#000000" stroke="#ffffff" strokeWidth="1.2" />
-                  <text x="0" y="5" fill="#ffffff" fontSize="13" fontWeight="900" textAnchor="middle">
-                    {navStats.dist.toFixed(0)}m
-                  </text>
-                </g>
+                {targetSvg && (
+                  <g transform={`translate(${(droneSvg.x + targetSvg.x) / 2}, ${(droneSvg.y + targetSvg.y) / 2})`}>
+                    <rect x="-35" y="-12" width="70" height="24" rx="12" fill="#ffae00" fillOpacity="0.95" stroke="#ffffff" strokeWidth="1.5" />
+                    <text x="0" y="4" fill="#000000" fontSize="12" fontWeight="900" textAnchor="middle">
+                      {navStats.dist.toFixed(0)}m
+                    </text>
+                  </g>
+                )}
 
-                {/* Helipads & Landmarks with Anti-Collision Labels */}
+                {/* Helipads & Landmarks with Real Map Labels */}
                 {TACTICAL_POIS.map((poi) => {
                   const pt = worldToSvg(poi.x, poi.z);
                   const isSelected = poi.id === selectedPoiId;
                   const ox = poi.labelOffsetX;
                   const oy = poi.labelOffsetY;
+
+                  // Bright map colors
+                  const catColor = 
+                    poi.category === "airfield" ? "#ffffff" :
+                    poi.category === "mountain" ? "#f59e0b" :
+                    poi.category === "forest" ? "#10b981" :
+                    poi.category === "water" ? "#06b6d4" :
+                    poi.category === "industrial" ? "#a855f7" :
+                    poi.category === "city" ? "#ef4444" : "#ffffff";
 
                   return (
                     <g
@@ -493,53 +513,47 @@ export function IslandMapModal({
                       onClick={() => handleSelectTarget(poi)}
                     >
                       {isSelected && (
-                        <circle cx={pt.x} cy={pt.y} r="18" fill="none" stroke="#38bdf8" strokeWidth="2" className="animate-ping" opacity="0.75" />
+                        <circle cx={pt.x} cy={pt.y} r="22" fill="none" stroke="#ffae00" strokeWidth="3" className="animate-ping" opacity="0.9" />
                       )}
 
+                      {/* Map Marker Pin */}
                       <circle
                         cx={pt.x}
                         cy={pt.y}
                         r="12"
-                        fill={isSelected ? "#ffffff" : "#000000"}
-                        stroke="#ffffff"
-                        strokeWidth={isSelected ? "2.5" : "1.5"}
-                        strokeOpacity={isSelected ? "1" : "0.5"}
+                        fill={catColor}
+                        stroke="#000000"
+                        strokeWidth="2.5"
                         className="transition-transform duration-150 group-hover:scale-125 shadow-lg"
                       />
-                      <text
-                        x={pt.x}
-                        y={pt.y + 4}
-                        fill={isSelected ? "#000000" : "#ffffff"}
-                        fontSize="14"
-                        fontWeight="900"
-                        textAnchor="middle"
-                        className="pointer-events-none"
-                      >
-                        H
-                      </text>
+                      <circle cx={pt.x} cy={pt.y} r="4" fill="#000000" />
 
-                      {/* Premium Label */}
-                      <g transform={`translate(${pt.x + ox}, ${pt.y + oy})`}>
-                        <rect
-                          x="-70"
-                          y="-16"
-                          width="140"
-                          height="28"
-                          rx="4"
+                      {/* Clean Map Text Label */}
+                      <g transform={`translate(${pt.x + ox}, ${pt.y + oy + 8})`}>
+                        {/* Text Outline for readability */}
+                        <text
+                          x="0"
+                          y="4"
                           fill="#000000"
-                          fillOpacity="0.8"
-                          stroke="#ffffff"
-                          strokeOpacity={isSelected ? "1" : "0.3"}
-                          strokeWidth="1.5"
-                        />
+                          stroke="#000000"
+                          strokeWidth="4"
+                          strokeLinejoin="round"
+                          fontSize={isSelected ? "17" : "15"}
+                          fontWeight="900"
+                          textAnchor="middle"
+                          className="pointer-events-none"
+                        >
+                          {poi.name}
+                        </text>
+                        {/* Main Text Foreground */}
                         <text
                           x="0"
                           y="4"
                           fill="#ffffff"
-                          fontSize="13"
-                          fontWeight="bold"
+                          fontSize={isSelected ? "17" : "15"}
+                          fontWeight="900"
                           textAnchor="middle"
-                          className="pointer-events-none shadow-black drop-shadow-md"
+                          className="pointer-events-none"
                         >
                           {poi.name}
                         </text>
@@ -554,9 +568,9 @@ export function IslandMapModal({
                     <path d="M 0 0 L -45 -120 A 120 120 0 0 1 45 -120 Z" fill="url(#modal-recon-cone)" />
                   </g>
                   <circle cx="0" cy="0" r="16" fill="none" stroke="#ffffff" strokeWidth="2" className="animate-ping" opacity="0.6" />
-                  <circle cx="0" cy="0" r="12" fill="#ffffff" stroke="#000000" strokeWidth="2" />
+                  <circle cx="0" cy="0" r="12" fill="#38bdf8" stroke="#ffffff" strokeWidth="2.5" />
                   <g transform={`rotate(${telemetry.heading})`}>
-                    <path d="M 0 -14 L -7 7 L 0 3 L 7 7 Z" fill="#000000" />
+                    <path d="M 0 -16 L -8 8 L 0 4 L 8 8 Z" fill="#ffffff" />
                   </g>
                 </g>
               </svg>

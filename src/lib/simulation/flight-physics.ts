@@ -202,8 +202,45 @@ export class FlightPhysicsEngine {
       this.reset();
     }
 
-    // Freeze motion if in crashed state
+    // Post-Crash Tumbling Physics
     if (this.crashState?.isCrashed) {
+      // Still apply gravity and momentum
+      this.velY -= 9.81 * clampedDt;
+      this.posX += this.velX * clampedDt;
+      this.posY += this.velY * clampedDt;
+      this.posZ += this.velZ * clampedDt;
+      
+      this.pitch += this.pitchRate * clampedDt;
+      this.roll += this.rollRate * clampedDt;
+      this.yaw += this.yawRate * clampedDt;
+      
+      // Dynamic ground elevation query for tumbling
+      let surfaceElevation = 0.0;
+      if (this.elevationQueryFn) {
+        surfaceElevation = Math.max(0.0, this.elevationQueryFn(this.posX, this.posZ));
+      }
+      this.groundLevel = surfaceElevation + 0.245;
+
+      if (this.posY <= this.groundLevel) {
+        this.posY = this.groundLevel;
+        if (this.velY < -0.5) {
+          // Bounce
+          this.velY = Math.abs(this.velY) * 0.4;
+          this.velX *= 0.7;
+          this.velZ *= 0.7;
+          this.pitchRate *= 0.6;
+          this.rollRate *= 0.6;
+          this.yawRate *= 0.6;
+        } else {
+          // Settle
+          this.velY = 0;
+          this.velX *= 0.8;
+          this.velZ *= 0.8;
+          this.pitchRate *= 0.8;
+          this.rollRate *= 0.8;
+          this.yawRate *= 0.8;
+        }
+      }
       return this.generateTelemetry();
     }
 
@@ -369,7 +406,16 @@ export class FlightPhysicsEngine {
       sumThrustFactor += this.motorOutputs[i];
     }
     const avgThrottle = this.motorOutputs.length > 0 ? sumThrustFactor / this.motorOutputs.length : 0;
-    this.totalThrust = avgThrottle * this.def.maximumThrust;
+    
+    // Phase 1 Polish: Ground Effect Simulation
+    const agl = Math.max(0, this.posY - this.groundLevel);
+    let geMultiplier = 1.0;
+    if (agl < 1.2 && !this.crashState) {
+       // Ground effect boosts thrust by up to 25% when very close to the ground
+       geMultiplier = 1.0 + (0.25 * Math.pow(1.0 - (agl / 1.2), 2));
+    }
+    
+    this.totalThrust = avgThrottle * this.def.maximumThrust * geMultiplier;
 
     // ----------------------------------------------------
     // 3. ELECTRICAL BATTERY DRAIN (OHM'S LAW + MOTOR CURRENT)
@@ -442,15 +488,22 @@ export class FlightPhysicsEngine {
     const relVy = this.velY - windVec.y;
     const relVz = this.velZ - windVec.z;
 
-    // Streamlined aerodynamic drag curve for higher maximum cruise velocity
-    const aeroFactor = 0.5 * airDensity * (this.def.drag.linear * 0.55);
-    this.dragForceX = -relVx * Math.abs(relVx) * aeroFactor;
-    this.dragForceY = -relVy * Math.abs(relVy) * aeroFactor * 0.5;
-    this.dragForceZ = -relVz * Math.abs(relVz) * aeroFactor;
+    // Phase 2: True Aerodynamic Drag based on Tilt Projection
+    // When tilted, the large top plate and rotors act like a sail, drastically increasing wind resistance.
+    const tiltExposedArea = Math.max(0.15, Math.abs(Math.sin(this.pitch)) + Math.abs(Math.sin(this.roll)));
+    const verticalExposedArea = Math.max(0.15, Math.abs(Math.cos(this.pitch)) * Math.abs(Math.cos(this.roll)));
+    
+    const baseArea = this.def.drag.linear * 0.55;
+    const aeroFactorHorizontal = 0.5 * airDensity * (baseArea * (1.0 + 3.5 * tiltExposedArea));
+    const aeroFactorVertical = 0.5 * airDensity * (baseArea * (1.0 + 4.5 * verticalExposedArea));
 
-    this.windForceX = windVec.x * Math.abs(windVec.x) * aeroFactor;
-    this.windForceY = windVec.y * Math.abs(windVec.y) * aeroFactor;
-    this.windForceZ = windVec.z * Math.abs(windVec.z) * aeroFactor;    // ----------------------------------------------------
+    this.dragForceX = -relVx * Math.abs(relVx) * aeroFactorHorizontal;
+    this.dragForceY = -relVy * Math.abs(relVy) * aeroFactorVertical;
+    this.dragForceZ = -relVz * Math.abs(relVz) * aeroFactorHorizontal;
+
+    this.windForceX = windVec.x * Math.abs(windVec.x) * aeroFactorHorizontal;
+    this.windForceY = windVec.y * Math.abs(windVec.y) * aeroFactorVertical;
+    this.windForceZ = windVec.z * Math.abs(windVec.z) * aeroFactorHorizontal;    // ----------------------------------------------------
     // 6. THRUST FORCES IN WORLD FRAME
     // ----------------------------------------------------
     // Forward and Right vectors already calculated above
@@ -676,7 +729,7 @@ export class FlightPhysicsEngine {
       weightNewtons: Math.round(weightNewtons * 10) / 10,
       totalThrustNewtons: Math.round(this.totalThrust * 10) / 10,
       thrustToWeightRatio: weightNewtons > 0 ? Math.round((this.totalThrust / weightNewtons) * 100) / 100 : 0, maxThrustToWeightRatio: weightNewtons > 0 ? (this.def.maximumThrust / weightNewtons) : 0,
-      motorOutputs: this.motorOutputs.map((o) => Math.round(o * 100) / 100),
+      motorOutputs: this.motorOutputs.map((o) => Math.round(o * 1000) / 1000),
       accel: {
         x: Math.round(this.accelX * 100) / 100,
         y: Math.round(this.accelY * 100) / 100,

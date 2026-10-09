@@ -290,8 +290,8 @@ export class RemoteDroneManager {
       depthWrite: false,
     });
     const sprite = new THREE.Sprite(spriteMat);
-    sprite.position.set(0, 0.52, 0);
-    sprite.scale.set(1.4, 0.35, 1);
+    sprite.position.set(0, 0.45, 0);
+    sprite.scale.set(0.7, 0.175, 1);
     group.add(sprite);
 
     return {

@@ -131,8 +131,8 @@ export class ModularDrone {
       depthWrite: false,
     });
     this.nameTagSprite = new THREE.Sprite(spriteMat);
-    this.nameTagSprite.position.set(0, 1.4, 0);
-    this.nameTagSprite.scale.set(1.1, 0.22, 1);
+    this.nameTagSprite.position.set(0, 0.65, 0);
+    this.nameTagSprite.scale.set(0.65, 0.13, 1);
     this.group.add(this.nameTagSprite);
   }
 
@@ -288,8 +288,8 @@ export class ModularDrone {
         depthWrite: false, // CRITICAL: prevents invisible blades from occluding the blur disc!
       });
 
-      p.bladeGroup.children.forEach((c) => {
-        if ((c as THREE.Mesh).isMesh) {
+      p.bladeGroup.traverse((c) => {
+        if ((c as THREE.Mesh).isMesh && c !== blurMesh) {
           (c as THREE.Mesh).material = bladeMaterial;
         }
       });
@@ -588,7 +588,7 @@ export class ModularDrone {
       }
 
       // Rotation angular velocity (rad/s) - carefully chosen to avoid perfect 60fps aliasing
-      const spinSpeed = (motorThrottle * 120.0 + 15.0) * p.direction;
+      const spinSpeed = (motorThrottle * 1500.0 + 50.0) * p.direction;
       p.bladeGroup.rotation.y += spinSpeed * dt;
 
       // Blur disc blending logic: make it look exactly like a real fan circle!

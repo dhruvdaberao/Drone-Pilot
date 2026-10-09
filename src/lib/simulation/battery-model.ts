@@ -14,6 +14,7 @@ export class BatteryModel {
   // Default: 8 mΩ/cell × cellCount (typical fresh LiPo).
   private packInternalResistanceOhm: number;
   private temperatureC = 22.0;
+  private lastTerminalVoltage: number = 16.8;
 
   constructor(capacityMah: number, cellCount = 4) {
     this.capacityMah = capacityMah;
@@ -79,6 +80,7 @@ export class BatteryModel {
 
     // 4. Terminal Voltage with Ohm's Law Voltage Sag: V_terminal = V_oc - I * R_int
     const terminalVoltage = Math.max(0, openCircuitVoltage - currentAmps * packInternalResistance);
+    this.lastTerminalVoltage = terminalVoltage;
     const powerWatts = terminalVoltage * currentAmps;
 
 
@@ -104,9 +106,26 @@ export class BatteryModel {
    * Available thrust multiplier (1.0 down to 0.4 when battery is depleted)
    */
   public getThrustAuthority(): number {
+    // True voltage sag limits motor RPM. Thrust ~ RPM^2 ~ Voltage^2
+    const maxVoltage = 4.2 * this.cellCount;
+    // Hard cutoff at 3.0V per cell
+    const cutoffVoltage = 3.0 * this.cellCount;
+    
+    if (this.lastTerminalVoltage <= cutoffVoltage) {
+      return 0.0; // ESCs shut down
+    }
+    
+    // Calculate authority based on voltage sag. 
+    // At full 16.8V (4S) = 1.0 authority. At 14.0V = (14/16.8)^2 = 0.69 authority.
+    const voltageRatio = this.lastTerminalVoltage / maxVoltage;
+    let auth = voltageRatio * voltageRatio;
+    
+    // Add soft limit if battery capacity is absolutely dead
     const frac = this.remainingMah / this.capacityMah;
-    if (frac > 0.15) return 1.0;
-    if (frac <= 0.0) return 0.0;
-    return 0.4 + (frac / 0.15) * 0.6;
+    if (frac <= 0.05) {
+       auth *= (frac / 0.05);
+    }
+    
+    return Math.max(0.0, Math.min(1.0, auth));
   }
 }
