@@ -252,7 +252,12 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
   // UI Modal States
   const [isLoading, setIsLoading] = useState(true);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
-  const [activeWaypoint, setActiveWaypoint] = useState<NavigationWaypoint | null>(null);
+  const [activeWaypoint, _setActiveWaypoint] = useState<NavigationWaypoint | null>(null);
+  const activeWaypointRef = useRef<NavigationWaypoint | null>(null);
+  const setActiveWaypoint = (wp: NavigationWaypoint | null) => {
+    _setActiveWaypoint(wp);
+    activeWaypointRef.current = wp;
+  };
   const [isEnvironmentOpen, setIsEnvironmentOpen] = useState(false);
   // Flight Coach only opens automatically for first-time pilots
   const [isTutorialOpen, setIsTutorialOpen] = useState(() => {
@@ -277,6 +282,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
   // Simulation Data States
   const [cameraMode, setCameraMode] = useState<CameraMode>("chase");
   const [isHoverMode, setIsHoverMode] = useState(true);
+  const [isAutopilot, setIsAutopilot] = useState(false);
   const [remotePlayers, setRemotePlayers] = useState<RemotePlayerState[]>([]);
   const [replayFrames, setReplayFrames] = useState<ReplayFrame[]>([]);
   const [analysisReport, setAnalysisReport] = useState<FlightAnalysisReport | null>(null);

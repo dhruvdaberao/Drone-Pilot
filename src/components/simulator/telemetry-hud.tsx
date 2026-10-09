@@ -316,6 +316,8 @@ interface TelemetryHUDProps {
   onReset: () => void;
   onExit: () => void;
   isHoverMode: boolean;
+  isAutopilot?: boolean;
+  onToggleAutopilot?: () => void;
   onToggleHover: () => void;
   onToggleMap: () => void;
   onMoveDirection: (pitch: number, roll: number) => void;
@@ -348,6 +350,8 @@ export function TelemetryHUD({
   onExit,
   isHoverMode,
   onToggleHover,
+  isAutopilot,
+  onToggleAutopilot,
   onToggleMap,
   onMoveDirection,
   onYaw,

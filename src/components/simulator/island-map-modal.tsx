@@ -196,6 +196,12 @@ export function IslandMapModal({
 
   const droneSvg = worldToSvg(telemetry.position.x, telemetry.position.z);
 
+  const svgToWorld = (svgX: number, svgY: number) => {
+    const center = SVG_CANVAS_SIZE / 2;
+    const scale = (SVG_CANVAS_SIZE * 0.46) / 1400;
+    return { x: (svgX - center) / scale, z: (svgY - center) / scale };
+  };
+
   // Flight path points
   const flightPathPoints = useMemo(() => {
     if (!telemetry.flightPath || telemetry.flightPath.length === 0) return "";
@@ -369,6 +375,24 @@ export function IslandMapModal({
             {/* Topographical SVG Map Canvas */}
             <svg
                 viewBox={`0 0 ${SVG_CANVAS_SIZE} ${SVG_CANVAS_SIZE}`}
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const rx = (e.clientX - rect.left) / rect.width;
+                    const ry = (e.clientY - rect.top) / rect.height;
+                    const svgX = rx * SVG_CANVAS_SIZE;
+                    const svgY = ry * SVG_CANVAS_SIZE;
+                    const w = svgToWorld(svgX, svgY);
+                    
+                    if (onSelectWaypoint) {
+                       onSelectWaypoint({
+                          id: `custom-wp-${Date.now()}`,
+                          name: `WP-${Math.abs(Math.round(w.x))}-${Math.abs(Math.round(w.z))}`,
+                          x: w.x,
+                          z: w.z,
+                          elevation: 100
+                       });
+                    }
+                  }}
                 className="w-full h-full max-w-[720px] max-h-[720px] rounded-xl border border-white/10 shadow-lg bg-[#030712] transition-transform duration-300 ease-out"
                 style={{
                   transform: `scale(${zoomLevel})`,
