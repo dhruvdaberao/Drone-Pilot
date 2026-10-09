@@ -64,6 +64,7 @@ import { DigitalTwinHUD } from "./debug/digital-twin-hud";
 import { FaultInjectionPanel } from "./fault-injection-panel";
 import { FlightCoachPanel } from "./flight-coach-panel";
 import { FlightControlsOverlay } from "./flight-controls-overlay";
+import { PostFlightReportModal } from "./post-flight-report-modal";
 import { ScenarioSelectorModal } from "./scenario-selector-modal";
 import { SimulationClock, ClockSnapshot } from "@/lib/simulation/simulation-clock";
 import { SimulationAdapter, SimulationAdapterStatus } from "@/lib/simulation/adapters/simulation-adapter";
@@ -361,6 +362,8 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
   // Flight Coach
   const [currentInsight, setCurrentInsight] = useState<FlightCoachInsight | null>(null);
   const [insightHistory, setInsightHistory] = useState<FlightCoachInsight[]>([]);
+  const flightStatsRef = useRef({ startTime: Date.now(), topSpeed: 0, maxAltitude: 0, distance: 0, lastPos: {x:0, y:0, z:0}, crashes: 0 });
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const coachEngineRef = useRef<FlightCoachEngine>(new FlightCoachEngine());
   const [coachSessionSummary, setCoachSessionSummary] = useState<FlightSessionSummary | null>(null);
 

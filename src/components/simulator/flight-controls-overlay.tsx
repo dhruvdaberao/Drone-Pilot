@@ -2,7 +2,7 @@ import React from "react";
 import { MinimapWidget } from "./minimap-widget";
 import { Lock, NavigationOff, ArrowUp, ArrowDown, Target } from "lucide-react";
 
-export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, onToggleScenarios, sensorHealth }: { telemetry?: any, autoMoveLocked?: string, onToggleMap?: () => void, onToggleScenarios?: () => void, sensorHealth?: Record<string, boolean> }) {
+export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, onToggleScenarios, sensorHealth, onExit }: { telemetry?: any, autoMoveLocked?: string, onToggleMap?: () => void, onToggleScenarios?: () => void, onExit?: () => void, sensorHealth?: Record<string, boolean> }) {
   const isGpsHealthy = sensorHealth ? sensorHealth['gps'] : true;
 
   const keyBtn = (label: string, isLocked: boolean, size: string = "w-12 h-12", textSize: string = "text-lg") => (
@@ -77,14 +77,10 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
           <Target className="w-4 h-4" /> Missions
         </button>
         <button
-          onClick={() => {
-            if (typeof window !== "undefined") {
-              window.location.href = "/fly";
-            }
-          }}
-          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/80 hover:bg-white text-black backdrop-blur-md border border-white/10 text-xs font-black uppercase tracking-widest transition-all shadow-lg"
+          onClick={onExit}
+          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white backdrop-blur-md border border-rose-500 text-xs font-black uppercase tracking-widest transition-all shadow-lg"
         >
-          Exit
+          End Simulation
         </button>
       </div>
 
