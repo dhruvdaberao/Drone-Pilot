@@ -1094,9 +1094,26 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       // Record telemetry frame for recorder & replay
       flightRecorderRef.current.record(curTelemetry);
 
+      // Real-time Flight Stats Tracking for Debrief
+      const lastP = flightStatsRef.current.lastPos;
+      if (lastP.x !== 0 || lastP.z !== 0) {
+        const dMove = Math.hypot(curTelemetry.position.x - lastP.x, curTelemetry.position.z - lastP.z);
+        if (dMove > 0.005 && dMove < 25) {
+          flightStatsRef.current.distance += dMove;
+        }
+      }
+      flightStatsRef.current.lastPos = { x: curTelemetry.position.x, y: curTelemetry.position.y, z: curTelemetry.position.z };
+      if (curTelemetry.groundSpeed > flightStatsRef.current.topSpeed) {
+        flightStatsRef.current.topSpeed = curTelemetry.groundSpeed;
+      }
+      if (curTelemetry.altitude > flightStatsRef.current.maxAltitude) {
+        flightStatsRef.current.maxAltitude = curTelemetry.altitude;
+      }
+
       // Check for impact / crash incident
       if (curTelemetry.isCrashed && !crashTriggeredRef.current) {
         crashTriggeredRef.current = true;
+        flightStatsRef.current.crashes += 1;
         sfxEventsRef.current?.playCrash();
         const report = flightRecorderRef.current.generateAnalysis(
           selectedDrone.name,
@@ -1465,7 +1482,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
         />
       )}
 
-              {/* Post-Flight Reporting Modal (White PDF) */}
+        {/* Post-Flight Reporting Modal (White PDF) */}
         {isReportOpen && (
           <PostFlightReportModal
             drone={selectedDrone}
@@ -1473,8 +1490,12 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
             envState={envState}
             stats={flightStatsRef.current}
             insights={insightHistory}
+            frames={flightRecorderRef.current.getFrames()}
+            droneQuantity={droneQuantity}
+            callsign={callsign}
             onClose={() => {
               setIsReportOpen(false);
+              simClockRef.current.resume();
             }}
           />
         )}

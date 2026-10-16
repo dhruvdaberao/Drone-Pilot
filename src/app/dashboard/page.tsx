@@ -167,15 +167,25 @@ export default function AircraftHangarPage() {
             <div className="flex flex-col gap-3">
               <Button
                 onClick={() =>
-                  router.push(`/configure?drone=${activeDrone?.platformId}`)
+                  router.push(`/fly?drone=${activeDrone?.platformId || "quadcopter"}&region=coast`)
                 }
                 variant="primary"
-                className="w-full h-12 text-[13px] font-bold flex items-center justify-center gap-2.5"
+                className="w-full h-12 text-[13px] font-bold flex items-center justify-center gap-2.5 bg-[#FF5500] hover:bg-[#e04b00] text-white shadow-lg shadow-[#FF5500]/25 cursor-pointer"
+                leftIcon={<Play className="w-4 h-4 fill-current" />}
+              >
+                Launch Simulation
+              </Button>
+
+              <Button
+                onClick={() =>
+                  router.push(`/configure?drone=${activeDrone?.platformId}`)
+                }
+                variant="black"
+                className="w-full h-12 text-[13px] font-bold flex items-center justify-center gap-2.5 border border-white/10 hover:border-white/30 cursor-pointer"
                 leftIcon={<Settings2 className="w-4 h-4" />}
               >
                 Configure Aircraft
               </Button>
-
             </div>
           </div>
           </div>

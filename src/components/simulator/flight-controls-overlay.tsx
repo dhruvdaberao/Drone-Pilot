@@ -52,23 +52,28 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
 
         {/* Swarm Quantity */}
         <div className="flex flex-col items-center gap-1 pointer-events-auto">
-          <span className="text-[9px] font-bold text-white/50 tracking-widest uppercase mb-1">Fleet</span>
-          <div className="flex items-center gap-2 bg-neutral-900/80 backdrop-blur border border-white/20 p-2 rounded-xl h-24">
+          <span className="text-[9px] font-bold text-white/50 tracking-widest uppercase mb-1">Fleet Swarm</span>
+          <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md border border-white/20 px-2 py-2 rounded-xl h-24 shadow-lg">
             <button 
+              type="button"
               onClick={() => onUpdateDroneQuantity && onUpdateDroneQuantity(Math.max(1, (droneQuantity || 1) - 1))}
-              className="p-1 rounded bg-white/10 hover:bg-white/20 text-white"
+              className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/25 active:scale-95 flex items-center justify-center text-white cursor-pointer transition-all border border-white/10"
+              title="Decrease Drone Swarm Quantity"
             >
-              <Minus className="w-4 h-4" />
+              <Minus className="w-3.5 h-3.5" />
             </button>
-            <div className="flex flex-col items-center min-w-[40px]">
-              <Copy className="w-4 h-4 text-orange-400 mb-1" />
-              <span className="font-mono font-bold text-lg text-white">{droneQuantity || 1}</span>
+            <div className="flex flex-col items-center justify-center px-1 min-w-[44px]">
+              <Copy className="w-4 h-4 text-[#FF5500] mb-0.5" />
+              <span className="font-mono font-black text-xl text-white leading-none">{droneQuantity || 1}</span>
+              <span className="text-[8px] font-mono text-white/50 uppercase mt-0.5">DRONES</span>
             </div>
             <button 
+              type="button"
               onClick={() => onUpdateDroneQuantity && onUpdateDroneQuantity(Math.min(10, (droneQuantity || 1) + 1))}
-              className="p-1 rounded bg-white/10 hover:bg-white/20 text-white"
+              className="w-7 h-7 rounded-lg bg-[#FF5500]/80 hover:bg-[#FF5500] active:scale-95 flex items-center justify-center text-white cursor-pointer transition-all border border-orange-400/40 shadow-xs"
+              title="Increase Drone Swarm Quantity"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -95,14 +100,16 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
 
       <div className="flex gap-2 pointer-events-auto">
         <button
+          type="button"
           onClick={onToggleScenarios}
-          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-orange-500/90 hover:bg-orange-500 text-white backdrop-blur-md border border-orange-400/50 text-xs font-black uppercase tracking-widest transition-all shadow-lg"
+          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-orange-500/90 hover:bg-orange-500 text-white backdrop-blur-md border border-orange-400/50 text-xs font-black uppercase tracking-widest transition-all shadow-lg cursor-pointer hover:scale-105 active:scale-95"
         >
           <Target className="w-4 h-4" /> Missions
         </button>
         <button
+          type="button"
           onClick={onExit}
-          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white backdrop-blur-md border border-rose-500 text-xs font-black uppercase tracking-widest transition-all shadow-lg"
+          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white backdrop-blur-md border border-rose-500 text-xs font-black uppercase tracking-widest transition-all shadow-lg cursor-pointer hover:scale-105 active:scale-95"
         >
           End Simulation
         </button>
