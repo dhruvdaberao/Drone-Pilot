@@ -87,6 +87,22 @@ export class FlightPhysicsEngine {
   public isCeilingLimitReached = false;
   public isGroundLimitReached = false;
 
+  // Home / Takeoff Coordinates for Return-to-Home (RTL)
+  public homeX = 0;
+  public homeY = 1.445;
+  public homeZ = 0;
+
+  // Commercial UAS Fail-Safe: Return-To-Home (RTH / RTL)
+  public isRtlActive = false;
+  public rtlStage: "CLIMB" | "TRANSIT" | "DESCENT" | "LANDED" = "CLIMB";
+  public rtlClearanceAltitudeAgl = 20.0; // 20m safe transit altitude above ground
+
+  // 3D Geo-Fence Containment Envelope (Civil Aviation Part 107 standard)
+  public geoFenceMaxRadius = 1000.0; // 1000m radius limit from home
+  public geoFenceMaxAltitudeAgl = 120.0; // 120m (400ft) FAA ceiling limit
+  public isGeoFenceWarning = false;
+  public isGeoFenceBreached = false;
+
   // Breadcrumbs path history
   private breadcrumbs: Array<{ x: number; z: number }> = [{ x: 0, z: 0 }];
   private lastBreadcrumbTime = 0;
@@ -176,7 +192,13 @@ export class FlightPhysicsEngine {
     this.crashState = null;
     this.isCeilingLimitReached = false;
     this.isGroundLimitReached = false;
-    this.battery.reset(100.0);
+    this.homeX = spawnX;
+    this.homeY = this.groundLevel;
+    this.homeZ = spawnZ;
+    this.isRtlActive = false;
+    this.rtlStage = "CLIMB";
+    this.isGeoFenceWarning = false;
+    this.isGeoFenceBreached = false;
 
     this.breadcrumbs = [{ x: Math.round(spawnX), z: Math.round(spawnZ) }];
     this.lastBreadcrumbTime = 0;
@@ -185,6 +207,29 @@ export class FlightPhysicsEngine {
   public triggerAutoLand() {
     if (this.posY > this.groundLevel + 0.05 && !this.crashState) {
       this.isAutoLanding = !this.isAutoLanding;
+      if (this.isAutoLanding) this.isRtlActive = false;
+    }
+  }
+
+  public triggerRTL() {
+    if (this.crashState || !this.isArmed) return;
+    if (this.isRtlActive) {
+      this.isRtlActive = false;
+      this.isAutoLanding = false;
+      this.isHoverMode = true;
+      this.targetAltitude = this.posY;
+    } else {
+      this.isRtlActive = true;
+      this.isAutoLanding = false;
+      this.isHoverMode = true;
+      const currentAgl = Math.max(0, this.posY - this.groundLevel);
+      if (currentAgl < this.rtlClearanceAltitudeAgl) {
+        this.rtlStage = "CLIMB";
+        this.targetAltitude = this.groundLevel + this.rtlClearanceAltitudeAgl;
+      } else {
+        this.rtlStage = "TRANSIT";
+        this.targetAltitude = this.posY;
+      }
     }
   }
 
@@ -279,6 +324,31 @@ export class FlightPhysicsEngine {
       }
     }
 
+    // Pilot Manual Override of Return-to-Home
+    if (this.isRtlActive) {
+      if (Math.abs(input.throttle) > 0.25 || Math.abs(input.pitch) > 0.25 || Math.abs(input.roll) > 0.25) {
+        this.isRtlActive = false;
+        this.isHoverMode = true;
+        this.targetAltitude = this.posY;
+      }
+    }
+
+    // Autonomous Low-Battery Return-to-Home Fail-safe (<= 20% state of charge)
+    if (this.isArmed && !onGround && !this.crashState && !this.isRtlActive && !this.isAutoLanding) {
+      if (this.battery.getPercentage() <= 20.0) {
+        this.isRtlActive = true;
+        this.isHoverMode = true;
+        const currentAgl = Math.max(0, this.posY - this.groundLevel);
+        if (currentAgl < this.rtlClearanceAltitudeAgl) {
+          this.rtlStage = "CLIMB";
+          this.targetAltitude = this.groundLevel + this.rtlClearanceAltitudeAgl;
+        } else {
+          this.rtlStage = "TRANSIT";
+          this.targetAltitude = this.posY;
+        }
+      }
+    }
+
     // ----------------------------------------------------
     // 1. MASS, WEIGHT & HOVER EQUILIBRIUM
     // ----------------------------------------------------
@@ -294,7 +364,49 @@ export class FlightPhysicsEngine {
     if (this.isArmed) {
       this.flightTime += clampedDt;
 
-      if (this.isAutoLanding) {
+      if (this.isRtlActive) {
+        const dx = this.homeX - this.posX;
+        const dz = this.homeZ - this.posZ;
+        const distToHome = Math.hypot(dx, dz);
+        const currentAgl = Math.max(0, this.posY - this.groundLevel);
+        const targetTransitAlt = this.homeY + this.rtlClearanceAltitudeAgl;
+
+        if (this.rtlStage === "CLIMB") {
+          // Stage 1: Climb to safe clearance altitude
+          if (this.posY < targetTransitAlt - 0.4) {
+            this.velY += (2.2 - this.velY) * (clampedDt * 4.5);
+            this.velX *= 0.82;
+            this.velZ *= 0.82;
+            commandedThrottle = (hoverWeight / this.def.maximumThrust) * 1.15;
+          } else {
+            this.rtlStage = "TRANSIT";
+          }
+        } else if (this.rtlStage === "TRANSIT") {
+          // Stage 2: Transit horizontally toward Home takeoff coordinates
+          if (distToHome > 1.8) {
+            const transitSpeed = Math.min(7.0, Math.max(1.8, distToHome * 0.45));
+            const targetVx = (dx / distToHome) * transitSpeed;
+            const targetVz = (dz / distToHome) * transitSpeed;
+            this.velX += (targetVx - this.velX) * (clampedDt * 2.8);
+            this.velZ += (targetVz - this.velZ) * (clampedDt * 2.8);
+
+            // Maintain safe transit altitude
+            const altDiff = targetTransitAlt - this.posY;
+            this.velY += (altDiff * 1.8 - this.velY) * (clampedDt * 3.5);
+            commandedThrottle = (hoverWeight / this.def.maximumThrust);
+          } else {
+            // Arrived over home origin
+            this.rtlStage = "DESCENT";
+          }
+        } else if (this.rtlStage === "DESCENT") {
+          // Stage 3: Controlled vertical auto-land over home origin
+          this.velX *= 0.82;
+          this.velZ *= 0.82;
+          const targetDescentSpeed = currentAgl > 3.0 ? -1.3 : -0.55;
+          this.velY += (targetDescentSpeed - this.velY) * (clampedDt * 4.5);
+          commandedThrottle = (hoverWeight / this.def.maximumThrust) * 0.90;
+        }
+      } else if (this.isAutoLanding) {
         const currentAlt = Math.max(0, this.posY - this.groundLevel);
         const targetDescentSpeed = currentAlt > 3.0 ? -1.4 : -0.65;
         this.velY += (targetDescentSpeed - this.velY) * (clampedDt * 5.0);
@@ -347,8 +459,17 @@ export class FlightPhysicsEngine {
     let effPitch = this.isAutoLanding ? 0 : input.pitch;
     let effRoll = this.isAutoLanding ? 0 : input.roll;
 
-    // GPS Position Hold (Active Aerodynamic Braking & Wind Fighting)
-    if (this.isHoverMode && !onGround && this.sensorHealth.gps) {
+    if (this.isRtlActive) {
+      if (this.rtlStage === "TRANSIT") {
+        const localVelForward = this.velX * forwardX + this.velZ * forwardZ;
+        const localVelRight = this.velX * rightX + this.velZ * rightZ;
+        effPitch = Math.max(-0.6, Math.min(0.6, -localVelForward * 0.12));
+        effRoll = Math.max(-0.6, Math.min(0.6, -localVelRight * 0.12));
+      } else {
+        effPitch = 0;
+        effRoll = 0;
+      }
+    } else if (this.isHoverMode && !onGround && this.sensorHealth.gps) {
       const isStickNeutral = Math.abs(input.pitch) < 0.04 && Math.abs(input.roll) < 0.04;
       if (isStickNeutral) {
         const localVelForward = this.velX * forwardX + this.velZ * forwardZ;
@@ -626,9 +747,48 @@ export class FlightPhysicsEngine {
         this.isAutoLanding = false;
         this.isArmed = false;
       }
+      if (this.isRtlActive) {
+        this.isRtlActive = false;
+        this.rtlStage = "LANDED";
+        this.isArmed = false;
+      }
       if (input.throttle < -0.6) {
         this.isArmed = false;
       }
+    }
+
+    // ----------------------------------------------------
+    // 8. 3D GEO-FENCE CONTAINMENT (FAA PART 107 COMPLIANCE)
+    // ----------------------------------------------------
+    const currentAgl = Math.max(0, this.posY - this.groundLevel);
+    // 1. Vertical Ceiling Fence (120m AGL)
+    if (currentAgl >= this.geoFenceMaxAltitudeAgl) {
+      this.posY = this.groundLevel + this.geoFenceMaxAltitudeAgl;
+      if (this.velY > 0) this.velY = 0;
+      this.isCeilingLimitReached = true;
+    } else {
+      this.isCeilingLimitReached = false;
+    }
+
+    // 2. Horizontal Radius Fence (1000m from Home)
+    const distFromHome = Math.hypot(this.posX - this.homeX, this.posZ - this.homeZ);
+    if (distFromHome >= this.geoFenceMaxRadius * 0.88) {
+      this.isGeoFenceWarning = true;
+    } else {
+      this.isGeoFenceWarning = false;
+    }
+
+    if (distFromHome >= this.geoFenceMaxRadius) {
+      this.isGeoFenceBreached = true;
+      // Active soft-boundary deceleration and containment pushback towards home
+      const normX = (this.posX - this.homeX) / distFromHome;
+      const normZ = (this.posZ - this.homeZ) / distFromHome;
+      this.posX = this.homeX + normX * this.geoFenceMaxRadius;
+      this.posZ = this.homeZ + normZ * this.geoFenceMaxRadius;
+      this.velX *= -0.3;
+      this.velZ *= -0.3;
+    } else {
+      this.isGeoFenceBreached = false;
     }
 
     // Island Airspace Boundary Constraints (2000m x 1800m island)
@@ -665,13 +825,15 @@ export class FlightPhysicsEngine {
     const altitudeMsl = Math.round(this.posY * 10) / 10;
     const verticalSpeedMs = Math.round(this.velY * 10) / 10;
     const headingDeg = Math.round((((this.yaw * 180) / Math.PI) % 360 + 360) % 360);
-    const distFromHome = Math.round(Math.hypot(this.posX, this.posZ) * 10) / 10;
+    const distFromHome = Math.round(Math.hypot(this.posX - this.homeX, this.posZ - this.homeZ) * 10) / 10;
 
     let flightMode: FlightMode = "HOVER";
     if (this.crashState?.isCrashed) {
       flightMode = "LANDED";
     } else if (this.posY <= this.groundLevel + 0.05 && Math.abs(horizontalSpeedMs) < 0.2) {
       flightMode = "LANDED";
+    } else if (this.isRtlActive) {
+      flightMode = "RTH";
     } else if (this.isAutoLanding) {
       flightMode = "AUTO LAND";
     } else if (!this.isHoverMode) {
@@ -707,6 +869,10 @@ export class FlightPhysicsEngine {
       isCrashed: !!this.crashState?.isCrashed,
       isCeilingLimitReached: this.isCeilingLimitReached,
       isGroundLimitReached: this.isGroundLimitReached,
+      isRtlActive: this.isRtlActive,
+      rtlStage: this.rtlStage,
+      isGeoFenceWarning: this.isGeoFenceWarning,
+      isGeoFenceBreached: this.isGeoFenceBreached,
       sensorHealth: { ...this.sensorHealth },
       windVector: {
         speedMs: this.environment.getState().windSpeed,

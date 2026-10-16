@@ -524,6 +524,10 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     physicsEngineRef.current?.triggerAutoLand();
   }, []);
 
+  const handleToggleRtl = useCallback(() => {
+    physicsEngineRef.current?.triggerRTL();
+  }, []);
+
   // Camera selection
   const handleSelectCameraMode = useCallback((mode: CameraMode) => {
     if (cameraControllerRef.current) {
@@ -1025,6 +1029,9 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       if ((e.target as HTMLElement)?.tagName === "INPUT" || (e.target as HTMLElement)?.tagName === "TEXTAREA") return;
       if (e.code === "KeyL") {
         physics.triggerAutoLand();
+      }
+      if (e.code === "KeyR") {
+        physics.triggerRTL();
       }
     };
 
@@ -1532,6 +1539,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
             onExit={handleManualDebrief}
             droneQuantity={droneQuantity}
             onUpdateDroneQuantity={handleSetDroneQuantity}
+            onToggleRtl={handleToggleRtl}
           />
 
       {/* Real-Time Flight Coach Instrumentation */}

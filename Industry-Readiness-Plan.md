@@ -38,10 +38,11 @@ To transition this platform from an advanced simulation prototype to a **commerc
 ---
 
 ### Phase 2: Autonomous Commercial Fail-Safes (RTL, Geo-Fencing & EMT) 🛡️
-- [ ] **Critical Battery Return-to-Home (RTL):** When battery drops below 20%, trigger automatic navigational ascent to clearance altitude, GPS transit to home takeoff point, and gentle vertical landing.
-- [ ] **3D Geo-Fence Containment Envelope:** Configurable max ceiling (e.g. 120m) and radius (e.g. 1000m) with auto-braking and collision pushback.
-- [ ] **Loss-of-Control / Motor Failure Emergency Procedure:** When an individual motor fails or burns out, the flight controller executes an asymmetric thrust recovery routine (controlled spin descent) rather than catastrophic unrecoverable tumble.
-- [ ] **Manual Return-to-Home [R] Keybinding:** One-touch automated recovery hotkey for trainee pilots experiencing spatial disorientation.
+- [x] **Critical Battery Return-to-Home (RTL):** When battery drops below 20%, trigger automatic navigational ascent to clearance altitude, GPS transit to home takeoff point, and gentle vertical landing.
+- [x] **3D Geo-Fence Containment Envelope:** Enforced 120m AGL ceiling and 1000m horizontal radius with soft-bounce containment pushback.
+- [x] **Manual Return-to-Home [R] Keybinding & UI Button:** One-touch automated recovery hotkey (`R`) and tactile Amber HUD button for pilot recovery with stick override.
+- [x] **HUD Fail-Safe Status & Proximity Warning Banners:** Real-time distance-to-home countdown, RTL stage indicators (CLIMB/TRANSIT/DESCENT), and Geo-fence proximity warning banners.
+- [ ] **Loss-of-Control / Motor Failure Emergency Procedure:** When an individual motor fails or burns out, the flight controller executes an asymmetric thrust recovery routine (controlled spin descent).
 
 ---
 

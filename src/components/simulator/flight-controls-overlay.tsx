@@ -1,10 +1,8 @@
 import React from "react";
 import { MinimapWidget } from "./minimap-widget";
-import { Lock, NavigationOff, ArrowUp, ArrowDown, Target } from "lucide-react";
+import { Lock, NavigationOff, ArrowUp, ArrowDown, Target, Copy, Plus, Minus, Home, AlertTriangle, ShieldAlert } from "lucide-react";
 
-import { Copy, Plus, Minus } from "lucide-react";
-
-export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, onToggleScenarios, sensorHealth, onExit, droneQuantity, onUpdateDroneQuantity }: { telemetry?: any, autoMoveLocked?: string, onToggleMap?: () => void, onToggleScenarios?: () => void, onExit?: () => void, sensorHealth?: Record<string, boolean>, droneQuantity?: number, onUpdateDroneQuantity?: (qty: number) => void }) {
+export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, onToggleScenarios, sensorHealth, onExit, droneQuantity, onUpdateDroneQuantity, onToggleRtl }: { telemetry?: any, autoMoveLocked?: string, onToggleMap?: () => void, onToggleScenarios?: () => void, onExit?: () => void, sensorHealth?: Record<string, boolean>, droneQuantity?: number, onUpdateDroneQuantity?: (qty: number) => void, onToggleRtl?: () => void }) {
   const isGpsHealthy = sensorHealth ? sensorHealth['gps'] : true;
 
   const keyBtn = (label: string, isLocked: boolean, size: string = "w-12 h-12", textSize: string = "text-lg") => (
@@ -101,6 +99,18 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
       <div className="flex gap-2 pointer-events-auto">
         <button
           type="button"
+          onClick={onToggleRtl}
+          className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl backdrop-blur-md text-xs font-black uppercase tracking-widest transition-all shadow-lg cursor-pointer hover:scale-105 active:scale-95 border ${
+            telemetry?.isRtlActive
+              ? "bg-amber-500 text-black border-amber-300 animate-pulse shadow-[0_0_20px_rgba(245,158,11,0.6)]"
+              : "bg-neutral-900/80 hover:bg-neutral-800 text-white border-white/20"
+          }`}
+          title="Return-To-Home Fail-Safe [R]"
+        >
+          <Home className="w-4 h-4" /> {telemetry?.isRtlActive ? "RTL ACTIVE" : "RTL (HOME)"}
+        </button>
+        <button
+          type="button"
           onClick={onToggleScenarios}
           className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-orange-500/90 hover:bg-orange-500 text-white backdrop-blur-md border border-orange-400/50 text-xs font-black uppercase tracking-widest transition-all shadow-lg cursor-pointer hover:scale-105 active:scale-95"
         >
@@ -114,6 +124,27 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
           End Simulation
         </button>
       </div>
+
+      {telemetry?.isRtlActive && (
+        <div className="flex items-center gap-2 bg-amber-500/25 text-amber-300 px-4 py-1.5 rounded-full border border-amber-400/50 text-[10px] font-mono font-bold tracking-widest uppercase animate-pulse shadow-lg backdrop-blur-md">
+          <Home className="w-3.5 h-3.5 text-amber-400" />
+          <span>RETURN TO HOME [{telemetry.rtlStage || "TRANSIT"}] • DIST: {telemetry.distanceFromHome}M • PRESS [R] TO ABORT</span>
+        </div>
+      )}
+
+      {telemetry?.isGeoFenceWarning && !telemetry?.isGeoFenceBreached && (
+        <div className="flex items-center gap-2 bg-amber-500/20 text-amber-300 px-4 py-1.5 rounded-full border border-amber-400/50 text-[10px] font-mono font-bold tracking-widest uppercase animate-pulse shadow-md">
+          <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+          <span>GEO-FENCE PROXIMITY ADVISORY (&gt;880M FROM ORIGIN)</span>
+        </div>
+      )}
+
+      {telemetry?.isGeoFenceBreached && (
+        <div className="flex items-center gap-2 bg-rose-500/20 text-rose-300 px-4 py-1.5 rounded-full border border-rose-400/60 text-[10px] font-mono font-bold tracking-widest uppercase animate-bounce shadow-md">
+          <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+          <span>GEO-FENCE AIRSPACE CONTAINMENT ENFORCED (1000M MAX)</span>
+        </div>
+      )}
 
       {autoMoveLocked && (
         <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-400 px-4 py-1.5 rounded-full border border-emerald-500/30 text-[10px] font-bold tracking-widest uppercase animate-pulse mt-1">

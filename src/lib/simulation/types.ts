@@ -137,6 +137,10 @@ export interface TelemetryState {
   isCrashed?: boolean;
   isCeilingLimitReached?: boolean;
   isGroundLimitReached?: boolean;
+  isRtlActive?: boolean;
+  rtlStage?: "CLIMB" | "TRANSIT" | "DESCENT" | "LANDED";
+  isGeoFenceWarning?: boolean;
+  isGeoFenceBreached?: boolean;
   sensorHealth?: {
     gps: boolean;
     imu: boolean;

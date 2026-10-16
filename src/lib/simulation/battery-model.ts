@@ -40,6 +40,10 @@ export class BatteryModel {
     this.remainingMah = (initialPercentage / 100.0) * this.capacityMah;
   }
 
+  public getPercentage(): number {
+    return Math.max(0, Math.min(100, (this.remainingMah / this.capacityMah) * 100));
+  }
+
 
   /**
    * Evaluates battery state given active total current draw (Amperes) and timestep (seconds).
