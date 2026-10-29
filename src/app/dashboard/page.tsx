@@ -157,9 +157,9 @@ export default function AircraftHangarPage() {
             {/* Tags */}
             <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-[10px] font-bold tracking-widest text-neutral-500 uppercase">
               <span>GPS Hold</span>
-              <span className="text-neutral-700">Â·</span>
+              <span className="text-neutral-700">•</span>
               <span>RTK GNSS</span>
-              <span className="text-neutral-700">Â·</span>
+              <span className="text-neutral-700">•</span>
               <span>{activeDrone?.batteryCells}S</span>
             </div>
 

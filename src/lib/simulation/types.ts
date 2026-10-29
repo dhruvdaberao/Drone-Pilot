@@ -253,7 +253,7 @@ export interface TutorialStep {
 // ----------------------------------------------------------
 // PHASE 6: SWARM FORMATIONS & TACTICAL COORDINATION
 // ----------------------------------------------------------
-export type SwarmFormationType = "V_WEDGE" | "LINE_ABEAM" | "DIAMOND" | "TRAIL" | "ORBIT";
+export type SwarmFormationType = "GRID" | "V_WEDGE" | "LINE_ABEAM" | "DIAMOND" | "TRAIL" | "ORBIT";
 
 export interface SwarmSlotOffset {
   lateral: number;

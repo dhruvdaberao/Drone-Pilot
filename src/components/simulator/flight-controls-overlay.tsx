@@ -13,7 +13,7 @@ export function FlightControlsOverlay({
   droneQuantity,
   onUpdateDroneQuantity,
   onToggleRtl,
-  swarmFormation = "V_WEDGE",
+  swarmFormation = "GRID",
   onCycleFormation,
 }: {
   telemetry?: any;
@@ -96,6 +96,7 @@ export function FlightControlsOverlay({
                   className="mt-1 px-1.5 py-0.5 rounded bg-white/10 hover:bg-[#FF5500]/30 border border-white/20 hover:border-[#FF5500]/50 text-[7px] font-mono font-bold text-amber-300 uppercase transition-all tracking-wider cursor-pointer"
                   title="Cycle Tactical Swarm Formation [Hotkey: F]"
                 >
+                  {swarmFormation === "GRID" && "GRID"}
                   {swarmFormation === "V_WEDGE" && "WEDGE"}
                   {swarmFormation === "LINE_ABEAM" && "LINE"}
                   {swarmFormation === "DIAMOND" && "DIAMOND"}

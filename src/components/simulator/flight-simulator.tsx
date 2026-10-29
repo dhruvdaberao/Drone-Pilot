@@ -99,13 +99,46 @@ function calculateSwarmSlot(
   elapsed: number
 ): { lateral: number; trailing: number; elevation: number } {
   switch (formation) {
+    case "GRID": {
+      // Symmetrical Compact Tactical Matrix (Escort Grid)
+      // Placed closely behind and tiered vertically so ALL drones fit comfortably inside the camera view
+      let lateralOffset: number;
+      let trailingOffset: number;
+      let elevationOffset: number;
+
+      if (i === 0) {
+        // Immediate left wingman
+        lateralOffset = -2.4;
+        trailingOffset = 2.8;
+        elevationOffset = 0.35;
+      } else if (i === 1) {
+        // Immediate right wingman
+        lateralOffset = 2.4;
+        trailingOffset = 2.8;
+        elevationOffset = 0.35;
+      } else {
+        // Subsequent drones form clean 3-wide tiered grid rows behind wingmen
+        const subIndex = i - 2;
+        const col = (subIndex % 3) - 1; // -1 (left), 0 (center), 1 (right)
+        const row = Math.floor(subIndex / 3) + 1; // 1, 2, 3...
+        lateralOffset = col * 3.0;
+        trailingOffset = 2.8 + (row * 3.0);
+        elevationOffset = 0.35 + (row * 0.40);
+      }
+
+      return {
+        lateral: lateralOffset * scale,
+        trailing: trailingOffset * scale,
+        elevation: elevationOffset,
+      };
+    }
     case "LINE_ABEAM": {
-      // Search and Rescue Wall: Broad lateral line perpendicular to flight heading
+      // Search and Rescue Wall: Compact lateral line perpendicular to flight heading
       const rank = Math.floor(i / 2) + 1;
       const isLeft = i % 2 === 0;
       const sideSign = isLeft ? -1 : 1;
       return {
-        lateral: sideSign * (rank * 5.2) * scale,
+        lateral: sideSign * (rank * 2.8) * scale,
         trailing: ((i % 2) * 0.4) * scale,
         elevation: 0.35 + ((i % 3) * 0.25),
       };
@@ -114,21 +147,21 @@ function calculateSwarmSlot(
       // Protective Diamond Perimeter surrounding the leader
       const count = Math.max(1, totalClones);
       const angle = (i / count) * Math.PI * 2;
-      const radius = 7.5 * scale;
+      const radius = 5.0 * scale;
       return {
         lateral: Math.sin(angle) * radius,
         trailing: Math.cos(angle) * radius,
-        elevation: 0.5 + (Math.cos(angle) > 0 ? 0.6 : 0.2),
+        elevation: 0.45 + (Math.cos(angle) > 0 ? 0.5 : 0.2),
       };
     }
     case "TRAIL": {
       // Single-File Column / Echelon
       const step = i + 1;
-      const lateralJitter = (i % 2 === 0 ? -1 : 1) * 1.2 * scale;
+      const lateralJitter = (i % 2 === 0 ? -1 : 1) * 0.8 * scale;
       return {
         lateral: lateralJitter,
-        trailing: step * 4.6 * scale,
-        elevation: 0.45 * step,
+        trailing: step * 3.2 * scale,
+        elevation: 0.35 * step,
       };
     }
     case "ORBIT": {
@@ -136,30 +169,30 @@ function calculateSwarmSlot(
       const count = Math.max(1, totalClones);
       const orbitSpeed = 0.75;
       const angle = (elapsed * orbitSpeed) + (i * ((Math.PI * 2) / count));
-      const radius = 7.8 * scale;
+      const radius = 5.2 * scale;
       return {
         lateral: Math.sin(angle) * radius,
         trailing: Math.cos(angle) * radius,
-        elevation: 0.85 + Math.sin(angle * 2) * 0.45,
+        elevation: 0.70 + Math.sin(angle * 2) * 0.35,
       };
     }
     case "V_WEDGE":
     default: {
       const FORMATION_SLOTS = [
-        { lateral: -4.5, trailing: 3.6, elevation: 0.55 },
-        { lateral:  4.5, trailing: 3.6, elevation: 0.55 },
-        { lateral: -8.8, trailing: 7.2, elevation: 1.10 },
-        { lateral:  8.8, trailing: 7.2, elevation: 1.10 },
-        { lateral: -13.0, trailing: 10.8, elevation: 1.65 },
-        { lateral:  13.0, trailing: 10.8, elevation: 1.65 },
-        { lateral:   0.0, trailing: 8.5, elevation: 1.35 },
-        { lateral: -6.5, trailing: 14.0, elevation: 2.20 },
-        { lateral:  6.5, trailing: 14.0, elevation: 2.20 },
+        { lateral: -2.5, trailing: 2.8, elevation: 0.40 },
+        { lateral:  2.5, trailing: 2.8, elevation: 0.40 },
+        { lateral: -4.8, trailing: 5.4, elevation: 0.80 },
+        { lateral:  4.8, trailing: 5.4, elevation: 0.80 },
+        { lateral: -6.8, trailing: 8.0, elevation: 1.20 },
+        { lateral:  6.8, trailing: 8.0, elevation: 1.20 },
+        { lateral:   0.0, trailing: 6.0, elevation: 0.90 },
+        { lateral: -3.4, trailing: 10.5, elevation: 1.50 },
+        { lateral:  3.4, trailing: 10.5, elevation: 1.50 },
       ];
       const base = FORMATION_SLOTS[i] || {
-        lateral: (i % 2 === 0 ? -1 : 1) * ((Math.floor(i / 2) + 1) * 4.2),
-        trailing: (Math.floor(i / 2) + 1) * 3.6,
-        elevation: (Math.floor(i / 2) + 1) * 0.55,
+        lateral: (i % 2 === 0 ? -1 : 1) * ((Math.floor(i / 2) + 1) * 2.8),
+        trailing: (Math.floor(i / 2) + 1) * 2.8,
+        elevation: (Math.floor(i / 2) + 1) * 0.40,
       };
       return {
         lateral: base.lateral * scale,
@@ -436,8 +469,8 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
   const [payloadMassKg, setPayloadMassKg] = useState(0.0);
   const [droneQuantity, setDroneQuantity] = useState(1);
   const droneQuantityRef = useRef(1);
-  const [swarmFormation, setSwarmFormation] = useState<SwarmFormationType>("V_WEDGE");
-  const swarmFormationRef = useRef<SwarmFormationType>("V_WEDGE");
+  const [swarmFormation, setSwarmFormation] = useState<SwarmFormationType>("GRID");
+  const swarmFormationRef = useRef<SwarmFormationType>("GRID");
   const [swarmSpacing, setSwarmSpacing] = useState(1.0);
   const swarmSpacingRef = useRef(1.0);
   const [motorOverrides, setMotorOverrides] = useState<number[]>([1, 1, 1, 1, 1, 1, 1, 1]);
@@ -797,7 +830,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
   }, []);
 
   const handleCycleSwarmFormation = useCallback(() => {
-    const formations: SwarmFormationType[] = ["V_WEDGE", "LINE_ABEAM", "DIAMOND", "TRAIL", "ORBIT"];
+    const formations: SwarmFormationType[] = ["GRID", "V_WEDGE", "LINE_ABEAM", "DIAMOND", "TRAIL", "ORBIT"];
     const currentIdx = formations.indexOf(swarmFormationRef.current);
     const nextFmt = formations[(currentIdx + 1) % formations.length];
     handleSetSwarmFormation(nextFmt);

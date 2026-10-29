@@ -36,7 +36,7 @@ export function LeftGlassPanel({
   onUpdatePayload,
   droneQuantity = 1,
   onUpdateDroneQuantity,
-  swarmFormation = "V_WEDGE",
+  swarmFormation = "GRID",
   onUpdateSwarmFormation,
   swarmSpacing = 1.0,
   onUpdateSwarmSpacing,
@@ -64,20 +64,26 @@ export function LeftGlassPanel({
       <button 
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed top-18 left-4 z-40 flex items-center gap-2.5 px-3.5 py-2 rounded-2xl border backdrop-blur-xl shadow-2xl transition-all duration-300 select-none group cursor-pointer ${
+        className={`fixed top-[76px] left-5 z-40 flex items-center gap-3 px-4 py-2.5 rounded-2xl border backdrop-blur-2xl shadow-2xl transition-all duration-300 select-none group cursor-pointer ${
           isOpen
-            ? "bg-[#FF5500]/25 border-[#FF5500]/70 text-white shadow-[#FF5500]/20"
-            : "bg-neutral-950/80 hover:bg-neutral-900 border-white/15 text-white/90 hover:border-white/30 hover:scale-105 active:scale-95"
+            ? "bg-[#FF5500]/25 border-[#FF5500] text-white shadow-[0_0_25px_rgba(255,85,0,0.35)] scale-105"
+            : "bg-[#0b0f17]/95 hover:bg-[#121824] border-white/20 text-white hover:border-[#FF5500]/60 hover:shadow-[0_0_20px_rgba(255,85,0,0.2)] hover:scale-105 active:scale-95"
         }`}
-        title="Toggle Aircraft Systems & Swarm Controls"
+        title="Toggle Aircraft Systems & Swarm Controls [Hotkey: F to cycle]"
         aria-label="Toggle Aircraft Systems"
       >
-        <Menu className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "text-[#FF5500] rotate-90" : "text-[#FF5500] group-hover:scale-110"}`} />
-        <span className="text-xs font-mono font-bold tracking-widest uppercase">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF5500] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#FF5500]"></span>
+          </span>
+          <Menu className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "text-[#FF5500] rotate-90" : "text-white group-hover:text-[#FF5500]"}`} />
+        </div>
+        <span className="text-xs font-mono font-black tracking-[0.14em] uppercase text-white/95">
           Aircraft & Swarm
         </span>
         {droneQuantity > 1 && (
-          <span className="px-1.5 py-0.5 text-[10px] font-mono font-black bg-[#FF5500]/30 text-[#FF5500] rounded-md border border-[#FF5500]/40">
+          <span className="px-2 py-0.5 text-[10px] font-mono font-black bg-[#FF5500] text-black rounded-md shadow-[0_0_8px_rgba(255,85,0,0.6)]">
             {droneQuantity}x
           </span>
         )}
@@ -92,7 +98,7 @@ export function LeftGlassPanel({
       )}
 
       {/* Premium Glassmorphism Drawer Card */}
-      <div className={`fixed top-18 bottom-4 left-4 md:w-[390px] w-[calc(100vw-32px)] max-w-[420px] p-6 flex flex-col gap-6 z-40 bg-[#0a0d14]/95 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl shadow-black/80 text-white font-sans transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+      <div className={`fixed top-[76px] bottom-4 left-5 md:w-[400px] w-[calc(100vw-40px)] max-w-[420px] p-6 flex flex-col gap-6 z-40 bg-[#0a0d14]/95 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl shadow-black/80 text-white font-sans transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
         isOpen ? "translate-x-0 pointer-events-auto" : "-translate-x-[125%] pointer-events-none"
       }`}>
         
@@ -204,6 +210,7 @@ export function LeftGlassPanel({
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-mono font-bold tracking-widest text-white/60 uppercase">Swarm Formation</span>
                       <span className="text-[10px] font-mono font-bold text-[#FF5500] uppercase">
+                        {swarmFormation === "GRID" && "Tactical Grid"}
                         {swarmFormation === "V_WEDGE" && "V-Wedge"}
                         {swarmFormation === "LINE_ABEAM" && "Line Abeam"}
                         {swarmFormation === "DIAMOND" && "Diamond"}
@@ -214,6 +221,7 @@ export function LeftGlassPanel({
 
                     <div className="grid grid-cols-2 gap-1.5">
                       {[
+                        { id: "GRID" as const, label: "Tactical Grid", desc: "Compact Escort Matrix", colSpan: true },
                         { id: "V_WEDGE" as const, label: "V-Wedge", desc: "Tactical Echelon" },
                         { id: "LINE_ABEAM" as const, label: "Line Abeam", desc: "Search & Rescue" },
                         { id: "DIAMOND" as const, label: "Diamond", desc: "Escort Perimeter" },
@@ -442,18 +450,21 @@ export function RightGlassPanel({
       <button 
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed top-18 right-4 z-40 flex items-center gap-2.5 px-3.5 py-2 rounded-2xl border backdrop-blur-xl shadow-2xl transition-all duration-300 select-none group cursor-pointer ${
+        className={`fixed top-[76px] right-5 z-40 flex items-center gap-3 px-4 py-2.5 rounded-2xl border backdrop-blur-2xl shadow-2xl transition-all duration-300 select-none group cursor-pointer ${
           isOpen
-            ? "bg-emerald-500/25 border-emerald-500/70 text-white shadow-emerald-500/20"
-            : "bg-neutral-950/80 hover:bg-neutral-900 border-white/15 text-white/90 hover:border-white/30 hover:scale-105 active:scale-95"
+            ? "bg-cyan-500/25 border-cyan-400 text-white shadow-[0_0_25px_rgba(6,182,212,0.35)] scale-105"
+            : "bg-[#0b0f17]/95 hover:bg-[#121824] border-white/20 text-white hover:border-cyan-400/60 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] hover:scale-105 active:scale-95"
         }`}
         title="Toggle Weather Environment & Island Minimap"
         aria-label="Toggle Environment Panel"
       >
-        <span className="text-xs font-mono font-bold tracking-widest uppercase">
-          Weather & Map
+        <span className="text-xs font-mono font-black tracking-[0.14em] uppercase text-white/95">
+          Weather & Radar
         </span>
-        <Menu className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "text-emerald-400 rotate-90" : "text-emerald-400 group-hover:scale-110"}`} />
+        <div className="flex items-center gap-2">
+          <CloudSun className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+          <Menu className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "text-cyan-400 rotate-90" : "text-white group-hover:text-cyan-400"}`} />
+        </div>
       </button>
 
       {/* Backdrop (Click outside to dismiss drawer) */}
@@ -465,7 +476,7 @@ export function RightGlassPanel({
       )}
 
       {/* Premium Glassmorphism Drawer Card */}
-      <div className={`fixed top-18 bottom-4 right-4 md:w-[390px] w-[calc(100vw-32px)] max-w-[420px] p-6 flex flex-col gap-6 z-40 bg-[#0a0d14]/95 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl shadow-black/80 text-white font-sans transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+      <div className={`fixed top-[76px] bottom-4 right-5 md:w-[400px] w-[calc(100vw-40px)] max-w-[420px] p-6 flex flex-col gap-6 z-40 bg-[#0a0d14]/95 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl shadow-black/80 text-white font-sans transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
         isOpen ? "translate-x-0 pointer-events-auto" : "translate-x-[125%] pointer-events-none"
       }`}>
         
