@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TelemetryState, EnvironmentState } from "@/lib/simulation/types";
 import { DroneModel } from "@/types/drone";
-import { Battery, ShieldAlert, Wind, CloudSun, Map as MapIcon, Settings2, Plane, Thermometer, Droplets, RotateCcw, Info, CloudRain, AlertTriangle, Activity, Eye } from "lucide-react";
+import { Battery, ShieldAlert, Wind, CloudSun, Map as MapIcon, Settings2, Plane, Thermometer, Droplets, RotateCcw, Info, CloudRain, AlertTriangle, Activity, Eye, Menu, X } from "lucide-react";
 import { MinimapWidget, NavigationWaypoint } from "./minimap-widget";
 import { FlightCoachInsight } from "@/lib/simulation/flight-coach-types";
 
@@ -37,41 +37,75 @@ export function LeftGlassPanel({
   onExit,
 }: LeftGlassPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"status" | "motors">("status"); const avgMotorOutput = telemetry.motorOutputs ? telemetry.motorOutputs.reduce((a,b)=>a+b,0) / Math.max(1, telemetry.motorOutputs.length) : 0;
+  const [activeTab, setActiveTab] = useState<"status" | "motors">("status");
+  const avgMotorOutput = telemetry.motorOutputs ? telemetry.motorOutputs.reduce((a,b)=>a+b,0) / Math.max(1, telemetry.motorOutputs.length) : 0;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
 
   return (
     <>
-      {/* Mobile Toggle Button */}
+      {/* Sandwich Bar Toggle Button (Desktop & Mobile) */}
       <button 
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-20 left-4 z-40 bg-neutral-900/80 backdrop-blur border border-white/5 p-3 rounded-2xl text-white shadow-xl"
+        className={`fixed top-18 left-4 z-40 flex items-center gap-2.5 px-3.5 py-2 rounded-2xl border backdrop-blur-xl shadow-2xl transition-all duration-300 select-none group cursor-pointer ${
+          isOpen
+            ? "bg-[#FF5500]/25 border-[#FF5500]/70 text-white shadow-[#FF5500]/20"
+            : "bg-neutral-950/80 hover:bg-neutral-900 border-white/15 text-white/90 hover:border-white/30 hover:scale-105 active:scale-95"
+        }`}
+        title="Toggle Aircraft Systems & Swarm Controls"
+        aria-label="Toggle Aircraft Systems"
       >
-        <Settings2 className="w-6 h-6 text-white/80" />
+        <Menu className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "text-[#FF5500] rotate-90" : "text-[#FF5500] group-hover:scale-110"}`} />
+        <span className="text-xs font-mono font-bold tracking-widest uppercase">
+          Aircraft & Swarm
+        </span>
+        {droneQuantity > 1 && (
+          <span className="px-1.5 py-0.5 text-[10px] font-mono font-black bg-[#FF5500]/30 text-[#FF5500] rounded-md border border-[#FF5500]/40">
+            {droneQuantity}x
+          </span>
+        )}
       </button>
 
-      {/* Backdrop for mobile */}
+      {/* Backdrop (Click outside to dismiss drawer) */}
       {isOpen && (
         <div 
-          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-30" 
+          className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-30 transition-opacity" 
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      {/* Premium Glassmorphism Card */}
-      <div className={`fixed top-20 bottom-4 left-4 md:w-[380px] w-[calc(100vw-32px)] p-6 flex flex-col gap-6 z-40 text-white font-sans pointer-events-auto transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
-        isOpen ? "translate-x-0" : "-translate-x-[120%] md:translate-x-0"
+      {/* Premium Glassmorphism Drawer Card */}
+      <div className={`fixed top-18 bottom-4 left-4 md:w-[390px] w-[calc(100vw-32px)] max-w-[420px] p-6 flex flex-col gap-6 z-40 bg-[#0a0d14]/95 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl shadow-black/80 text-white font-sans transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        isOpen ? "translate-x-0 pointer-events-auto" : "-translate-x-[125%] pointer-events-none"
       }`}>
         
-        {/* Header & Exit */}
+        {/* Header & Close */}
         <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
           <div className="space-y-1">
             <h2 className="font-bold text-xl uppercase tracking-wider flex items-center gap-2">
-              <Plane className="w-6 h-6 text-white/80" />
+              <Plane className="w-5 h-5 text-[#FF5500]" />
               {drone.name}
             </h2>
-            <p className="text-xs text-white/60 tracking-widest uppercase">{motorCount} MOTORS • {drone.platformCategory}</p>
+            <p className="text-xs text-white/60 tracking-widest uppercase font-mono">{motorCount} MOTORS • {drone.platformCategory}</p>
           </div>
-          <button onClick={() => setIsOpen(false)} className="md:hidden p-2 bg-white/10 rounded-full hover:bg-white/20"><Settings2 className="w-5 h-5 text-white" /></button>
+          <button 
+            type="button"
+            onClick={() => setIsOpen(false)} 
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all text-xs font-mono font-bold tracking-wider cursor-pointer border border-white/10"
+            title="Close Panel"
+          >
+            <X className="w-4 h-4" />
+            <span>CLOSE</span>
+          </button>
         </div>
 
         {/* Tab Navigation */}
@@ -325,37 +359,67 @@ export function RightGlassPanel({
 }: RightGlassPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
   return (
     <>
-      {/* Mobile Toggle Button */}
+      {/* Sandwich Bar Toggle Button (Desktop & Mobile) */}
       <button 
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-20 right-4 z-40 bg-neutral-900/80 backdrop-blur border border-white/5 p-3 rounded-2xl text-white shadow-xl"
+        className={`fixed top-18 right-4 z-40 flex items-center gap-2.5 px-3.5 py-2 rounded-2xl border backdrop-blur-xl shadow-2xl transition-all duration-300 select-none group cursor-pointer ${
+          isOpen
+            ? "bg-emerald-500/25 border-emerald-500/70 text-white shadow-emerald-500/20"
+            : "bg-neutral-950/80 hover:bg-neutral-900 border-white/15 text-white/90 hover:border-white/30 hover:scale-105 active:scale-95"
+        }`}
+        title="Toggle Weather Environment & Island Minimap"
+        aria-label="Toggle Environment Panel"
       >
-        <CloudSun className="w-6 h-6 text-white/80" />
+        <span className="text-xs font-mono font-bold tracking-widest uppercase">
+          Weather & Map
+        </span>
+        <Menu className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "text-emerald-400 rotate-90" : "text-emerald-400 group-hover:scale-110"}`} />
       </button>
 
-      {/* Backdrop for mobile */}
+      {/* Backdrop (Click outside to dismiss drawer) */}
       {isOpen && (
         <div 
-          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-30" 
+          className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-30 transition-opacity" 
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      {/* Premium Glassmorphism Card */}
-      <div className={`fixed top-20 bottom-4 right-4 md:w-[380px] w-[calc(100vw-32px)] p-6 flex flex-col gap-6 z-40 text-white font-sans pointer-events-auto transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${isOpen ? "translate-x-0" : "translate-x-[120%] md:translate-x-0"}`}>
+      {/* Premium Glassmorphism Drawer Card */}
+      <div className={`fixed top-18 bottom-4 right-4 md:w-[390px] w-[calc(100vw-32px)] max-w-[420px] p-6 flex flex-col gap-6 z-40 bg-[#0a0d14]/95 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl shadow-black/80 text-white font-sans transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        isOpen ? "translate-x-0 pointer-events-auto" : "translate-x-[125%] pointer-events-none"
+      }`}>
         
-        {/* Header */}
+        {/* Header & Close */}
         <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
           <div className="space-y-1">
             <h2 className="font-bold text-xl uppercase tracking-wider flex items-center gap-2">
-              <CloudSun className="w-6 h-6 text-white/80" />
+              <CloudSun className="w-5 h-5 text-emerald-400" />
               Environment
             </h2>
-            <p className="text-xs text-white/60 tracking-widest uppercase">Atmospheric Digital Twin</p>
+            <p className="text-xs text-white/60 tracking-widest uppercase font-mono">Atmospheric Digital Twin</p>
           </div>
-          <button onClick={() => setIsOpen(false)} className="md:hidden p-2 bg-white/10 rounded-full hover:bg-white/20"><CloudSun className="w-5 h-5 text-white" /></button>
+          <button 
+            type="button"
+            onClick={() => setIsOpen(false)} 
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all text-xs font-mono font-bold tracking-wider cursor-pointer border border-white/10"
+            title="Close Panel"
+          >
+            <X className="w-4 h-4" />
+            <span>CLOSE</span>
+          </button>
         </div>
 
         {/* Location Selector */}
