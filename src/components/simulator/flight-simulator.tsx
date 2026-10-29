@@ -10,6 +10,7 @@ import {
   FlightAnalysisReport,
   ReplayFrame,
   PhysicsDebugTelemetry,
+  SwarmFormationType,
 } from "@/lib/simulation/types";
 import { getDroneDefinition } from "@/lib/simulation/drone-definitions";
 import { FlightPhysicsEngine } from "@/lib/simulation/flight-physics";
@@ -88,6 +89,85 @@ function getWindExposure(x: number, z: number): number {
     }
   }
   return 0.6;
+}
+
+function calculateSwarmSlot(
+  formation: SwarmFormationType,
+  i: number,
+  totalClones: number,
+  scale: number,
+  elapsed: number
+): { lateral: number; trailing: number; elevation: number } {
+  switch (formation) {
+    case "LINE_ABEAM": {
+      // Search and Rescue Wall: Broad lateral line perpendicular to flight heading
+      const rank = Math.floor(i / 2) + 1;
+      const isLeft = i % 2 === 0;
+      const sideSign = isLeft ? -1 : 1;
+      return {
+        lateral: sideSign * (rank * 5.2) * scale,
+        trailing: ((i % 2) * 0.4) * scale,
+        elevation: 0.35 + ((i % 3) * 0.25),
+      };
+    }
+    case "DIAMOND": {
+      // Protective Diamond Perimeter surrounding the leader
+      const count = Math.max(1, totalClones);
+      const angle = (i / count) * Math.PI * 2;
+      const radius = 7.5 * scale;
+      return {
+        lateral: Math.sin(angle) * radius,
+        trailing: Math.cos(angle) * radius,
+        elevation: 0.5 + (Math.cos(angle) > 0 ? 0.6 : 0.2),
+      };
+    }
+    case "TRAIL": {
+      // Single-File Column / Echelon
+      const step = i + 1;
+      const lateralJitter = (i % 2 === 0 ? -1 : 1) * 1.2 * scale;
+      return {
+        lateral: lateralJitter,
+        trailing: step * 4.6 * scale,
+        elevation: 0.45 * step,
+      };
+    }
+    case "ORBIT": {
+      // Dynamic Tactical Helical Orbit around the leader
+      const count = Math.max(1, totalClones);
+      const orbitSpeed = 0.75;
+      const angle = (elapsed * orbitSpeed) + (i * ((Math.PI * 2) / count));
+      const radius = 7.8 * scale;
+      return {
+        lateral: Math.sin(angle) * radius,
+        trailing: Math.cos(angle) * radius,
+        elevation: 0.85 + Math.sin(angle * 2) * 0.45,
+      };
+    }
+    case "V_WEDGE":
+    default: {
+      const FORMATION_SLOTS = [
+        { lateral: -4.5, trailing: 3.6, elevation: 0.55 },
+        { lateral:  4.5, trailing: 3.6, elevation: 0.55 },
+        { lateral: -8.8, trailing: 7.2, elevation: 1.10 },
+        { lateral:  8.8, trailing: 7.2, elevation: 1.10 },
+        { lateral: -13.0, trailing: 10.8, elevation: 1.65 },
+        { lateral:  13.0, trailing: 10.8, elevation: 1.65 },
+        { lateral:   0.0, trailing: 8.5, elevation: 1.35 },
+        { lateral: -6.5, trailing: 14.0, elevation: 2.20 },
+        { lateral:  6.5, trailing: 14.0, elevation: 2.20 },
+      ];
+      const base = FORMATION_SLOTS[i] || {
+        lateral: (i % 2 === 0 ? -1 : 1) * ((Math.floor(i / 2) + 1) * 4.2),
+        trailing: (Math.floor(i / 2) + 1) * 3.6,
+        elevation: (Math.floor(i / 2) + 1) * 0.55,
+      };
+      return {
+        lateral: base.lateral * scale,
+        trailing: base.trailing * scale,
+        elevation: base.elevation,
+      };
+    }
+  }
 }
 
 interface FlightSimulatorProps {
@@ -356,6 +436,10 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
   const [payloadMassKg, setPayloadMassKg] = useState(0.0);
   const [droneQuantity, setDroneQuantity] = useState(1);
   const droneQuantityRef = useRef(1);
+  const [swarmFormation, setSwarmFormation] = useState<SwarmFormationType>("V_WEDGE");
+  const swarmFormationRef = useRef<SwarmFormationType>("V_WEDGE");
+  const [swarmSpacing, setSwarmSpacing] = useState(1.0);
+  const swarmSpacingRef = useRef(1.0);
   const [motorOverrides, setMotorOverrides] = useState<number[]>([1, 1, 1, 1, 1, 1, 1, 1]);
   const [manipulationEvents, setManipulationEvents] = useState<ManipulationEvent[]>([]);
   const baselineExperimentRef = useRef({ payloadKg: 0, batteryPercent: 100 });
@@ -702,6 +786,23 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     droneQuantityRef.current = qty;
   }, []);
 
+  const handleSetSwarmFormation = useCallback((fmt: SwarmFormationType) => {
+    setSwarmFormation(fmt);
+    swarmFormationRef.current = fmt;
+  }, []);
+
+  const handleSetSwarmSpacing = useCallback((spacing: number) => {
+    setSwarmSpacing(spacing);
+    swarmSpacingRef.current = spacing;
+  }, []);
+
+  const handleCycleSwarmFormation = useCallback(() => {
+    const formations: SwarmFormationType[] = ["V_WEDGE", "LINE_ABEAM", "DIAMOND", "TRAIL", "ORBIT"];
+    const currentIdx = formations.indexOf(swarmFormationRef.current);
+    const nextFmt = formations[(currentIdx + 1) % formations.length];
+    handleSetSwarmFormation(nextFmt);
+  }, [handleSetSwarmFormation]);
+
   const handleResetAllFaults = useCallback(() => {
     const nominal = [1, 1, 1, 1, 1, 1, 1, 1];
     setMotorHealths(nominal);
@@ -1035,6 +1136,9 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       if (e.code === "KeyR") {
         physics.triggerRTL();
       }
+      if (e.code === "KeyF") {
+        handleCycleSwarmFormation();
+      }
     };
 
     const onWheel = (e: WheelEvent) => {
@@ -1137,27 +1241,14 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       droneMesh.update(curTelemetry, dt);
       droneMesh.setNameTagVisible(chaseCam.mode !== "fpv");
       
-      // Update Swarm Clones (Tactical Tiered V-Formation / Diamond Echelon)
+      // Update Swarm Clones (Multi-Formation Tactical Coordination)
       const isAirborne = curTelemetry.altitude > 0.15 && !curTelemetry.isCrashed;
       const yaw = curTelemetry.rotation.yaw;
       const cosYaw = Math.cos(yaw);
       const sinYaw = Math.sin(yaw);
-
-      // Predefined tactical offsets for up to 9 wingman drones (lateral, trailing, elevation):
-      // lateral: negative = port (left), positive = starboard (right)
-      // trailing: positive = behind leader along flight heading
-      // elevation: positive = staggered above leader for clear line-of-sight from chase cam
-      const FORMATION_SLOTS = [
-        { lateral: -4.5, trailing: 3.6, elevation: 0.55 }, // Wingman 1: Port Tier 1
-        { lateral:  4.5, trailing: 3.6, elevation: 0.55 }, // Wingman 2: Starboard Tier 1
-        { lateral: -8.8, trailing: 7.2, elevation: 1.10 }, // Wingman 3: Port Tier 2
-        { lateral:  8.8, trailing: 7.2, elevation: 1.10 }, // Wingman 4: Starboard Tier 2
-        { lateral: -13.0, trailing: 10.8, elevation: 1.65 }, // Wingman 5: Port Tier 3
-        { lateral:  13.0, trailing: 10.8, elevation: 1.65 }, // Wingman 6: Starboard Tier 3
-        { lateral:   0.0, trailing: 8.5, elevation: 1.35 }, // Escort 7: Diamond Center Aft
-        { lateral: -6.5, trailing: 14.0, elevation: 2.20 }, // Overwatch 8: Port High Apex
-        { lateral:  6.5, trailing: 14.0, elevation: 2.20 }, // Overwatch 9: Starboard High Apex
-      ];
+      const currentFormation = swarmFormationRef.current;
+      const currentScale = swarmSpacingRef.current;
+      const totalClones = Math.max(1, droneQuantityRef.current - 1);
 
       for (let i = 0; i < cloneMeshes.length; i++) {
         const clone = cloneMeshes[i];
@@ -1165,11 +1256,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
           clone.group.visible = true;
           if (clone.groundShadowMesh) clone.groundShadowMesh.visible = true;
 
-          const slot = FORMATION_SLOTS[i] || {
-            lateral: (i % 2 === 0 ? -1 : 1) * ((Math.floor(i / 2) + 1) * 4.2),
-            trailing: (Math.floor(i / 2) + 1) * 3.6,
-            elevation: (Math.floor(i / 2) + 1) * 0.55,
-          };
+          const slot = calculateSwarmSlot(currentFormation, i, totalClones, currentScale, elapsed);
 
           // Precise orthogonal body-frame to world-frame transformation:
           // Right vector:  ( cosYaw, 0, -sinYaw)
@@ -1373,6 +1460,10 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
           onUpdatePayload={handleSetPayloadMass}
           droneQuantity={droneQuantity}
           onUpdateDroneQuantity={handleSetDroneQuantity}
+          swarmFormation={swarmFormation}
+          onUpdateSwarmFormation={handleSetSwarmFormation}
+          swarmSpacing={swarmSpacing}
+          onUpdateSwarmSpacing={handleSetSwarmSpacing}
           sensorHealth={sensorHealth}
           onToggleSensor={handleToggleSensor as any}
           onExit={onExit}
@@ -1555,6 +1646,8 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
             droneQuantity={droneQuantity}
             onUpdateDroneQuantity={handleSetDroneQuantity}
             onToggleRtl={handleToggleRtl}
+            swarmFormation={swarmFormation}
+            onCycleFormation={handleCycleSwarmFormation}
           />
 
       {/* Real-Time Flight Coach Instrumentation */}

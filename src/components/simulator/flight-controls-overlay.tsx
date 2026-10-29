@@ -1,8 +1,33 @@
 import React from "react";
 import { MinimapWidget } from "./minimap-widget";
 import { Lock, NavigationOff, ArrowUp, ArrowDown, Target, Copy, Plus, Minus, Home, AlertTriangle, ShieldAlert } from "lucide-react";
+import { SwarmFormationType } from "@/lib/simulation/types";
 
-export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, onToggleScenarios, sensorHealth, onExit, droneQuantity, onUpdateDroneQuantity, onToggleRtl }: { telemetry?: any, autoMoveLocked?: string, onToggleMap?: () => void, onToggleScenarios?: () => void, onExit?: () => void, sensorHealth?: Record<string, boolean>, droneQuantity?: number, onUpdateDroneQuantity?: (qty: number) => void, onToggleRtl?: () => void }) {
+export function FlightControlsOverlay({
+  telemetry,
+  autoMoveLocked,
+  onToggleMap,
+  onToggleScenarios,
+  sensorHealth,
+  onExit,
+  droneQuantity,
+  onUpdateDroneQuantity,
+  onToggleRtl,
+  swarmFormation = "V_WEDGE",
+  onCycleFormation,
+}: {
+  telemetry?: any;
+  autoMoveLocked?: string;
+  onToggleMap?: () => void;
+  onToggleScenarios?: () => void;
+  onExit?: () => void;
+  sensorHealth?: Record<string, boolean>;
+  droneQuantity?: number;
+  onUpdateDroneQuantity?: (qty: number) => void;
+  onToggleRtl?: () => void;
+  swarmFormation?: SwarmFormationType;
+  onCycleFormation?: () => void;
+}) {
   const isGpsHealthy = sensorHealth ? sensorHealth['gps'] : true;
 
   const keyBtn = (label: string, isLocked: boolean, size: string = "w-12 h-12", textSize: string = "text-lg") => (
@@ -60,10 +85,24 @@ export function FlightControlsOverlay({ telemetry, autoMoveLocked, onToggleMap, 
             >
               <Minus className="w-3.5 h-3.5" />
             </button>
-            <div className="flex flex-col items-center justify-center px-1 min-w-[44px]">
+            <div className="flex flex-col items-center justify-center px-1 min-w-[50px]">
               <Copy className="w-4 h-4 text-[#FF5500] mb-0.5" />
               <span className="font-mono font-black text-xl text-white leading-none">{droneQuantity || 1}</span>
               <span className="text-[8px] font-mono text-white/50 uppercase mt-0.5">DRONES</span>
+              {droneQuantity && droneQuantity > 1 && onCycleFormation && (
+                <button
+                  type="button"
+                  onClick={onCycleFormation}
+                  className="mt-1 px-1.5 py-0.5 rounded bg-white/10 hover:bg-[#FF5500]/30 border border-white/20 hover:border-[#FF5500]/50 text-[7px] font-mono font-bold text-amber-300 uppercase transition-all tracking-wider cursor-pointer"
+                  title="Cycle Tactical Swarm Formation [Hotkey: F]"
+                >
+                  {swarmFormation === "V_WEDGE" && "WEDGE"}
+                  {swarmFormation === "LINE_ABEAM" && "LINE"}
+                  {swarmFormation === "DIAMOND" && "DIAMOND"}
+                  {swarmFormation === "TRAIL" && "TRAIL"}
+                  {swarmFormation === "ORBIT" && "ORBIT"}
+                </button>
+              )}
             </div>
             <button 
               type="button"

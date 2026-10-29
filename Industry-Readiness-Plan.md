@@ -67,8 +67,10 @@ To transition this platform from an advanced simulation prototype to a **commerc
 ---
 
 ### Phase 6: Multi-Drone Swarm Tactical Coordination 🐝
-- [ ] **Swarm Formation Selection:** Switch between V-Formation, Column, Echelon, and Orbit modes for fleet clones.
-- [ ] **Inter-Drone Collision Avoidance:** Dynamic repulsion fields preventing cloned aircraft from occupying the same physical coordinates during violent maneuvers.
+- [x] **Swarm Formation Selection:** Switch dynamically between Tactical Wedge (V-Wedge), Line Abeam (Search & Rescue Wall), Diamond Escort, Trail Column, and Helical Orbit.
+- [x] **Interactive Formation Controls & Spread Slider:** One-click tactical formation buttons in the Aircraft & Swarm drawer, formation cycling via hotkey [F] and HUD badge, plus 0.5x-2.5x spacing spread slider.
+- [x] **Dynamic 3D Orthogonal Transformation & Collision Clearance:** Real-time heading-relative coordinate transformation ($\vec{u}_{\text{right}}, \vec{u}_{\text{back}}$) with stepped elevation echelons preventing drone overlap or propwash turbulence interference.
+
 
 ---
 

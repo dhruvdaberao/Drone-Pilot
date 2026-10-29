@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { TelemetryState, EnvironmentState } from "@/lib/simulation/types";
+import { TelemetryState, EnvironmentState, SwarmFormationType } from "@/lib/simulation/types";
 import { DroneModel } from "@/types/drone";
-import { Battery, ShieldAlert, Wind, CloudSun, Map as MapIcon, Settings2, Plane, Thermometer, Droplets, RotateCcw, Info, CloudRain, AlertTriangle, Activity, Eye, Menu, X } from "lucide-react";
+import { Battery, ShieldAlert, Wind, CloudSun, Map as MapIcon, Settings2, Plane, Thermometer, Droplets, RotateCcw, Info, CloudRain, AlertTriangle, Activity, Eye, Menu, X, Users, Radio } from "lucide-react";
 import { MinimapWidget, NavigationWaypoint } from "./minimap-widget";
 import { FlightCoachInsight } from "@/lib/simulation/flight-coach-types";
 
@@ -17,6 +17,10 @@ interface LeftGlassPanelProps {
   onUpdatePayload: (mass: number) => void;
   droneQuantity?: number;
   onUpdateDroneQuantity?: (qty: number) => void;
+  swarmFormation?: SwarmFormationType;
+  onUpdateSwarmFormation?: (fmt: SwarmFormationType) => void;
+  swarmSpacing?: number;
+  onUpdateSwarmSpacing?: (spacing: number) => void;
   sensorHealth: Record<string, boolean>;
   onToggleSensor: (sensor: string) => void;
   onExit: () => void;
@@ -32,6 +36,10 @@ export function LeftGlassPanel({
   onUpdatePayload,
   droneQuantity = 1,
   onUpdateDroneQuantity,
+  swarmFormation = "V_WEDGE",
+  onUpdateSwarmFormation,
+  swarmSpacing = 1.0,
+  onUpdateSwarmSpacing,
   sensorHealth,
   onToggleSensor,
   onExit,
@@ -186,8 +194,67 @@ export function LeftGlassPanel({
                   </div>
                   <input type="range" min="1" max="10" step="1" value={droneQuantity}
                     onChange={(e) => onUpdateDroneQuantity(parseInt(e.target.value))}
-                    className="w-full h-1.5 bg-white/20 rounded-full appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#FF5500] [&::-webkit-slider-thumb]:rounded-full" />
+                    className="w-full h-1.5 bg-white/20 rounded-full appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#FF5500] [&::-webkit-slider-thumb]:rounded-full cursor-pointer" />
                 </div>
+                )}
+
+                {/* TACTICAL FORMATION CONTROLS (Active when swarm > 1) */}
+                {droneQuantity > 1 && (
+                  <div className="pt-3 border-t border-white/10 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold tracking-widest text-white/60 uppercase">Swarm Formation</span>
+                      <span className="text-[10px] font-mono font-bold text-[#FF5500] uppercase">
+                        {swarmFormation === "V_WEDGE" && "V-Wedge"}
+                        {swarmFormation === "LINE_ABEAM" && "Line Abeam"}
+                        {swarmFormation === "DIAMOND" && "Diamond"}
+                        {swarmFormation === "TRAIL" && "Trail"}
+                        {swarmFormation === "ORBIT" && "Helical Orbit"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        { id: "V_WEDGE" as const, label: "V-Wedge", desc: "Tactical Echelon" },
+                        { id: "LINE_ABEAM" as const, label: "Line Abeam", desc: "Search & Rescue" },
+                        { id: "DIAMOND" as const, label: "Diamond", desc: "Escort Perimeter" },
+                        { id: "TRAIL" as const, label: "Trail Column", desc: "Single File" },
+                        { id: "ORBIT" as const, label: "Helical Orbit", desc: "Dynamic Patrol", colSpan: true },
+                      ].map((fmt) => (
+                        <button
+                          key={fmt.id}
+                          type="button"
+                          onClick={() => onUpdateSwarmFormation && onUpdateSwarmFormation(fmt.id)}
+                          className={`p-2 rounded-xl border text-left transition-all cursor-pointer ${fmt.colSpan ? "col-span-2" : ""} ${
+                            swarmFormation === fmt.id
+                              ? "bg-[#FF5500]/25 border-[#FF5500]/80 text-white shadow-lg shadow-[#FF5500]/20"
+                              : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
+                          }`}
+                        >
+                          <div className="text-[11px] font-bold font-mono uppercase">{fmt.label}</div>
+                          <div className="text-[9px] text-white/50">{fmt.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Formation Spacing / Spread Slider */}
+                    {onUpdateSwarmSpacing && (
+                      <div className="pt-2">
+                        <div className="flex justify-between text-[10px] font-mono font-bold mb-1 uppercase">
+                          <span className="text-white/50">Formation Spread</span>
+                          <span className="text-white/90">{(swarmSpacing || 1.0).toFixed(1)}x</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.5"
+                          max="2.5"
+                          step="0.1"
+                          value={swarmSpacing || 1.0}
+                          onChange={(e) => onUpdateSwarmSpacing(parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-white/20 rounded-full appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-amber-400 [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
+                        />
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 

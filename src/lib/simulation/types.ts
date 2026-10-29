@@ -251,18 +251,13 @@ export interface TutorialStep {
 }
 
 // ----------------------------------------------------------
-// PHASE 6: SNAPSHOT SYSTEM
+// PHASE 6: SWARM FORMATIONS & TACTICAL COORDINATION
 // ----------------------------------------------------------
-export interface SimulationSnapshot {
-  snapshotId: string;
-  configVersion: string;
-  timestamp: number;
-  simTimeSeconds: number;
-  aircraftConfigurationRef: string; // Configuration ID or Platform Category
-  telemetry: TelemetryState;
-  environment: EnvironmentState;
-  scenarioState?: {
-    scenarioId: string;
-    elapsedTime: number;
-  };
+export type SwarmFormationType = "V_WEDGE" | "LINE_ABEAM" | "DIAMOND" | "TRAIL" | "ORBIT";
+
+export interface SwarmSlotOffset {
+  lateral: number;
+  trailing: number;
+  elevation: number;
 }
+
