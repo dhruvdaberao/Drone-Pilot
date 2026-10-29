@@ -854,7 +854,7 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       preserveDrawingBuffer: true,
     });
     renderer.setSize(width, height, false);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -891,10 +891,12 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
     scene.add(droneMesh.group);
     droneMeshRef.current = droneMesh;
     
-    // SWARM CLONES
-    const cloneMeshes: any[] = [];
+    // SWARM CLONES (Pre-allocated, hidden until quantity increased)
+    const cloneMeshes: ModularDrone[] = [];
     for (let i = 1; i < 10; i++) {
-        const clone = new ModularDrone(droneDef, `CLONE-${i}`);
+        const clone = new ModularDrone(droneDef, `SWARM-${i < 9 ? "0" + (i + 1) : (i + 1)}`);
+        clone.group.visible = false;
+        if (clone.groundShadowMesh) clone.groundShadowMesh.visible = false;
         scene.add(clone.group);
         cloneMeshes.push(clone);
     }
@@ -1135,36 +1137,68 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       droneMesh.update(curTelemetry, dt);
       droneMesh.setNameTagVisible(chaseCam.mode !== "fpv");
       
-      // Update Swarm Clones
+      // Update Swarm Clones (Tactical Tiered V-Formation / Diamond Echelon)
+      const isAirborne = curTelemetry.altitude > 0.15 && !curTelemetry.isCrashed;
+      const yaw = curTelemetry.rotation.yaw;
+      const cosYaw = Math.cos(yaw);
+      const sinYaw = Math.sin(yaw);
+
+      // Predefined tactical offsets for up to 9 wingman drones (lateral, trailing, elevation):
+      // lateral: negative = port (left), positive = starboard (right)
+      // trailing: positive = behind leader along flight heading
+      // elevation: positive = staggered above leader for clear line-of-sight from chase cam
+      const FORMATION_SLOTS = [
+        { lateral: -4.5, trailing: 3.6, elevation: 0.55 }, // Wingman 1: Port Tier 1
+        { lateral:  4.5, trailing: 3.6, elevation: 0.55 }, // Wingman 2: Starboard Tier 1
+        { lateral: -8.8, trailing: 7.2, elevation: 1.10 }, // Wingman 3: Port Tier 2
+        { lateral:  8.8, trailing: 7.2, elevation: 1.10 }, // Wingman 4: Starboard Tier 2
+        { lateral: -13.0, trailing: 10.8, elevation: 1.65 }, // Wingman 5: Port Tier 3
+        { lateral:  13.0, trailing: 10.8, elevation: 1.65 }, // Wingman 6: Starboard Tier 3
+        { lateral:   0.0, trailing: 8.5, elevation: 1.35 }, // Escort 7: Diamond Center Aft
+        { lateral: -6.5, trailing: 14.0, elevation: 2.20 }, // Overwatch 8: Port High Apex
+        { lateral:  6.5, trailing: 14.0, elevation: 2.20 }, // Overwatch 9: Starboard High Apex
+      ];
+
       for (let i = 0; i < cloneMeshes.length; i++) {
-          const clone = cloneMeshes[i];
-          if (i < droneQuantityRef.current - 1) {
-              clone.group.visible = true;
-              if (clone.groundShadowMesh) clone.groundShadowMesh.visible = true;
-              
-              // Deep copy telemetry to offset position safely
-              const cloneTelem = JSON.parse(JSON.stringify(curTelemetry));
-              
-              // Offset clone position to fly in a V-formation or staggered line
-              // i=0 -> left 2.5m, i=1 -> right 2.5m, i=2 -> left 5m, etc.
-              const offsetIndex = Math.ceil((i + 1) / 2);
-              const sign = (i % 2 === 0) ? -1 : 1;
-              const spacing = 3.5;
-              
-              // Calculate formation offsets based on yaw to fly behind and to the sides
-              const yawRad = curTelemetry.rotation.yaw;
-              const dx = Math.cos(yawRad) * (offsetIndex * spacing * sign) - Math.sin(yawRad) * (offsetIndex * spacing);
-              const dz = Math.sin(yawRad) * (offsetIndex * spacing * sign) + Math.cos(yawRad) * (offsetIndex * spacing);
-              
-              cloneTelem.position.x += dx;
-              cloneTelem.position.z += dz;
-              
-              clone.update(cloneTelem, dt);
-              clone.setNameTagVisible(chaseCam.mode !== "fpv");
-          } else {
-              clone.group.visible = false;
-              if (clone.groundShadowMesh) clone.groundShadowMesh.visible = false;
-          }
+        const clone = cloneMeshes[i];
+        if (i < droneQuantityRef.current - 1) {
+          clone.group.visible = true;
+          if (clone.groundShadowMesh) clone.groundShadowMesh.visible = true;
+
+          const slot = FORMATION_SLOTS[i] || {
+            lateral: (i % 2 === 0 ? -1 : 1) * ((Math.floor(i / 2) + 1) * 4.2),
+            trailing: (Math.floor(i / 2) + 1) * 3.6,
+            elevation: (Math.floor(i / 2) + 1) * 0.55,
+          };
+
+          // Precise orthogonal body-frame to world-frame transformation:
+          // Right vector:  ( cosYaw, 0, -sinYaw)
+          // Back vector:   ( sinYaw, 0,  cosYaw)
+          const dx = (cosYaw * slot.lateral) + (sinYaw * slot.trailing);
+          const dz = (-sinYaw * slot.lateral) + (cosYaw * slot.trailing);
+
+          // Subtle organic hover desynchronization when airborne
+          const microBob = isAirborne ? Math.sin(elapsed * 2.4 + i * 1.35) * 0.05 : 0;
+          const dy = isAirborne ? (slot.elevation + microBob) : 0;
+
+          // Zero-allocation shallow copy to eliminate GC pauses
+          const cloneTelem: TelemetryState = {
+            ...curTelemetry,
+            position: {
+              x: curTelemetry.position.x + dx,
+              y: curTelemetry.position.y + dy,
+              z: curTelemetry.position.z + dz,
+            },
+            velocity: { ...curTelemetry.velocity },
+            rotation: { ...curTelemetry.rotation },
+          };
+
+          clone.update(cloneTelem, dt);
+          clone.setNameTagVisible(chaseCam.mode !== "fpv");
+        } else {
+          clone.group.visible = false;
+          if (clone.groundShadowMesh) clone.groundShadowMesh.visible = false;
+        }
       }
 
       // Update Remote Drones in Airspace (with Dead Reckoning)
@@ -1217,25 +1251,6 @@ export function FlightSimulator({ selectedDrone, initialDigitalTwin, onExit }: F
       );
 
       // Render 3D Frame
-      scene.traverse((obj: any) => {
-        if (obj.children && obj.children.includes(undefined as any)) {
-          console.error("CORRUPTED THREE.JS OBJECT FOUND (undefined child):", obj, obj.name, obj.type);
-          obj.children = obj.children.filter((c: any) => c !== undefined);
-        }
-        if (obj.isMesh || obj.isPoints || obj.isLine || obj.isSprite) {
-          if (!obj.material) {
-            console.error("OBJECT MISSING MATERIAL:", obj, obj.name);
-            obj.material = new THREE.MeshBasicMaterial({ color: 0xff00ff });
-          } else if (Array.isArray(obj.material)) {
-            for (let i = 0; i < obj.material.length; i++) {
-              if (!obj.material[i]) {
-                console.error("OBJECT MATERIAL ARRAY MISSING ITEM AT INDEX", i, obj, obj.name);
-                obj.material[i] = new THREE.MeshBasicMaterial({ color: 0xff00ff });
-              }
-            }
-          }
-        }
-      });
       renderer.render(scene, chaseCam.camera);
 
       // Broadcast telemetry to peer pilots

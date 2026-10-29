@@ -145,18 +145,7 @@ export class InstancedGrass {
     alpha.minFilter = THREE.LinearMipmapLinearFilter;
     alpha.magFilter = THREE.LinearFilter;
 
-    // Also attempt to load the Poly Haven 4K texture asynchronously if present
-    const loader = new THREE.TextureLoader();
-    loader.load("/textures/nature/grass_medium_01_diff_4k.jpg", (tex) => {
-      tex.colorSpace = THREE.SRGBColorSpace;
-      this.customMaterial.map = tex;
-      this.customMaterial.needsUpdate = true;
-    });
-    loader.load("/textures/nature/grass_medium_01_alpha_4k.png", (alphaTex) => {
-      this.customMaterial.alphaMap = alphaTex;
-      this.customMaterial.needsUpdate = true;
-    });
-
+    // Procedural canvas textures are used for instantaneous loading and maximum framerates
     return { diffuse, alpha };
   }
 
@@ -228,7 +217,7 @@ export class InstancedGrass {
 
     this.instancedMesh = new THREE.InstancedMesh(geo, this.customMaterial, count);
     this.instancedMesh.receiveShadow = true;
-    this.instancedMesh.castShadow = true;
+    this.instancedMesh.castShadow = false; // Disabled castShadow saves tens of thousands of extra vertex draws in shadow pass
 
     // Initialize instance color attribute for multi-biome palette tinting
     const colorInit = new THREE.Color(0x65a30d);
@@ -442,9 +431,9 @@ export class InstancedGrass {
     if (dronePos) {
       this.dronePosUniform.value.copy(dronePos);
 
-      // Reposition grass clipmap around the drone when moving > 4.5m
+      // Reposition grass clipmap around the drone when moving > 12.0m
       const distMoved = this.lastGridCenter.distanceTo(new THREE.Vector2(dronePos.x, dronePos.z));
-      if (distMoved > 4.5) {
+      if (distMoved > 12.0) {
         this.repositionGrassGrid(dronePos.x, dronePos.z);
       }
     }

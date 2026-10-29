@@ -27,12 +27,12 @@ export function SimulationLoadingScreen({ onReady }: SimulationLoadingScreenProp
       setCurrentPhase((prev) => {
         if (prev >= PHASES.length - 1) {
           clearInterval(timer);
-          setTimeout(() => onReadyRef.current(), 250);
+          setTimeout(() => onReadyRef.current(), 120);
           return prev;
         }
         return prev + 1;
       });
-    }, 140);
+    }, 75);
 
     return () => clearInterval(timer);
   }, []);
