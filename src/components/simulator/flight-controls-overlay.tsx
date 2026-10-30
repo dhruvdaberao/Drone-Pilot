@@ -37,7 +37,7 @@ export function FlightControlsOverlay({
   );
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex flex-col items-center gap-3 opacity-80 hover:opacity-100 transition-opacity">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex flex-col items-center gap-3 opacity-80 hover:opacity-100 transition-opacity">
       <div className="flex items-end justify-center gap-10 px-6 py-3">
         
         {/* WASD Direction */}
