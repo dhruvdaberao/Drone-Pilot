@@ -37,7 +37,7 @@ export function getAircraftBoundingRadius(type: "quadcopter" | "hexacopter" | "o
 // ------------------------------------------------------------------
 // PROFESSIONAL AEROSPACE MATERIALS (shared, static — created once)
 // ------------------------------------------------------------------
-const Materials = {
+export const Materials = {
   // Dark structural carbon fibre chassis
   carbonFiber: new THREE.MeshStandardMaterial({
     color: 0x2a2c33,
@@ -541,6 +541,7 @@ function buildArmsAndMotors(
       new THREE.CylinderGeometry(0.011, 0.011, 0.010, 14),
       Materials.darkGraphite
     );
+    hub.name = "prop_hub";
     propGroup.add(hub);
 
     // Prop spinner cap (orange accent)
@@ -549,6 +550,7 @@ function buildArmsAndMotors(
       Materials.accentOrange
     );
     cap.position.y = 0.008;
+    cap.name = "prop_accent";
     propGroup.add(cap);
 
     // Realistic two-blade propeller shape — tapers from hub to tip
@@ -569,6 +571,7 @@ function buildArmsAndMotors(
     blade1.position.x = propRadius / 2;
     blade1.rotation.x = 0.18;  // aerodynamic pitch angle
     blade1.castShadow = true;
+    blade1.name = "prop_blade";
     propGroup.add(blade1);
 
     const blade2 = new THREE.Mesh(bladeGeo, Materials.propeller);
@@ -576,7 +579,25 @@ function buildArmsAndMotors(
     blade2.rotation.z = Math.PI;
     blade2.rotation.x = 0.18;
     blade2.castShadow = true;
+    blade2.name = "prop_blade";
     propGroup.add(blade2);
+
+    // High-visibility safety orange tips for clear rotational sweep perception
+    const tipLength = propRadius * 0.18;
+    const tipGeo = new THREE.BoxGeometry(tipLength, 0.0048, 0.014);
+
+    const tip1 = new THREE.Mesh(tipGeo, Materials.accentOrange);
+    tip1.position.set(propRadius - tipLength / 2, 0, 0);
+    tip1.rotation.x = 0.18;
+    tip1.name = "prop_accent";
+    propGroup.add(tip1);
+
+    const tip2 = new THREE.Mesh(tipGeo, Materials.accentOrange);
+    tip2.position.set(-(propRadius - tipLength / 2), 0, 0);
+    tip2.rotation.z = Math.PI;
+    tip2.rotation.x = 0.18;
+    tip2.name = "prop_accent";
+    propGroup.add(tip2);
 
     armGroup.add(propGroup);
 

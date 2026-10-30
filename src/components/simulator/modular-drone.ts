@@ -7,7 +7,7 @@
 
 import * as THREE from "three";
 import { DroneDefinition, TelemetryState } from "@/lib/simulation/types";
-import { buildProfessionalUAV, LedMaterials } from "../ui/aircraft-model-builder";
+import { buildProfessionalUAV, LedMaterials, Materials } from "../ui/aircraft-model-builder";
 
 interface PropellerAssembly {
   bladeGroup: THREE.Group;
@@ -171,13 +171,13 @@ export class ModularDrone {
 
     ctx.clearRect(0, 0, size, size);
 
-    // 1. Frosted-glass disc: semi-transparent grey visible on any bg
+    // 1. Aerodynamic rotor wash disc: soft translucent grey
     const baseGrad = ctx.createRadialGradient(center, center, innerHub, center, center, outerRadius);
     baseGrad.addColorStop(0.0,  "rgba(120,120,120,0.0)");
-    baseGrad.addColorStop(0.12, "rgba(80,85,90,0.40)");
-    baseGrad.addColorStop(0.55, "rgba(60,65,70,0.45)");
-    baseGrad.addColorStop(0.82, "rgba(40,45,50,0.55)");
-    baseGrad.addColorStop(1.0,  "rgba(20,25,30,0.0)");
+    baseGrad.addColorStop(0.15, "rgba(90,95,105,0.22)");
+    baseGrad.addColorStop(0.60, "rgba(70,75,85,0.28)");
+    baseGrad.addColorStop(0.85, "rgba(50,55,65,0.32)");
+    baseGrad.addColorStop(1.0,  "rgba(25,30,40,0.0)");
     ctx.beginPath();
     ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
     ctx.fillStyle = baseGrad;
@@ -186,22 +186,22 @@ export class ModularDrone {
     // 2. Concentric motion-streak rings in darker grey
     for (let r = innerHub + 4; r < outerRadius - 6; r += 3.5) {
       const normR = (r - innerHub) / (outerRadius - innerHub);
-      const alpha = Math.sin(normR * Math.PI) * 0.18 + 0.06;
+      const alpha = Math.sin(normR * Math.PI) * 0.12 + 0.04;
       ctx.beginPath();
       ctx.arc(center, center, r, 0, Math.PI * 2);
       ctx.strokeStyle = `rgba(30, 30, 30, ${alpha.toFixed(3)})`;
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = 1.0;
       ctx.stroke();
     }
 
     // 3. Blade tip safety-orange outer ring
     for (let r = outerRadius - 22; r < outerRadius - 2; r += 1.8) {
       const t = (r - (outerRadius - 22)) / 20;
-      const alpha = Math.sin(t * Math.PI) * 0.85;
+      const alpha = Math.sin(t * Math.PI) * 0.45;
       ctx.beginPath();
       ctx.arc(center, center, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(255, 100, 0, ${alpha.toFixed(3)})`;
-      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = `rgba(255, 90, 0, ${alpha.toFixed(3)})`;
+      ctx.lineWidth = 1.6;
       ctx.stroke();
     }
 
@@ -209,7 +209,7 @@ export class ModularDrone {
     const grad = ctx.createLinearGradient(center - outerRadius, center - outerRadius, center + outerRadius, center + outerRadius);
     grad.addColorStop(0.0,  "rgba(255,255,255,0.0)");
     grad.addColorStop(0.42, "rgba(255,255,255,0.0)");
-    grad.addColorStop(0.50, "rgba(255,255,255,0.15)");
+    grad.addColorStop(0.50, "rgba(255,255,255,0.10)");
     grad.addColorStop(0.58, "rgba(255,255,255,0.0)");
     grad.addColorStop(1.0,  "rgba(255,255,255,0.0)");
     ctx.fillStyle = grad;
@@ -220,7 +220,7 @@ export class ModularDrone {
     // 5. Soft feathered edge
     const edgeGrad = ctx.createRadialGradient(center, center, outerRadius - 18, center, center, outerRadius);
     edgeGrad.addColorStop(0, "rgba(0,0,0,0.0)");
-    edgeGrad.addColorStop(1, "rgba(0,0,0,0.45)");
+    edgeGrad.addColorStop(1, "rgba(0,0,0,0.25)");
     ctx.fillStyle = edgeGrad;
     ctx.beginPath();
     ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
@@ -275,22 +275,26 @@ export class ModularDrone {
       });
       const blurMesh = new THREE.Mesh(blurDiscGeo, blurDiscMat);
       blurMesh.rotation.x = -Math.PI / 2;
-      blurMesh.position.y = 0.005;
+      blurMesh.position.y = 0.002;
       p.bladeGroup.add(blurMesh);
 
-      // Override blade material with transparent-capable version for blur cross-fade
+      // Separate standard material for dark carbon blade bodies
       const bladeMaterial = new THREE.MeshStandardMaterial({
-        color: 0x4f545e,
-        roughness: 0.32,
+        color: 0x181a1f,
+        roughness: 0.38,
         metalness: 0.22,
         transparent: true,
         opacity: 1.0,
-        depthWrite: true, // Fixed occlusion
+        depthWrite: true,
       });
 
       p.bladeGroup.traverse((c) => {
         if ((c as THREE.Mesh).isMesh && c !== blurMesh) {
-          (c as THREE.Mesh).material = bladeMaterial;
+          const m = c as THREE.Mesh;
+          // Protect safety-orange tips, orange cap, and hub; only assign bladeMaterial to carbon blades
+          if (m.name === "prop_blade" || (!m.name && m.material === Materials.propeller)) {
+            m.material = bladeMaterial;
+          }
         }
       });
 
@@ -587,21 +591,24 @@ export class ModularDrone {
         }
       }
 
-      // Rotation angular velocity (rad/s) - carefully chosen to avoid perfect 60fps aliasing
-      const spinSpeed = (motorThrottle * 1500.0 + 50.0) * p.direction;
+      // Rotation angular velocity (rad/s) - tuned for fluid, natural visual rotation without wagon-wheel aliasing
+      const idleSpin = 25.0; // rad/s at idle (~4 rev/s)
+      const maxSpin = 95.0;  // rad/s at 100% throttle (~15 rev/s, ~90 deg/frame at 60fps)
+      const spinSpeed = (idleSpin + motorThrottle * (maxSpin - idleSpin)) * p.direction;
       p.bladeGroup.rotation.y += spinSpeed * dt;
 
-      // Blur disc blending logic: make it look exactly like a real fan circle!
+      // Blur disc & blade blending logic:
       if (motorThrottle < 0.05) {
         p.blurMaterial.opacity = 0.0;
         p.blurMesh.visible = false;
         p.bladeMaterial.opacity = 1.0; 
       } else {
         p.blurMesh.visible = true;
-        // Fade to fully blurred circle extremely quickly as throttle goes up
+        // Translucent aerodynamic rotor wash disc (soft motion trail, NOT an opaque solid plate)
         const blurFade = Math.min(1.0, (motorThrottle - 0.05) / 0.15); 
-        p.blurMaterial.opacity = blurFade * 0.95; // Strong solid blur disc
-        p.bladeMaterial.opacity = 1.0 - blurFade; // Completely vanish the solid blades
+        p.blurMaterial.opacity = blurFade * 0.28; 
+        // Physical carbon blades stay fully visible with natural high-speed motion transparency
+        p.bladeMaterial.opacity = 0.88; 
       }
     });
 
