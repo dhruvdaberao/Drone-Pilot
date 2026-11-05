@@ -153,6 +153,13 @@ export interface TelemetryState {
     gustMs: number;
   };
   ambientTemperatureC?: number;
+  inRotorWash?: boolean;
+  proximityAlert?: {
+    callsign: string;
+    distanceM: number;
+    bearingDeg: number;
+    isCritical: boolean;
+  };
 }
 
 export interface PhysicsDebugTelemetry {

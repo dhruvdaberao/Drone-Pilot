@@ -23,6 +23,7 @@ export class MultiplayerClient {
   public regionId = "training";
   public helipadId = "training-alpha";
   public status: ConnectionStatus = "LOCAL";
+  public airframeType = "quadcopter";
 
   private channel: BroadcastChannel | null = null;
   private firestoreUnsubscribe: Unsubscribe | null = null;
@@ -31,9 +32,9 @@ export class MultiplayerClient {
   private onStatusChanged?: (status: ConnectionStatus) => void;
 
   private broadcastTimer = 0;
-  private broadcastInterval = 0.05; // 20Hz local broadcast
+  private broadcastInterval = 0.04; // 25Hz local broadcast
   private cloudSyncTimer = 0;
-  private cloudSyncInterval = 0.15; // ~7Hz cloud broadcast (low latency without quota exhaustion)
+  private cloudSyncInterval = 0.35; // ~2.8Hz cloud broadcast (optimal latency without quota exhaustion)
   private unloadListener: (() => void) | null = null;
   private localSequence = 0;
 
@@ -56,6 +57,12 @@ export class MultiplayerClient {
       if (this.onStatusChanged) {
         this.onStatusChanged(newStatus);
       }
+    }
+  }
+
+  public setAirframeType(type: string): void {
+    if (type) {
+      this.airframeType = type;
     }
   }
 
@@ -110,7 +117,7 @@ export class MultiplayerClient {
               } else {
                 const raw = change.doc.data();
                 const sanitized = sanitizeRemotePlayerState(raw);
-                if (sanitized && now - sanitized.lastUpdate < 8000) {
+                if (sanitized && sanitized.regionId === this.regionId && now - sanitized.lastUpdate < 8000) {
                   const existing = this.remotePlayers.get(id);
                   if (!existing || sanitized.sequenceNumber >= existing.sequenceNumber) {
                     this.remotePlayers.set(id, sanitized);
@@ -147,8 +154,8 @@ export class MultiplayerClient {
   }
 
 
-  public sendTelemetry(telemetry: TelemetryState, dt = 0.05) {
-    this.updateLocalState(telemetry, "drone", this.regionId, this.helipadId, dt);
+  public sendTelemetry(telemetry: TelemetryState, dt = 0.016) {
+    this.updateLocalState(telemetry, this.airframeType, this.regionId, this.helipadId, dt);
   }
 
   public disconnect() {
@@ -199,6 +206,8 @@ export class MultiplayerClient {
       playerId: this.localPlayerId,
       callsign: this.callsign,
       droneId,
+      droneType: this.airframeType,
+      airframeType: this.airframeType,
       regionId,
       helipadId,
       position: { ...telemetry.position },
@@ -206,6 +215,7 @@ export class MultiplayerClient {
       velocity: { ...telemetry.velocity },
       rotorRpmPercent: telemetry.rotorRpmPercent,
       flightMode: telemetry.flightMode,
+      isCrashed: Boolean(telemetry.isCrashed),
       lastUpdate: Date.now(),
       sequenceNumber: this.localSequence,
     };
@@ -265,7 +275,7 @@ export class MultiplayerClient {
 
     if (packet.type === "STATE") {
       const sanitized = sanitizeRemotePlayerState(packet.data);
-      if (sanitized) {
+      if (sanitized && sanitized.regionId === this.regionId) {
         const existing = this.remotePlayers.get(packet.playerId);
         if (!existing || sanitized.sequenceNumber >= existing.sequenceNumber) {
           this.remotePlayers.set(packet.playerId, sanitized);

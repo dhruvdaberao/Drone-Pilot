@@ -68,9 +68,14 @@ export class RemoteDroneManager {
       instance.currentRot.z = lerpAngle(instance.currentRot.z, instance.targetRot.z, blend);
       instance.group.rotation.copy(instance.currentRot);
 
-      const rpmSpeed = (p.rotorRpmPercent / 100) * 45;
-      for (const r of instance.rotors) {
-        r.rotation.y += rpmSpeed * dt;
+      if (p.isCrashed) {
+        instance.currentRot.z = 1.2;
+        instance.group.rotation.copy(instance.currentRot);
+      } else {
+        const rpmSpeed = (p.rotorRpmPercent / 100) * 45;
+        for (const r of instance.rotors) {
+          r.rotation.y += rpmSpeed * dt;
+        }
       }
     }
   }

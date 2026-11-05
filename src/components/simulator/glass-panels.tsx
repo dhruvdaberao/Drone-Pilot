@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { TelemetryState, EnvironmentState, SwarmFormationType } from "@/lib/simulation/types";
+import { TelemetryState, EnvironmentState } from "@/lib/simulation/types";
 import { DroneModel } from "@/types/drone";
 import { Battery, ShieldAlert, Wind, CloudSun, Plane, Thermometer, RotateCcw, Info, CloudRain, Activity, Eye, Menu, X, MapPin, Compass } from "lucide-react";
 import { NavigationWaypoint } from "./minimap-widget";
@@ -15,12 +15,6 @@ interface LeftGlassPanelProps {
   onSetMotorHealth: (idx: number, health: number) => void;
   payloadMassKg: number;
   onUpdatePayload: (mass: number) => void;
-  droneQuantity?: number;
-  onUpdateDroneQuantity?: (qty: number) => void;
-  swarmFormation?: SwarmFormationType;
-  onUpdateSwarmFormation?: (fmt: SwarmFormationType) => void;
-  swarmSpacing?: number;
-  onUpdateSwarmSpacing?: (spacing: number) => void;
   sensorHealth: Record<string, boolean>;
   onToggleSensor: (sensor: string) => void;
   onExit: () => void;
@@ -34,12 +28,6 @@ export function LeftGlassPanel({
   onSetMotorHealth,
   payloadMassKg,
   onUpdatePayload,
-  droneQuantity = 1,
-  onUpdateDroneQuantity,
-  swarmFormation = "GRID",
-  onUpdateSwarmFormation,
-  swarmSpacing = 1.0,
-  onUpdateSwarmSpacing,
   sensorHealth,
   onToggleSensor,
   onExit,
@@ -69,7 +57,7 @@ export function LeftGlassPanel({
             ? "opacity-0 pointer-events-none scale-75 -translate-x-4 invisible"
             : "opacity-100 pointer-events-auto scale-100 translate-x-0 visible bg-gradient-to-r from-[#0d1320]/95 to-[#131a2b]/95 hover:from-[#131a2b] hover:to-[#1a233a] border-[#FF5500]/30 hover:border-[#FF5500] text-white hover:shadow-[0_0_22px_rgba(255,85,0,0.3)] hover:scale-105 active:scale-95"
         }`}
-        title="Toggle Aircraft Systems & Swarm Controls [Hotkey: F to cycle]"
+        title="Toggle Aircraft Systems & Diagnostics"
         aria-label="Toggle Aircraft Systems"
       >
         <div className="flex items-center gap-2">
@@ -80,13 +68,9 @@ export function LeftGlassPanel({
           <Menu className="w-4 h-4 text-white group-hover:text-[#FF5500] transition-colors" />
         </div>
         <span className="text-xs font-mono font-bold tracking-[0.14em] uppercase text-white/95">
-          Aircraft & Swarm
+          Aircraft Systems
         </span>
-        {droneQuantity > 1 && (
-          <span className="px-2 py-0.5 text-[10px] font-mono font-black bg-[#FF5500] text-black rounded-md shadow-xs">
-            {droneQuantity}x
-          </span>
-        )}
+
       </button>
 
       {/* Backdrop (Click outside to dismiss drawer) */}
@@ -217,71 +201,7 @@ export function LeftGlassPanel({
                   />
                 </div>
 
-                {onUpdateDroneQuantity && (
-                  <div className="pt-2.5 border-t border-white/10">
-                    <div className="flex justify-between text-xs font-mono font-bold mb-1.5 uppercase">
-                      <span className="text-slate-300">Fleet Quantity</span>
-                      <span className="text-[#FF5500] font-black text-sm">{droneQuantity} Drones</span>
-                    </div>
-                    <input 
-                      type="range" min="1" max="10" step="1" value={droneQuantity}
-                      onChange={(e) => onUpdateDroneQuantity(parseInt(e.target.value))}
-                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#FF5500] border border-white/5" 
-                    />
-                  </div>
-                )}
-
-                {/* Swarm Formations */}
-                {droneQuantity > 1 && (
-                  <div className="pt-2.5 border-t border-white/10 space-y-2.5">
-                    <div className="flex items-center justify-between text-xs font-mono font-bold uppercase">
-                      <span className="text-slate-300">Formation</span>
-                      <span className="text-[#FF5500] font-black">
-                        {swarmFormation === "GRID" && "Tactical Grid"}
-                        {swarmFormation === "V_WEDGE" && "V-Wedge"}
-                        {swarmFormation === "LINE_ABEAM" && "Line"}
-                        {swarmFormation === "DIAMOND" && "Diamond"}
-                        {swarmFormation === "TRAIL" && "Trail"}
-                        {swarmFormation === "ORBIT" && "Orbit"}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {[
-                        { id: "GRID" as const, label: "Grid" },
-                        { id: "V_WEDGE" as const, label: "Wedge" },
-                        { id: "LINE_ABEAM" as const, label: "Line" },
-                        { id: "DIAMOND" as const, label: "Diamond" },
-                        { id: "TRAIL" as const, label: "Trail" },
-                        { id: "ORBIT" as const, label: "Orbit" },
-                      ].map((fmt) => (
-                        <button
-                          key={fmt.id}
-                          type="button"
-                          onClick={() => onUpdateSwarmFormation && onUpdateSwarmFormation(fmt.id)}
-                          className={`py-1.5 px-2 rounded-xl border text-center transition-all cursor-pointer font-mono text-[11px] font-bold uppercase ${
-                            swarmFormation === fmt.id
-                              ? "bg-[#FF5500] text-black border-[#FF5500] shadow-[0_0_12px_rgba(255,85,0,0.4)] font-black"
-                              : "bg-white/5 border-white/10 text-white/70 hover:bg-white/15 hover:text-white"
-                          }`}
-                        >
-                          {fmt.label}
-                        </button>
-                      ))}
-                    </div>
-                    {onUpdateSwarmSpacing && (
-                      <div className="pt-1.5 flex items-center gap-2.5">
-                        <span className="text-[11px] font-mono font-bold text-slate-400 uppercase shrink-0">Spread</span>
-                        <input
-                          type="range" min="0.5" max="2.5" step="0.1" value={swarmSpacing || 1.0}
-                          onChange={(e) => onUpdateSwarmSpacing(parseFloat(e.target.value))}
-                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400 border border-white/5"
-                        />
-                        <span className="text-xs font-mono font-bold text-amber-300 w-8 text-right">{(swarmSpacing || 1.0).toFixed(1)}x</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                </div>
 
               {/* Sensor Diagnostics */}
               <div className="bg-gradient-to-b from-[#151c2e]/85 to-[#0e1423]/95 rounded-2xl p-3.5 border border-white/12 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] space-y-2.5">

@@ -11,6 +11,8 @@ import {
   resetPassword as apiResetPassword,
   sendVerificationEmail as apiSendVerificationEmail,
   reloadCurrentUser as apiReloadCurrentUser,
+  updatePilotProfile as apiUpdatePilotProfile,
+  updatePilotEmail as apiUpdatePilotEmail,
   type PilotUser,
 } from "@/lib/firebase/auth";
 import { mapFirebaseAuthError } from "@/lib/firebase/errors";
@@ -28,6 +30,8 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
   reloadUser: () => Promise<boolean>;
+  updateProfile: (displayName: string) => Promise<void>;
+  updateEmailAddress: (newEmail: string) => Promise<{ verificationEmailSent: boolean; message: string }>;
   clearError: () => void;
 }
 
@@ -174,6 +178,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateProfile = async (displayName: string) => {
+    setError(null);
+    try {
+      await apiUpdatePilotProfile(rawFirebaseUser, { displayName });
+      setUser((prev) => (prev ? { ...prev, displayName } : null));
+    } catch (err) {
+      const friendlyMessage = mapFirebaseAuthError(err);
+      setError(friendlyMessage);
+      throw new Error(friendlyMessage);
+    }
+  };
+
+  const updateEmailAddress = async (newEmail: string) => {
+    setError(null);
+    try {
+      const res = await apiUpdatePilotEmail(rawFirebaseUser, newEmail);
+      if (!res.verificationEmailSent) {
+        setUser((prev) => (prev ? { ...prev, email: newEmail } : null));
+      }
+      return res;
+    } catch (err) {
+      const friendlyMessage = mapFirebaseAuthError(err);
+      setError(friendlyMessage);
+      throw new Error(friendlyMessage);
+    }
+  };
+
   const isEmailVerified = Boolean(user?.emailVerified);
 
   return (
@@ -191,6 +222,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         resetPassword,
         sendVerificationEmail,
         reloadUser,
+        updateProfile,
+        updateEmailAddress,
         clearError,
       }}
     >

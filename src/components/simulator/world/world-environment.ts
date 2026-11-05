@@ -112,8 +112,8 @@ export class WorldEnvironment {
     this.sunLight = new THREE.DirectionalLight(0xfffae8, 2.5);
     this.sunLight.position.set(220, 360, 160);
     this.sunLight.castShadow = true;
-    this.sunLight.shadow.mapSize.width = 2048;
-    this.sunLight.shadow.mapSize.height = 2048;
+    this.sunLight.shadow.mapSize.width = 1024;
+    this.sunLight.shadow.mapSize.height = 1024;
     this.sunLight.shadow.camera.near = 10;
     this.sunLight.shadow.camera.far = 900;
     this.sunLight.shadow.camera.left = -260;

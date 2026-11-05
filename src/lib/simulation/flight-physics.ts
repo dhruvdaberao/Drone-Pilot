@@ -14,6 +14,7 @@ import {
   CrashState,
   PhysicsDebugTelemetry,
 } from "./types";
+import { RemotePlayerState } from "../multiplayer/multiplayer-types";
 import { MotorMixer } from "./motor-mixer";
 import { BatteryModel } from "./battery-model";
 import { EnvironmentModel } from "./environment-model";
@@ -84,6 +85,9 @@ export class FlightPhysicsEngine {
 
   // Crash State
   public crashState: CrashState | null = null;
+  public remoteAircraft: RemotePlayerState[] = [];
+  public inRotorWash = false;
+  public proximityAlert: { callsign: string; distanceM: number; bearingDeg: number; isCritical: boolean } | null = null;
   public isCeilingLimitReached = false;
   public isGroundLimitReached = false;
 
@@ -142,6 +146,10 @@ export class FlightPhysicsEngine {
 
   public setTurbulence(turbulence: number) {
     this.turbulenceFactor = Math.max(0, Math.min(1.0, turbulence));
+  }
+
+  public setRemoteAircraft(aircraft: RemotePlayerState[]) {
+    this.remoteAircraft = aircraft || [];
   }
 
   public setEnvironment(env: EnvironmentState) {
@@ -240,7 +248,10 @@ export class FlightPhysicsEngine {
   /**
    * Main 6-DoF Physics Step
    */
-  public update(input: FlightInput, dt: number): TelemetryState {
+  public update(input: FlightInput, dt: number, remoteAircraft?: RemotePlayerState[]): TelemetryState {
+    if (remoteAircraft) {
+      this.remoteAircraft = remoteAircraft;
+    }
     const clampedDt = Math.min(dt, 0.05);
 
     if (input.reset) {
@@ -605,9 +616,53 @@ export class FlightPhysicsEngine {
     const airDensity = this.environment.getAirDensity();
 
     // Relative airspeed: V_rel = V_drone - V_wind
-    const relVx = this.velX - windVec.x;
-    const relVy = this.velY - windVec.y;
-    const relVz = this.velZ - windVec.z;
+    // 5B. ROTOR WASH & WAKE TURBULENCE FROM NEARBY AIRCRAFT
+    this.inRotorWash = false;
+    let downwashWindVy = 0;
+    let wakeWindVx = 0;
+    let wakeWindVz = 0;
+
+    for (const remote of this.remoteAircraft) {
+      if (remote.isCrashed) continue;
+      const dx = this.posX - remote.position.x;
+      const dy = remote.position.y - this.posY;
+      const dz = this.posZ - remote.position.z;
+      const horizDist = Math.hypot(dx, dz);
+
+      if (dy > 0.15 && dy < 14.0 && (remote.rotorRpmPercent || 0) > 15) {
+        const washRadius = 0.8 + dy * 0.22;
+        if (horizDist < washRadius) {
+          this.inRotorWash = true;
+          const radialFactor = 1.0 - (horizDist / washRadius);
+          const depthAttenuation = Math.max(0.15, 1.0 - (dy / 15.0));
+          const rpmScale = (remote.rotorRpmPercent || 70) / 100;
+          const downwashVelocity = 9.2 * radialFactor * depthAttenuation * rpmScale;
+          downwashWindVy -= downwashVelocity;
+
+          const washStrength = radialFactor * depthAttenuation;
+          this.rollRate += (Math.sin(this.flightTime * 28.0) * 0.08 + (Math.random() - 0.5) * 0.12) * washStrength;
+          this.pitchRate += (Math.cos(this.flightTime * 31.0) * 0.08 + (Math.random() - 0.5) * 0.12) * washStrength;
+        }
+      }
+
+      const remoteSpeed = Math.hypot(remote.velocity.x, remote.velocity.z);
+      if (remoteSpeed > 2.5) {
+        const totalDist = Math.hypot(dx, dy, dz);
+        if (totalDist < 10.0) {
+          const wakeFactor = Math.max(0, (1.0 - totalDist / 10.0) * 0.35);
+          wakeWindVx += remote.velocity.x * wakeFactor;
+          wakeWindVz += remote.velocity.z * wakeFactor;
+        }
+      }
+    }
+
+    const effectiveWindVx = windVec.x + wakeWindVx;
+    const effectiveWindVy = windVec.y + downwashWindVy;
+    const effectiveWindVz = windVec.z + wakeWindVz;
+
+    const relVx = this.velX - effectiveWindVx;
+    const relVy = this.velY - effectiveWindVy;
+    const relVz = this.velZ - effectiveWindVz;
 
     // Phase 2: True Aerodynamic Drag based on Tilt Projection
     // When tilted, the large top plate and rotors act like a sail, drastically increasing wind resistance.
@@ -758,6 +813,67 @@ export class FlightPhysicsEngine {
     }
 
     // ----------------------------------------------------
+    // 7B. MULTIPLAYER INTER-DRONE MID-AIR COLLISION DETECTION
+    if (!this.crashState) {
+      for (const remote of this.remoteAircraft) {
+        if (remote.isCrashed) continue;
+        const dx = this.posX - remote.position.x;
+        const dy = this.posY - remote.position.y;
+        const dz = this.posZ - remote.position.z;
+        const dist = Math.hypot(dx, dy, dz);
+
+        const collisionThreshold = 0.85;
+
+        if (dist < collisionThreshold) {
+          const relVx = this.velX - remote.velocity.x;
+          const relVy = this.velY - remote.velocity.y;
+          const relVz = this.velZ - remote.velocity.z;
+          const relSpeed = Math.hypot(relVx, relVy, relVz);
+
+          if (relSpeed > 2.4 || (dist < 0.60 && this.posY > this.groundLevel + 0.5)) {
+            const kineticEnergy = 0.5 * totalMass * relSpeed * relSpeed;
+            this.crashState = {
+              isCrashed: true,
+              impactSpeedKmh: Math.round(relSpeed * 3.6 * 10) / 10,
+              impactSpeedMs: Math.round(relSpeed * 10) / 10,
+              impactLocation: { x: this.posX, y: this.posY, z: this.posZ },
+              kineticEnergyJoules: Math.round(kineticEnergy),
+              primaryCause: `Mid-air collision with ${remote.callsign || "peer drone"}! (${Math.round(relSpeed * 3.6)} km/h closure rate)`,
+              impactNormal: {
+                x: dx / (dist || 1),
+                y: dy / (dist || 1),
+                z: dz / (dist || 1),
+              },
+              timestamp: Date.now(),
+            };
+
+            this.isArmed = false;
+            this.pitchRate = (Math.random() - 0.5) * 14;
+            this.rollRate = (Math.random() - 0.5) * 14;
+            this.yawRate = (Math.random() - 0.5) * 14;
+            this.velX = relVx * 0.4;
+            this.velY = -3.0;
+            this.velZ = relVz * 0.4;
+            return this.generateTelemetry();
+          } else {
+            const nx = dx / (dist || 0.1);
+            const ny = dy / (dist || 0.1);
+            const nz = dz / (dist || 0.1);
+            this.posX += nx * 0.15;
+            this.posY += Math.max(0, ny * 0.15);
+            this.posZ += nz * 0.15;
+
+            this.velX = nx * 3.2;
+            this.velY = Math.max(0.6, ny * 2.8);
+            this.velZ = nz * 3.2;
+
+            this.pitchRate += (Math.random() - 0.5) * 4.0;
+            this.rollRate += (Math.random() - 0.5) * 4.0;
+          }
+        }
+      }
+    }
+
     // 8. 3D GEO-FENCE CONTAINMENT (FAA PART 107 COMPLIANCE)
     // ----------------------------------------------------
     const currentAgl = Math.max(0, this.posY - this.groundLevel);
@@ -840,6 +956,29 @@ export class FlightPhysicsEngine {
       flightMode = "MANUAL";
     }
 
+    // Inter-aircraft proximity TCAS advisory
+    let closestAlert: TelemetryState["proximityAlert"] = undefined;
+    let closestDist = 99999;
+    for (const remote of this.remoteAircraft) {
+      if (remote.isCrashed) continue;
+      const dx = remote.position.x - this.posX;
+      const dy = remote.position.y - this.posY;
+      const dz = remote.position.z - this.posZ;
+      const d = Math.hypot(dx, dy, dz);
+      if (d < 35.0 && d < closestDist) {
+        closestDist = d;
+        const bearingRad = Math.atan2(dx, dz);
+        let bearingDeg = Math.round((bearingRad * 180) / Math.PI);
+        if (bearingDeg < 0) bearingDeg += 360;
+        closestAlert = {
+          callsign: remote.callsign || "AIRCRAFT",
+          distanceM: Math.round(d * 10) / 10,
+          bearingDeg,
+          isCritical: d < 12.0,
+        };
+      }
+    }
+
     const battState = this.battery.update(0, 0);
 
     return {
@@ -880,6 +1019,8 @@ export class FlightPhysicsEngine {
         gustMs: this.environment.getState().windGust,
       },
       ambientTemperatureC: this.environment.getState().temperature,
+      inRotorWash: this.inRotorWash,
+      proximityAlert: closestAlert,
     };
   }
 

@@ -361,13 +361,13 @@ export function PostFlightReportModal({
             <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50 flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">
-                  Swarm Units Flown
+                  Airspace Sector
                 </span>
                 <strong className="text-base font-black text-neutral-900 block">
-                  {droneQuantity} {droneQuantity === 1 ? "Aircraft" : "Drones (Fleet)"}
+                  Active Multiplayer
                 </strong>
                 <span className="text-[11px] font-medium text-emerald-600">
-                  Synchronized Telemetry
+                  Shared Airspace Network
                 </span>
               </div>
             </div>

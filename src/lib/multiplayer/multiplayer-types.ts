@@ -20,6 +20,7 @@ export interface RemotePlayerState {
   velocity: { x: number; y: number; z: number };
   rotorRpmPercent: number;
   flightMode: string;
+  isCrashed?: boolean;
   lastUpdate: number;
   sequenceNumber: number;
   pingMs?: number;
@@ -82,6 +83,7 @@ export function sanitizeRemotePlayerState(raw: any): RemotePlayerState | null {
     },
     rotorRpmPercent: clamp(raw.rotorRpmPercent, 0, 100, 0),
     flightMode: String(raw.flightMode || "HOVER").substring(0, 16),
+    isCrashed: Boolean(raw.isCrashed),
     lastUpdate: typeof raw.lastUpdate === "number" ? raw.lastUpdate : Date.now(),
     sequenceNumber: typeof raw.sequenceNumber === "number" ? raw.sequenceNumber : 0,
     pingMs: typeof raw.pingMs === "number" ? raw.pingMs : 0,

@@ -41,13 +41,17 @@ export function DashboardHeader() {
 
       {/* Right: callsign + sign out */}
       <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.07] text-xs sm:text-sm text-neutral-400 font-mono tracking-wider">
-          <User className="h-3.5 w-3.5 text-[#FF5500] shrink-0" />
+        <Link
+          href="/profile"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] hover:border-[#FF5500]/50 text-xs sm:text-sm text-neutral-400 hover:text-white font-mono tracking-wider transition-all group cursor-pointer"
+          title="View Pilot Profile & Drone Fleet"
+        >
+          <User className="h-3.5 w-3.5 text-[#FF5500] group-hover:scale-110 transition-transform shrink-0" />
           <span>
-            <span className="text-neutral-600">CALL SIGN </span>
+            <span className="text-neutral-600 group-hover:text-neutral-400 transition-colors hidden sm:inline">CALL SIGN </span>
             <strong className="font-bold text-white uppercase">{displayName}</strong>
           </span>
-        </div>
+        </Link>
 
         <button
           onClick={handleSignOut}

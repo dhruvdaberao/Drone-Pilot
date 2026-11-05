@@ -449,8 +449,31 @@ export function TelemetryHUD({
         </div>
       )}
 
+      {telemetry.inRotorWash && (
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in fade-in duration-200 select-none">
+          <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-amber-950/85 backdrop-blur-md text-amber-300 font-mono text-[11px] tracking-widest border border-amber-500/40 shadow-lg animate-pulse">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>CAUTION: WAKE TURBULENCE / ROTOR DOWNWASH</span>
+          </div>
+        </div>
+      )}
 
-      {/* ---------------------------------------------------- */}
+      {telemetry.proximityAlert && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in fade-in duration-200 select-none">
+          <div className={`flex items-center gap-2.5 px-4 py-2 rounded-full backdrop-blur-md font-mono text-[11px] tracking-widest border shadow-lg ${
+            telemetry.proximityAlert.isCritical
+              ? "bg-rose-950/90 text-rose-200 border-rose-500/60 animate-bounce"
+              : "bg-black/80 text-white/90 border-white/20"
+          }`}>
+            <div className={`w-2 h-2 rounded-full ${telemetry.proximityAlert.isCritical ? "bg-rose-500 animate-ping" : "bg-cyan-400"}`} />
+            <span>
+              {telemetry.proximityAlert.isCritical ? "TRAFFIC ALERT: " : "PROXIMITY: "}
+              {telemetry.proximityAlert.callsign} — {telemetry.proximityAlert.distanceM}M
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* CENTER CROSSHAIR (SUBTLE, NON-INTRUSIVE)             */}
       {/* ---------------------------------------------------- */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">

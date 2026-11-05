@@ -1,7 +1,6 @@
 import React from "react";
 import { MinimapWidget } from "./minimap-widget";
-import { Lock, NavigationOff, ArrowUp, ArrowDown, Target, Copy, Plus, Minus, Home, AlertTriangle, ShieldAlert } from "lucide-react";
-import { SwarmFormationType } from "@/lib/simulation/types";
+import { Lock, NavigationOff, ArrowUp, ArrowDown, Target, Home, AlertTriangle, ShieldAlert } from "lucide-react";
 
 export function FlightControlsOverlay({
   telemetry,
@@ -10,11 +9,7 @@ export function FlightControlsOverlay({
   onToggleScenarios,
   sensorHealth,
   onExit,
-  droneQuantity,
-  onUpdateDroneQuantity,
   onToggleRtl,
-  swarmFormation = "GRID",
-  onCycleFormation,
 }: {
   telemetry?: any;
   autoMoveLocked?: string;
@@ -22,11 +17,7 @@ export function FlightControlsOverlay({
   onToggleScenarios?: () => void;
   onExit?: () => void;
   sensorHealth?: Record<string, boolean>;
-  droneQuantity?: number;
-  onUpdateDroneQuantity?: (qty: number) => void;
   onToggleRtl?: () => void;
-  swarmFormation?: SwarmFormationType;
-  onCycleFormation?: () => void;
 }) {
   const isGpsHealthy = sensorHealth ? sensorHealth['gps'] : true;
 
@@ -70,49 +61,6 @@ export function FlightControlsOverlay({
             <div className="w-16 h-12 rounded-lg bg-white/90 border border-white/80 flex items-center justify-center text-black font-mono text-[10px] font-bold shadow-lg gap-1">
               <ArrowDown className="w-3 h-3" />SHIFT
             </div>
-          </div>
-        </div>
-
-        {/* Swarm Quantity */}
-        <div className="flex flex-col items-center gap-1 pointer-events-auto">
-          <span className="text-[9px] font-bold text-white/50 tracking-widest uppercase mb-1">Fleet Swarm</span>
-          <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md border border-white/20 px-2 py-2 rounded-xl h-24 shadow-lg">
-            <button 
-              type="button"
-              onClick={() => onUpdateDroneQuantity && onUpdateDroneQuantity(Math.max(1, (droneQuantity || 1) - 1))}
-              className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/25 active:scale-95 flex items-center justify-center text-white cursor-pointer transition-all border border-white/10"
-              title="Decrease Drone Swarm Quantity"
-            >
-              <Minus className="w-3.5 h-3.5" />
-            </button>
-            <div className="flex flex-col items-center justify-center px-1 min-w-[50px]">
-              <Copy className="w-4 h-4 text-[#FF5500] mb-0.5" />
-              <span className="font-mono font-black text-xl text-white leading-none">{droneQuantity || 1}</span>
-              <span className="text-[8px] font-mono text-white/50 uppercase mt-0.5">DRONES</span>
-              {droneQuantity && droneQuantity > 1 && onCycleFormation && (
-                <button
-                  type="button"
-                  onClick={onCycleFormation}
-                  className="mt-1 px-1.5 py-0.5 rounded bg-white/10 hover:bg-[#FF5500]/30 border border-white/20 hover:border-[#FF5500]/50 text-[7px] font-mono font-bold text-amber-300 uppercase transition-all tracking-wider cursor-pointer"
-                  title="Cycle Tactical Swarm Formation [Hotkey: F]"
-                >
-                  {swarmFormation === "GRID" && "GRID"}
-                  {swarmFormation === "V_WEDGE" && "WEDGE"}
-                  {swarmFormation === "LINE_ABEAM" && "LINE"}
-                  {swarmFormation === "DIAMOND" && "DIAMOND"}
-                  {swarmFormation === "TRAIL" && "TRAIL"}
-                  {swarmFormation === "ORBIT" && "ORBIT"}
-                </button>
-              )}
-            </div>
-            <button 
-              type="button"
-              onClick={() => onUpdateDroneQuantity && onUpdateDroneQuantity(Math.min(10, (droneQuantity || 1) + 1))}
-              className="w-7 h-7 rounded-lg bg-[#FF5500]/80 hover:bg-[#FF5500] active:scale-95 flex items-center justify-center text-white cursor-pointer transition-all border border-orange-400/40 shadow-xs"
-              title="Increase Drone Swarm Quantity"
-            >
-              <Plus className="w-3.5 h-3.5" />
-            </button>
           </div>
         </div>
 

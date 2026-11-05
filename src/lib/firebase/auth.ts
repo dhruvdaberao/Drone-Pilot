@@ -7,6 +7,7 @@ import {
   sendPasswordResetEmail,
   sendEmailVerification,
   updateProfile,
+  verifyBeforeUpdateEmail,
   type User,
   type ActionCodeSettings,
 } from "firebase/auth";
@@ -227,4 +228,74 @@ export async function logoutUser(): Promise<void> {
     return;
   }
   await signOut(auth);
+}
+
+/**
+ * Update the pilot's profile (callsign / display name).
+ */
+export async function updatePilotProfile(
+  currentUser: User | null,
+  updates: { displayName?: string; photoURL?: string }
+): Promise<void> {
+  if (!isFirebaseConfigured()) {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    const mock = getStoredMockUser();
+    if (mock) {
+      if (updates.displayName !== undefined) mock.displayName = updates.displayName;
+      if (updates.photoURL !== undefined) mock.photoURL = updates.photoURL;
+      setStoredMockUser(mock);
+    }
+    return;
+  }
+  const target = currentUser || auth.currentUser;
+  if (!target) {
+    throw new Error("No authenticated pilot found to update profile.");
+  }
+  await updateProfile(target, updates);
+}
+
+/**
+ * Request an email change for the authenticated pilot.
+ * Uses Firebase's native verifyBeforeUpdateEmail, dispatching a secure verification link
+ * to the new email without needing Brevo or external mail servers.
+ */
+export async function updatePilotEmail(
+  currentUser: User | null,
+  newEmail: string
+): Promise<{ verificationEmailSent: boolean; message: string }> {
+  if (!newEmail || !newEmail.includes("@")) {
+    throw new Error("Please enter a valid email address.");
+  }
+
+  if (!isFirebaseConfigured()) {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    const mock = getStoredMockUser();
+    if (mock) {
+      mock.email = newEmail;
+      setStoredMockUser(mock);
+    }
+    return {
+      verificationEmailSent: false,
+      message: "Email updated successfully in local session.",
+    };
+  }
+
+  const target = currentUser || auth.currentUser;
+  if (!target) {
+    throw new Error("No authenticated pilot found.");
+  }
+
+  // Firebase native secure verification link to new email address
+  try {
+    await verifyBeforeUpdateEmail(target, newEmail, getActionCodeSettings("/profile"));
+    return {
+      verificationEmailSent: true,
+      message: `A security verification link has been sent to ${newEmail}. Please click the link to confirm your new email address.`,
+    };
+  } catch (err: any) {
+    if (err.code === "auth/requires-recent-login") {
+      throw new Error("Security check: Please sign out and sign back in before updating your email address.");
+    }
+    throw err;
+  }
 }
