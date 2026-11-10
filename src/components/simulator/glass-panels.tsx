@@ -114,23 +114,25 @@ export function LeftGlassPanel({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 bg-black/50 p-1.5 rounded-2xl shrink-0 border border-white/10">
+        <div className="flex gap-2 bg-black/60 p-1.5 rounded-2xl shrink-0 border border-white/15 shadow-inner">
           <button 
+            type="button"
             onClick={() => setActiveTab("status")} 
-            className={`flex-1 py-2 text-xs font-mono font-bold tracking-wider uppercase rounded-xl transition-all ${
+            className={`flex-1 py-2 text-xs font-mono font-bold tracking-wider uppercase rounded-xl transition-all cursor-pointer ${
               activeTab === "status" 
-                ? "bg-gradient-to-r from-[#FF5500] to-amber-500 text-black font-black shadow-[0_0_15px_rgba(255,85,0,0.3)] border-transparent" 
-                : "text-white/60 hover:text-white"
+                ? "bg-gradient-to-r from-[#FF5500] to-amber-500 text-black font-black shadow-[0_0_18px_rgba(255,85,0,0.4)] border border-amber-300/40" 
+                : "bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-white border border-white/10"
             }`}
           >
             Status
           </button>
           <button 
+            type="button"
             onClick={() => setActiveTab("motors")} 
-            className={`flex-1 py-2 text-xs font-mono font-bold tracking-wider uppercase rounded-xl transition-all ${
+            className={`flex-1 py-2 text-xs font-mono font-bold tracking-wider uppercase rounded-xl transition-all cursor-pointer ${
               activeTab === "motors" 
-                ? "bg-gradient-to-r from-[#FF5500] to-amber-500 text-black font-black shadow-[0_0_15px_rgba(255,85,0,0.3)] border-transparent" 
-                : "text-white/60 hover:text-white"
+                ? "bg-gradient-to-r from-[#FF5500] to-amber-500 text-black font-black shadow-[0_0_18px_rgba(255,85,0,0.4)] border border-amber-300/40" 
+                : "bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-white border border-white/10"
             }`}
           >
             Motors

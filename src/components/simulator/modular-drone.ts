@@ -167,61 +167,69 @@ export class ModularDrone {
 
     const center = size / 2;
     const outerRadius = size / 2 - 4;
-    const innerHub   = outerRadius * 0.08;
+    const innerHub = outerRadius * 0.08;
 
     ctx.clearRect(0, 0, size, size);
 
-    // 1. Aerodynamic rotor wash disc: soft translucent grey
+    // 1. High-visibility aerodynamic rotor wash disc: frosted translucent white & cyan-tinted glow
     const baseGrad = ctx.createRadialGradient(center, center, innerHub, center, center, outerRadius);
-    baseGrad.addColorStop(0.0,  "rgba(120,120,120,0.0)");
-    baseGrad.addColorStop(0.15, "rgba(90,95,105,0.22)");
-    baseGrad.addColorStop(0.60, "rgba(70,75,85,0.28)");
-    baseGrad.addColorStop(0.85, "rgba(50,55,65,0.32)");
-    baseGrad.addColorStop(1.0,  "rgba(25,30,40,0.0)");
+    baseGrad.addColorStop(0.0,  "rgba(255,255,255,0.0)");
+    baseGrad.addColorStop(0.12, "rgba(240,248,255,0.45)");
+    baseGrad.addColorStop(0.55, "rgba(225,240,255,0.55)");
+    baseGrad.addColorStop(0.82, "rgba(210,235,255,0.65)");
+    baseGrad.addColorStop(0.92, "rgba(255,140,20,0.85)");
+    baseGrad.addColorStop(1.0,  "rgba(255,140,20,0.0)");
     ctx.beginPath();
     ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
     ctx.fillStyle = baseGrad;
     ctx.fill();
 
-    // 2. Concentric motion-streak rings in darker grey
-    for (let r = innerHub + 4; r < outerRadius - 6; r += 3.5) {
+    // 2. Concentric rotational motion streaks in bright white
+    for (let r = innerHub + 6; r < outerRadius - 10; r += 4.5) {
       const normR = (r - innerHub) / (outerRadius - innerHub);
-      const alpha = Math.sin(normR * Math.PI) * 0.12 + 0.04;
+      const alpha = Math.sin(normR * Math.PI) * 0.28 + 0.12;
       ctx.beginPath();
       ctx.arc(center, center, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(30, 30, 30, ${alpha.toFixed(3)})`;
-      ctx.lineWidth = 1.0;
+      ctx.strokeStyle = `rgba(255, 255, 255, ${alpha.toFixed(3)})`;
+      ctx.lineWidth = 1.4;
       ctx.stroke();
     }
 
-    // 3. Blade tip safety-orange outer ring
-    for (let r = outerRadius - 22; r < outerRadius - 2; r += 1.8) {
-      const t = (r - (outerRadius - 22)) / 20;
-      const alpha = Math.sin(t * Math.PI) * 0.45;
+    // 3. Dynamic blade sweep trails (two opposing translucent motion fans)
+    for (let b = 0; b < 2; b++) {
+      const startAngle = b * Math.PI;
+      const endAngle = startAngle + Math.PI * 0.45;
+      const fanGrad = ctx.createRadialGradient(center, center, innerHub, center, center, outerRadius);
+      fanGrad.addColorStop(0.0, "rgba(255,255,255,0.0)");
+      fanGrad.addColorStop(0.4, "rgba(255,255,255,0.30)");
+      fanGrad.addColorStop(1.0, "rgba(255,160,50,0.50)");
+      ctx.beginPath();
+      ctx.moveTo(center, center);
+      ctx.arc(center, center, outerRadius - 2, startAngle, endAngle);
+      ctx.closePath();
+      ctx.fillStyle = fanGrad;
+      ctx.fill();
+    }
+
+    // 4. Blade tip safety-orange outer ring for clear rotational sweep
+    for (let r = outerRadius - 24; r < outerRadius - 2; r += 1.8) {
+      const t = (r - (outerRadius - 24)) / 22;
+      const alpha = Math.sin(t * Math.PI) * 0.70;
       ctx.beginPath();
       ctx.arc(center, center, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(255, 90, 0, ${alpha.toFixed(3)})`;
-      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = `rgba(255, 120, 10, ${alpha.toFixed(3)})`;
+      ctx.lineWidth = 1.8;
       ctx.stroke();
     }
 
-    // 4. Specular sheen slash
+    // 5. Specular sheen reflection slash across the disc
     const grad = ctx.createLinearGradient(center - outerRadius, center - outerRadius, center + outerRadius, center + outerRadius);
     grad.addColorStop(0.0,  "rgba(255,255,255,0.0)");
-    grad.addColorStop(0.42, "rgba(255,255,255,0.0)");
-    grad.addColorStop(0.50, "rgba(255,255,255,0.10)");
-    grad.addColorStop(0.58, "rgba(255,255,255,0.0)");
+    grad.addColorStop(0.40, "rgba(255,255,255,0.0)");
+    grad.addColorStop(0.50, "rgba(255,255,255,0.35)");
+    grad.addColorStop(0.60, "rgba(255,255,255,0.0)");
     grad.addColorStop(1.0,  "rgba(255,255,255,0.0)");
     ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 5. Soft feathered edge
-    const edgeGrad = ctx.createRadialGradient(center, center, outerRadius - 18, center, center, outerRadius);
-    edgeGrad.addColorStop(0, "rgba(0,0,0,0.0)");
-    edgeGrad.addColorStop(1, "rgba(0,0,0,0.25)");
-    ctx.fillStyle = edgeGrad;
     ctx.beginPath();
     ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
     ctx.fill();
@@ -275,7 +283,8 @@ export class ModularDrone {
       });
       const blurMesh = new THREE.Mesh(blurDiscGeo, blurDiscMat);
       blurMesh.rotation.x = -Math.PI / 2;
-      blurMesh.position.y = 0.002;
+      blurMesh.position.y = 0.010;
+      blurMesh.renderOrder = 999;
       p.bladeGroup.add(blurMesh);
 
       // Separate standard material for dark carbon blade bodies
@@ -604,11 +613,11 @@ export class ModularDrone {
         p.bladeMaterial.opacity = 1.0; 
       } else {
         p.blurMesh.visible = true;
-        // Translucent aerodynamic rotor wash disc (soft motion trail, NOT an opaque solid plate)
+        // High-visibility translucent aerodynamic rotor wash disc with safety-orange tips
         const blurFade = Math.min(1.0, (motorThrottle - 0.05) / 0.15); 
-        p.blurMaterial.opacity = blurFade * 0.28; 
-        // Physical carbon blades stay fully visible with natural high-speed motion transparency
-        p.bladeMaterial.opacity = 0.88; 
+        p.blurMaterial.opacity = blurFade * 0.75; 
+        // Physical carbon blades become high-speed ghosted motion trails
+        p.bladeMaterial.opacity = Math.max(0.20, 1.0 - blurFade * 0.65); 
       }
     });
 
