@@ -30,8 +30,8 @@ export const TERRAIN_CONFIG: TerrainConfiguration = {
 export const REGIONS_RECORD: Record<RegionId, RegionDefinition> = {
   training: {
     id: "training",
-    name: "Central Flight Academy",
-    shortName: "Academy",
+    name: "Yelahanka Flight Academy",
+    shortName: "Yelahanka",
     category: "academy",
     description: "Centrally positioned flight training plateau featuring an asphalt runway, precision landing zones, obstacle arena, and primary apron.",
     center: { x: 0, y: 1.2, z: 0 },
@@ -52,8 +52,8 @@ export const REGIONS_RECORD: Record<RegionId, RegionDefinition> = {
 
   forest: {
     id: "forest",
-    name: "Whispering Pines Forest",
-    shortName: "Forest",
+    name: "Dandeli Reserve Forest",
+    shortName: "Dandeli",
     category: "nature",
     description: "Vast continuous woodland reserve in the western sector with undulating ridges, natural clearings, fire trails, and a ranger lookout tower.",
     center: { x: -640, y: 5.5, z: 20 },
@@ -74,8 +74,8 @@ export const REGIONS_RECORD: Record<RegionId, RegionDefinition> = {
 
   mountain: {
     id: "mountain",
-    name: "Mount Apex Massif",
-    shortName: "Mountains",
+    name: "Sahyadri Western Ghats Range",
+    shortName: "Sahyadri",
     category: "highlands",
     description: "Dominant northwestern alpine mountain range featuring three connected jagged peaks up to 145m, knife-edge ridges, cirques, scree slopes, and high-altitude weather terrace.",
     center: { x: -650, y: 48.0, z: -650 },
@@ -96,8 +96,8 @@ export const REGIONS_RECORD: Record<RegionId, RegionDefinition> = {
 
   river: {
     id: "river",
-    name: "Valley River & Canyon",
-    shortName: "River Valley",
+    name: "Kaveri River & Gorge",
+    shortName: "Kaveri Gorge",
     category: "freshwater",
     description: "Natural geological drainage corridor originating at the alpine lake waterfall, cutting a steep canyon southward under stone arch bridges into the ocean estuary delta.",
     center: { x: -160, y: 3.5, z: 160 },
@@ -118,8 +118,8 @@ export const REGIONS_RECORD: Record<RegionId, RegionDefinition> = {
 
   city: {
     id: "city",
-    name: "Downtown Metropolis",
-    shortName: "Metropolis",
+    name: "Cyberabad Tech Metropolis",
+    shortName: "Cyberabad",
     category: "urban",
     description: "Dense commercial skyscraper district in the eastern sector, featuring high-rise glass corridors, ground plaza vertiport, and the 68m Apex Tower rooftop skyport.",
     center: { x: 720, y: 2.5, z: 320 },
@@ -140,8 +140,8 @@ export const REGIONS_RECORD: Record<RegionId, RegionDefinition> = {
 
   industrial: {
     id: "industrial",
-    name: "Harbor Industrial Park",
-    shortName: "Industrial",
+    name: "Nhava Sheva Cargo Port (JNPT)",
+    shortName: "JNPT Port",
     category: "logistics",
     description: "Sprawling maritime cargo and manufacturing district in the southeastern sector with hangars, bulk fuel storage tanks, shipping container yards, and deepwater piers.",
     center: { x: 380, y: 1.8, z: 780 },
@@ -162,8 +162,8 @@ export const REGIONS_RECORD: Record<RegionId, RegionDefinition> = {
 
   coast: {
     id: "coast",
-    name: "Pelican Coves & Bluffs",
-    shortName: "Coastline",
+    name: "Konkan Coastal Bluffs",
+    shortName: "Konkan Coast",
     category: "maritime",
     description: "Southwestern maritime frontier showcasing golden crescent beaches, sheer granite sea bluffs rising 22m above crashing surf, offshore sea stacks, and a marine rescue station.",
     center: { x: -720, y: 2.0, z: 580 },
@@ -184,8 +184,8 @@ export const REGIONS_RECORD: Record<RegionId, RegionDefinition> = {
 
   water: {
     id: "water",
-    name: "Archipelago Surrounding Waters",
-    shortName: "Ocean",
+    name: "Arabian Sea Offshore Airspace",
+    shortName: "Arabian Sea",
     category: "ocean",
     description: "Expansive 4.8km open ocean waters, shallow coral reefs, navigation fairway buoys, and outer simulation safety boundary.",
     center: { x: 0, y: 0, z: 0 },
@@ -209,7 +209,7 @@ export const HELIPADS_RECORD: Record<string, Helipad> = {
   "training-alpha": {
     id: "training-alpha",
     regionId: "training",
-    name: "Helipad Alpha (Academy Main)",
+    name: "Helipad Alpha (Yelahanka Base)",
     position: { x: 0, y: 1.2, z: 0 },
     headingDeg: 0,
     elevation: 1.2,
@@ -221,7 +221,7 @@ export const HELIPADS_RECORD: Record<string, Helipad> = {
   "training-bravo": {
     id: "training-bravo",
     regionId: "training",
-    name: "Helipad Bravo (Practice Pad)",
+    name: "Helipad Bravo (Yelahanka Practice)",
     position: { x: 45, y: 1.2, z: 20 },
     headingDeg: 90,
     elevation: 1.2,
@@ -233,7 +233,7 @@ export const HELIPADS_RECORD: Record<string, Helipad> = {
   "forest-alpha": {
     id: "forest-alpha",
     regionId: "forest",
-    name: "Forest Ranger Station Pad",
+    name: "Dandeli Forest Ranger Station Pad",
     position: { x: -620, y: 5.5, z: -40 },
     headingDeg: 45,
     elevation: 5.5,
@@ -245,7 +245,7 @@ export const HELIPADS_RECORD: Record<string, Helipad> = {
   "mountain-alpha": {
     id: "mountain-alpha",
     regionId: "mountain",
-    name: "Mount Apex Weather Station Pad",
+    name: "Sahyadri Ridge Station Pad",
     position: { x: -580, y: 48.0, z: -560 },
     headingDeg: 180,
     elevation: 48.0,
@@ -257,7 +257,7 @@ export const HELIPADS_RECORD: Record<string, Helipad> = {
   "river-alpha": {
     id: "river-alpha",
     regionId: "river",
-    name: "Valley Bridge Observation Pad",
+    name: "Kaveri Gorge Observation Pad",
     position: { x: -85, y: 10.0, z: 195 },
     headingDeg: 120,
     elevation: 10.0,
@@ -269,7 +269,7 @@ export const HELIPADS_RECORD: Record<string, Helipad> = {
   "city-alpha": {
     id: "city-alpha",
     regionId: "city",
-    name: "Downtown Heliport Plaza",
+    name: "Cyberabad Vertiport Plaza",
     position: { x: 640, y: 2.5, z: 320 },
     headingDeg: 0,
     elevation: 2.5,
@@ -281,7 +281,7 @@ export const HELIPADS_RECORD: Record<string, Helipad> = {
   "city-apex-rooftop": {
     id: "city-apex-rooftop",
     regionId: "city",
-    name: "Apex Center Rooftop Skyport",
+    name: "Cyberabad Tower Skyport",
     position: { x: 760, y: 68.0, z: 360 },
     headingDeg: 270,
     elevation: 68.0,
@@ -329,7 +329,7 @@ export const LANDMARKS_RECORD: Record<string, LandmarkDefinition> = {
   },
   "alpine-lake": {
     id: "alpine-lake",
-    name: "Crystal Mountain Lake",
+    name: "Kaveri Reservoir Lake",
     category: "lake",
     regionId: "river",
     position: { x: -320, y: 8.5, z: -260 },
@@ -339,7 +339,7 @@ export const LANDMARKS_RECORD: Record<string, LandmarkDefinition> = {
   },
   "mountain-waterfall": {
     id: "mountain-waterfall",
-    name: "Cascade Falls",
+    name: "Shivanasamudra Plunge Falls",
     category: "waterfall",
     regionId: "river",
     position: { x: -270, y: 8.5, z: -210 },
@@ -349,7 +349,7 @@ export const LANDMARKS_RECORD: Record<string, LandmarkDefinition> = {
   },
   "valley-bridge": {
     id: "valley-bridge",
-    name: "Grand Valley Suspension Bridge",
+    name: "Kaveri Gorge Suspension Bridge",
     category: "bridge",
     regionId: "river",
     position: { x: -140, y: 9.8, z: 160 },
@@ -359,7 +359,7 @@ export const LANDMARKS_RECORD: Record<string, LandmarkDefinition> = {
   },
   "apex-tower": {
     id: "apex-tower",
-    name: "Apex Center Skyscraper",
+    name: "Cyberabad Tech Tower",
     category: "tower",
     regionId: "city",
     position: { x: 760, y: 68.0, z: 360 },
@@ -369,7 +369,7 @@ export const LANDMARKS_RECORD: Record<string, LandmarkDefinition> = {
   },
   "academy-runway": {
     id: "academy-runway",
-    name: "Central Flight Academy Runway",
+    name: "Yelahanka Airfield Runway",
     category: "airfield",
     regionId: "training",
     position: { x: 25, y: 1.2, z: -50 },
@@ -379,7 +379,7 @@ export const LANDMARKS_RECORD: Record<string, LandmarkDefinition> = {
   },
   "harbor-docks": {
     id: "harbor-docks",
-    name: "Deepwater Cargo Terminal & Piers",
+    name: "JNPT Container Terminal & Wharves",
     category: "facility",
     regionId: "industrial",
     position: { x: 420, y: 1.5, z: 860 },
@@ -389,7 +389,7 @@ export const LANDMARKS_RECORD: Record<string, LandmarkDefinition> = {
   },
   "coastal-cliffs": {
     id: "coastal-cliffs",
-    name: "Sentinel Bluffs & Sea Stack",
+    name: "Ratnagiri Sentinel Bluffs",
     category: "cliff",
     regionId: "coast",
     position: { x: -840, y: 22.0, z: 620 },

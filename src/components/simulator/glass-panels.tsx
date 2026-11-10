@@ -458,13 +458,13 @@ export function RightGlassPanel({
             }}
             defaultValue={typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("region") || "training" : "training"}
           >
-            <option className="bg-neutral-900 text-white py-1" value="training">Training Center</option>
-            <option className="bg-neutral-900 text-white py-1" value="city">Urban City</option>
-            <option className="bg-neutral-900 text-white py-1" value="mountain">Mountain Range</option>
-            <option className="bg-neutral-900 text-white py-1" value="forest">Forest Valley</option>
-            <option className="bg-neutral-900 text-white py-1" value="river">River &amp; Lake</option>
-            <option className="bg-neutral-900 text-white py-1" value="coast">Coastal Area</option>
-            <option className="bg-neutral-900 text-white py-1" value="industrial">Industrial Harbor</option>
+            <option className="bg-neutral-900 text-white py-1" value="training">Yelahanka Air Base (Bengaluru)</option>
+              <option className="bg-neutral-900 text-white py-1" value="city">Cyberabad Tech Hub (Hyderabad)</option>
+              <option className="bg-neutral-900 text-white py-1" value="mountain">Sahyadri Ridge (Western Ghats)</option>
+              <option className="bg-neutral-900 text-white py-1" value="forest">Dandeli Forest Reserve (Teak Valley)</option>
+              <option className="bg-neutral-900 text-white py-1" value="river">Kaveri River Gorge (Shivanasamudra)</option>
+              <option className="bg-neutral-900 text-white py-1" value="coast">Konkan Coastal Bluffs (Ratnagiri)</option>
+              <option className="bg-neutral-900 text-white py-1" value="industrial">Nhava Sheva Port SEZ (JNPT Mumbai)</option>
           </select>
         </div>
 

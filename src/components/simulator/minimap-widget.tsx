@@ -113,14 +113,14 @@ export function MinimapWidget({ telemetry, onClick, activeWaypoint }: MinimapWid
 
   // Current Sector Tag
   const sectorName = useMemo(() => {
-    if (Math.hypot(droneX, droneZ) < 220) return "ACADEMY";
-    if (droneX < -250 && droneZ < -250) return "MT APEX";
-    if (droneX < -250 && droneZ >= -250 && droneZ <= 280) return "FOREST";
-    if (droneX < -250 && droneZ > 280) return "PELICAN COVE";
-    if (droneX > 350 && droneZ > 520) return "HARBOR DOCKS";
-    if (droneX > 350 && droneZ <= 520) return "METROPOLIS";
-    if (droneX >= -250 && droneX <= 80 && droneZ > 80) return "RIVER CANYON";
-    return "ARCHIPELAGO";
+    if (Math.hypot(droneX, droneZ) < 220) return "YELAHANKA";
+    if (droneX < -250 && droneZ < -250) return "SAHYADRI";
+    if (droneX < -250 && droneZ >= -250 && droneZ <= 280) return "DANDELI";
+    if (droneX < -250 && droneZ > 280) return "KONKAN";
+    if (droneX > 350 && droneZ > 520) return "JNPT PORT";
+    if (droneX > 350 && droneZ <= 520) return "CYBERABAD";
+    if (droneX >= -250 && droneX <= 80 && droneZ > 80) return "KAVERI GORGE";
+    return "ARABIAN SEA";
   }, [droneX, droneZ]);
 
   return (

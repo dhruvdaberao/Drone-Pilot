@@ -164,7 +164,7 @@ export function WorldMapSelector({
               145m
             </text>
             <text x="235" y="240" fill="#cbd5e1" fontSize="8" fontWeight="bold" textAnchor="middle" letterSpacing="1">
-              ▲ MT. APEX MASSIF
+              ▲ SAHYADRI RIDGE
             </text>
           </g>
 
@@ -175,7 +175,7 @@ export function WorldMapSelector({
             <circle cx="255" cy="340" r="32" fill="#0f2919" opacity="0.7" />
             <circle cx="215" cy="400" r="30" fill="#0f2919" opacity="0.7" />
             <text x="225" y="315" fill="#86efac" fontSize="8" fontWeight="bold" textAnchor="middle" opacity="0.9" letterSpacing="1">
-              WHISPERING PINES FOREST
+              DANDELI TEAK FOREST
             </text>
           </g>
 
@@ -192,7 +192,7 @@ export function WorldMapSelector({
               APEX
             </text>
             <text x="585" y="372" fill="#93c5fd" fontSize="8" fontWeight="bold" textAnchor="middle" letterSpacing="1">
-              METROPOLIS
+              CYBERABAD
             </text>
           </g>
 
@@ -200,7 +200,7 @@ export function WorldMapSelector({
           <g opacity="0.85">
             <rect x="420" y="520" width="105" height="75" rx="6" fill="#2d3748" stroke="#4a5568" strokeWidth="1.5" />
             <text x="472" y="512" fill="#fcd34d" fontSize="7.5" fontWeight="bold" textAnchor="middle" letterSpacing="1">
-              HARBOR LOGISTICS
+              JNPT LOGISTICS
             </text>
             {/* Harbor Pier */}
             <rect x="480" y="585" width="14" height="35" fill="#334155" stroke="#475569" strokeWidth="1" />
@@ -292,7 +292,7 @@ export function WorldMapSelector({
             <rect x="-65" y="-9" width="130" height="18" rx="2" fill="#0f172a" stroke="#cbd5e1" strokeWidth="1.2" />
             <line x1="-55" y1="0" x2="55" y2="0" stroke="#ffffff" strokeWidth="1.2" strokeDasharray="4 3" />
             <text x="0" y="-12" fill="#94a3b8" fontSize="7" fontWeight="bold" textAnchor="middle">
-              ACADEMY RUNWAY
+              YELAHANKA RUNWAY
             </text>
           </g>
 
